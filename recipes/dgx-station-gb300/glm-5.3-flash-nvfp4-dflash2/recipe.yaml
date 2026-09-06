@@ -1,0 +1,124 @@
+schema: jm-recipe/v1
+id: dgx-station-gb300/glm-5.3-flash-nvfp4-dflash2
+title: GLM-5.3-Flash NVFP4 + DFlash2 speculative decoding on one DGX Station GB300
+summary: >
+  355B-parameter GLM-5.3-Flash in NVFP4 served by SGLang with the DFlash2 block-diffusion draft model.
+  Interactive-optimised: 234 tok/s single-stream decode, ~825 tok/s aggregate at C8, sub-second cold prefill
+  to 8k tokens. Switch to plain autoregressive above C16.
+status: verified
+owners: [jmeadlock, milo]
+updated: "2026-09-06"
+tags: [glm-5.3-flash, nvfp4, sglang, dflash2, speculative-decoding, single-gpu, interactive]
+
+model:
+  name: GLM-5.3-Flash
+  params: 355B (MoE)
+  repo: https://huggingface.co/LibertAIDAI/GLM-5.3-Flash-NVFP4
+  revision: aa28e1f54130286c95fee10d0705c74ce8743734
+  quantization: NVFP4 (ModelOpt)
+  draft:
+    repo: https://huggingface.co/incoai/GLM-5.3-Flash-DFlash2
+    revision: 7d74cdd881ed7e32c31175984a67823127b66cfe
+    method: DFlash2 block diffusion draft, 8-token blocks
+
+hardware:
+  profile: hardware/dgx-station-gb300.yaml
+  nominal: { gpu_memory_gb: 288, host_memory_gb: 496 }
+  observed:
+    gpu: NVIDIA GB300
+    driver: "595.84"
+    cuda: "13.2"
+    gpu_memory_visible_gib: 250.7
+    host_memory_gib: 494.5
+    os: Ubuntu 24.04.4 LTS
+    kernel: 6.17.0-1031-nvidia-64k
+    snapshot: results/2026-09-01-flash-dflash2/system.json
+  required_settings:
+    - "Do NOT set CUDA_VISIBLE_DEVICES: DGX OS's docker config already hides the display GPU; setting it makes the container see 0 GPUs"
+
+runtime:
+  engine: SGLang
+  engine_version: 0.5.18 + PR #36507 (glm-5.3-flash-support, includes #36708 DFlash hidden-state adapter)
+  engine_commit: 0a6b5d8c7b92825eb2687946aba2c5f728d7382e
+  container:
+    image: glm53-nvfp4-sglang:gb300-v2
+    digest: sha256:f710fd42cf749cbc6c3e1799244b5bdefd3b8f34d978aa810a9c1f97f86b143a
+    dockerfile: scripts/build-image.sh
+    dockerfile_sha256: c7456c2c640cf3f87d0b7453b2c666425b2cd8fc3efb00badd618b0dfc1e87ef
+    base_image: lmsysorg/sglang:v0.5.18 @ sha256:9e148f5ac788e856a06166bd6347a831831eb9fcfab4d1770874823a7c29a1a1 (built 2026-08-21, upstream rev 71de97b264b04dcd514cf904003028aefe9775c8)
+  key_libraries:
+    torch: 2.13.0+cu130
+    transformers: 5.16.1
+    triton: 3.7.1
+    cudnn: 9.14.0.64-1
+
+launch:
+  script: scripts/launch-dflash2.sh
+  command: "MODEL_DIR=/path/to/GLM-5.3-Flash-NVFP4/<revision>/original DRAFT_DIR=/path/to/GLM-5.3-Flash-DFlash2 API_KEY=... bash scripts/launch-dflash2.sh && bash scripts/warmup.sh"
+  health: "curl -fs http://localhost:30000/health; then run scripts/warmup.sh — first hit of each batch shape pays up to 30 s of kernel autotune"
+  warmup: scripts/warmup.sh (fires C1/4/8/16/32 once each)
+  notable_flags:
+    - "--quantization modelopt_fp4"
+    - "--speculative-algorithm DFLASH --speculative-draft-model-path /draft --speculative-draft-attention-backend fa4"
+    - "--tool-call-parser glm47 --reasoning-parser glm45  (REQUIRED for any agent/tool use; without them tool calls come back as plain text)"
+    - "--cuda-graph-max-bs 32 --max-running-requests 32 --max-prefill-tokens 8192 --chunked-prefill-size 8192"
+
+metrics:
+  - name: single-stream decode
+    value: 234.2
+    unit: tok/s
+    workload: C1, warm, prose prompts, DFlash2
+    aggregation: median of 3 warm runs
+    provenance: { run_id: 2026-09-01-flash-dflash2, method: "sequential chat completions after warmup.sh; tokens/s from streamed output timing", raw: throughput.csv }
+  - name: aggregate decode C8
+    value: 825.2
+    unit: tok/s
+    workload: C8, warm, DFlash2
+    aggregation: single warm run
+    provenance: { run_id: 2026-09-01-flash-dflash2, method: "8 concurrent chat completions; sum of output tokens / wall time", raw: throughput.csv }
+  - name: aggregate decode C32 (AR config)
+    value: 1162.5
+    unit: tok/s
+    workload: C32, warm, plain autoregressive (scripts/launch-ar.sh)
+    aggregation: single warm run
+    provenance: { run_id: 2026-09-01-flash-dflash2, method: "32 concurrent chat completions; sum of output tokens / wall time", raw: throughput.csv }
+  - name: TTFT under load
+    value: 0.19
+    unit: s
+    workload: 9th streamed request while 8 are running, DFlash2
+    provenance: { run_id: 2026-09-01-flash-dflash2, method: "time to first streamed token", raw: throughput.csv }
+  - name: cold prefill 8k
+    value: 0.29
+    unit: s
+    workload: 6,625-token prompt, cold KV, warm kernel shapes, DFlash2
+    provenance: { run_id: 2026-09-01-flash-dflash2, method: "TTFT of a fresh prompt (~22.5k tok/s prefill)", raw: throughput.csv }
+  - name: cold prefill 105k
+    value: 4.0
+    unit: s
+    workload: 105,434-token prompt, cold KV, warm kernel shapes, DFlash2
+    provenance: { run_id: 2026-09-01-flash-dflash2, method: "TTFT of a fresh prompt (~26.3k tok/s prefill)", raw: throughput.csv }
+
+verification:
+  gates:
+    schema:      { how: "scripts/check_recipe.py passes", last_pass_utc: "2026-09-06T15:00:00Z", run_id: 2026-09-01-flash-dflash2 }
+    digest:      { how: "docker image inspect reports the digest above; model dirs are the pinned revisions", last_pass_utc: "2026-09-06T14:40:00Z", run_id: 2026-09-01-flash-dflash2 }
+    health:      { how: "/health 200 after boot; warmup.sh completes all five shapes", last_pass_utc: "2026-09-02T00:00:00Z", run_id: 2026-09-01-flash-dflash2 }
+    quality:     { how: "coherent long-form output on the prose/code prompt set; DFlash2 accepts ~5 of 8 draft tokens per block; agent tool-calls parse with the two parsers on. No logprob-divergence gate was run for this recipe (see limits).", last_pass_utc: "2026-09-02T00:00:00Z", run_id: 2026-09-01-flash-dflash2, notes: "weaker gate than recipe 2's; stated, not hidden" }
+    performance: { how: "C1 median-of-3 within 5% of 234.2 tok/s after warmup", last_pass_utc: "2026-09-02T00:00:00Z", run_id: 2026-09-01-flash-dflash2 }
+
+limits:
+  - "DFlash2 is an interactive win: it loses to plain AR at C16+ (796 vs 1051 agg tok/s at C16). Use scripts/launch-ar.sh for batch work."
+  - "KV cache runs at SGLang's default for modelopt_fp4 (FP8 target KV; draft KV bf16 via fa4). This recipe accepts that. It is a quality tradeoff, and it is NOT what the GLM-5.3-big recipe on this same hardware allows — quality bars are per recipe."
+  - "First hit of every batch shape after a restart pays up to 30 s of kernel autotune. Run warmup.sh or your first benchmark measures autotune, not serving."
+  - "No teacher-forced divergence gate was run for this recipe; quality was judged on outputs and acceptance rate. A KL gate like recipe 2's would be stronger."
+  - "Image is a frozen `docker commit` of an SGLang PR branch, not a released tag. Reproduce with scripts/build-image.sh; results may drift once #36507 merges."
+  - "The 704 GB FP8 checkpoint of full GLM-5.3 does not fit this machine with SGLang CPU offload (host shm peak > 744 GiB). See research/failure-ledger.md."
+
+rollback:
+  script: scripts/swap-model.sh
+  summary: "docker rm -f glm53-flash and relaunch the previous checkpoint dir with the same image and flags; ~5 min wall including warmup."
+
+links:
+  blog: https://al-engr.com/gb300-glm-53-testing.html
+  origin_repo: https://github.com/jmeadlock/gb300-glm-flash-recipe
+  sglang_pr: https://github.com/sgl-project/sglang/pull/36507

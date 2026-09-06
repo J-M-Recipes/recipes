@@ -1,0 +1,27 @@
+config,concurrency,metric,value,unit,notes
+ar-tuned,1,decode,135.5,tok/s,median of 3 warm runs
+ar-tuned,4,aggregate,375.8,tok/s,warm
+ar-tuned,8,aggregate,647.6,tok/s,warm
+ar-tuned,16,aggregate,1051.2,tok/s,warm
+ar-tuned,32,aggregate,1162.5,tok/s,warm
+ar-tuned,8,ttft_under_load,0.18,s,streamed 9th request during 8 running
+dflash2,1,decode,234.2,tok/s,median of 3 warm runs (frozen v2 image)
+dflash2,4,aggregate,511.4,tok/s,warm
+dflash2,8,aggregate,825.2,tok/s,warm
+dflash2,16,aggregate,796.3,tok/s,warm
+dflash2,32,aggregate,835.8,tok/s,warm
+dflash2,8,ttft_under_load,0.19,s,streamed 9th request during 8 running
+day-one-default,1,decode,141.8,tok/s,no tuning flags; median of 3
+prefill-dayone-ar,8197,cold_prefill_ttft,0.89,s,day-one AR config; ~9228 tok/s
+prefill-dayone-ar,32495,cold_prefill_ttft,1.17,s,day-one AR config; ~27695 tok/s
+prefill-dflash2,6625,cold_prefill_ttft,0.29,s,production config warm shapes; ~22465 tok/s
+prefill-dflash2,26393,cold_prefill_ttft,1.10,s,production config warm shapes; ~24060 tok/s
+prefill-dflash2,52739,cold_prefill_ttft,2.01,s,production config warm shapes; ~26209 tok/s
+prefill-dflash2,105434,cold_prefill_ttft,4.00,s,production config warm shapes; ~26340 tok/s
+prefill-dflash2,8000,first_hit_autotune,16.0,s,approx one-time cost per prompt-size class after restart
+dflash2,1,accept_length_min,2.77,tokens,observed range on prose
+dflash2,1,accept_length_max,3.95,tokens,observed range on prose
+dflash2-derisked,1,decode,218.8,tok/s,Blackfrost DERISKED variant; stock drafter
+dflash2-derisked,8,aggregate,757.2,tok/s,warm
+dflash2-derisked,1,accept_length_min,2.69,tokens,stock-trained drafter on derisked base
+dflash2-derisked,1,accept_length_max,3.69,tokens,stock-trained drafter on derisked base

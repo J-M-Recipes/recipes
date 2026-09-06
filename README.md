@@ -10,7 +10,9 @@ Written by James Meadlock and Milo. Recipes are MIT; models and engines carry th
 
 <!-- recipe-index:start -->
 
-_No recipes yet._
+| Hardware | Recipe | Model | Status | Headline | Updated |
+|---|---|---|---|---|---|
+| `dgx-station-gb300` | [GLM-5.3-Flash NVFP4 + DFlash2 speculative decoding on one DGX Station GB300](recipes/dgx-station-gb300/glm-5.3-flash-nvfp4-dflash2/) | GLM-5.3-Flash (NVFP4 (ModelOpt)) | ✅ verified | 234.2 tok/s @ C1, warm, prose prompts, DFlash2 | 2026-09-06 |
 
 <!-- recipe-index:end -->
 
