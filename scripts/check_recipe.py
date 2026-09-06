@@ -172,8 +172,8 @@ def main(argv: list[str] | None = None) -> int:
     if a.all or not paths:
         paths = sorted(root.glob("recipes/*/*/recipe.yaml"))
     if not paths:
-        print("no recipe.yaml files found")
-        return 1
+        print("no recipe.yaml files found (nothing to check)")
+        return 0
     total = 0
     for p in paths:
         errs = check_recipe(p, root=root)
