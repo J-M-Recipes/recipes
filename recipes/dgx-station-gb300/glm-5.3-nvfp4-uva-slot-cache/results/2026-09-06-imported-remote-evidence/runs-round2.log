@@ -1,0 +1,56 @@
+V1 already stopped at start
+v1 stopped 11:08
+launched glm53-big-sc13g  SLOT_CACHE=112  offload=420 (all experts)  extra: --compilation-config {"mode":3,"backend":"eager"}
+SC13G_READY 11:29
+SLOT_CACHE installed: S=112 per_layer=75 bypass_above_tokens=16
+(APIServer pid=1) SLOT_CACHE runner seam patched: capture=0 router=ffi
+layers.3.mlp.experts: S=192
+layers.4.mlp.experts: S=192
+layers.5.mlp.experts: S=208
+layers.77.mlp.experts: S=112
+(EngineCore pid=361) Capturing CUDA graphs (decode, FULL):   0%|          | 0/3 [00:00<?, ?it/s]Capturing CUDA graphs (decode, FULL):  33%
+GREEDY saved 20 outputs to runs/sc13g/greedy.json
+SC13G_vs_V1G GREEDY_EQUIV identical=20/20
+SC13G_vs_V1EAGER GREEDY_EQUIV identical=20/20
+RUN sc13g {"pieces": 53, "positions": 51299, "sec": 80}
+KL_sc13g_vs_v1g COMPARE {"A": "sc13g", "B_ref": "v1g", "positions": 51299, "mean_abs_dlp": 0.0, "p99_abs_dlp": 0.0, "p999_abs_dlp": 0.0, "max_abs_dlp": 0.0, "top1_disagree_rate": 0.0, "top1_disagree_n": 0, "mean_tkl20": 0.0, "p999_tkl20": 0.0, "max_tkl20": 0.0, "per_cat": {"prose": {"n": 19965, "mean_abs_dlp": 0.0, "top1_disagree_rate": 0.0, "max_abs_dlp": 0.0}, "legal": {"n": 9492, "mean_abs_dlp": 0.0, "top1_disagre
+KL_sc13g_vs_v1e COMPARE {"A": "sc13g", "B_ref": "v1e", "positions": 51299, "mean_abs_dlp": 0.0, "p99_abs_dlp": 0.0, "p999_abs_dlp": 0.0, "max_abs_dlp": 0.0, "top1_disagree_rate": 0.0, "top1_disagree_n": 0, "mean_tkl20": 0.0, "p999_tkl20": 0.0, "max_tkl20": 0.0, "per_cat": {"prose": {"n": 19965, "mean_abs_dlp": 0.0, "top1_disagree_rate": 0.0, "max_abs_dlp": 0.0}, "legal": {"n": 9492, "mean_abs_dlp": 0.0, "top1_disagre
+SC13G C1 prose n=3 agg mean=43.1 min=42.9 max=43.2  code=39.1
+SC13G C4 prose n=3 agg mean=92.0 min=90.4 max=94.0  code=71.6
+SC13G C8 prose n=3 agg mean=95.6 min=94.8 max=96.0  code=76.5
+(EngineCore pid=361) SLOT_CACHE STATS window 20s: steps/layer=325 misses/step/layer=7.51 HIT=0.061 best=6:0.56 worst=77:-0.26 median_layer_hit=0.05
+(EngineCore pid=361) SLOT_CACHE STATS window 20s: steps/layer=385 misses/step/layer=6.32 HIT=0.210 best=5:0.62 worst=77:-0.07 median_layer_hit=0.21
+(EngineCore pid=361) SLOT_CACHE STATS window 20s: steps/layer=412 misses/step/layer=5.03 HIT=0.371 best=5:0.74 worst=57:0.11 median_layer_hit=0.36
+launched glm53-big-v1g-mtp (AT_KEY=bigv1-shared TRACE=off) extra: --compilation-config {"mode":3,"backend":"eager"} --speculative-config {"method":"mtp","num_speculative_tokens":1}
+glm53-big-v1g-mtp DEAD
+(EngineCore pid=501)   File "/usr/lib/python3.12/multiprocessing/process.py", line 108, in run
+--
+(EngineCore pid=501) torch.OutOfMemoryError: CUDA out of memory. Tried to allocate 6.00 GiB. GPU 0 has a total capacity of 249.81 GiB of which 1.44 GiB is free. Including non-PyTorch memory, this process has 248.34 GiB memory in use. Of the
+[rank0]:[W906 16:58:14.376247197 ProcessGroupNCCL.cpp:1624] Warning: WARNING: destroy_process_group() was not called before program exit, which can leak resources. For more info, please see https://pytorch.org/docs/stable/distributed.html#s
+(APIServer pid=1) INFO 09-06 16:58:18 [utils.py:615] [shutdown] Process manager: send sigterm to process EngineCore
+(APIServer pid=1) Traceback (most recent call last):
+(APIServer pid=1)   File "/usr/local/bin/vllm", line 10, in <module>
+(APIServer pid=1)     sys.exit(main())
+(APIServer pid=1)              ^^^^^^
+--
+(APIServer pid=1)     raise RuntimeError(
+(APIServer pid=1) RuntimeError: Engine core initialization failed. See root cause above. Failed core proc(s): {}
+launched glm53-big-sc13g-mtp  SLOT_CACHE=112  offload=420 (all experts)  extra: --compilation-config {"mode":3,"backend":"eager"} --speculative-config {"method":"mtp","num_speculative_tokens":1}
+SC13G_MTP_READY 12:23
+GREEDY saved 20 outputs to runs/sc13g-mtp/greedy.json
+SC13G-MTP_vs_V1G GREEDY_EQUIV identical=9/20
+SC13G-MTP_vs_V1EAGER GREEDY_EQUIV identical=9/20
+RUN sc13g-mtp {"pieces": 53, "positions": 51299, "sec": 78}
+KL_sc13g-mtp_vs_v1g COMPARE {"A": "sc13g-mtp", "B_ref": "v1g", "positions": 51299, "mean_abs_dlp": 0.0, "p99_abs_dlp": 0.0, "p999_abs_dlp": 0.0, "max_abs_dlp": 0.0, "top1_disagree_rate": 0.0, "top1_disagree_n": 0, "mean_tkl20": 0.0, "p999_tkl20": 0.0, "max_tkl20": 0.0, "per_cat": {"prose": {"n": 19965, "mean_abs_dlp": 0.0, "top1_disagree_rate": 0.0, "max_abs_dlp": 0.0}, "legal": {"n": 9492, "mean_abs_dlp": 0.0, "top1
+KL_sc13g-mtp_vs_v1e COMPARE {"A": "sc13g-mtp", "B_ref": "v1e", "positions": 51299, "mean_abs_dlp": 0.0, "p99_abs_dlp": 0.0, "p999_abs_dlp": 0.0, "max_abs_dlp": 0.0, "top1_disagree_rate": 0.0, "top1_disagree_n": 0, "mean_tkl20": 0.0, "p999_tkl20": 0.0, "max_tkl20": 0.0, "per_cat": {"prose": {"n": 19965, "mean_abs_dlp": 0.0, "top1_disagree_rate": 0.0, "max_abs_dlp": 0.0}, "legal": {"n": 9492, "mean_abs_dlp": 0.0, "top1
+SC13G-MTP C1 prose n=3 agg mean=54.7 min=53.8 max=55.7  code=52.2
+SC13G-MTP C4 prose n=3 agg mean=107.8 min=102.5 max=110.8  code=88.3
+SC13G-MTP C8 prose n=3 agg mean=102.9 min=98.7 max=106.2  code=89.3
+SC13G_MTP vllm:spec_decode_num_draft_tokens_total{engine="0",model_name="glm-5.3-big"} 18138.0
+SC13G_MTP vllm:spec_decode_num_accepted_tokens_total{engine="0",model_name="glm-5.3-big"} 14805.0
+SC13G_MTP vllm:spec_decode_num_accepted_tokens_per_pos_total{engine="0",model_name="glm-5.3-big",position="0"} 14805.0
+SC13G_MTP vllm:spec_decode_num_accepted_tokens_per_pos_created{engine="0",model_name="glm-5.3-big",position="0"} 1.7887153760017188e+09
+(EngineCore pid=361) SLOT_CACHE STATS window 20s: steps/layer=320 misses/step/layer=7.54 HIT=0.058 best=6:0.59 worst=77:-0.25 median_layer_hit=0.06
+(EngineCore pid=361) SLOT_CACHE STATS window 20s: steps/layer=242 misses/step/layer=10.34 HIT=-0.292 best=6:0.46 worst=57:-0.75 median_layer_hit=-0.30
+(EngineCore pid=361) SLOT_CACHE STATS window 20s: steps/layer=226 misses/step/layer=10.76 HIT=-0.345 best=6:0.40 worst=77:-0.80 median_layer_hit=-0.35
+V1_RESTORE_STARTED 12:31

@@ -1,0 +1,252 @@
+schema: jm-recipe/v1
+id: dgx-station-gb300/glm-5.3-nvfp4-uva-slot-cache
+title: GLM-5.3-NVFP4-One-GB300
+summary: Experimental vLLM UVA offload recipe for full GLM-5.3 NVFP4 on one DGX Station GB300. V1 keeps routed experts in
+  host memory with bf16 KV; the slot-cache variants keep a small per-layer HBM expert cache and preserve measured prefill
+  logits, but decode equivalence remains diagnostic rather than formal.
+status: experimental
+owners:
+- jmeadlock
+- milo
+updated: '2026-09-06'
+tags:
+- glm-5.3
+- nvfp4
+- vllm
+- uva
+- cpu-offload
+- slot-cache
+- experimental
+model:
+  name: GLM-5.3
+  params: 744B (MoE)
+  repo: https://huggingface.co/incoai/GLM-5.3-NVFP4
+  revision: 54e52520606f96b3d9fc84088ad22882a61648ac
+  quantization: NVFP4 (ModelOpt)
+hardware:
+  profile: hardware/dgx-station-gb300.yaml
+  nominal:
+    gpu_memory_gb: 288
+    host_memory_gb: 496
+  observed:
+    gpu: NVIDIA GB300
+    driver: '595.84'
+    cuda: '13.2'
+    gpu_memory_visible_gib: 250.7
+    host_memory_gib: 494.5
+    os: Ubuntu 24.04.4 LTS
+    kernel: 6.17.0-1031-nvidia-64k
+    snapshot: results/2026-09-05-v1-baseline/system.json
+  required_settings:
+  - 'Do NOT set CUDA_VISIBLE_DEVICES: DGX OS''s docker config already hides the display GPU; setting it can make the container
+    see the wrong GPU set.'
+  - CDMM/UVA offload must be enabled and stable before launching; this recipe depends on host-memory expert reads over Grace-Blackwell
+    coherent memory.
+runtime:
+  engine: vLLM
+  engine_version: 0.28.0 local GLM-5.3 UVA build
+  engine_commit: 2cf0a6915ce544dc493a0990f2ea38d81601128a
+  container:
+    image: vllm-glm53-uva:v0.28.0-2cf0a691
+    digest: sha256:61fc8a896b0a4fbbbdc063bc4b0dbc25ce98e02b5050c24aeb7830ac02039b14
+  patches:
+  - path: patches/sitecustomize-bigv1.py
+    sha256: 1238cf28c4d61fde53a223799c3df43333d8095e44d9437b49c6037cbbf4ff57
+    purpose: V1 route-trace and FlashInfer autotune-cache key hook; launch-bigv1.sh bind-mounts it from patches/.
+  - path: patches/sitecustomize.py
+    sha256: 6b9b7a76d77bde03d1b4ee2f0daed7e1cc6feba8718fad526c9fe334bbf3b2a0
+    purpose: Slot-cache import hook installed as container sitecustomize.py.
+  - path: patches/exact_pin.py
+    sha256: 93c8ee1420be870c505330f387f3168147539d6277be9500aae866d7bbf21bf0
+    purpose: Exact pinned-host tensor allocation helper for UVA expert storage.
+  - path: patches/ffi_route.py
+    sha256: 38a36cfec0e0cf06e00e406b1d3f015b51d9147289269d4a180d161ba1c3eec7
+    purpose: FFI router path used by sc11/sc12/sc13 slot-cache variants.
+  - path: patches/slot_cache_hook.py
+    sha256: 889613f0dc2e371a715a8c43e6ac0858d6ad7aefda7308ac67e8a2343cd715ad
+    purpose: Latest per-layer slot-cache hook; builds per-layer HBM expert slots and routes decode through cached slots.
+  - path: configs/slots-8400.json
+    sha256: 4ee071670e13f199658776ddb7b508c9a068657ea631a0cb4287db0a2afeeaed
+    purpose: Non-code per-layer HBM slot allocation map for the packaged slot-cache launcher.
+launch:
+  script: scripts/launch-slotcache-portable.sh
+  command: MODEL_DIR=/home/exx/models/GLM-5.3-NVFP4-big CACHE_DIR=$HOME/vllm-cache API_KEY_FILE=$HOME/.glm_api_key bash scripts/launch-slotcache-portable.sh
+    sc13g 112 --compilation-config '{"mode":3,"backend":"eager"}'
+  health: BASE_URL=http://127.0.0.1:30001 MODEL_NAME=glm-5.3-big bash scripts/health-check.sh performs HTTP-only /health,
+    /v1/models, and optional /metrics reads.
+  notable_flags:
+  - 'V1 baseline script: --cpu-offload-gb 188, --kv-cache-dtype bfloat16, --kv-cache-memory 8589934592, --max-model-len 65536,
+    --max-num-seqs 4.'
+  - 'Slot-cache measured sc13g: --cpu-offload-gb 420 to offload routed experts, SLOT_CACHE=112, SLOT_CACHE_PER_LAYER=/w/trace/r1-base/slots-8400.json,
+    SLOT_CACHE_ROUTER=ffi, bypass prefill above 16 tokens.'
+  - Do not use /home/milo/gb300-big-v1/Dockerfile for this recipe; it is an unrelated SGLang Dockerfile.
+metrics:
+- name: V1 baseline single-stream decode
+  value: 33.8
+  unit: tok/s
+  workload: 'C1, prose prompts, 512 generated tokens, n=3, V1 baseline flags: 188 GiB offload, bf16 KV 8 GiB, seq4, 65k'
+  aggregation: mean of three prose runs rounded from 33.81, 33.79, 33.81
+  provenance:
+    run_id: 2026-09-05-v1-baseline
+    method: scripts/bench3.sh BENCH agg_tok_s
+    raw: bench.txt
+- name: V1 baseline aggregate decode C4
+  value: 57.7
+  unit: tok/s
+  workload: C4, prose prompts, 512 generated tokens per stream, V1 baseline flags
+  aggregation: mean of three prose runs rounded from 58.89, 57.80, 56.32
+  provenance:
+    run_id: 2026-09-05-v1-baseline
+    method: scripts/bench3.sh BENCH agg_tok_s
+    raw: bench.txt
+- name: sc11 FFI eager single-stream decode
+  value: 5.9
+  unit: tok/s
+  workload: C1, prose prompts, 512 generated tokens, SLOT_CACHE=112, FFI router, eager compile
+  aggregation: mean of three prose runs rounded from 5.81, 5.85, 5.94
+  label: exact diagnostic parity, slower than V1
+  provenance:
+    run_id: 2026-09-06-sc11-ffi-eager
+    method: scripts/bench3.sh BENCH agg_tok_s
+    raw: bench.txt
+- name: sc11 FFI eager prefill parity
+  value: 0.0
+  unit: max_abs_dlp
+  workload: teacher-forced prefill/logprob diagnostic, 51,299 positions against v1e
+  aggregation: exact zero across reported dlp/tkl/top1 fields
+  label: prefill parity only; not a formal decode noninferiority proof
+  provenance:
+    run_id: 2026-09-06-kl-round
+    method: scripts/tf_kl.py compare sc11f_vs_v1e
+    raw: sc11f_vs_v1e.json
+- name: sc13g slot-cache single-stream decode
+  value: 43.1
+  unit: tok/s
+  workload: C1, prose prompts, 512 generated tokens, SLOT_CACHE=112, per-layer slots, FFI router, eager compile, all routed
+    experts offloaded
+  aggregation: mean of three prose runs rounded from 43.24, 43.20, 42.89
+  label: imported remote throughput evidence; decode quality remains diagnostic, not a noninferiority result
+  provenance:
+    run_id: 2026-09-06-sc13g-slotcache-eager
+    method: imported bench3.sh BENCH agg_tok_s
+    raw: bench.txt
+- name: sc13g slot-cache aggregate decode C4
+  value: 92.0
+  unit: tok/s
+  workload: C4, prose prompts, 512 generated tokens per stream, SLOT_CACHE=112, per-layer slots, FFI router, eager compile
+  aggregation: mean of three prose runs rounded from 93.97, 91.65, 90.42
+  label: imported remote throughput evidence; decode quality remains diagnostic, not a noninferiority result
+  provenance:
+    run_id: 2026-09-06-sc13g-slotcache-eager
+    method: imported bench3.sh BENCH agg_tok_s
+    raw: bench.txt
+- name: sc13g slot-cache aggregate decode C8
+  value: 95.6
+  unit: tok/s
+  workload: C8, prose prompts, 512 generated tokens per stream, SLOT_CACHE=112, per-layer slots, FFI router, eager compile
+  aggregation: mean of three prose runs rounded from 96.04, 94.76, 95.87
+  label: imported remote throughput evidence; decode quality remains diagnostic, not a noninferiority result
+  provenance:
+    run_id: 2026-09-06-sc13g-slotcache-eager
+    method: imported bench3.sh BENCH agg_tok_s
+    raw: bench.txt
+- name: sc13g-MTP single-stream decode
+  value: 54.7
+  unit: tok/s
+  workload: C1, prose prompts, 512 generated tokens, SLOT_CACHE=112 plus --speculative-config method=mtp,num_speculative_tokens=1
+  aggregation: mean of three prose runs rounded from 53.76, 55.70, 54.67
+  label: 'MTP decode does not gate: only 9/20 greedy outputs matched V1G, despite prefill diagnostic parity'
+  provenance:
+    run_id: 2026-09-06-sc13g-mtp-slotcache-eager
+    method: imported bench3.sh BENCH agg_tok_s
+    raw: bench.txt
+- name: sc13g warm long-prefill 64k
+  value: 3649
+  unit: tok/s
+  workload: 52,740-token prompt, warm ladder, sc13g slot-cache; slot-cache bypasses prefill above 16 tokens
+  aggregation: single imported warm ladder measurement
+  label: throughput evidence from round3 log; not a decode gate
+  provenance:
+    run_id: 2026-09-06-imported-remote-evidence
+    method: PREFILL_LADDER_WARM sc13g
+    raw: runs-round3.log
+- name: V1-MTP Round 4 aggregate decode C1
+  value: 37.7
+  unit: tok/s
+  workload: C1, prose prompts, 512 generated tokens per stream; campaign V1-MTP with 210 GiB offload and 49152 context
+  aggregation: mean of three runs rounded from 38.31, 37.3, 37.43
+  label: throughput only; decode noninferiority not established
+  provenance:
+    run_id: 2026-09-06-v1g-mtp3-round4
+    method: bench3.sh BENCH agg_tok_s
+    raw: bench.txt
+- name: V1-MTP Round 4 aggregate decode C4
+  value: 61.9
+  unit: tok/s
+  workload: C4, prose prompts, 512 generated tokens per stream; campaign V1-MTP with 210 GiB offload and 49152 context
+  aggregation: mean of three runs rounded from 61.48, 62.41, 61.83
+  label: throughput only; decode noninferiority not established
+  provenance:
+    run_id: 2026-09-06-v1g-mtp3-round4
+    method: bench3.sh BENCH agg_tok_s
+    raw: bench.txt
+- name: V1-MTP Round 4 aggregate decode C8
+  value: 79.9
+  unit: tok/s
+  workload: C8, prose prompts, 512 generated tokens per stream; campaign V1-MTP with 210 GiB offload and 49152 context
+  aggregation: mean of three runs rounded from 78.4, 80.06, 81.26
+  label: throughput only; decode noninferiority not established
+  provenance:
+    run_id: 2026-09-06-v1g-mtp3-round4
+    method: bench3.sh BENCH agg_tok_s
+    raw: bench.txt
+verification:
+  quality_gate:
+    reference_build: V1 eager baseline comparators v1e/v1g
+    method: 'Current evidence is diagnostic: sc11 and sc13 report zero teacher-forced prefill/logprob deltas and sc13g greedy
+      output matches 20/20 prompts, but the original tf_decode metric is not a formal noninferiority gate because common-prefix
+      censoring, missing-piece handling, null logprob handling, category coverage, and statistical floor are incomplete.'
+    positions: 51299
+    floor_run_id: 2026-09-06-round4-decode
+    never:
+    - Do not promote to verified from tf_decode.py metric_pass alone.
+    - Do not use MTP greedy/logprob prefill parity as a decode gate; sc13g-MTP only matched 9/20 greedy outputs.
+  gates:
+    schema:
+      how: 'Local schema/checker must pass: .venv/bin/python scripts/check_recipe.py recipes/dgx-station-gb300/glm-5.3-nvfp4-uva-slot-cache/recipe.yaml.'
+    digest:
+      how: Local Docker image ID (not registry manifest digest) sha256:61fc... imported from sanitized inspect fields; command contained no API key,
+        env list was sanitized and only shows non-secret flags. Model revision is intended from HF API/prior SHA; local all-file
+        identity is not verified.
+      run_id: 2026-09-06-v1g-campaign-eager
+      notes: Inspect provenance lives in results/*/container-inspect-sanitized.json.
+    health:
+      how: scripts/health-check.sh is HTTP-only and verifies /health plus served model from /v1/models; remote readiness lines
+        SC13G_READY/SC13G_MTP_READY are imported evidence, not a local live test.
+      run_id: 2026-09-06-imported-remote-evidence
+    quality:
+      how: Measured prefill parity and diagnostic greedy/decode evidence only; formal decode noninferiority is not established by the two-run repeatability comparison or its postprocessor.
+      run_id: 2026-09-06-imported-remote-evidence
+      notes: 'sc13g non-MTP: 20/20 greedy vs V1G and V1EAGER, zero reported prefill deltas in truncated log. sc13g-MTP: 9/20
+        greedy, not a gate.'
+    performance:
+      how: 'bench3.sh imported remote evidence: sc13g C1 43.1 tok/s, C4 92.0 agg tok/s, C8 95.6 agg tok/s; V1 baseline recorded
+        separately at 33.8 tok/s with 188 GiB/seq4 flags.'
+      run_id: 2026-09-06-sc13g-slotcache-eager
+limits:
+- 'Experimental, not verified: formal decode noninferiority is not established. The independent postprocessor is diagnostic only.'
+- sc13g-MTP is faster in raw throughput but failed greedy equivalence (9/20), so it is recorded as evidence only and must
+  not be used as the decode gate.
+- The imported v1g campaign comparator used campaign defaults visible in inspect (200 GiB offload, seq8); the packaged V1
+  baseline script intentionally preserves the earlier 188 GiB offload, bf16 KV 8 GiB, seq4, 65k flags.
+- Model repo/revision is intended and pinned from HF API plus prior short SHA; local all-file checkpoint identity was not
+  verified.
+- scripts/launch-slotcache-portable.sh was packaged from campaign evidence but was not live-tested from this repo path.
+- Existing scripts/launch-slotcache.sh is obsolete and campaign-hardcoded; prefer scripts/launch-slotcache-portable.sh for
+  this package.
+- Do not modify scripts/tf_decode.py as part of this package; its existing metric_pass is known insufficient for verification.
+rollback:
+  script: scripts/rollback.sh
+  summary: Default is --dry-run and performs no Docker actions; --execute stops (does not remove) the named candidate and prefers the preserved baseline keeper. Fresh launch requires explicit --fresh-launch if the keeper is absent. Authenticated HTTP health follows startup; this helper is locally tested, not live-qualified.
+links:
+  model: https://huggingface.co/incoai/GLM-5.3-NVFP4
