@@ -1,0 +1,28 @@
+# Hardware profile: NVIDIA DGX Station GB300 (single Grace-Blackwell Ultra desktop superchip)
+# Values under `observed` come from scripts/collect_system_snapshot.sh on the actual machine.
+# Values under `nominal` are the spec sheet and are informational only — recipes pin against `observed`.
+slug: dgx-station-gb300
+name: NVIDIA DGX Station GB300
+vendor: NVIDIA
+form_factor: desktop workstation
+nominal:
+  gpu: NVIDIA GB300 Blackwell Ultra
+  gpu_memory_gb: 288          # spec sheet HBM3e
+  host_memory_gb: 496         # LPDDR5X on the Grace CPU
+  cpu: NVIDIA Grace, 72x Arm Neoverse V2
+  cpu_gpu_link: NVLink-C2C (coherent)
+observed:                     # 2026-09-06, driver 595.84
+  compute_gpu: NVIDIA GB300
+  gpu_memory_visible_gib: 250.7      # nvidia-smi memory.total = 256,703 MiB; CUDA-usable ≈ 249.8 GiB (torch)
+  display_gpu: NVIDIA RTX PRO 4000 Blackwell SFF Edition (23.9 GiB) — not used by recipes
+  host_memory_gib: 494.5
+  cpu: Neoverse-V2 (aarch64)
+  os: Ubuntu 24.04.4 LTS
+  kernel: 6.17.0-1031-nvidia-64k
+  driver: "595.84"
+  cuda: "13.2"
+  docker: "29.1.3"
+notes:
+  - The 288 GB spec figure is not what you get. Recipes that size a model to HBM must use ~250 GiB visible / ~249.8 GiB CUDA-allocatable.
+  - Expert offload to host memory works over NVLink-C2C with vLLM's UVA offload backend; effective bandwidth is the limit for MoE decode.
+  - Host time zone on the reference machine is America/Chicago; results bundles record UTC.
