@@ -10,7 +10,7 @@ Lanes:
 
 | lane | file | rows | schema OK | correct | note |
 |---|---|---:|---:|---:|---|
-| V1 preserved baseline | `v1-secondary-structured-v2.jsonl` | 40 | 40 | 37 | V1 restored state was explicitly cancelled by the user; all keepers were last stopped. This receipt preserves the prior V1 evidence only. |
+| V1 preserved baseline | `v1-secondary-structured-v2.jsonl` | 40 | 40 | 37 | V1 restoration was explicitly cancelled during the V2 collection. This receipt preserves the prior V1 evidence only and does not assert current serving state. |
 | `sc13g` no MTP | `sc13g-nomtp-v2.jsonl` | 40 | 40 | 38 | matched slot-cache control |
 | `sc13g` + MTP(1) | `sc13g-mtp-v2.jsonl` | 40 | 40 | 37 | experimental release candidate only; not default quality-approved |
 

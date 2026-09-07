@@ -1,0 +1,66 @@
+{
+  "profile": "ctx512k",
+  "decision": "512K context (524,288 tokens) with 48.0 GiB bf16 KV selected as the daily serving profile to balance decode speed (expert-slot budget) against context headroom",
+  "date": "2026-09-07",
+  "container": {
+    "name": "glm53-big-sc13g-mtp-ctx512k",
+    "started_at": "2026-09-07T14:00:10.137594257Z",
+    "image": "vllm-glm53-uva:v0.28.0-2cf0a691",
+    "status_at_receipt": "running"
+  },
+  "launch_flags": {
+    "cpu_offload_gb": 420,
+    "cpu_offload_params": ["routed_experts.w13_weight", "routed_experts.w2_weight"],
+    "kv_cache_dtype": "bfloat16",
+    "kv_cache_memory_bytes": 51539607552,
+    "kv_cache_gib": 48.0,
+    "max_model_len": 524288,
+    "max_num_seqs": 1,
+    "max_num_batched_tokens": 8192,
+    "compilation_config": "{\"mode\":3,\"backend\":\"eager\"}",
+    "speculative_config": "{\"method\":\"mtp\",\"num_speculative_tokens\":1}",
+    "slot_cache": 112,
+    "slot_cache_per_layer": "slots-5792-ctx512k.json",
+    "slot_cache_router": "ffi",
+    "exact_pin": 1
+  },
+  "slot_map": {
+    "path": "configs/slots-5792-ctx512k.json",
+    "sha256": "73962276498626af16baaa7c8737384960aff8718d254e66ab92610570c9743c",
+    "total_slots": 5792,
+    "per_layer_min": 48,
+    "per_layer_max": 96,
+    "layers": 75,
+    "mean_predicted_hit_alloc": 0.6166,
+    "derived_from": "trace/r1-base/slots-8400.json per-layer hit curves"
+  },
+  "engine_log_milestones": {
+    "total_cpu_offloaded_parameters": 337.5,
+    "initial_free_memory_gib": 249.12,
+    "reserved_kv_gib": 48.0,
+    "gpu_kv_cache_tokens": 548800,
+    "max_concurrency_at_524288": "1.05x",
+    "application_startup_complete": true
+  },
+  "verification": {
+    "near_window_prompt_tokens": 480011,
+    "near_window_prompt_bytes": 1474255,
+    "cold_request_seconds": 142.723,
+    "cold_request_note": "first attempt at max_tokens 16 finished by length with 16 reasoning tokens (probe artifact); request completed without server error",
+    "cached_repeat_seconds": 1.393,
+    "cached_repeat_output": "CTX512K OK",
+    "post_test_gpu_used_mib": 238908,
+    "post_test_gpu_free_mib": 16902,
+    "post_test_oom_or_traceback": false,
+    "hermes_clients": [
+      {"host": "M4 Milo profile", "context_length_set": 524288, "probe": "HERMES 512K OK"},
+      {"host": "forge (Echo)", "context_length_set": 524288, "probe": "HERMES 512K OK", "note": "provider-level and nested model-level entries"}
+    ]
+  },
+  "profiles_compared": {
+    "ctx256k": {"slots": 7360, "per_layer_min": 64, "per_layer_max": 176, "mean_predicted_hit_alloc": 0.6982, "outcome": "not compelling as the daily profile"},
+    "ctx512k": {"slots": 5792, "per_layer_min": 48, "per_layer_max": 96, "mean_predicted_hit_alloc": 0.6166, "outcome": "selected"},
+    "ctx1m": {"kv_gib": 96.0, "slots": 2672, "per_layer_min": 32, "per_layer_max": 48, "mean_predicted_hit_alloc": 0.4016, "outcome": "aborted during startup as too slow for daily use; archived container glm53-big-sc13g-mtp-ctx1m-superseded-by-512k-20260907-085813; retained only as a special long-context option"}
+  },
+  "quality_note": "Context sizing changes no quality verdict; MTP and structured-output caveats elsewhere in this recipe still apply."
+}

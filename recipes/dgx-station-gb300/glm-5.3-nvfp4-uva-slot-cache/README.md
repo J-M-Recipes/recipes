@@ -1,6 +1,6 @@
 # GLM-5.3-NVFP4-One-GB300
 
-**Status: experimental** · V1 baseline 33.8 tok/s C1 · sc13g slot-cache 43.1 tok/s C1 / 92.0 agg C4 / 95.6 agg C8 · MTP(1) audited as faster but **not** a quality-approved default
+**Status: experimental** · V1 baseline 33.8 tok/s C1 · sc13g slot-cache 43.1 tok/s C1 / 92.0 agg C4 / 95.6 agg C8 · MTP(1) audited as faster but **not** a quality-approved default · daily serving profile live-tested at 512K context / 48 GiB bf16 KV
 
 ![Memory map](diagrams/memory-map.svg)
 
@@ -135,6 +135,31 @@ Evidence gates:
 | 8k | 6,621 | 1.96 s | 3,383 tok/s |
 | 32k | 26,392 | 7.59 s | 3,477 tok/s |
 | 64k | 52,740 | 14.45 s | 3,649 tok/s |
+
+### Long-context profile: why the daily serving config is 512K / 48 GiB KV
+
+On September 7, 2026 we sized three context profiles for the sc13g slot-cache + MTP(1) build and settled on **512K context (524,288 tokens) with a 48.0 GiB bf16 KV cache** as the daily profile, balancing decode speed against context headroom. The reasoning: every GiB of KV comes straight out of the HBM expert-slot budget, and decode speed follows the slot budget. Live receipts: [`results/2026-09-07-ctx512k-live/`](results/2026-09-07-ctx512k-live/).
+
+| profile | context | bf16 KV | expert slots (per-layer range) | mean predicted hit allocation | outcome |
+|---|---:|---:|---:|---:|---|
+| ctx256k | 262,144 | — | 7,360 (64–176) | 0.6982 | fastest slots, but context was not the pain point; not compelling |
+| **ctx512k** | **524,288** | **48.0 GiB** | **5,792 (48–96)** | **0.6166** | **selected daily profile** |
+| ctx1m | 1,048,576 | 96.0 GiB | 2,672 (32–48) | 0.4016 | aborted during startup as too slow for daily use; archived as a special long-context option only |
+
+The "mean predicted hit allocation" figures are planning numbers computed from per-layer routing-trace hit curves — not measured runtime hit rates. The live 512K launch (`glm53-big-sc13g-mtp-ctx512k`, receipt `ctx512k-20260907-090009`) reserved 48.0 GiB KV for 548,800 tokens of KV capacity (1.05x concurrency at 524,288), loaded with the 5,792-slot map packaged as [`configs/slots-5792-ctx512k.json`](configs/slots-5792-ctx512k.json), and passed a near-window probe: a **480,011-prompt-token** request completed in 142.7 s cold and its cached repeat returned exactly `CTX512K OK` in 1.393 s, with no OOM and 16,902 MiB still free afterward. Context sizing changes no quality verdict; the MTP and structured-output caveats below are unaffected.
+
+Launch the 512K daily profile from the portable script with the documented overrides:
+
+```bash
+MODEL_DIR=/home/exx/models/GLM-5.3-NVFP4-big \
+CACHE_DIR=$HOME/vllm-cache \
+API_KEY_FILE=$HOME/.glm_api_key \
+KV_CACHE_MEMORY=51539607552 MAX_MODEL_LEN=524288 MAX_NUM_SEQS=1 \
+SLOT_CACHE_PER_LAYER=/w/configs/slots-5792-ctx512k.json \
+bash scripts/launch-slotcache-portable.sh sc13g-mtp-ctx512k 112 \
+  --compilation-config '{"mode":3,"backend":"eager"}' \
+  --speculative-config '{"method":"mtp","num_speculative_tokens":1}'
+```
 
 ### Secondary structured-output V2 release-candidate receipts
 

@@ -18,6 +18,13 @@ AT_KEY="${AT_KEY:-slotcache-S$SLOTS}"
 IMAGE="${IMAGE:-vllm-glm53-uva:v0.28.0-2cf0a691}"
 CONTAINER_NAME="${CONTAINER_NAME:-glm53-big-$RUN}"
 COMPILATION_CONFIG="${COMPILATION_CONFIG:-{\"mode\":3,\"backend\":\"eager\"}}"
+# Context-profile overrides. Defaults preserve the measured sc13g flags (8 GiB KV / 65k).
+# The live-tested 512K daily profile (see results/2026-09-07-ctx512k-live/) is launched with:
+#   KV_CACHE_MEMORY=51539607552 MAX_MODEL_LEN=524288 MAX_NUM_SEQS=1 \
+#   SLOT_CACHE_PER_LAYER=/w/configs/slots-5792-ctx512k.json bash scripts/launch-slotcache-portable.sh sc13g-mtp-ctx512k 112 ...
+KV_CACHE_MEMORY="${KV_CACHE_MEMORY:-8589934592}"
+MAX_MODEL_LEN="${MAX_MODEL_LEN:-65536}"
+MAX_NUM_SEQS="${MAX_NUM_SEQS:-4}"
 
 if [ ! -r "$API_KEY_FILE" ]; then
   echo "missing readable API_KEY_FILE: $API_KEY_FILE" >&2
@@ -42,9 +49,9 @@ vllm_args=(
   --cpu-offload-params routed_experts.w13_weight routed_experts.w2_weight
   --gpu-memory-utilization 0.95
   --kv-cache-dtype bfloat16
-  --kv-cache-memory 8589934592
-  --max-model-len 65536
-  --max-num-seqs 4
+  --kv-cache-memory "$KV_CACHE_MEMORY"
+  --max-model-len "$MAX_MODEL_LEN"
+  --max-num-seqs "$MAX_NUM_SEQS"
   --max-num-batched-tokens 8192
   --enable-auto-tool-choice
   --tool-call-parser glm47

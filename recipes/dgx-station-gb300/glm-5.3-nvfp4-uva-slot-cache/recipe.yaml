@@ -3,7 +3,9 @@ id: dgx-station-gb300/glm-5.3-nvfp4-uva-slot-cache
 title: GLM-5.3-NVFP4-One-GB300
 summary: Experimental vLLM UVA offload recipe for full GLM-5.3 NVFP4 on one DGX Station GB300. V1 keeps routed experts in
   host memory with bf16 KV; the slot-cache variants keep a small per-layer HBM expert cache. MTP(1) has audited warm C1 speed
-  upside, but the frozen quality campaign is INCONCLUSIVE and MTP is not the quality-approved default.
+  upside, but the frozen quality campaign is INCONCLUSIVE and MTP is not the quality-approved default. The live-tested daily
+  serving profile is 512K context with 48 GiB bf16 KV, chosen to balance decode speed (expert-slot budget) against context
+  headroom; see results/2026-09-07-ctx512k-live/.
 status: experimental
 owners:
 - jmeadlock
@@ -68,6 +70,10 @@ runtime:
   - path: configs/slots-8400.json
     sha256: 4ee071670e13f199658776ddb7b508c9a068657ea631a0cb4287db0a2afeeaed
     purpose: Non-code per-layer HBM slot allocation map for the packaged slot-cache launcher.
+  - path: configs/slots-5792-ctx512k.json
+    sha256: 73962276498626af16baaa7c8737384960aff8718d254e66ab92610570c9743c
+    purpose: Per-layer HBM slot allocation map for the live-tested 512K context / 48 GiB KV daily profile (5,792 slots over
+      75 layers, min 48 / max 96 per layer, derived from the slots-8400 hit curves; mean predicted hit allocation 0.6166).
 launch:
   script: scripts/launch-slotcache-portable.sh
   command: MODEL_DIR=/home/exx/models/GLM-5.3-NVFP4-big CACHE_DIR=$HOME/vllm-cache API_KEY_FILE=$HOME/.glm_api_key bash scripts/launch-slotcache-portable.sh
@@ -79,6 +85,12 @@ launch:
     --max-num-seqs 4.'
   - 'Slot-cache measured sc13g: --cpu-offload-gb 420 to offload routed experts, SLOT_CACHE=112, SLOT_CACHE_PER_LAYER=/w/trace/r1-base/slots-8400.json,
     SLOT_CACHE_ROUTER=ffi, bypass prefill above 16 tokens.'
+  - 'Live-tested 512K daily profile (2026-09-07, container glm53-big-sc13g-mtp-ctx512k): --kv-cache-memory 51539607552 (48
+    GiB), --max-model-len 524288, --max-num-seqs 1, SLOT_CACHE=112, SLOT_CACHE_PER_LAYER=configs/slots-5792-ctx512k.json,
+    MTP(1). Launched from the portable script via KV_CACHE_MEMORY / MAX_MODEL_LEN / MAX_NUM_SEQS / SLOT_CACHE_PER_LAYER overrides.
+    See results/2026-09-07-ctx512k-live/.'
+  - 'Rejected 1M profile (2026-09-07): 96 GiB KV left only 2,672 expert slots (mean predicted hit allocation 0.4016 versus
+    0.6166 at 512K); the launch was aborted during startup as too slow for daily use and archived, not deleted.'
   - Do not use /home/milo/gb300-big-v1/Dockerfile for this recipe; it is an unrelated SGLang Dockerfile.
 metrics:
 - name: V1 baseline single-stream decode
