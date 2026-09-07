@@ -36,7 +36,7 @@ Engine log milestones (2026-09-07 14:21:54 container log):
 
 ## Verification
 
-- Near-window probe: a 480,011-prompt-token request (1,474,255 bytes) completed successfully in 142.723 s cold (the first attempt with `max_tokens 16` hit the length cap with 16 reasoning tokens — a probe artifact, not a serving failure); an immediate repeat returned the exact string `CTX512K OK` in 1.393 s with the prompt cached.
+- Near-window probe: a 480,011-prompt-token request (1,474,255 bytes) completed successfully in 142.723 s cold (the first attempt with `max_tokens 16` hit the length cap with 16 reasoning tokens — a probe artifact, not a serving failure) — an effective **3,363 tok/s** across the near-480k prefill (prompt tokens / wall time, computed from the probe receipt); an immediate repeat returned the exact string `CTX512K OK` in 1.393 s with the prompt already cached (prefix-cache hit, not a prefill measurement).
 - Post-test health: container still running, no OOM or traceback in logs; compute GPU showed 238,908 MiB used / 16,902 MiB free after the probes.
 - Hermes client wiring: declared `glm53` context was corrected from 65,536 to 524,288 on the M4 Milo profile and on Forge/Echo (provider and nested model entries); both clients then answered `HERMES 512K OK`.
 

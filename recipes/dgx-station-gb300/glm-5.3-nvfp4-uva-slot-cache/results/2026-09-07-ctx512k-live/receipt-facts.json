@@ -10,7 +10,10 @@
   },
   "launch_flags": {
     "cpu_offload_gb": 420,
-    "cpu_offload_params": ["routed_experts.w13_weight", "routed_experts.w2_weight"],
+    "cpu_offload_params": [
+      "routed_experts.w13_weight",
+      "routed_experts.w2_weight"
+    ],
     "kv_cache_dtype": "bfloat16",
     "kv_cache_memory_bytes": 51539607552,
     "kv_cache_gib": 48.0,
@@ -53,14 +56,44 @@
     "post_test_gpu_free_mib": 16902,
     "post_test_oom_or_traceback": false,
     "hermes_clients": [
-      {"host": "M4 Milo profile", "context_length_set": 524288, "probe": "HERMES 512K OK"},
-      {"host": "forge (Echo)", "context_length_set": 524288, "probe": "HERMES 512K OK", "note": "provider-level and nested model-level entries"}
-    ]
+      {
+        "host": "M4 Milo profile",
+        "context_length_set": 524288,
+        "probe": "HERMES 512K OK"
+      },
+      {
+        "host": "forge (Echo)",
+        "context_length_set": 524288,
+        "probe": "HERMES 512K OK",
+        "note": "provider-level and nested model-level entries"
+      }
+    ],
+    "near_window_effective_prefill_tok_s": 3363.2,
+    "near_window_effective_prefill_note": "prompt tokens / cold wall time; computed from the probe receipt, not a separate bench"
   },
   "profiles_compared": {
-    "ctx256k": {"slots": 7360, "per_layer_min": 64, "per_layer_max": 176, "mean_predicted_hit_alloc": 0.6982, "outcome": "not compelling as the daily profile"},
-    "ctx512k": {"slots": 5792, "per_layer_min": 48, "per_layer_max": 96, "mean_predicted_hit_alloc": 0.6166, "outcome": "selected"},
-    "ctx1m": {"kv_gib": 96.0, "slots": 2672, "per_layer_min": 32, "per_layer_max": 48, "mean_predicted_hit_alloc": 0.4016, "outcome": "aborted during startup as too slow for daily use; archived container glm53-big-sc13g-mtp-ctx1m-superseded-by-512k-20260907-085813; retained only as a special long-context option"}
+    "ctx256k": {
+      "slots": 7360,
+      "per_layer_min": 64,
+      "per_layer_max": 176,
+      "mean_predicted_hit_alloc": 0.6982,
+      "outcome": "not compelling as the daily profile"
+    },
+    "ctx512k": {
+      "slots": 5792,
+      "per_layer_min": 48,
+      "per_layer_max": 96,
+      "mean_predicted_hit_alloc": 0.6166,
+      "outcome": "selected"
+    },
+    "ctx1m": {
+      "kv_gib": 96.0,
+      "slots": 2672,
+      "per_layer_min": 32,
+      "per_layer_max": 48,
+      "mean_predicted_hit_alloc": 0.4016,
+      "outcome": "aborted during startup as too slow for daily use; archived container glm53-big-sc13g-mtp-ctx1m-superseded-by-512k-20260907-085813; retained only as a special long-context option"
+    }
   },
   "quality_note": "Context sizing changes no quality verdict; MTP and structured-output caveats elsewhere in this recipe still apply."
 }
