@@ -41,10 +41,16 @@ Patch pins in [`recipe.yaml`](recipe.yaml):
 | `patches/sitecustomize.py` | `6b9b7a76d77bde03d1b4ee2f0daed7e1cc6feba8718fad526c9fe334bbf3b2a0` | slot-cache sitecustomize hook |
 | `patches/exact_pin.py` | `93c8ee1420be870c505330f387f3168147539d6277be9500aae866d7bbf21bf0` | pinned-host tensor helper |
 | `patches/ffi_route.py` | `38a36cfec0e0cf06e00e406b1d3f015b51d9147289269d4a180d161ba1c3eec7` | FFI router path |
-| `patches/slot_cache_hook.py` | `889613f0dc2e371a715a8c43e6ac0858d6ad7aefda7308ac67e8a2343cd715ad` | latest per-layer slot-cache hook |
+| `patches/slot_cache_hook.py` | `26e23dd2d2c1fbf7dfef897e8697a355677d094bb43e76b9be83d740c9efa4a7` | latest per-layer slot-cache hook |
 | `configs/slots-8400.json` | `4ee071670e13f199658776ddb7b508c9a068657ea631a0cb4287db0a2afeeaed` | per-layer slot allocation |
 
 ## Launch
+
+**Optional DMA experiment:** set `SLOT_CACHE_COPY_BACKEND=dma` with the portable
+launcher to use CUDA runtime row copies. The launcher adds `--enforce-eager`;
+`triton` remains the default. See [DMA setup and validation](research/dma-backend.md)
+for dependencies, comparison commands, CUDA tests, and the host-synchronization
+cost. This backend has not been validated on GB300 and has no measured speedup.
 
 Run the launch, live-health, and rollback commands below from this recipe directory (`recipes/dgx-station-gb300/glm-5.3-nvfp4-uva-slot-cache` relative to the repository root). Run the Python package-validation commands from the repository root.
 
