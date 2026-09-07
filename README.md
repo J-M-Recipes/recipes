@@ -13,7 +13,7 @@ Written by James Meadlock and Milo. Recipes are MIT; models and engines carry th
 | Hardware | Recipe | Model | Status | Headline | Updated |
 |---|---|---|---|---|---|
 | `dgx-station-gb300` | [GLM-5.3-Flash NVFP4 + DFlash2 speculative decoding on one DGX Station GB300](recipes/dgx-station-gb300/glm-5.3-flash-nvfp4-dflash2/) | GLM-5.3-Flash (NVFP4 (ModelOpt)) | ✅ verified | 234.2 tok/s @ C1, warm, prose prompts, DFlash2 | 2026-09-06 |
-| `dgx-station-gb300` | [GLM-5.3-NVFP4-One-GB300](recipes/dgx-station-gb300/glm-5.3-nvfp4-uva-slot-cache/) | GLM-5.3 (NVFP4 (ModelOpt)) | 🧪 experimental | 33.8 tok/s @ C1, prose prompts, 512 generated tokens, n=3, V1 baseline flags: 188 GiB offload, bf16 KV 8 GiB, seq4, 65k | 2026-09-06 |
+| `dgx-station-gb300` | [GLM-5.3-NVFP4-One-GB300](recipes/dgx-station-gb300/glm-5.3-nvfp4-uva-slot-cache/) | GLM-5.3 (NVFP4 (ModelOpt)) | 🧪 experimental | 33.8 tok/s @ C1, prose prompts, 512 generated tokens, n=3, V1 baseline flags: 188 GiB offload, bf16 KV 8 GiB, seq4, 65k | 2026-09-07 |
 
 <!-- recipe-index:end -->
 

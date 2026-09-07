@@ -1,6 +1,6 @@
 # GLM-5.3-NVFP4-One-GB300
 
-**Status: experimental** · V1 baseline 33.8 tok/s C1 · sc13g slot-cache 43.1 tok/s C1 / 92.0 agg C4 / 95.6 agg C8 · not formally verified
+**Status: experimental** · V1 baseline 33.8 tok/s C1 · sc13g slot-cache 43.1 tok/s C1 / 92.0 agg C4 / 95.6 agg C8 · MTP(1) audited as faster but **not** a quality-approved default
 
 ![Memory map](diagrams/memory-map.svg)
 
@@ -98,7 +98,7 @@ Evidence gates:
 | schema | local checker passes |
 | digest | local image ID imported from sanitized inspect fields; registry/build provenance is incomplete |
 | health | HTTP health script is packaged; remote `SC13G_READY`/`SC13G_MTP_READY` lines imported as evidence, not local live validation |
-| quality | measured prefill parity and diagnostic greedy/decode only; not formal noninferiority |
+| quality | non-MTP slot-cache remains diagnostic only; MTP quality campaign is audited INCONCLUSIVE because secondary gates failed |
 | performance | bench numbers imported/calculated from raw `BENCH` lines |
 
 ## Results
@@ -120,14 +120,32 @@ Evidence gates:
 | 32k | 26,392 | 7.59 s | 3,477 tok/s |
 | 64k | 52,740 | 14.45 s | 3,649 tok/s |
 
-### MTP recorded but not gated
+### MTP recorded but not quality-approved
 
 | run | C1 prose | C4 prose agg | C8 prose agg | why not gated |
 |---|---:|---:|---:|---|
-| `2026-09-06-v1g-mtp3-round4` | 37.7 tok/s | 61.9 tok/s | 79.9 tok/s | 49k context / 210 GiB offload campaign variant; 6/20 greedy matches; observed-floor metric not met |
-| `2026-09-06-sc13g-mtp-slotcache-eager` | 54.7 tok/s | 107.8 tok/s | 102.9 tok/s | only 9/20 greedy outputs matched V1G/V1EAGER; prefill parity does not prove decode equivalence |
+| `2026-09-06-v1g-mtp3-round4` | 37.7 tok/s | 61.9 tok/s | 79.9 tok/s | 49k context / 210 GiB offload campaign variant; greedy-match diagnostics were not a promotion gate |
+| `2026-09-06-sc13g-mtp-slotcache-eager` | 54.7 tok/s | 107.8 tok/s | 102.9 tok/s | greedy mismatch is diagnostic only; prefill parity does not prove decode equivalence |
 
 Imported evidence keeps source-hash sidecars next to every copied file, and sanitized container inspect fields are in `container-inspect-sanitized.json` under the imported run directories.
+
+### Audited MTP quality campaign
+
+The completed frozen campaign in [`results/2026-09-06-mtp-quality-audit/`](results/2026-09-06-mtp-quality-audit/) tested `sc13g-mtp` against the matched `sc13g` control under [`CONTRACT.md`](results/2026-09-06-mtp-quality-audit/CONTRACT.md). The public bundle now includes inspectable raw JSONL receipts, the actual secondary runner, a rerunnable audit script, a public evidence manifest, and explicitly labeled public derivatives for provenance/config proof.
+
+Audited result: **overall INCONCLUSIVE / promotion blocked**. The primary code/math gate passed for MTP(1), and the warm C1 speed gate passed, but the frozen secondary gate failed in every lane. Therefore MTP(1) is recorded here only as an experimental performance option; it is **not** the quality-approved recipe default.
+
+Key audited numbers:
+
+| check | result |
+|---|---|
+| Primary repeat accuracy | `sc13g` 190/200; `sc13g-mtp` 190/200 |
+| Matched unique-task comparison | 1 loss, 1 win, 98 ties over 100 tasks |
+| One-sided 95% Clopper-Pearson gross-loss upper bound | `0.04655981145353899` (< 0.05) |
+| Warm short C1 median effective TPS | `sc13g` 40.92076273384625; `sc13g-mtp` 53.98028929327154 |
+| Warm short C1 speed gain | 0.31914181669501307 (~31.9%) |
+| Long-prompt wall ratio | 0.7696895272711062, no >10% regression |
+| Secondary gate | `v1` 36/44; `sc13g` 35/44; `sc13g-mtp` 33/44 — all fail |
 
 ### Round 4 observed self-repeat floor
 
@@ -154,7 +172,7 @@ The non-MTP slot-cache configuration was **not** given a new full decode capture
 ## Known limits
 
 - **Not verified.** The independent postprocessor can validate capture integrity and expose censored coverage and category regressions. It cannot establish statistical noninferiority from only two baseline runs; do not promote from either its diagnostics or `tf_decode.py metric_pass`.
-- **MTP is not a decode gate.** It improves raw throughput in the imported run but fails greedy equivalence (9/20).
+- **MTP is not quality-approved.** Greedy mismatch is a diagnostic warning, not the frozen quality veto; the audited promotion blocker is the failed secondary gate.
 - **Model identity is incomplete.** The model revision is intended and pinned from HF API/prior SHA; local all-file identity is not verified.
 - **Packaged launch is not live-tested.** `scripts/launch-slotcache-portable.sh` fixes path portability but has not been run from this repo path.
 - **Baseline flags matter.** Recipe V1 is 188 GiB offload, bf16 KV 8 GiB, seq4, 65k; imported v1g campaign comparator is not that baseline.

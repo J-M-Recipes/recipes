@@ -2,13 +2,13 @@ schema: jm-recipe/v1
 id: dgx-station-gb300/glm-5.3-nvfp4-uva-slot-cache
 title: GLM-5.3-NVFP4-One-GB300
 summary: Experimental vLLM UVA offload recipe for full GLM-5.3 NVFP4 on one DGX Station GB300. V1 keeps routed experts in
-  host memory with bf16 KV; the slot-cache variants keep a small per-layer HBM expert cache and preserve measured prefill
-  logits, but decode equivalence remains diagnostic rather than formal.
+  host memory with bf16 KV; the slot-cache variants keep a small per-layer HBM expert cache. MTP(1) has audited warm C1 speed
+  upside, but the frozen quality campaign is INCONCLUSIVE and MTP is not the quality-approved default.
 status: experimental
 owners:
 - jmeadlock
 - milo
-updated: '2026-09-06'
+updated: '2026-09-07'
 tags:
 - glm-5.3
 - nvfp4
@@ -155,7 +155,7 @@ metrics:
   unit: tok/s
   workload: C1, prose prompts, 512 generated tokens, SLOT_CACHE=112 plus --speculative-config method=mtp,num_speculative_tokens=1
   aggregation: mean of three prose runs rounded from 53.76, 55.70, 54.67
-  label: 'MTP decode does not gate: only 9/20 greedy outputs matched V1G, despite prefill diagnostic parity'
+  label: 'MTP throughput evidence only; 9/20 greedy match is diagnostic and not the frozen promotion gate'
   provenance:
     run_id: 2026-09-06-sc13g-mtp-slotcache-eager
     method: imported bench3.sh BENCH agg_tok_s
@@ -200,24 +200,56 @@ metrics:
     run_id: 2026-09-06-v1g-mtp3-round4
     method: bench3.sh BENCH agg_tok_s
     raw: bench.txt
+- name: sc13g-MTP audited primary gross-loss upper bound
+  value: 0.04655981145353899
+  unit: one-sided_95pct_cp_upper
+  workload: 100 unique HumanEval/GSM8K tasks, two repeats per task, sc13g-mtp versus matched sc13g, temperature=0 and reasoning_effort=low
+  aggregation: 1 loss, 1 win, 98 ties by unique-task correct-repeat count; both sc13g and sc13g-mtp scored 190/200 repeats
+  label: primary gate passes, but overall promotion remains INCONCLUSIVE because secondary failed
+  provenance:
+    run_id: 2026-09-06-mtp-quality-audit
+    method: audit_campaign.py plus independent audit copied from gb300-mtp-quality
+    raw: audit-summary.json
+- name: sc13g-MTP audited warm short C1 speed gain
+  value: 31.914181669501307
+  unit: percent
+  workload: warm short-prompt C1 forced-length probes, seven scored repeats after warmup, effective completion tokens per
+    wall second
+  aggregation: median effective TPS 53.98028929327154 for sc13g-mtp versus 40.92076273384625 for matched sc13g
+  label: experimental performance option only; not quality-approved default
+  provenance:
+    run_id: 2026-09-06-mtp-quality-audit
+    method: audit_campaign.py speed medians and independent audit
+    raw: audit-summary.json
+- name: sc13g-MTP audited secondary gate
+  value: 33
+  unit: passes_out_of_44
+  workload: 20 supplied-data/structured-output fixtures times two repeats plus four sequential tool-chain episodes
+  aggregation: sc13g-mtp 33/44; controls also failed with v1 36/44 and sc13g 35/44
+  label: fails frozen secondary gate; blocks promotion
+  provenance:
+    run_id: 2026-09-06-mtp-quality-audit
+    method: audit_campaign.py plus independent audit
+    raw: audit-summary.json
 verification:
   quality_gate:
     reference_build: V1 eager baseline comparators v1e/v1g
-    method: 'Current evidence is diagnostic: sc11 and sc13 report zero teacher-forced prefill/logprob deltas and sc13g greedy
-      output matches 20/20 prompts, but the original tf_decode metric is not a formal noninferiority gate because common-prefix
-      censoring, missing-piece handling, null logprob handling, category coverage, and statistical floor are incomplete.'
+    method: Current evidence is diagnostic for non-MTP slot-cache. A later frozen MTP(1) campaign passed the primary gross-loss
+      and warm C1 speed gates, but the overall verdict is INCONCLUSIVE because secondary gates failed in all lanes.
     positions: 51299
     floor_run_id: 2026-09-06-round4-decode
     never:
     - Do not promote to verified from tf_decode.py metric_pass alone.
     - Do not use MTP greedy/logprob prefill parity as a decode gate; sc13g-MTP only matched 9/20 greedy outputs.
+    - Do not make MTP the default or quality-approved recommendation from the 2026-09-06 MTP campaign; it is an experimental
+      performance option only.
   gates:
     schema:
       how: 'Local schema/checker must pass: .venv/bin/python scripts/check_recipe.py recipes/dgx-station-gb300/glm-5.3-nvfp4-uva-slot-cache/recipe.yaml.'
     digest:
-      how: Local Docker image ID (not registry manifest digest) sha256:61fc... imported from sanitized inspect fields; command contained no API key,
-        env list was sanitized and only shows non-secret flags. Model revision is intended from HF API/prior SHA; local all-file
-        identity is not verified.
+      how: Local Docker image ID (not registry manifest digest) sha256:61fc... imported from sanitized inspect fields; command
+        contained no API key, env list was sanitized and only shows non-secret flags. Model revision is intended from HF API/prior
+        SHA; local all-file identity is not verified.
       run_id: 2026-09-06-v1g-campaign-eager
       notes: Inspect provenance lives in results/*/container-inspect-sanitized.json.
     health:
@@ -225,18 +257,23 @@ verification:
         SC13G_READY/SC13G_MTP_READY are imported evidence, not a local live test.
       run_id: 2026-09-06-imported-remote-evidence
     quality:
-      how: Measured prefill parity and diagnostic greedy/decode evidence only; formal decode noninferiority is not established by the two-run repeatability comparison or its postprocessor.
-      run_id: 2026-09-06-imported-remote-evidence
-      notes: 'sc13g non-MTP: 20/20 greedy vs V1G and V1EAGER, zero reported prefill deltas in truncated log. sc13g-MTP: 9/20
-        greedy, not a gate.'
+      how: 'Measured prefill parity and diagnostic greedy/decode evidence only for non-MTP slot-cache. The audited MTP quality
+        campaign is INCONCLUSIVE: primary code/math passes, but secondary fails.'
+      run_id: 2026-09-06-mtp-quality-audit
+      notes: 'sc13g non-MTP: 20/20 greedy vs V1G and V1EAGER, zero reported prefill deltas in truncated log. MTP campaign:
+        sc13g and sc13g-mtp both 190/200 primary repeats; matched unique-task loss/win/tie 1/1/98; CP upper 0.04655981145353899;
+        secondary v1 36/44, sc13g 35/44, sc13g-mtp 33/44, so promotion remains blocked.'
     performance:
       how: 'bench3.sh imported remote evidence: sc13g C1 43.1 tok/s, C4 92.0 agg tok/s, C8 95.6 agg tok/s; V1 baseline recorded
         separately at 33.8 tok/s with 188 GiB/seq4 flags.'
       run_id: 2026-09-06-sc13g-slotcache-eager
 limits:
-- 'Experimental, not verified: formal decode noninferiority is not established. The independent postprocessor is diagnostic only.'
-- sc13g-MTP is faster in raw throughput but failed greedy equivalence (9/20), so it is recorded as evidence only and must
-  not be used as the decode gate.
+- 'Experimental, not verified: formal decode noninferiority is not established. The independent postprocessor is diagnostic
+  only.'
+- sc13g-MTP is faster in raw throughput, but greedy mismatch (9/20) is only diagnostic. The frozen 2026-09-06 promotion
+  blocker is the failed secondary gate, not a greedy-difference quality veto.
+- The frozen MTP quality campaign found a +31.9% warm short-C1 median effective TPS gain and primary gross-loss CP upper 0.04655981145353899,
+  but overall promotion remains INCONCLUSIVE because the secondary gate failed at 33/44 for sc13g-MTP.
 - The imported v1g campaign comparator used campaign defaults visible in inspect (200 GiB offload, seq8); the packaged V1
   baseline script intentionally preserves the earlier 188 GiB offload, bf16 KV 8 GiB, seq4, 65k flags.
 - Model repo/revision is intended and pinned from HF API plus prior short SHA; local all-file checkpoint identity was not
@@ -247,6 +284,8 @@ limits:
 - Do not modify scripts/tf_decode.py as part of this package; its existing metric_pass is known insufficient for verification.
 rollback:
   script: scripts/rollback.sh
-  summary: Default is --dry-run and performs no Docker actions; --execute stops (does not remove) the named candidate and prefers the preserved baseline keeper. Fresh launch requires explicit --fresh-launch if the keeper is absent. Authenticated HTTP health follows startup; this helper is locally tested, not live-qualified.
+  summary: Default is --dry-run and performs no Docker actions; --execute stops (does not remove) the named candidate and
+    prefers the preserved baseline keeper. Fresh launch requires explicit --fresh-launch if the keeper is absent. Authenticated
+    HTTP health follows startup; this helper is locally tested, not live-qualified.
 links:
   model: https://huggingface.co/incoai/GLM-5.3-NVFP4
