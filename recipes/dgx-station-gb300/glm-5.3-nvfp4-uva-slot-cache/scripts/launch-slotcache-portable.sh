@@ -15,6 +15,11 @@ CACHE_DIR="${CACHE_DIR:-$HOME/vllm-cache}"
 API_KEY_FILE="${API_KEY_FILE:-$HOME/.glm_api_key}"
 CAPTURE_DIR="${CAPTURE_DIR:-$RECIPE_DIR/capture}"
 SLOT_CACHE_PER_LAYER="${SLOT_CACHE_PER_LAYER:-/w/configs/slots-8400.json}"
+SLOT_CACHE_COPY_BACKEND="${SLOT_CACHE_COPY_BACKEND:-triton}"
+case "$SLOT_CACHE_COPY_BACKEND" in
+  triton|dma) ;;
+  *) echo "SLOT_CACHE_COPY_BACKEND must be triton or dma" >&2; exit 2 ;;
+esac
 AT_KEY="${AT_KEY:-slotcache-S$SLOTS}"
 IMAGE="${IMAGE:-vllm-glm53-uva:v0.28.0-2cf0a691}"
 CONTAINER_NAME="${CONTAINER_NAME:-glm53-big-$RUN}"
@@ -70,6 +75,11 @@ if [ "$has_compilation_config" = "0" ]; then
   vllm_args+=(--compilation-config "$COMPILATION_CONFIG")
 fi
 vllm_args+=("$@")
+if [ "$SLOT_CACHE_COPY_BACKEND" = "dma" ]; then
+  # backend=eager inside compilation-config still permits CUDA graphs.
+  # Host-driven dynamic memcpy descriptors require the explicit eager switch.
+  vllm_args+=(--enforce-eager)
+fi
 
 docker_mounts=(
   -v "$MODEL_DIR:/model:ro"
@@ -94,6 +104,7 @@ docker run -d --name "$CONTAINER_NAME" --gpus all --shm-size 32g --network host 
   -e EXACT_PIN_FILE=/w/patches/exact_pin.py \
   -e "SLOT_CACHE=$SLOTS" \
   -e SLOT_CACHE_HOOK=/w/patches/slot_cache_hook.py \
+  -e "SLOT_CACHE_COPY_BACKEND=$SLOT_CACHE_COPY_BACKEND" \
   -e SLOT_CACHE_CAPTURE="${CAPTURE:-0}" \
   -e SLOT_CACHE_ROUTER="${ROUTER:-ffi}" \
   -e SLOT_CACHE_PER_LAYER="$SLOT_CACHE_PER_LAYER" \
@@ -105,4 +116,4 @@ docker run -d --name "$CONTAINER_NAME" --gpus all --shm-size 32g --network host 
   "$IMAGE" \
   "${vllm_args[@]}"
 
-echo "launched $CONTAINER_NAME SLOT_CACHE=$SLOTS offload=420 per_layer=$SLOT_CACHE_PER_LAYER"
+echo "launched $CONTAINER_NAME SLOT_CACHE=$SLOTS offload=420 per_layer=$SLOT_CACHE_PER_LAYER copy_backend=$SLOT_CACHE_COPY_BACKEND"

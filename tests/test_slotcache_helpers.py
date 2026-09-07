@@ -4,6 +4,7 @@ import subprocess
 import sys
 import textwrap
 import threading
+import pytest
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
@@ -203,6 +204,32 @@ def test_portable_launcher_preserves_sc13g_flags_and_uses_packaged_hook_paths(tm
     mounts = [argv[i + 1] for i, token in enumerate(argv[:-1]) if token == "-v"]
     assert f"{RECIPE}:/w:ro" in mounts
     assert f"{RECIPE / 'patches/sitecustomize.py'}:/usr/lib/python3.12/sitecustomize.py:ro" in mounts
+
+
+@pytest.mark.parametrize("backend", ["triton", "dma", "invalid"])
+def test_portable_launcher_copy_backend_and_eager_requirement(tmp_path, backend):
+    record = tmp_path / "docker-argv.json"
+    fakebin = tmp_path / "bin"
+    fakebin.mkdir()
+    _fake_docker_recorder(fakebin, record)
+    home = tmp_path / "home"
+    home.mkdir()
+    (home / ".glm_api_key").write_text("synthetic-secret-key\n")
+    result = _run(
+        ["bash", str(SCRIPTS / "launch-slotcache-portable.sh"), "dma-test", "112"],
+        env={**_docker_env(fakebin, home, tmp_path), "SLOT_CACHE_COPY_BACKEND": backend,
+             "CAPTURE_DIR": str(tmp_path / "capture")},
+    )
+    if backend == "invalid":
+        assert result.returncode == 2
+        assert "must be triton or dma" in result.stderr
+        assert not record.exists()
+        return
+    assert result.returncode == 0, result.stderr
+    argv = json.loads(record.read_text())
+    assert f"SLOT_CACHE_COPY_BACKEND={backend}" in argv
+    command = argv[argv.index("vllm-glm53-uva:v0.28.0-2cf0a691") + 1:]
+    assert ("--enforce-eager" in command) == (backend == "dma")
 
 
 def _serve(handler_cls):
