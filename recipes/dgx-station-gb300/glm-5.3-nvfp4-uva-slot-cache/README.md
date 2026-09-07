@@ -1,6 +1,6 @@
 # GLM-5.3-NVFP4-One-GB300
 
-**Status: experimental** · V1 baseline 33.8 tok/s C1 · sc13g slot-cache 43.1 tok/s C1 / 92.0 agg C4 / 95.6 agg C8 · MTP(1) audited as faster but **not** a quality-approved default · daily serving profile live-tested at 512K context / 48 GiB bf16 KV
+**Status: experimental** · V1 baseline 33.8 tok/s C1 · sc13g slot-cache 43.1 tok/s C1 / 92.0 agg C4 / 95.6 agg C8 · MTP(1) audited as faster but **not** a quality-approved default · DFlash2-over-UVA stopped at its K4 acceptance gate (1.5718 < 3.0) · daily serving profile remains 512K context / 48 GiB bf16 KV with MTP(1)
 
 ![Memory map](diagrams/memory-map.svg)
 
@@ -188,9 +188,11 @@ Pairing audit: 40/40 common fixture/repeat pairs across V1/no-MTP/MTP, zero fixt
 
 Public-safe copies include source and published SHA-256 hashes in `public-evidence-manifest.json`; `receipt-audit.json` records no private home paths or credential-shaped markers in the package receipts/docs. The prior +31.9% MTP speed figure remains historical unconstrained-quality campaign evidence; it was **not** remeasured under this V2 structured-output schema run.
 
-### Queued experiments
+### DFlash2-over-UVA experiment: stopped at K4
 
-- **DFlash2-over-UVA acceptance probe** (queued 2026-09-07; not started): swap MTP(1) for incoai's DFlash2 block-diffusion draft on the sc13g build. Published DFlash2 wins are all HBM-resident; over UVA offload the 8-token verification width multiplies cold-expert traffic and the outcome is unknown. Gated sequence: static geometry audit, then a K4 acceptance-length probe with a stop gate at acceptance < ~3, then only if it passes a full C1/C4/C8 bench plus teacher-forced divergence check. Plan: [`research/dflash2-experiment-plan.md`](research/dflash2-experiment-plan.md). Idea credit: keys (drowzeys).
+The September 7 DFlash2 experiment is complete and **not promoted**. Static target/draft geometry passed. The first launch failed during CUDA-graph capture when the slot-cache statistics hook attempted an unsupported capture-time operation; a one-axis retry with explicit `--enforce-eager` booted and served the fixed two-prose/two-code battery. Weighted accepted length was **1.5718** (2,048 completion tokens / 1,303 verification steps), below the frozen **3.0** stop gate. Median decode throughput inside the acceptance harness was 7.8775 tok/s.
+
+Per the predeclared contract, no C1/C4/C8 candidate bench, teacher-forced quality campaign, or 512K DFlash promotion was run. The exact preserved 512K/MTP daily lane was restarted and verified by authenticated model inventory (`max_model_len=524288`) plus an exact `RESTORE_OK` completion. This is a negative transfer result for K4 over the single-GB300 selective-UVA/slot-cache path, not a verdict on DFlash2's HBM-resident results. Evidence: [`results/2026-09-07-dflash2-uva/`](results/2026-09-07-dflash2-uva/). Idea credit: keys (drowzeys); draft model: incoai.
 
 ### MTP recorded but not quality-approved
 
@@ -246,7 +248,7 @@ The non-MTP slot-cache configuration was **not** given a new full decode capture
 - **Not verified.** The independent postprocessor can validate capture integrity and expose censored coverage and category regressions. It cannot establish statistical noninferiority from only two baseline runs; do not promote from either its diagnostics or `tf_decode.py metric_pass`.
 - **MTP is not quality-approved.** Greedy mismatch is a diagnostic warning, not the frozen quality veto; the audited promotion blocker is the failed secondary gate.
 - **Model identity is incomplete.** The model revision is intended and pinned from HF API/prior SHA; local all-file identity is not verified.
-- **Packaged launch is not live-tested.** `scripts/launch-slotcache-portable.sh` fixes path portability but has not been run from this repo path.
+- **Packaged launch scope.** `scripts/launch-slotcache-portable.sh` was live-tested from a staged copy for the stopped DFlash2 K4 candidate. That does not retroactively prove every default or MTP override combination.
 - **Baseline flags matter.** Recipe V1 is 188 GiB offload, bf16 KV 8 GiB, seq4, 65k; imported v1g campaign comparator is not that baseline.
 - **Old slot-cache script is obsolete.** `scripts/launch-slotcache.sh` points at `/home/milo/big-v1-campaign` and is kept only as raw provenance.
 - **No Dockerfile provenance.** The known `/home/milo/gb300-big-v1/Dockerfile` is the wrong engine family and is intentionally excluded.

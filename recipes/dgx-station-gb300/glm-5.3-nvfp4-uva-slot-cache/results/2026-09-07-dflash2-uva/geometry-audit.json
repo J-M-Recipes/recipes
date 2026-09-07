@@ -1,0 +1,60 @@
+{
+  "schema": "glm53-dflash2-uva-geometry-audit-v1",
+  "date": "2026-09-07",
+  "target": {
+    "repo_intent": "incoai/GLM-5.3-NVFP4",
+    "revision": "54e52520606f96b3d9fc84088ad22882a61648ac",
+    "local_path": "/home/exx/models/GLM-5.3-NVFP4-big",
+    "model_type": "glm_moe_dsa",
+    "architecture": "GlmMoeDsaForCausalLM",
+    "hidden_size": 6144,
+    "intermediate_size": 12288,
+    "num_hidden_layers": 78,
+    "num_attention_heads": 64,
+    "num_key_value_heads": 64,
+    "head_dim": 192,
+    "vocab_size": 154880,
+    "n_routed_experts": 256,
+    "num_experts_per_tok": 8,
+    "n_shared_experts": 1,
+    "num_nextn_predict_layers": 1
+  },
+  "draft": {
+    "repo": "incoai/GLM-5.3-DFlash2",
+    "revision": "425aa615ce320caac34400208b30808c8f14f76c",
+    "local_path": "/home/milo/models/GLM-5.3-DFlash2-425aa615",
+    "architecture": "DFlash2DraftModel",
+    "dtype": "bfloat16",
+    "parameter_count": 2459424256,
+    "weight_bytes": 4918859112,
+    "weight_sha256": "3105f14043bef642baa49a7d533fdf0b8b2895737ec84b6305601da662656161",
+    "hidden_size": 6144,
+    "intermediate_size": 12288,
+    "num_hidden_layers": 6,
+    "num_attention_heads": 64,
+    "num_key_value_heads": 8,
+    "head_dim": 128,
+    "vocab_size": 154880,
+    "num_target_layers": 78,
+    "target_layer_ids": [5, 19, 33, 47, 61, 75],
+    "block_size": 8
+  },
+  "engine": {
+    "image": "vllm-glm53-uva:v0.28.0-2cf0a691",
+    "image_id": "sha256:61fc8a896b0a4fbbbdc063bc4b0dbc25ce98e02b5050c24aeb7830ac02039b14",
+    "vllm_version": "0.28.0",
+    "dflash_module": "/usr/local/lib/python3.12/dist-packages/vllm/v1/spec_decode/dflash.py",
+    "accepted_speculative_fields": ["method", "model", "num_speculative_tokens"]
+  },
+  "checks": {
+    "hidden_size_matches": true,
+    "intermediate_size_matches": true,
+    "vocab_size_matches": true,
+    "draft_num_target_layers_matches_target": true,
+    "target_layer_ids_in_range": true,
+    "draft_architecture_supported": true,
+    "block_size_supports_k4_probe": true,
+    "pass": true
+  },
+  "license": "CC BY-NC-ND 4.0; research/evaluation only"
+}

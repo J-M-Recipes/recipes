@@ -10,6 +10,7 @@ RUN="$1"; SLOTS="$2"; shift 2
 HERE="$(cd "$(dirname "$0")" && pwd)"
 RECIPE_DIR="$(cd "$HERE/.." && pwd)"
 MODEL_DIR="${MODEL_DIR:-/home/exx/models/GLM-5.3-NVFP4-big}"
+DRAFT_MODEL_DIR="${DRAFT_MODEL_DIR:-}"
 CACHE_DIR="${CACHE_DIR:-$HOME/vllm-cache}"
 API_KEY_FILE="${API_KEY_FILE:-$HOME/.glm_api_key}"
 CAPTURE_DIR="${CAPTURE_DIR:-$RECIPE_DIR/capture}"
@@ -70,12 +71,23 @@ if [ "$has_compilation_config" = "0" ]; then
 fi
 vllm_args+=("$@")
 
+docker_mounts=(
+  -v "$MODEL_DIR:/model:ro"
+  -v "$CACHE_DIR:/root/.cache/vllm"
+  -v "$RECIPE_DIR:/w:ro"
+  -v "$CAPTURE_DIR:/wcap"
+  -v "$RECIPE_DIR/patches/sitecustomize.py:/usr/lib/python3.12/sitecustomize.py:ro"
+)
+if [ -n "$DRAFT_MODEL_DIR" ]; then
+  if [ ! -d "$DRAFT_MODEL_DIR" ]; then
+    echo "missing DRAFT_MODEL_DIR: $DRAFT_MODEL_DIR" >&2
+    exit 2
+  fi
+  docker_mounts+=( -v "$DRAFT_MODEL_DIR:/draft:ro" )
+fi
+
 docker run -d --name "$CONTAINER_NAME" --gpus all --shm-size 32g --network host \
-  -v "$MODEL_DIR:/model:ro" \
-  -v "$CACHE_DIR:/root/.cache/vllm" \
-  -v "$RECIPE_DIR:/w:ro" \
-  -v "$CAPTURE_DIR:/wcap" \
-  -v "$RECIPE_DIR/patches/sitecustomize.py:/usr/lib/python3.12/sitecustomize.py:ro" \
+  "${docker_mounts[@]}" \
   -e VLLM_LOGGING_LEVEL=INFO \
   -e "VLLM_AUTOTUNE_CACHE_KEY=$AT_KEY" \
   -e EXACT_PIN=1 \

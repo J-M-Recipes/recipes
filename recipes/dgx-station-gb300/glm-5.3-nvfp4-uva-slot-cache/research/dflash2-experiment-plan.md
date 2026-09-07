@@ -1,7 +1,15 @@
-# Queued experiment: DFlash2-over-UVA acceptance probe
+# Experiment result: DFlash2-over-UVA stopped at K4
 
-Status: **QUEUED** (2026-09-07). Idea credit: keys (drowzeys, GitHub). Not started; no GPU time spent.
+Status: **COMPLETED — STOPPED AT K4** (2026-09-07). Idea credit: keys (drowzeys, GitHub).
 Sourcing note: raised in session `milo/20260907_095808_e77b25` on 2026-09-07 after the 512K daily-profile rollout.
+
+## Result
+
+The static geometry audit passed. The first candidate startup failed before API bind because the slot-cache statistics hook invalidated CUDA-graph capture. A one-axis retry with explicit `--enforce-eager` booted and served the frozen two-prose/two-code K4 battery.
+
+Weighted accepted length was **1.5718** (2,048 completion tokens / 1,303 verification steps), below the predeclared **3.0** stop gate. Median decode throughput inside that acceptance harness was 7.8775 tok/s. Per contract, the C1/C4/C8 benchmark, teacher-forced quality gate, and 512K DFlash promotion were not run. The DFlash candidate was stopped; the exact preserved 512K/MTP service was restarted and verified by authenticated model inventory plus an exact `RESTORE_OK` completion.
+
+Evidence: [`results/2026-09-07-dflash2-uva/`](../results/2026-09-07-dflash2-uva/).
 
 ## The idea
 

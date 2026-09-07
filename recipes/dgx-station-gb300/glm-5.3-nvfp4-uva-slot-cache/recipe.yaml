@@ -3,9 +3,9 @@ id: dgx-station-gb300/glm-5.3-nvfp4-uva-slot-cache
 title: GLM-5.3-NVFP4-One-GB300
 summary: Experimental vLLM UVA offload recipe for full GLM-5.3 NVFP4 on one DGX Station GB300. V1 keeps routed experts in
   host memory with bf16 KV; the slot-cache variants keep a small per-layer HBM expert cache. MTP(1) has audited warm C1 speed
-  upside, but the frozen quality campaign is INCONCLUSIVE and MTP is not the quality-approved default. The live-tested daily
-  serving profile is 512K context with 48 GiB bf16 KV, chosen to balance decode speed (expert-slot budget) against context
-  headroom; see results/2026-09-07-ctx512k-live/.
+  upside, but the frozen quality campaign is INCONCLUSIVE and MTP is not the quality-approved default. A DFlash2-over-UVA
+  candidate was stopped at its K4 acceptance gate (1.5718 < 3.0). The live-tested daily serving profile remains 512K context
+  with 48 GiB bf16 KV; see results/2026-09-07-ctx512k-live/ and results/2026-09-07-dflash2-uva/.
 status: experimental
 owners:
 - jmeadlock
@@ -253,6 +253,16 @@ metrics:
     run_id: 2026-09-07-secondary-structured-v2
     method: frozen secondary_gates_v2.py runner plus receipt-audit.py pairing/fixture/schema/oracle-leak audit
     raw: receipt-audit.json
+- name: DFlash2-over-UVA K4 weighted accepted length
+  value: 1.5717574827321565
+  unit: completion_tokens_per_verification_step
+  workload: two prose and two code requests, 512 completion tokens each, temperature 0, sc13g slot cache, DFlash K4, explicit eager execution
+  aggregation: 2048 completion tokens divided by 1303 vLLM spec_decode_num_drafts_total verification steps
+  label: fails the frozen 3.0 stop gate; no C1/C4/C8, quality, or 512K promotion run was performed
+  provenance:
+    run_id: 2026-09-07-dflash2-uva
+    method: scripts/dflash2_acceptance_probe.py
+    raw: acceptance-k4-eager.json
 verification:
   quality_gate:
     reference_build: V1 eager baseline comparators v1e/v1g
@@ -302,7 +312,7 @@ limits:
   baseline script intentionally preserves the earlier 188 GiB offload, bf16 KV 8 GiB, seq4, 65k flags.
 - Model repo/revision is intended and pinned from HF API plus prior short SHA; local all-file checkpoint identity was not
   verified.
-- scripts/launch-slotcache-portable.sh was packaged from campaign evidence but was not live-tested from this repo path.
+- scripts/launch-slotcache-portable.sh was live-tested from a staged copy for the stopped DFlash2 K4 candidate; this does not prove every default or MTP override combination.
 - Existing scripts/launch-slotcache.sh is obsolete and campaign-hardcoded; prefer scripts/launch-slotcache-portable.sh for
   this package.
 - Do not modify scripts/tf_decode.py as part of this package; its existing metric_pass is known insufficient for verification.

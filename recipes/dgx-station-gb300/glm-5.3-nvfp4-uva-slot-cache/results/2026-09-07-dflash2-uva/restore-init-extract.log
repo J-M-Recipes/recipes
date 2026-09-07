@@ -1,0 +1,155 @@
+2026-09-07T18:18:50.064877423Z (APIServer pid=1) INFO 09-07 18:18:50 [api_utils.py:272] non-default args: {'model_tag': '/model', 'enable_auto_tool_choice': True, 'tool_call_parser': 'glm47', 'host': '0.0.0.0', 'port': 30001, 'model': '/model', 'trust_remote_code': True, 'max_model_len': 524288, 'quantization': 'modelopt', 'served_model_name': ['glm-5.3-big'], 'load_format': 'safetensors', 'reasoning_parser': 'glm45', 'gpu_memory_utilization': 0.95, 'kv_cache_memory_bytes': 51539607552, 'kv_cache_dtype': 'bfloat16', 'offload_backend': 'uva', 'cpu_offload_gb': 420.0, 'cpu_offload_params': ['routed_experts.w13_weight', 'routed_experts.w2_weight'], 'max_num_batched_tokens': 8192, 'max_num_seqs': 1, 'speculative_config': {'method': 'mtp', 'num_speculative_tokens': 1}, 'compilation_config': {'mode': <CompilationMode.VLLM_COMPILE: 3>, 'debug_dump_path': None, 'cache_dir': '', 'compile_cache_save_format': 'binary', 'backend': 'eager', 'custom_ops': [], 'ir_enable_torch_wrap': None, 'splitting_ops': None, 'compile_mm_encoder': False, 'cudagraph_mm_encoder': False, 'encoder_cudagraph_token_budgets': [], 'encoder_cudagraph_max_vision_items_per_batch': 0, 'encoder_cudagraph_max_frames_per_batch': None, 'compile_sizes': None, 'compile_ranges_endpoints': None, 'inductor_compile_config': {'enable_auto_functionalized_v2': False, 'combo_kernels': True, 'benchmark_combo_kernel': True}, 'inductor_passes': {}, 'cudagraph_mode': None, 'cudagraph_num_of_warmups': 0, 'cudagraph_capture_sizes': None, 'cudagraph_copy_inputs': False, 'cudagraph_specialize_lora': True, 'use_inductor_graph_partition': None, 'pass_config': {}, 'max_cudagraph_capture_size': None, 'dynamic_shapes_config': {'type': <DynamicShapesType.BACKED: 'backed'>, 'evaluate_guards': False, 'assume_32_bit_indexing': False}, 'local_cache_dir': None, 'fast_moe_cold_start': None, 'static_all_moe_layers': []}}
+2026-09-07T18:19:06.198377670Z (EngineCore pid=361) INFO 09-07 18:19:06 [core.py:122] Initializing a V1 LLM engine (v0.28.0) with config: model='/model', speculative_config=SpeculativeConfig(method='mtp', model='/model', num_spec_tokens=1), tokenizer='/model', skip_tokenizer_init=False, tokenizer_mode=auto, revision=None, tokenizer_revision=None, trust_remote_code=True, dtype=torch.bfloat16, max_seq_len=524288, download_dir=None, load_format=safetensors, tensor_parallel_size=1, pipeline_parallel_size=1, data_parallel_size=1, decode_context_parallel_size=1, dcp_comm_backend=ag_rs, disable_custom_all_reduce=False, quantization=modelopt_fp4, quantization_config=None, enforce_eager=False, enable_return_routed_experts=False, kv_cache_dtype=bfloat16, device_config=cuda, structured_outputs_config=StructuredOutputsConfig(backend='auto', disable_any_whitespace=False, disable_additional_properties=False, reasoning_parser='glm45', reasoning_parser_plugin='', enable_in_reasoning=False), observability_config=ObservabilityConfig(show_hidden_metrics_for_version=None, otlp_traces_endpoint=None, collect_detailed_traces=None, kv_cache_metrics=False, kv_cache_metrics_sample=0.01, cudagraph_metrics=False, enable_layerwise_nvtx_tracing=False, enable_mfu_metrics=False, enable_mm_processor_stats=False, enable_logging_iteration_details=False, jit_monitor_mode='warn', jit_monitor_verbose=False), seed=0, served_model_name=glm-5.3-big, enable_prefix_caching=True, enable_chunked_prefill=True, pooler_config=None, compilation_config={'mode': <CompilationMode.VLLM_COMPILE: 3>, 'debug_dump_path': None, 'cache_dir': '', 'compile_cache_save_format': 'binary', 'backend': 'eager', 'custom_ops': ['all'], 'ir_enable_torch_wrap': False, 'splitting_ops': ['vllm::unified_attention_with_output', 'vllm::unified_mla_attention_with_output', 'vllm::mamba_mixer2', 'vllm::mamba_mixer', 'vllm::short_conv', 'vllm::linear_attention', 'vllm::qwen_gdn_attention_core', 'vllm::qwen_gdn_attention_core_fused_norm_packed', 'vllm::gdn_attention_core_xpu', 'vllm::olmo_hybrid_gdn_full_forward', 'vllm::sparse_attn_indexer', 'vllm::rocm_aiter_sparse_attn_indexer', 'vllm::deepseek_v4_attention', 'vllm::hpc_rope_norm_forward', 'vllm::unified_kv_cache_update', 'vllm::unified_mla_kv_cache_update'], 'compile_mm_encoder': False, 'cudagraph_mm_encoder': False, 'encoder_cudagraph_token_budgets': [], 'encoder_cudagraph_max_vision_items_per_batch': 0, 'encoder_cudagraph_max_frames_per_batch': None, 'compile_sizes': [], 'compile_ranges_endpoints': [8192], 'inductor_compile_config': {'enable_auto_functionalized_v2': False, 'combo_kernels': True, 'benchmark_combo_kernel': True}, 'inductor_passes': {}, 'cudagraph_mode': <CUDAGraphMode.FULL_AND_PIECEWISE: (2, 1)>, 'cudagraph_num_of_warmups': 1, 'cudagraph_capture_sizes': [1, 2, 4], 'cudagraph_copy_inputs': False, 'cudagraph_specialize_lora': True, 'use_inductor_graph_partition': False, 'pass_config': {'fuse_norm_quant': True, 'fuse_act_quant': True, 'fuse_attn_quant': False, 'enable_sp': False, 'fuse_gemm_comms': False, 'fuse_allreduce_rms': False, 'enable_qk_norm_rope_fusion': False, 'fuse_rope_kvcache_cat_mla': False, 'fuse_act_padding': False, 'fuse_qk_norm_rope_kvcache': False}, 'max_cudagraph_capture_size': 4, 'dynamic_shapes_config': {'type': <DynamicShapesType.BACKED: 'backed'>, 'evaluate_guards': False, 'assume_32_bit_indexing': False}, 'local_cache_dir': None, 'fast_moe_cold_start': False, 'static_all_moe_layers': []}, kernel_config=KernelConfig(ir_op_priority=IrOpPriorityConfig(rms_norm=['vllm_c', 'native'], fused_add_rms_norm=['vllm_c', 'native']), enable_flashinfer_autotune=True, enable_cutedsl_warmup=True, enable_jit_warmup=True, enable_bf16x3_router_gemm=False, moe_backend='auto', linear_backend='auto')
+2026-09-07T18:35:24.642942978Z (EngineCore pid=361) SLOT_CACHE deferred cache for model.layers.3.mlp.experts
+2026-09-07T18:35:25.313629336Z (EngineCore pid=361) SLOT_CACHE deferred cache for model.layers.4.mlp.experts
+2026-09-07T18:35:25.951953892Z (EngineCore pid=361) SLOT_CACHE deferred cache for model.layers.5.mlp.experts
+2026-09-07T18:35:26.583669826Z (EngineCore pid=361) SLOT_CACHE deferred cache for model.layers.6.mlp.experts
+2026-09-07T18:35:27.213148443Z (EngineCore pid=361) SLOT_CACHE deferred cache for model.layers.7.mlp.experts
+2026-09-07T18:35:27.838383019Z (EngineCore pid=361) SLOT_CACHE deferred cache for model.layers.8.mlp.experts
+2026-09-07T18:35:28.459643283Z (EngineCore pid=361) SLOT_CACHE deferred cache for model.layers.9.mlp.experts
+2026-09-07T18:35:29.075873391Z (EngineCore pid=361) SLOT_CACHE deferred cache for model.layers.10.mlp.experts
+2026-09-07T18:35:29.741687004Z (EngineCore pid=361) SLOT_CACHE deferred cache for model.layers.11.mlp.experts
+2026-09-07T18:35:30.359415421Z (EngineCore pid=361) SLOT_CACHE deferred cache for model.layers.12.mlp.experts
+2026-09-07T18:35:30.972796019Z (EngineCore pid=361) SLOT_CACHE deferred cache for model.layers.13.mlp.experts
+2026-09-07T18:35:31.590252404Z (EngineCore pid=361) SLOT_CACHE deferred cache for model.layers.14.mlp.experts
+2026-09-07T18:35:32.202367305Z (EngineCore pid=361) SLOT_CACHE deferred cache for model.layers.15.mlp.experts
+2026-09-07T18:35:32.814733982Z (EngineCore pid=361) SLOT_CACHE deferred cache for model.layers.16.mlp.experts
+2026-09-07T18:35:33.440425779Z (EngineCore pid=361) SLOT_CACHE deferred cache for model.layers.17.mlp.experts
+2026-09-07T18:35:34.075061340Z (EngineCore pid=361) SLOT_CACHE deferred cache for model.layers.18.mlp.experts
+2026-09-07T18:35:34.714496241Z (EngineCore pid=361) SLOT_CACHE deferred cache for model.layers.19.mlp.experts
+2026-09-07T18:35:35.405488507Z (EngineCore pid=361) SLOT_CACHE deferred cache for model.layers.20.mlp.experts
+2026-09-07T18:35:36.020179320Z (EngineCore pid=361) SLOT_CACHE deferred cache for model.layers.21.mlp.experts
+2026-09-07T18:35:36.630174123Z (EngineCore pid=361) SLOT_CACHE deferred cache for model.layers.22.mlp.experts
+2026-09-07T18:35:37.241847906Z (EngineCore pid=361) SLOT_CACHE deferred cache for model.layers.23.mlp.experts
+2026-09-07T18:35:37.856212383Z (EngineCore pid=361) SLOT_CACHE deferred cache for model.layers.24.mlp.experts
+2026-09-07T18:35:38.466824660Z (EngineCore pid=361) SLOT_CACHE deferred cache for model.layers.25.mlp.experts
+2026-09-07T18:35:39.073112511Z (EngineCore pid=361) SLOT_CACHE deferred cache for model.layers.26.mlp.experts
+2026-09-07T18:35:39.679914764Z (EngineCore pid=361) SLOT_CACHE deferred cache for model.layers.27.mlp.experts
+2026-09-07T18:35:40.289114975Z (EngineCore pid=361) SLOT_CACHE deferred cache for model.layers.28.mlp.experts
+2026-09-07T18:35:40.898907892Z (EngineCore pid=361) SLOT_CACHE deferred cache for model.layers.29.mlp.experts
+2026-09-07T18:35:41.506608772Z (EngineCore pid=361) SLOT_CACHE deferred cache for model.layers.30.mlp.experts
+2026-09-07T18:35:42.167103118Z (EngineCore pid=361) SLOT_CACHE deferred cache for model.layers.31.mlp.experts
+2026-09-07T18:35:42.775425600Z (EngineCore pid=361) SLOT_CACHE deferred cache for model.layers.32.mlp.experts
+2026-09-07T18:35:43.420833800Z (EngineCore pid=361) SLOT_CACHE deferred cache for model.layers.33.mlp.experts
+2026-09-07T18:35:44.022708780Z (EngineCore pid=361) SLOT_CACHE deferred cache for model.layers.34.mlp.experts
+2026-09-07T18:35:44.632873092Z (EngineCore pid=361) SLOT_CACHE deferred cache for model.layers.35.mlp.experts
+2026-09-07T18:35:45.314438976Z (EngineCore pid=361) SLOT_CACHE deferred cache for model.layers.36.mlp.experts
+2026-09-07T18:35:45.991650770Z (EngineCore pid=361) SLOT_CACHE deferred cache for model.layers.37.mlp.experts
+2026-09-07T18:35:46.692208699Z (EngineCore pid=361) SLOT_CACHE deferred cache for model.layers.38.mlp.experts
+2026-09-07T18:35:47.361075963Z (EngineCore pid=361) SLOT_CACHE deferred cache for model.layers.39.mlp.experts
+2026-09-07T18:35:48.056610776Z (EngineCore pid=361) SLOT_CACHE deferred cache for model.layers.40.mlp.experts
+2026-09-07T18:35:48.728348800Z (EngineCore pid=361) SLOT_CACHE deferred cache for model.layers.41.mlp.experts
+2026-09-07T18:35:49.409760190Z (EngineCore pid=361) SLOT_CACHE deferred cache for model.layers.42.mlp.experts
+2026-09-07T18:35:50.101505749Z (EngineCore pid=361) SLOT_CACHE deferred cache for model.layers.43.mlp.experts
+2026-09-07T18:35:50.779922189Z (EngineCore pid=361) SLOT_CACHE deferred cache for model.layers.44.mlp.experts
+2026-09-07T18:35:51.479469590Z (EngineCore pid=361) SLOT_CACHE deferred cache for model.layers.45.mlp.experts
+2026-09-07T18:35:52.153199493Z (EngineCore pid=361) SLOT_CACHE deferred cache for model.layers.46.mlp.experts
+2026-09-07T18:35:52.829526106Z (EngineCore pid=361) SLOT_CACHE deferred cache for model.layers.47.mlp.experts
+2026-09-07T18:35:53.529409445Z (EngineCore pid=361) SLOT_CACHE deferred cache for model.layers.48.mlp.experts
+2026-09-07T18:35:54.207384510Z (EngineCore pid=361) SLOT_CACHE deferred cache for model.layers.49.mlp.experts
+2026-09-07T18:35:54.903321378Z (EngineCore pid=361) SLOT_CACHE deferred cache for model.layers.50.mlp.experts
+2026-09-07T18:35:55.580247482Z (EngineCore pid=361) SLOT_CACHE deferred cache for model.layers.51.mlp.experts
+2026-09-07T18:35:56.258187412Z (EngineCore pid=361) SLOT_CACHE deferred cache for model.layers.52.mlp.experts
+2026-09-07T18:35:56.952952950Z (EngineCore pid=361) SLOT_CACHE deferred cache for model.layers.53.mlp.experts
+2026-09-07T18:35:57.628355788Z (EngineCore pid=361) SLOT_CACHE deferred cache for model.layers.54.mlp.experts
+2026-09-07T18:35:58.326447351Z (EngineCore pid=361) SLOT_CACHE deferred cache for model.layers.55.mlp.experts
+2026-09-07T18:35:59.002478831Z (EngineCore pid=361) SLOT_CACHE deferred cache for model.layers.56.mlp.experts
+2026-09-07T18:35:59.682787857Z (EngineCore pid=361) SLOT_CACHE deferred cache for model.layers.57.mlp.experts
+2026-09-07T18:36:00.397878756Z (EngineCore pid=361) SLOT_CACHE deferred cache for model.layers.58.mlp.experts
+2026-09-07T18:36:01.074922592Z (EngineCore pid=361) SLOT_CACHE deferred cache for model.layers.59.mlp.experts
+2026-09-07T18:36:01.752702270Z (EngineCore pid=361) SLOT_CACHE deferred cache for model.layers.60.mlp.experts
+2026-09-07T18:36:02.434373701Z (EngineCore pid=361) SLOT_CACHE deferred cache for model.layers.61.mlp.experts
+2026-09-07T18:36:03.115970669Z (EngineCore pid=361) SLOT_CACHE deferred cache for model.layers.62.mlp.experts
+2026-09-07T18:36:03.832425061Z (EngineCore pid=361) SLOT_CACHE deferred cache for model.layers.63.mlp.experts
+2026-09-07T18:36:04.514578223Z (EngineCore pid=361) SLOT_CACHE deferred cache for model.layers.64.mlp.experts
+2026-09-07T18:36:05.194115059Z (EngineCore pid=361) SLOT_CACHE deferred cache for model.layers.65.mlp.experts
+2026-09-07T18:36:05.874712954Z (EngineCore pid=361) SLOT_CACHE deferred cache for model.layers.66.mlp.experts
+2026-09-07T18:36:06.555117665Z (EngineCore pid=361) SLOT_CACHE deferred cache for model.layers.67.mlp.experts
+2026-09-07T18:36:07.285670877Z (EngineCore pid=361) SLOT_CACHE deferred cache for model.layers.68.mlp.experts
+2026-09-07T18:36:07.970757007Z (EngineCore pid=361) SLOT_CACHE deferred cache for model.layers.69.mlp.experts
+2026-09-07T18:36:08.647416751Z (EngineCore pid=361) SLOT_CACHE deferred cache for model.layers.70.mlp.experts
+2026-09-07T18:36:09.345183104Z (EngineCore pid=361) SLOT_CACHE deferred cache for model.layers.71.mlp.experts
+2026-09-07T18:36:10.023242851Z (EngineCore pid=361) SLOT_CACHE deferred cache for model.layers.72.mlp.experts
+2026-09-07T18:36:10.729557193Z (EngineCore pid=361) SLOT_CACHE deferred cache for model.layers.73.mlp.experts
+2026-09-07T18:36:11.406337259Z (EngineCore pid=361) SLOT_CACHE deferred cache for model.layers.74.mlp.experts
+2026-09-07T18:36:12.082427499Z (EngineCore pid=361) SLOT_CACHE deferred cache for model.layers.75.mlp.experts
+2026-09-07T18:36:12.790517078Z (EngineCore pid=361) SLOT_CACHE deferred cache for model.layers.76.mlp.experts
+2026-09-07T18:36:13.497310047Z (EngineCore pid=361) SLOT_CACHE deferred cache for model.layers.77.mlp.experts
+2026-09-07T18:38:49.704522391Z (EngineCore pid=361) SLOT_CACHE cache built for model.layers.3.mlp.experts: S=80 E=256 slot bytes=1.51 GB
+2026-09-07T18:38:49.796044535Z (EngineCore pid=361) SLOT_CACHE cache built for model.layers.4.mlp.experts: S=80 E=256 slot bytes=1.51 GB
+2026-09-07T18:38:50.145164781Z (EngineCore pid=361) SLOT_CACHE cache built for model.layers.5.mlp.experts: S=96 E=256 slot bytes=1.81 GB
+2026-09-07T18:38:50.198226863Z (EngineCore pid=361) SLOT_CACHE cache built for model.layers.6.mlp.experts: S=96 E=256 slot bytes=1.81 GB
+2026-09-07T18:38:50.400845150Z (EngineCore pid=361) SLOT_CACHE cache built for model.layers.7.mlp.experts: S=96 E=256 slot bytes=1.81 GB
+2026-09-07T18:38:50.750908630Z (EngineCore pid=361) SLOT_CACHE cache built for model.layers.8.mlp.experts: S=96 E=256 slot bytes=1.81 GB
+2026-09-07T18:38:51.131620313Z (EngineCore pid=361) SLOT_CACHE cache built for model.layers.9.mlp.experts: S=96 E=256 slot bytes=1.81 GB
+2026-09-07T18:38:51.478868939Z (EngineCore pid=361) SLOT_CACHE cache built for model.layers.10.mlp.experts: S=96 E=256 slot bytes=1.81 GB
+2026-09-07T18:38:51.830921064Z (EngineCore pid=361) SLOT_CACHE cache built for model.layers.11.mlp.experts: S=80 E=256 slot bytes=1.51 GB
+2026-09-07T18:38:52.187027567Z (EngineCore pid=361) SLOT_CACHE cache built for model.layers.12.mlp.experts: S=96 E=256 slot bytes=1.81 GB
+2026-09-07T18:38:52.542836598Z (EngineCore pid=361) SLOT_CACHE cache built for model.layers.13.mlp.experts: S=96 E=256 slot bytes=1.81 GB
+2026-09-07T18:38:52.898015259Z (EngineCore pid=361) SLOT_CACHE cache built for model.layers.14.mlp.experts: S=96 E=256 slot bytes=1.81 GB
+2026-09-07T18:38:53.271071820Z (EngineCore pid=361) SLOT_CACHE cache built for model.layers.15.mlp.experts: S=80 E=256 slot bytes=1.51 GB
+2026-09-07T18:38:53.621612166Z (EngineCore pid=361) SLOT_CACHE cache built for model.layers.16.mlp.experts: S=80 E=256 slot bytes=1.51 GB
+2026-09-07T18:38:53.971995199Z (EngineCore pid=361) SLOT_CACHE cache built for model.layers.17.mlp.experts: S=64 E=256 slot bytes=1.21 GB
+2026-09-07T18:38:54.351150591Z (EngineCore pid=361) SLOT_CACHE cache built for model.layers.18.mlp.experts: S=64 E=256 slot bytes=1.21 GB
+2026-09-07T18:38:54.701764762Z (EngineCore pid=361) SLOT_CACHE cache built for model.layers.19.mlp.experts: S=64 E=256 slot bytes=1.21 GB
+2026-09-07T18:38:55.052888629Z (EngineCore pid=361) SLOT_CACHE cache built for model.layers.20.mlp.experts: S=48 E=256 slot bytes=0.91 GB
+2026-09-07T18:38:55.413982410Z (EngineCore pid=361) SLOT_CACHE cache built for model.layers.21.mlp.experts: S=64 E=256 slot bytes=1.21 GB
+2026-09-07T18:38:55.767582571Z (EngineCore pid=361) SLOT_CACHE cache built for model.layers.22.mlp.experts: S=80 E=256 slot bytes=1.51 GB
+2026-09-07T18:38:56.120122987Z (EngineCore pid=361) SLOT_CACHE cache built for model.layers.23.mlp.experts: S=80 E=256 slot bytes=1.51 GB
+2026-09-07T18:38:56.473715501Z (EngineCore pid=361) SLOT_CACHE cache built for model.layers.24.mlp.experts: S=96 E=256 slot bytes=1.81 GB
+2026-09-07T18:38:56.837787081Z (EngineCore pid=361) SLOT_CACHE cache built for model.layers.25.mlp.experts: S=96 E=256 slot bytes=1.81 GB
+2026-09-07T18:38:57.184542618Z (EngineCore pid=361) SLOT_CACHE cache built for model.layers.26.mlp.experts: S=80 E=256 slot bytes=1.51 GB
+2026-09-07T18:38:57.540389154Z (EngineCore pid=361) SLOT_CACHE cache built for model.layers.27.mlp.experts: S=80 E=256 slot bytes=1.51 GB
+2026-09-07T18:38:57.913851797Z (EngineCore pid=361) SLOT_CACHE cache built for model.layers.28.mlp.experts: S=80 E=256 slot bytes=1.51 GB
+2026-09-07T18:38:58.264539729Z (EngineCore pid=361) SLOT_CACHE cache built for model.layers.29.mlp.experts: S=80 E=256 slot bytes=1.51 GB
+2026-09-07T18:38:58.618259411Z (EngineCore pid=361) SLOT_CACHE cache built for model.layers.30.mlp.experts: S=80 E=256 slot bytes=1.51 GB
+2026-09-07T18:38:58.978698567Z (EngineCore pid=361) SLOT_CACHE cache built for model.layers.31.mlp.experts: S=64 E=256 slot bytes=1.21 GB
+2026-09-07T18:38:59.332421162Z (EngineCore pid=361) SLOT_CACHE cache built for model.layers.32.mlp.experts: S=64 E=256 slot bytes=1.21 GB
+2026-09-07T18:38:59.679829694Z (EngineCore pid=361) SLOT_CACHE cache built for model.layers.33.mlp.experts: S=64 E=256 slot bytes=1.21 GB
+2026-09-07T18:39:00.058049533Z (EngineCore pid=361) SLOT_CACHE cache built for model.layers.34.mlp.experts: S=64 E=256 slot bytes=1.21 GB
+2026-09-07T18:39:00.409126650Z (EngineCore pid=361) SLOT_CACHE cache built for model.layers.35.mlp.experts: S=80 E=256 slot bytes=1.51 GB
+2026-09-07T18:39:00.758883251Z (EngineCore pid=361) SLOT_CACHE cache built for model.layers.36.mlp.experts: S=64 E=256 slot bytes=1.21 GB
+2026-09-07T18:39:01.129618561Z (EngineCore pid=361) SLOT_CACHE cache built for model.layers.37.mlp.experts: S=80 E=256 slot bytes=1.51 GB
+2026-09-07T18:39:01.479629979Z (EngineCore pid=361) SLOT_CACHE cache built for model.layers.38.mlp.experts: S=64 E=256 slot bytes=1.21 GB
+2026-09-07T18:39:01.829697078Z (EngineCore pid=361) SLOT_CACHE cache built for model.layers.39.mlp.experts: S=80 E=256 slot bytes=1.51 GB
+2026-09-07T18:39:02.196524250Z (EngineCore pid=361) SLOT_CACHE cache built for model.layers.40.mlp.experts: S=80 E=256 slot bytes=1.51 GB
+2026-09-07T18:39:02.550716383Z (EngineCore pid=361) SLOT_CACHE cache built for model.layers.41.mlp.experts: S=80 E=256 slot bytes=1.51 GB
+2026-09-07T18:39:02.900183544Z (EngineCore pid=361) SLOT_CACHE cache built for model.layers.42.mlp.experts: S=80 E=256 slot bytes=1.51 GB
+2026-09-07T18:39:03.259939851Z (EngineCore pid=361) SLOT_CACHE cache built for model.layers.43.mlp.experts: S=80 E=256 slot bytes=1.51 GB
+2026-09-07T18:39:03.619690366Z (EngineCore pid=361) SLOT_CACHE cache built for model.layers.44.mlp.experts: S=64 E=256 slot bytes=1.21 GB
+2026-09-07T18:39:03.971296125Z (EngineCore pid=361) SLOT_CACHE cache built for model.layers.45.mlp.experts: S=64 E=256 slot bytes=1.21 GB
+2026-09-07T18:39:04.324744512Z (EngineCore pid=361) SLOT_CACHE cache built for model.layers.46.mlp.experts: S=80 E=256 slot bytes=1.51 GB
+2026-09-07T18:39:04.695741551Z (EngineCore pid=361) SLOT_CACHE cache built for model.layers.47.mlp.experts: S=80 E=256 slot bytes=1.51 GB
+2026-09-07T18:39:05.050046069Z (EngineCore pid=361) SLOT_CACHE cache built for model.layers.48.mlp.experts: S=80 E=256 slot bytes=1.51 GB
+2026-09-07T18:39:05.399153774Z (EngineCore pid=361) SLOT_CACHE cache built for model.layers.49.mlp.experts: S=80 E=256 slot bytes=1.51 GB
+2026-09-07T18:39:05.776274572Z (EngineCore pid=361) SLOT_CACHE cache built for model.layers.50.mlp.experts: S=64 E=256 slot bytes=1.21 GB
+2026-09-07T18:39:06.125661798Z (EngineCore pid=361) SLOT_CACHE cache built for model.layers.51.mlp.experts: S=64 E=256 slot bytes=1.21 GB
+2026-09-07T18:39:06.478012615Z (EngineCore pid=361) SLOT_CACHE cache built for model.layers.52.mlp.experts: S=64 E=256 slot bytes=1.21 GB
+2026-09-07T18:39:06.854032899Z (EngineCore pid=361) SLOT_CACHE cache built for model.layers.53.mlp.experts: S=80 E=256 slot bytes=1.51 GB
+2026-09-07T18:39:07.203329693Z (EngineCore pid=361) SLOT_CACHE cache built for model.layers.54.mlp.experts: S=80 E=256 slot bytes=1.51 GB
+2026-09-07T18:39:07.558831174Z (EngineCore pid=361) SLOT_CACHE cache built for model.layers.55.mlp.experts: S=80 E=256 slot bytes=1.51 GB
+2026-09-07T18:39:07.934550177Z (EngineCore pid=361) SLOT_CACHE cache built for model.layers.56.mlp.experts: S=64 E=256 slot bytes=1.21 GB
+2026-09-07T18:39:08.285366143Z (EngineCore pid=361) SLOT_CACHE cache built for model.layers.57.mlp.experts: S=64 E=256 slot bytes=1.21 GB
+2026-09-07T18:39:08.643420719Z (EngineCore pid=361) SLOT_CACHE cache built for model.layers.58.mlp.experts: S=80 E=256 slot bytes=1.51 GB
+2026-09-07T18:39:09.021182352Z (EngineCore pid=361) SLOT_CACHE cache built for model.layers.59.mlp.experts: S=64 E=256 slot bytes=1.21 GB
+2026-09-07T18:39:09.371673325Z (EngineCore pid=361) SLOT_CACHE cache built for model.layers.60.mlp.experts: S=64 E=256 slot bytes=1.21 GB
+2026-09-07T18:39:09.726532181Z (EngineCore pid=361) SLOT_CACHE cache built for model.layers.61.mlp.experts: S=80 E=256 slot bytes=1.51 GB
+2026-09-07T18:39:10.106083642Z (EngineCore pid=361) SLOT_CACHE cache built for model.layers.62.mlp.experts: S=80 E=256 slot bytes=1.51 GB
+2026-09-07T18:39:10.467950900Z (EngineCore pid=361) SLOT_CACHE cache built for model.layers.63.mlp.experts: S=80 E=256 slot bytes=1.51 GB
+2026-09-07T18:39:10.824014560Z (EngineCore pid=361) SLOT_CACHE cache built for model.layers.64.mlp.experts: S=64 E=256 slot bytes=1.21 GB
+2026-09-07T18:39:11.193178635Z (EngineCore pid=361) SLOT_CACHE cache built for model.layers.65.mlp.experts: S=80 E=256 slot bytes=1.51 GB
+2026-09-07T18:39:11.555544422Z (EngineCore pid=361) SLOT_CACHE cache built for model.layers.66.mlp.experts: S=64 E=256 slot bytes=1.21 GB
+2026-09-07T18:39:11.911404882Z (EngineCore pid=361) SLOT_CACHE cache built for model.layers.67.mlp.experts: S=80 E=256 slot bytes=1.51 GB
+2026-09-07T18:39:12.271404519Z (EngineCore pid=361) SLOT_CACHE cache built for model.layers.68.mlp.experts: S=80 E=256 slot bytes=1.51 GB
+2026-09-07T18:39:12.647690437Z (EngineCore pid=361) SLOT_CACHE cache built for model.layers.69.mlp.experts: S=80 E=256 slot bytes=1.51 GB
+2026-09-07T18:39:13.001121098Z (EngineCore pid=361) SLOT_CACHE cache built for model.layers.70.mlp.experts: S=80 E=256 slot bytes=1.51 GB
+2026-09-07T18:39:13.361983746Z (EngineCore pid=361) SLOT_CACHE cache built for model.layers.71.mlp.experts: S=80 E=256 slot bytes=1.51 GB
+2026-09-07T18:39:13.739231298Z (EngineCore pid=361) SLOT_CACHE cache built for model.layers.72.mlp.experts: S=64 E=256 slot bytes=1.21 GB
+2026-09-07T18:39:14.094752461Z (EngineCore pid=361) SLOT_CACHE cache built for model.layers.73.mlp.experts: S=80 E=256 slot bytes=1.51 GB
+2026-09-07T18:39:14.451982333Z (EngineCore pid=361) SLOT_CACHE cache built for model.layers.74.mlp.experts: S=80 E=256 slot bytes=1.51 GB
+2026-09-07T18:39:14.829646462Z (EngineCore pid=361) SLOT_CACHE cache built for model.layers.75.mlp.experts: S=80 E=256 slot bytes=1.51 GB
+2026-09-07T18:39:15.186791949Z (EngineCore pid=361) SLOT_CACHE cache built for model.layers.76.mlp.experts: S=80 E=256 slot bytes=1.51 GB
+2026-09-07T18:39:15.548768104Z (EngineCore pid=361) SLOT_CACHE cache built for model.layers.77.mlp.experts: S=80 E=256 slot bytes=1.51 GB
+2026-09-07T18:39:18.072656592Z (EngineCore pid=361) INFO 09-07 18:39:18 [kv_cache_utils.py:1869] GPU KV cache size: 548,800 tokens, Maximum concurrency for 524,288 tokens per request: 1.05x
+2026-09-07T18:39:33.882291010Z (APIServer pid=1) INFO:     Application startup complete.
+2026-09-07T18:39:35.678674110Z (APIServer pid=1) INFO:     127.0.0.1:44890 - "POST /v1/chat/completions HTTP/1.1" 200 OK
