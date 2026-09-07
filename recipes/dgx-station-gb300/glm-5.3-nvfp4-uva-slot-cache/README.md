@@ -188,6 +188,10 @@ Pairing audit: 40/40 common fixture/repeat pairs across V1/no-MTP/MTP, zero fixt
 
 Public-safe copies include source and published SHA-256 hashes in `public-evidence-manifest.json`; `receipt-audit.json` records no private home paths or credential-shaped markers in the package receipts/docs. The prior +31.9% MTP speed figure remains historical unconstrained-quality campaign evidence; it was **not** remeasured under this V2 structured-output schema run.
 
+### Queued experiments
+
+- **DFlash2-over-UVA acceptance probe** (queued 2026-09-07; not started): swap MTP(1) for incoai's DFlash2 block-diffusion draft on the sc13g build. Published DFlash2 wins are all HBM-resident; over UVA offload the 8-token verification width multiplies cold-expert traffic and the outcome is unknown. Gated sequence: static geometry audit, then a K4 acceptance-length probe with a stop gate at acceptance < ~3, then only if it passes a full C1/C4/C8 bench plus teacher-forced divergence check. Plan: [`research/dflash2-experiment-plan.md`](research/dflash2-experiment-plan.md). Idea credit: keys (drowzeys).
+
 ### MTP recorded but not quality-approved
 
 | run | C1 prose | C4 prose agg | C8 prose agg | why not gated |
