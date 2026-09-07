@@ -71,6 +71,22 @@ bash scripts/launch-slotcache-portable.sh sc13g 112 \
 
 The portable slot-cache wrapper mounts this recipe directory at `/w`, uses `/w/patches/sitecustomize.py`, `/w/patches/slot_cache_hook.py`, and defaults `SLOT_CACHE_PER_LAYER=/w/configs/slots-8400.json`. It was packaged from campaign evidence but was **not live-tested from this repo path**. The older `scripts/launch-slotcache.sh` is retained as provenance but is campaign-hardcoded and obsolete.
 
+Experimental MTP(1) release-candidate launch, only after inspecting that the installed vLLM build supports `--speculative-config` and only when an explicit experiment is intended:
+
+```bash
+docker run --rm --entrypoint python vllm-glm53-uva:v0.28.0-2cf0a691 \
+  -m vllm.entrypoints.openai.api_server --help | grep -E 'speculative|mtp'
+
+MODEL_DIR=/home/exx/models/GLM-5.3-NVFP4-big \
+CACHE_DIR=$HOME/vllm-cache \
+API_KEY_FILE=$HOME/.glm_api_key \
+bash scripts/launch-slotcache-portable.sh sc13g-mtp 112 \
+  --compilation-config '{"mode":3,"backend":"eager"}' \
+  --speculative-config '{"method":"mtp","num_speculative_tokens":1}'
+```
+
+Do not put this behind the default recipe command or call it quality-approved. The structured-output V2 receipts below preserve MTP as an experimental candidate only.
+
 ## Verify
 
 Local package validation:
@@ -119,6 +135,33 @@ Evidence gates:
 | 8k | 6,621 | 1.96 s | 3,383 tok/s |
 | 32k | 26,392 | 7.59 s | 3,477 tok/s |
 | 64k | 52,740 | 14.45 s | 3,649 tok/s |
+
+### Secondary structured-output V2 release-candidate receipts
+
+The V2 structured-output receipts in [`results/2026-09-07-secondary-structured-v2/`](results/2026-09-07-secondary-structured-v2/) are a public-safe experimental release-candidate evidence update. They do **not** change the original campaign verdict, do **not** make MTP the default, and do **not** quality-approve MTP.
+
+Frozen V2 contract and runner facts:
+
+| item | value |
+|---|---|
+| Contract | `VALIDATION-CONTRACT-V2-FROZEN.md`, frozen before scored V2 live validation output |
+| Runner | `secondary_gates_v2.py` |
+| Runner SHA-256 | `c9f5f378c4e30d05fe2e2afe5e99b428fe4fcf5c0d42539a27c2f3d173d65188` |
+| Fixtures | original V1 supplied-data secondary fixtures: 10 grounded + 10 structured, repeated twice = 40 requests |
+| Request change | only adds OpenAI-compatible `response_format` `json_schema` |
+| Schema safety | structural field/type schemas only; no expected IDs, totals, order, or fixture oracle answers encoded |
+
+Receipt audit summary from `python3 receipt-audit.py`:
+
+| lane | rows | protocol/parse/schema OK | correct | failures |
+|---|---:|---:|---:|---|
+| V1 preserved receipt | 40 | 40/40/40 | 37 | 3 oracle failures |
+| `sc13g` no MTP | 40 | 40/40/40 | 38 | 2 oracle failures |
+| `sc13g` + MTP(1) | 40 | 40/40/40 | 37 | 3 oracle failures |
+
+Pairing audit: 40/40 common fixture/repeat pairs across V1/no-MTP/MTP, zero fixture SHA mismatches, zero request mismatches after ignoring only lane/model identity. Matched no-MTP vs MTP comparison: 20 unique tasks, 18 ties, 1 MTP win, 1 MTP loss.
+
+Public-safe copies include source and published SHA-256 hashes in `public-evidence-manifest.json`; `receipt-audit.json` records no private home paths or credential-shaped markers in the package receipts/docs. The prior +31.9% MTP speed figure remains historical unconstrained-quality campaign evidence; it was **not** remeasured under this V2 structured-output schema run.
 
 ### MTP recorded but not quality-approved
 
@@ -192,6 +235,8 @@ It prints the planned container stop, preserved-baseline start, and health-check
 ### Recorded campaign restoration
 
 The campaign restored `glm53-big-v1-keep`; the separate monitor verified the running container, authenticated HTTP 200, served model `glm-5.3-big`, and a completed generation at **2026-09-06 18:29:50 CDT**. The raw reply was `</think>READY`, exposing a formatting defect. This establishes **serving recovery**, not clean protocol/tool-call qualification. See the [restoration receipt](results/2026-09-06-round4-decode/restore-verification.json). The packaged rollback helper was not used for this restoration and remains locally tested only.
+
+The later V2 follow-up did not complete V1 restoration: the operator explicitly cancelled it. Preserve the earlier restoration evidence, but do not infer current serving state from these historical receipts. Release-candidate publication does not switch agent defaults.
 
 ## Credits
 
