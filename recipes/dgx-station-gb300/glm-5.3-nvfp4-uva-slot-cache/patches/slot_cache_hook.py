@@ -1,10 +1,15 @@
 # tensors as backing, expert->slot / slot->expert maps + LRU clock on device, a fused Triton bookkeeping kernel,
 # a masked Triton row copy for misses, then ONE trtllm_fp4_block_scale_routed_moe launch over the slot tensors.
-# Fixed shapes, no host sync -> CUDA-graph capturable. Bypass to plain UVA when M*K > S (prefill).
+# Default Triton path: fixed shapes, no host sync, CUDA-graph capturable.
+# Optional DMA path: runtime copies on a side stream, eager only (host miss descriptors).
+# Both paths bypass to plain UVA when M*K > S (prefill).
 import os, sys, sys, torch
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 S_SLOTS = int(os.environ.get("SLOT_CACHE", "0"))
+_COPY_BACKEND = os.environ.get("SLOT_CACHE_COPY_BACKEND", "triton")
+if _COPY_BACKEND not in ("triton", "dma"):
+    raise ValueError("SLOT_CACHE_COPY_BACKEND must be triton or dma")
 BYPASS_ABOVE = int(os.environ.get("SLOT_CACHE_BYPASS_TOKENS", "16"))   # M > this -> bypass (prefill)
 _PER_LAYER = {}
 if os.environ.get("SLOT_CACHE_PER_LAYER"):
@@ -181,6 +186,9 @@ def _install_triton():
 class LayerCache:
     def __init__(self, name, w13, w2, w13_scale, w2_scale, scalars, S):
         # w13/w2: UVA device views of pinned host [E, ...]; scales: [E, ...] on device; scalars: list of [E] fp32
+        if _COPY_BACKEND == "dma":
+            from slot_cache_dma import require_eager
+            require_eager()
         self.name = name; self.S = S; self.E = w13.shape[0]
         dev = w13_scale.device if w13_scale.is_cuda else torch.device("cuda")
         self.dev = dev
@@ -214,8 +222,18 @@ class LayerCache:
         self.misses = torch.zeros((), dtype=torch.int64, device=dev)
         self.SB = 1
         while self.SB < S: self.SB *= 2
-        self.rows = {k: (self._rows64(self.host[k]), self._rows64(self.slots[k])) for k in ("w13", "w2")}
-        self.rows_res = {k: (self._rows64(self.res[k]), self._rows64(self.res_slots[k])) for k in self.res}
+        self.dma = None
+        if _COPY_BACKEND == "dma":
+            from slot_cache_dma import DmaRowCopier
+            names = ["w13", "w2", *self.res]
+            sources = [self.host["w13"], self.host["w2"], *self.res.values()]
+            destinations = [self.slots["w13"], self.slots["w2"], *self.res_slots.values()]
+            self.dma = DmaRowCopier(sources, destinations)
+            _LOG(f"DMA {name}: {dict(zip(names, self.dma.describe()))}")
+            self.rows, self.rows_res = {}, {}
+        else:
+            self.rows = {k: (self._rows64(self.host[k]), self._rows64(self.slots[k])) for k in ("w13", "w2")}
+            self.rows_res = {k: (self._rows64(self.res[k]), self._rows64(self.res_slots[k])) for k in self.res}
         # pad scalars with a sink row so hits scatter harmlessly
         self.scal_pad = [torch.cat([s, torch.zeros(1, dtype=s.dtype, device=dev)]) if s is not None else None for s in self.scalars]
         self.scal_slot_pad = [torch.zeros(S + 1, dtype=s.dtype, device=dev) if s is not None else None for s in self.scalars]
@@ -246,17 +264,23 @@ def _ensure_triton():
 
 def _cache_forward(lc, topk_ids, N):
     """topk_ids: int32 [N] flat global expert ids. Returns int32 [N] slot ids; performs misses."""
+    if lc.dma is not None:
+        from slot_cache_dma import require_eager
+        require_eager()  # reject capture before bookkeeping can change ownership
     triton, fused, mcopy = _ensure_triton()
     b = lc.bufs_for(N)
     fused[(1,)](topk_ids, lc.e2s, lc.s2e, lc.last, lc.step, b["src"], b["dst"], b["mask"], b["slot"], lc.misses,
                 N=N, S=lc.S, E=lc.E, SB=lc.SB)
-    BLOCK = 2048
-    for k in ("w13", "w2"):
-        src, dst = lc.rows[k]; n = src.shape[1]
-        mcopy[(N, triton.cdiv(n, BLOCK))](src, dst, b["src"], b["dst"], b["mask"], n, BLOCK=BLOCK)
-    for k in lc.rows_res:
-        src, dst = lc.rows_res[k]; n = src.shape[1]
-        mcopy[(N, triton.cdiv(n, BLOCK))](src, dst, b["src"], b["dst"], b["mask"], n, BLOCK=BLOCK)
+    if lc.dma is not None:
+        lc.dma.copy_misses(b)
+    else:
+        BLOCK = 2048
+        for k in ("w13", "w2"):
+            src, dst = lc.rows[k]; n = src.shape[1]
+            mcopy[(N, triton.cdiv(n, BLOCK))](src, dst, b["src"], b["dst"], b["mask"], n, BLOCK=BLOCK)
+        for k in lc.rows_res:
+            src, dst = lc.rows_res[k]; n = src.shape[1]
+            mcopy[(N, triton.cdiv(n, BLOCK))](src, dst, b["src"], b["dst"], b["mask"], n, BLOCK=BLOCK)
     for sp, ssp in zip(lc.scal_pad, lc.scal_slot_pad):
         if sp is not None:
             ssp.index_put_((b["dst"].long(),), sp[b["src"].long()])
@@ -438,4 +462,4 @@ def install():
             loader.exec_module = exec_module
             return spec
     sys.meta_path.insert(0, _Finder())
-    _LOG(f"installed: S={S_SLOTS} per_layer={len(_PER_LAYER)} bypass_above_tokens={BYPASS_ABOVE}")
+    _LOG(f"installed: S={S_SLOTS} per_layer={len(_PER_LAYER)} bypass_above_tokens={BYPASS_ABOVE} copy_backend={_COPY_BACKEND}")

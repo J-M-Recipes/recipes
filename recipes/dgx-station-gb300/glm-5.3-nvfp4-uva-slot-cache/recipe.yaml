@@ -65,8 +65,14 @@ runtime:
     sha256: 38a36cfec0e0cf06e00e406b1d3f015b51d9147289269d4a180d161ba1c3eec7
     purpose: FFI router path used by sc11/sc12/sc13 slot-cache variants.
   - path: patches/slot_cache_hook.py
-    sha256: 889613f0dc2e371a715a8c43e6ac0858d6ad7aefda7308ac67e8a2343cd715ad
+    sha256: 26e23dd2d2c1fbf7dfef897e8697a355677d094bb43e76b9be83d740c9efa4a7
     purpose: Latest per-layer slot-cache hook; builds per-layer HBM expert slots and routes decode through cached slots.
+  - path: patches/slot_cache_dma.py
+    sha256: 4b1a10af9909c48fbe8f091e6759d62a827ed7eb7aa1d663f371c4571ef3546e
+    purpose: Optional eager DMA stream and event orchestration; loaded only with SLOT_CACHE_COPY_BACKEND=dma.
+  - path: patches/slot_cache_dma.cpp
+    sha256: ce3ee792a7cc2ed4513d55bd9b5c887cc7db827bafa22b06d90d7d5e4a38f56b
+    purpose: CUDA runtime extension for contiguous expert row copies with pointer-attribute validation.
   - path: configs/slots-8400.json
     sha256: 4ee071670e13f199658776ddb7b508c9a068657ea631a0cb4287db0a2afeeaed
     purpose: Non-code per-layer HBM slot allocation map for the packaged slot-cache launcher.
