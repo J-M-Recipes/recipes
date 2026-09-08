@@ -12,9 +12,14 @@ import pytest
 REPO_ROOT = Path(__file__).resolve().parents[1]
 RECIPE = REPO_ROOT / "recipes/dgx-station-gb300/glm-5.3-nvfp4-uva-slot-cache"
 PATCHES = RECIPE / "patches"
-RUNTIME_GPU_MODEL_RUNNER = Path("/Users/jamesmeadlock/.hermes/profiles/milo/work/k2-v3-runtime-source/complete/vllm/v1/worker/gpu_model_runner.py")
+RUNTIME_GPU_MODEL_RUNNER = Path(
+    os.environ.get(
+        "K2_V3_RUNTIME_GPU_MODEL_RUNNER",
+        REPO_ROOT / "tests/fixtures/k2-v3-runtime-source/vllm/v1/worker/gpu_model_runner.py",
+    )
+)
 EXPECTED_GPU_MODEL_RUNNER_SHA256 = "7f2890eefca1efe25565bf1c7e5906a87948ae922610a7aaac620b28b46f26aa"
-PYTHON = "/Users/jamesmeadlock/hermes/jm-recipes/recipes/.venv/bin/python"
+PYTHON = sys.executable
 
 
 def _load_instrumentation():

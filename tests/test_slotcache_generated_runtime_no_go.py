@@ -1,5 +1,6 @@
 import ast
 import importlib.util
+import os
 import subprocess
 import sys
 from pathlib import Path
@@ -10,8 +11,13 @@ import pytest
 REPO_ROOT = Path(__file__).resolve().parents[1]
 RECIPE = REPO_ROOT / "recipes/dgx-station-gb300/glm-5.3-nvfp4-uva-slot-cache"
 PATCHES = RECIPE / "patches"
-RUNTIME_GPU_MODEL_RUNNER = Path("/Users/jamesmeadlock/.hermes/profiles/milo/work/k2-v3-runtime-source/complete/vllm/v1/worker/gpu_model_runner.py")
-PYTHON = "/Users/jamesmeadlock/hermes/jm-recipes/recipes/.venv/bin/python"
+RUNTIME_GPU_MODEL_RUNNER = Path(
+    os.environ.get(
+        "K2_V3_RUNTIME_GPU_MODEL_RUNNER",
+        REPO_ROOT / "tests/fixtures/k2-v3-runtime-source/vllm/v1/worker/gpu_model_runner.py",
+    )
+)
+PYTHON = sys.executable
 
 
 def _load_patch_script():

@@ -15,7 +15,12 @@ ORIGINAL_RUNNER_SHA = "7f2890eefca1efe25565bf1c7e5906a87948ae922610a7aaac620b28b
 SOURCE_SHA = ORIGINAL_RUNNER_SHA
 IMAGE_SHA = "sha256:61fc8a896b0a4fbbbdc063bc4b0dbc25ce98e02b5050c24aeb7830ac02039b14"
 DEFAULT_IMAGE_TAG = "vllm-glm53-uva:v0.28.0-2cf0a691"
-PINNED_SOURCE = Path("/Users/jamesmeadlock/.hermes/profiles/milo/work/k2-v3-runtime-source/complete/vllm/v1/worker/gpu_model_runner.py")
+PINNED_SOURCE = Path(
+    os.environ.get(
+        "K2_V3_RUNTIME_GPU_MODEL_RUNNER",
+        REPO_ROOT / "tests/fixtures/k2-v3-runtime-source/vllm/v1/worker/gpu_model_runner.py",
+    )
+)
 PATCH_GENERATOR = RECIPE / "scripts/apply_slot_cache_instrumentation_patch.py"
 
 
