@@ -1,0 +1,19 @@
+Validation completed: 2026-09-07T22:13:02-05:00
+
+PASS  pytest tests -q
+      52 passed in 2.96s
+PASS  .venv/bin/python scripts/check_recipe.py recipes/dgx-station-gb300/glm-5.3-nvfp4-uva-slot-cache/recipe.yaml
+      OK
+PASS  Python compile: trace_policy_sim.py, test_trace_policy_sim.py, verify-package.py
+PASS  verify-package.py
+      OFFLINE_PUBLIC_PACKAGE_OK
+PASS  git diff --check
+PASS  mechanically verified harness and corrected-result SHA-256 values match run-command.txt
+PASS  remote GB300 and local M4 hashes match for trace, step sidecar, physical-slot sidecar, both slot maps, and marks.txt
+PASS  authenticated live proof: one preserved 512K/MTP container, glm-5.3-big at max_model_len 524288, exact OFFLINE_WORK_OK completion
+
+Experiment gates:
+- E2 cache gate: FAIL candidate gate / STOP experiment branch (best gain +0.0242140573 points; required +5.0)
+- E3-A prefetch gate: FAIL candidate gate / STOP experiment branch (best precision 0.0840845620; required 0.50)
+
+A failed experiment gate is the expected scientific verdict, not a validation failure. The evidence package itself passed all checks above.

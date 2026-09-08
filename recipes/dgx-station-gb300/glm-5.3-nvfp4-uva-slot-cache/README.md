@@ -1,6 +1,6 @@
 # GLM-5.3-NVFP4-One-GB300
 
-**Status: experimental** · V1 baseline 33.8 tok/s C1 · sc13g slot-cache 43.1 tok/s C1 / 92.0 agg C4 / 95.6 agg C8 · MTP(1) audited as faster but **not** a quality-approved default · DFlash2-over-UVA stopped at K4 (1.5718 < 3.0) · PR #1 demand-fill DMA stopped after losing to matched eager Triton by 3.28% at C1 · daily serving profile remains 512K context / 48 GiB bf16 KV with MTP(1)
+**Status: experimental** · V1 baseline 33.8 tok/s C1 · sc13g slot-cache 43.1 tok/s C1 / 92.0 agg C4 / 95.6 agg C8 · MTP(1) audited as faster but **not** a quality-approved default · DFlash2-over-UVA, PR #1 demand-fill DMA, offline cache-policy reallocation, and simple trace prediction all failed their frozen continue gates · daily serving profile remains 512K context / 48 GiB bf16 KV with MTP(1)
 
 ![Memory map](diagrams/memory-map.svg)
 
@@ -201,6 +201,12 @@ Fabian ([`onthehub97`](https://github.com/onthehub97), [`@onthexitter69`](https:
 The end-to-end result was negative. With model, image, slot geometry, MTP(1), prompts and repetitions matched, DMA eager measured **8.75 / 34.00 / 33.40 tok/s** at C1/C4/C8 versus **9.04 / 35.31 / 34.89** for Triton eager and **55.27 / 103.29 / 100.59** for Triton with CUDA graphs. DMA lost to the eager control by **3.28% at C1**, failing the frozen requirement to win by at least 5%. We stopped before profiler, teacher-forced, and 512K-promotion stages and restored the preserved 512K/MTP daily lane.
 
 This does not show that GB300 copy engines cannot help. It shows that four individual host-issued copies per miss, a per-layer device-to-host descriptor synchronization, demand fills on the current layer's critical path, and mandatory eager execution do not beat the existing implementation. Batched submissions, graph compatibility and correctness-preserving expert prefetch remain separate research directions. Full receipts and startup amendments: [`results/2026-09-07-dma-demand-fill/`](results/2026-09-07-dma-demand-fill/).
+
+### Offline cache-policy and trace-prediction screen: both stopped
+
+We replayed the frozen mixed-workload routing corpus (79,119 routed tokens; 71,210 decode tokens) on the M4 with chronological per-workload 70/30 train/held-out splits, prefill excluded, and the slot budget fixed at 5,792. The frozen LRU control measured **70.9736%** aggregate held-out hit rate. The best candidate—LRU with a trace-optimized per-layer allocation—measured **70.9978%**, a gain of only **0.0242 percentage points**; the held-out tools segment gained **0.0142 points**. Both were far below the frozen +5-point continue gate. LFU, static-hot, and 25/50/75% static-hot + LRU hybrids were worse.
+
+Simple routing predictors also failed. The best arm, adjacent-layer prediction with one nonresident row issued per token-layer, reached only **8.4085% precision** and **3.6721% recall** against a frozen 50% precision gate; the `tools_low` segment reached **15.7106% precision**, still far short. Previous-token prediction was worse and was scored only on unambiguous consecutive C1 decode steps. Therefore neither policy/allocation deployment nor speculative prefetch implementation proceeds from this screen. The corpus predates the current 512K/MTP serving profile, so this does not replace graph-safe live telemetry; it is sufficient to reject these exact low-complexity methods because their margins were not close. Full contract, JSON, hashes, command, and live-service proof: [`results/2026-09-07-offline-cache-prefetch/`](results/2026-09-07-offline-cache-prefetch/).
 
 ### MTP recorded but not quality-approved
 

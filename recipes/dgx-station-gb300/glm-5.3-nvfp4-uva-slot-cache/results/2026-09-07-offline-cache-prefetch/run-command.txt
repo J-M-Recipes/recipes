@@ -1,0 +1,22 @@
+Harness SHA-256: 03ecd5d30117dfdfe3b0806d517fde628e11939ed767e3fbf3e1c840c2d9dabf
+Result SHA-256 before packaging: f568e69cd51c2d493b67621861a588bfdedbfe7d1aade4db71d592fdfcee2224
+
+Run from the repository root after setting TRACE_DIR to a byte-identical copy of trace_source_directory from input-manifest.json:
+
+TRACE_DIR=<M4_WORKSPACE>/input/r1-base
+OUTPUT=<M4_WORKSPACE>/offline-sim-v1.json
+
+/opt/homebrew/opt/python@3.11/bin/python3.11 \
+  recipes/dgx-station-gb300/glm-5.3-nvfp4-uva-slot-cache/scripts/trace_policy_sim.py \
+  --trace-dir "$TRACE_DIR" \
+  --slot-map recipes/dgx-station-gb300/glm-5.3-nvfp4-uva-slot-cache/configs/slots-5792-ctx512k.json \
+  --marks "$TRACE_DIR/marks.txt" \
+  --train-fraction 0.7 \
+  --curve-sample 6000 \
+  --minimum 32 \
+  --maximum 256 \
+  --step 16 \
+  --predict-limits 1,2,4,8 \
+  --output "$OUTPUT"
+
+Exit code: 0

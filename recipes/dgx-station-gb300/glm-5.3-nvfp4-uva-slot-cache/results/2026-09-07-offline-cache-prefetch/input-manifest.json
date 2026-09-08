@@ -1,0 +1,60 @@
+{
+  "schema": "glm53-slotcache-offline-input-manifest-v1",
+  "source_host": "milo@192.168.1.9",
+  "trace_source_directory": "/home/milo/big-v1-campaign/trace/r1-base",
+  "marks_source_path": "/home/milo/big-v1-campaign/runs/r1-base/marks.txt",
+  "local_copy": "<M4_WORKSPACE>/input/r1-base",
+  "remote_local_hashes_matched": true,
+  "files": [
+    {
+      "name": "trace-361.i16",
+      "bytes": 98882784,
+      "sha256": "8603fa87aa8845bb89b368b45bae4a370277df3170913fab3b241e359dd56480",
+      "role": "used: routed expert ids"
+    },
+    {
+      "name": "trace-361.steps",
+      "bytes": 1064106,
+      "sha256": "00ce58df2ab763aefdcbc7be298591a7047e0adb52fab2f5b507d05d91b31ef1",
+      "role": "used: step timestamps, token counts, layer count, top-k"
+    },
+    {
+      "name": "trace-361.slots.i64",
+      "bytes": 632192,
+      "sha256": "7f9eee9e46b29352ea5f3ae2f4817aa89b14f5a9753dff14af2d615ba59c286e",
+      "role": "preserved only: physical KV slot mapping; not used as a request id because it is shorter than the routed trace"
+    },
+    {
+      "name": "slots-5792-ctx512k.json",
+      "bytes": 19216,
+      "sha256": "73962276498626af16baaa7c8737384960aff8718d254e66ab92610570c9743c",
+      "role": "used: frozen 5792-slot allocation; byte-identical to configs/slots-5792-ctx512k.json"
+    },
+    {
+      "name": "slots-8400.json",
+      "bytes": 19222,
+      "sha256": "4ee071670e13f199658776ddb7b508c9a068657ea631a0cb4287db0a2afeeaed",
+      "role": "preserved comparator; not used by this replay"
+    },
+    {
+      "name": "marks.txt",
+      "bytes": 184,
+      "sha256": "eb7346e706e4bedcbb3b2b4e693c0b52feb09e2ce440c99e6193514b2e31a7e2",
+      "role": "used: workload segment end-time markers"
+    }
+  ],
+  "trace_shape": {
+    "routed_tokens": 79119,
+    "decode_tokens": 71210,
+    "prefill_tokens": 7909,
+    "layers": 78,
+    "topk": 8,
+    "experts": 256,
+    "steps": 48363
+  },
+  "notes": [
+    "The 99 MB routed-expert binary is not duplicated in the public repository; this manifest pins it by byte count and SHA-256.",
+    "The source corpus predates the current 512K/MTP serving profile.",
+    "The tools_low segment is an existing tool-use workload, not a fresh live Hermes-session trace."
+  ]
+}

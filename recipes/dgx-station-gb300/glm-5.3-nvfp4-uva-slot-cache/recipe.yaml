@@ -4,10 +4,11 @@ title: GLM-5.3-NVFP4-One-GB300
 summary: >-
   Experimental vLLM UVA offload recipe for full GLM-5.3 NVFP4 on one DGX Station GB300. V1 keeps routed experts in host memory
   with bf16 KV; the slot-cache variants keep a small per-layer HBM expert cache. MTP(1) has audited warm C1 speed upside, but the
-  frozen quality campaign is INCONCLUSIVE and MTP is not the quality-approved default. DFlash2-over-UVA was stopped at K4
-  (1.5718 < 3.0), and PR #1 demand-fill DMA lost to matched eager Triton by 3.28% at C1. The live-tested daily profile remains
-  512K context with 48 GiB bf16 KV; see results/2026-09-07-ctx512k-live/, results/2026-09-07-dflash2-uva/, and
-  results/2026-09-07-dma-demand-fill/.
+  frozen quality campaign is INCONCLUSIVE and MTP is not the quality-approved default. DFlash2-over-UVA was stopped at K4,
+  PR #1 demand-fill DMA lost to matched eager Triton, and offline cache-policy plus simple trace-prediction candidates missed
+  their frozen continue gates. The live-tested daily profile remains
+  512K context with 48 GiB bf16 KV; see results/2026-09-07-ctx512k-live/, results/2026-09-07-dflash2-uva/,
+  results/2026-09-07-dma-demand-fill/, and results/2026-09-07-offline-cache-prefetch/.
 status: experimental
 owners:
 - jmeadlock
@@ -295,6 +296,26 @@ metrics:
     run_id: 2026-09-07-dma-demand-fill
     method: matched bench_big.py under frozen three-arm contract
     raw: triton-graphs-summary.json
+- name: offline held-out LRU hit rate with trace-optimized allocation
+  value: 0.7099777673765504
+  unit: fraction
+  workload: six chronological mixed-workload decode segments, final 30% held out per segment, 5792 total slots
+  aggregation: all held-out routed-expert accesses across 75 MoE layers; prefill excluded
+  label: fails the frozen +5 percentage-point gate; frozen-allocation LRU control was 0.7097356268039628
+  provenance:
+    run_id: 2026-09-07-offline-cache-prefetch
+    method: scripts/trace_policy_sim.py deterministic trace replay
+    raw: offline-sim-v1.json
+- name: offline adjacent-layer predictor precision
+  value: 0.08408456197831345
+  unit: fraction
+  workload: same held-out split; one nonresident predicted row per token-layer
+  aggregation: useful predicted rows divided by issued nonresident predicted rows
+  label: fails the frozen 0.50 precision gate; recall was 0.036721409234329934
+  provenance:
+    run_id: 2026-09-07-offline-cache-prefetch
+    method: scripts/trace_policy_sim.py deterministic trace replay
+    raw: offline-sim-v1.json
 verification:
   quality_gate:
     reference_build: V1 eager baseline comparators v1e/v1g
@@ -345,6 +366,7 @@ limits:
 - Model repo/revision is intended and pinned from HF API plus prior short SHA; local all-file checkpoint identity was not
   verified.
 - scripts/launch-slotcache-portable.sh was live-tested from a staged copy for the stopped DFlash2 K4 candidate; this does not prove every default or MTP override combination.
+- The offline cache/prefetch screen used the older mixed-workload r1-base routing corpus, not graph-safe telemetry from the current 512K/MTP lane; its negative verdict applies to the exact replayed policies and predictors, not every possible adaptive policy.
 - Existing scripts/launch-slotcache.sh is obsolete and campaign-hardcoded; prefer scripts/launch-slotcache-portable.sh for
   this package.
 - Do not modify scripts/tf_decode.py as part of this package; its existing metric_pass is known insufficient for verification.
