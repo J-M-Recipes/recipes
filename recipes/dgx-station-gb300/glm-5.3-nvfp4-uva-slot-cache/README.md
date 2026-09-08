@@ -41,7 +41,9 @@ Patch pins in [`recipe.yaml`](recipe.yaml):
 | `patches/sitecustomize.py` | `6b9b7a76d77bde03d1b4ee2f0daed7e1cc6feba8718fad526c9fe334bbf3b2a0` | slot-cache sitecustomize hook |
 | `patches/exact_pin.py` | `93c8ee1420be870c505330f387f3168147539d6277be9500aae866d7bbf21bf0` | pinned-host tensor helper |
 | `patches/ffi_route.py` | `38a36cfec0e0cf06e00e406b1d3f015b51d9147289269d4a180d161ba1c3eec7` | FFI router path |
-| `patches/slot_cache_hook.py` | `889613f0dc2e371a715a8c43e6ac0858d6ad7aefda7308ac67e8a2343cd715ad` | latest per-layer slot-cache hook |
+| `patches/slot_cache_hook.py` | `27241f2ba66736ade5717201f33b3d175860c11de84fb81578ff9b753bedd1b7` | latest per-layer slot-cache hook + quiescent snapshot registry helpers |
+| `patches/slot_cache_window_instrumentation.py` | `9f0c75b25438c63511a5b2580a4c0a77520f232e2affe109dd0ba3908477e453` | opt-in engine-owned bounded-window snapshot controller |
+| `scripts/apply_slot_cache_instrumentation_patch.py` | `8b4b3ae177618875378154681a43c16bf4cc265c6f073fb1dd6ef2562c45106b` | exact-hash guarded pinned `gpu_model_runner.py` patch-copy adapter |
 | `configs/slots-8400.json` | `4ee071670e13f199658776ddb7b508c9a068657ea631a0cb4287db0a2afeeaed` | per-layer slot allocation |
 
 ## Launch
@@ -70,6 +72,30 @@ bash scripts/launch-slotcache-portable.sh sc13g 112 \
 ```
 
 The portable slot-cache wrapper mounts this recipe directory at `/w`, uses `/w/patches/sitecustomize.py`, `/w/patches/slot_cache_hook.py`, and defaults `SLOT_CACHE_PER_LAYER=/w/configs/slots-8400.json`. It was packaged from campaign evidence but was **not live-tested from this repo path**. The older `scripts/launch-slotcache.sh` is retained as provenance but is campaign-hardcoded and obsolete.
+
+### Offline quiescent instrumentation package
+
+The optional quiescent snapshot instrumentation is accepted only as an offline-reviewed canary-preparation package. It does not make a GPU safety, performance, release, or campaign-validity claim. The independently reviewed source envelope is:
+
+| item | SHA-256 / value |
+|---|---|
+| Reviewed repo HEAD | `f84290bed6acea1afc3a9e8a9742c6269cd2ca4c` |
+| Pinned source `gpu_model_runner.py` | `7f2890eefca1efe25565bf1c7e5906a87948ae922610a7aaac620b28b46f26aa` |
+| Deterministically generated patched runner | `2268a6dafda69566d4128bb9b589bdecb22e3e7eb8d0b7e1155f2bb1ce8e3cd4` |
+| Instrumentation adapter | `9f0c75b25438c63511a5b2580a4c0a77520f232e2affe109dd0ba3908477e453` |
+| Staged generator | `8b4b3ae177618875378154681a43c16bf4cc265c6f073fb1dd6ef2562c45106b` |
+| Slot-cache hook | `27241f2ba66736ade5717201f33b3d175860c11de84fb81578ff9b753bedd1b7` |
+| Portable launcher | `aebe4fab6272a8ded9d2e871d5b9c536b641634ae9b10232db9fa5c33bcac04d` |
+
+Review invalidation scope: only the portable launcher hash changed from the prior offline-reviewed envelope; instrumentation adapter, staged generator, generated patched runner, slot-cache hook, pinned source, and local image identity hashes are preserved. The launcher change restores disabled/default `IMAGE` behavior while preserving the stricter opt-in instrumentation image gate.
+
+When `SLOT_CACHE_QUIESCENT_SNAPSHOTS=1`, the launcher intentionally narrows topology to a single GPU/non-parallel vLLM runtime (`pipeline_parallel_size=1`, `tensor_parallel_size=1`, `data_parallel_size=1`, `decode_context_parallel_size=1`, `use_ubatching=false`) and fail-closes outside that envelope. Disabled/default launches remain uninstrumented and default to image tag `vllm-glm53-uva:v0.28.0-2cf0a691`; disabled explicit `IMAGE` overrides are preserved.
+
+Instrumentation launch requires an explicit, current receipt envelope: `SLOT_CACHE_PATCHED_RUNNER`, `SLOT_CACHE_PATCHED_RUNNER_SHA256`, `SLOT_CACHE_SOURCE_RUNNER`, `SLOT_CACHE_SOURCE_SHA`, `SLOT_CACHE_IMAGE_SHA`, `SLOT_CACHE_RECIPE_SHA`, `SLOT_CACHE_RUN_ID`, `SLOT_CACHE_ENGINE_GENERATION`, `SLOT_CACHE_WINDOW_STEPS`, `SLOT_CACHE_K_MODE`, and `SLOT_CACHE_SNAPSHOT_DIR`. `STATS_SEC=0`, `SLOT_CACHE_EXPECTED_LAYERS=75`, the pinned local Docker image ID (used by default when instrumentation is enabled and no `IMAGE` is supplied), exactly one MTP `--speculative-config`, and a pre-existing `/wcap/...` snapshot directory are required. Enabled mode rejects tag/digest-tag/mismatched `IMAGE` values; `IMAGE` must equal `SLOT_CACHE_IMAGE_SHA` and the pinned local image ID. `SLOT_CACHE_PATCH_GENERATOR` may not be overridden: it must be the staged recipe generator at `scripts/apply_slot_cache_instrumentation_patch.py`, and the launcher regenerates a temporary patched runner and byte-compares it with `SLOT_CACHE_PATCHED_RUNNER` before Docker starts.
+
+`SLOT_CACHE_RECIPE_SHA` is not a historical result manifest. It is the deterministic hash of the current recipe source artifact mounted at `/w`: sorted `relative-path NUL byte-count NUL file-sha256` rows, excluding `.git`, `__pycache__`, `capture`, `results`, and `.pyc` files. Because README/recipe/canary doc edits change that source artifact, callers must recompute this value for the exact bytes they launch. Historical result manifests were not regenerated for this offline documentation reconciliation.
+
+All local generated raw snapshot metadata remains `valid_for_campaign=false` with blocker `external_canary_not_proven` until the Station canaries in [`RUNTIME-CANARY-ACCEPTANCE.md`](RUNTIME-CANARY-ACCEPTANCE.md) pass. A free-text counter scope or local CPU test cannot prove target-only GPU counter attribution.
 
 Experimental MTP(1) release-candidate launch, only after inspecting that the installed vLLM build supports `--speculative-config` and only when an explicit experiment is intended:
 

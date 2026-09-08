@@ -1,7 +1,13 @@
 # tensors as backing, expert->slot / slot->expert maps + LRU clock on device, a fused Triton bookkeeping kernel,
 # a masked Triton row copy for misses, then ONE trtllm_fp4_block_scale_routed_moe launch over the slot tensors.
 # Fixed shapes, no host sync -> CUDA-graph capturable. Bypass to plain UVA when M*K > S (prefill).
-import os, sys, sys, torch
+import os, sys, sys
+from collections.abc import Mapping
+from dataclasses import dataclass
+try:
+    import torch
+except ImportError:  # CPU-only local tests may import registry helpers without CUDA/Torch.
+    torch = None
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from slot_cache_stats import summarize_window
 from slot_cache_profile_control import handle_command as handle_profile_command
@@ -22,6 +28,93 @@ _LOG = lambda m: sys.stderr.write(f"SLOT_CACHE {m}\n")
 BIG = 1 << 62
 
 _registry = {}      # id(w13_param.data_ptr) -> LayerCache
+_COUNTER_COLUMNS = ("misses", "routes", "steps")
+_COUNTER_ATTRS = {"misses": "misses", "routes": "routes", "steps": "step"}
+_LAYER_ID_RE = __import__("re").compile(r"(?:^|\.)layers\.(\d+)\.")
+
+
+@dataclass
+class SlotCacheDeviceSnapshot:
+    trace_id: str
+    layer_ids: list[int]
+    counters_device: object
+    provenance: dict[str, object]
+    metadata: dict[str, object]
+
+
+def _layer_id_from_name(name: str) -> int:
+    m = _LAYER_ID_RE.search(name)
+    if m is None:
+        raise ValueError(f"noncanonical slot-cache layer name: {name!r}")
+    return int(m.group(1))
+
+
+def _canonical_registry(expected_layers: int = 75) -> list[tuple[int, object]] | None:
+    if len(_registry) != expected_layers:
+        return None
+    rows = []
+    seen = set()
+    for lc in list(_registry.values()):
+        try:
+            layer_id = _layer_id_from_name(lc.name)
+        except Exception:
+            return None
+        if layer_id in seen:
+            return None
+        seen.add(layer_id)
+        rows.append((layer_id, lc))
+    if seen != set(range(expected_layers)):
+        return None
+    return sorted(rows, key=lambda pair: pair[0])
+
+
+def slot_cache_registry_ready(expected_layers: int = 75) -> bool:
+    return _canonical_registry(expected_layers) is not None
+
+
+def slot_cache_layer_keys() -> list[str]:
+    rows = []
+    for lc in list(_registry.values()):
+        rows.append(str(_layer_id_from_name(lc.name)))
+    return sorted(rows, key=int)
+
+
+def _copy_scalar(dst, src):
+    # Real torch scalar tensors use copy_; CPU fake tensors in tests expose
+    # clone_value() and list-backed rows. Do not call item()/cpu()/tolist().
+    if hasattr(dst, "copy_"):
+        return dst.copy_(src)
+    if hasattr(src, "clone_value"):
+        return src.clone_value()
+    if hasattr(src, "clone"):
+        return src.clone()
+    return src
+
+
+def slot_cache_snapshot_device(*, trace_id: str, provenance: Mapping[str, object], metadata: Mapping[str, object], expected_layers: int = 75) -> SlotCacheDeviceSnapshot | None:
+    rows = _canonical_registry(expected_layers)
+    if rows is None:
+        if dict(metadata).get("diagnostic"):
+            diagnostic = dict(metadata)
+            diagnostic.update({"valid_for_campaign": False, "reason": "not_all75"})
+            return SlotCacheDeviceSnapshot(trace_id, [], [], dict(provenance), diagnostic)
+        return None
+    first_lc = rows[0][1]
+    dev = getattr(getattr(first_lc, "misses", None), "device", None)
+    if torch is None:
+        counters = [[0, 0, 0] for _ in range(expected_layers)]
+    else:
+        counters = torch.empty((expected_layers, len(_COUNTER_COLUMNS)), dtype=torch.int64, device=dev)
+    layer_ids = []
+    for idx, (layer_id, lc) in enumerate(rows):
+        layer_ids.append(layer_id)
+        for col, field in enumerate(_COUNTER_COLUMNS):
+            value = _copy_scalar(counters[idx][col] if isinstance(counters[idx], list) else counters[idx, col], getattr(lc, _COUNTER_ATTRS[field]))
+            if isinstance(counters[idx], list):
+                counters[idx][col] = value
+    return SlotCacheDeviceSnapshot(trace_id, layer_ids, counters, dict(provenance), dict(metadata))
+
+
 _CAP_N = int(os.environ.get("SLOT_CACHE_CAPTURE", "0"))
 _ROUTER = os.environ.get("SLOT_CACHE_ROUTER", "vllm")          # vllm | trt | ffi
 if _ROUTER == "ffi":

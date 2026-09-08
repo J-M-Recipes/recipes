@@ -13,7 +13,7 @@ status: experimental
 owners:
 - jmeadlock
 - milo
-updated: '2026-09-07'
+updated: '2026-09-08'
 tags:
 - glm-5.3
 - nvfp4
@@ -68,8 +68,14 @@ runtime:
     sha256: 38a36cfec0e0cf06e00e406b1d3f015b51d9147289269d4a180d161ba1c3eec7
     purpose: FFI router path used by sc11/sc12/sc13 slot-cache variants.
   - path: patches/slot_cache_hook.py
-    sha256: a1aff61502d40b260e5fb0d09c782a2bb151a3fb75c1a7e72eb547c7915ab388
-    purpose: Latest per-layer slot-cache hook; routes through cached experts, counts observed routes for hit telemetry, and supports opt-in CUDA profiler control.
+    sha256: 27241f2ba66736ade5717201f33b3d175860c11de84fb81578ff9b753bedd1b7
+    purpose: Latest per-layer slot-cache hook; routes through cached experts, counts observed routes for hit telemetry, supports opt-in CUDA profiler control, and exposes engine-owned quiescent snapshot registry helpers.
+  - path: patches/slot_cache_window_instrumentation.py
+    sha256: 9f0c75b25438c63511a5b2580a4c0a77520f232e2affe109dd0ba3908477e453
+    purpose: Opt-in engine-owned bounded-window slot-cache snapshot/receipt controller and pure phase/NVTX correlation helpers; raw rows remain campaign-invalid/valid_for_campaign=false until Station canaries prove counter scope.
+  - path: scripts/apply_slot_cache_instrumentation_patch.py
+    sha256: 8b4b3ae177618875378154681a43c16bf4cc265c6f073fb1dd6ef2562c45106b
+    purpose: Exact-hash guarded staged generator for a patched copy of pinned gpu_model_runner.py; never edits live runtime in place, may not be overridden by SLOT_CACHE_PATCH_GENERATOR, and must regenerate byte-identical runtime source before launch.
   - path: patches/slot_cache_stats.py
     sha256: c7c43119e5a0ba5ecd3f94bb27c6311ac2db2edd6ab2a960b7f42be950590f30
     purpose: Pure observed-route telemetry math imported by the slot-cache hook.
@@ -98,6 +104,14 @@ launch:
     GiB), --max-model-len 524288, --max-num-seqs 1, SLOT_CACHE=112, SLOT_CACHE_PER_LAYER=configs/slots-5792-ctx512k.json,
     MTP(1). Launched from the portable script via KV_CACHE_MEMORY / MAX_MODEL_LEN / MAX_NUM_SEQS / SLOT_CACHE_PER_LAYER overrides.
     See results/2026-09-07-ctx512k-live/.'
+  - 'Opt-in quiescent instrumentation requires a pre-generated patched runner plus SLOT_CACHE_PATCHED_RUNNER_SHA256, SLOT_CACHE_SOURCE_SHA,
+    SLOT_CACHE_IMAGE_SHA, SLOT_CACHE_RECIPE_SHA, SLOT_CACHE_RUN_ID, SLOT_CACHE_ENGINE_GENERATION, SLOT_CACHE_WINDOW_STEPS,
+    SLOT_CACHE_K_MODE, SLOT_CACHE_SNAPSHOT_DIR, STATS_SEC=0, SLOT_CACHE_EXPECTED_LAYERS=75, pinned IMAGE local ID, and exactly
+    one MTP speculative config. With instrumentation disabled, the portable launcher defaults to image tag vllm-glm53-uva:v0.28.0-2cf0a691
+    and preserves explicit IMAGE overrides. With instrumentation enabled, no-IMAGE defaults to the pinned local image ID and explicit
+    tag/digest-tag/mismatched IMAGE values are rejected. SLOT_CACHE_RECIPE_SHA is the deterministic current recipe source-artifact
+    hash over sorted relative-path/byte-count/file-sha rows excluding results/capture/cache-like trees; it is not a historical result manifest.'
+  - 'Portable launcher SHA-256: aebe4fab6272a8ded9d2e871d5b9c536b641634ae9b10232db9fa5c33bcac04d. Review invalidation is scoped to the launcher hash only; instrumentation adapter, staged generator, generated patched runner, slot-cache hook, pinned source, and local image identity hashes are preserved.'
   - 'Rejected 1M profile (2026-09-07): 96 GiB KV left only 2,672 expert slots (mean predicted hit allocation 0.4016 versus
     0.6166 at 512K); the launch was aborted during startup as too slow for daily use and archived, not deleted.'
   - Do not use /home/milo/gb300-big-v1/Dockerfile for this recipe; it is an unrelated SGLang Dockerfile.
@@ -372,6 +386,7 @@ limits:
 - Model repo/revision is intended and pinned from HF API plus prior short SHA; local all-file checkpoint identity was not
   verified.
 - scripts/launch-slotcache-portable.sh was live-tested from a staged copy for the stopped DFlash2 K4 candidate; this does not prove every default or MTP override combination.
+- 'Quiescent snapshot instrumentation is offline-reviewed canary-preparation only: generated rows are valid_for_campaign=false until Station canaries prove stream/capture behavior, graph replay correlation, async D2H race safety, and target-vs-draft counter scope.'
 - The offline cache/prefetch screen used the older mixed-workload r1-base routing corpus, not graph-safe telemetry from the current 512K/MTP lane; its negative verdict applies to the exact replayed policies and predictors, not every possible adaptive policy.
 - Existing scripts/launch-slotcache.sh is obsolete and campaign-hardcoded; prefer scripts/launch-slotcache-portable.sh for
   this package.
