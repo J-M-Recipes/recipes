@@ -1,0 +1,12 @@
+All four calls complete. E0 integration report:
+
+Call 1: start Tue Sep 8 07:21:57 CDT 2026 / end Tue Sep 8 07:26:57 CDT 2026
+Call 2: start Tue Sep 8 07:27:00 CDT 2026 / end Tue Sep 8 07:32:00 CDT 2026
+Call 3: start Tue Sep 8 07:32:02 CDT 2026 / end Tue Sep 8 07:37:02 CDT 2026
+Call 4: start Tue Sep 8 07:37:04 CDT 2026 / end Tue Sep 8 07:42:04 CDT 2026
+
+Protocol conformance: four sequential foreground calls, each `date; sleep 300; date` with 400s timeout, no backgrounding, no parallelization, no writes, no private file access. Each call shows a full 300-second gap, with only 3s, 2s, and 2s turnaround between calls.
+
+Elapsed time from first timestamp to last: 07:21:57 to 07:42:04 = 20 minutes 7 seconds.
+
+Verdict: yes, at least 20 minutes elapsed (20:07 total).

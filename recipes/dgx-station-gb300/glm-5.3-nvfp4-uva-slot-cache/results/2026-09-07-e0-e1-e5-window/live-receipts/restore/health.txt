@@ -1,0 +1,15 @@
+health: GET http://127.0.0.1:30001/health (up to 120 attempts)
+
+models: GET http://127.0.0.1:30001/v1/models
+served_models= glm-5.3-big
+metrics: present
+# HELP vllm:spec_decode_num_draft_tokens_total Number of draft tokens.
+# TYPE vllm:spec_decode_num_draft_tokens_total counter
+vllm:spec_decode_num_draft_tokens_total{engine="0",model_name="glm-5.3-big"} 0.0
+# HELP vllm:spec_decode_num_accepted_tokens_total Number of accepted tokens.
+# TYPE vllm:spec_decode_num_accepted_tokens_total counter
+vllm:spec_decode_num_accepted_tokens_total{engine="0",model_name="glm-5.3-big"} 0.0
+# HELP vllm:num_requests_running Number of requests in model execution batches.
+# TYPE vllm:num_requests_running gauge
+vllm:num_requests_running{engine="0",model_name="glm-5.3-big"} 0.0
+HEALTH_OK glm-5.3-big http://127.0.0.1:30001
