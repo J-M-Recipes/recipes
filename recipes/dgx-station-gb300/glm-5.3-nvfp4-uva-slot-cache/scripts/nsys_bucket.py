@@ -19,6 +19,7 @@ BUCKETS = (
     "fused_bookkeeping",
     "masked_row_copy",
     "routed_moe",
+    "dense_gemm",
     "scalar_gather",
     "mla_attention",
     "mtp_verify",
@@ -33,6 +34,10 @@ def classify_kernel(name: str) -> str:
         return "fused_bookkeeping"
     if "masked_row_copy" in lowered:
         return "masked_row_copy"
+    if re.search(r"(^|[^a-z0-9_])bmm_e2m1", lowered) or re.search(r"(^|[^a-z0-9_])bmm_bfloat16_e2m1", lowered):
+        return "routed_moe"
+    if re.search(r"(^|[^a-z0-9_])nvjet", lowered) or "cublaslt" in lowered:
+        return "dense_gemm"
     if "routed_moe" in lowered or "moe_gemm" in lowered:
         return "routed_moe"
     if any(token in lowered for token in ("index_put", "indexselect", "index_select", "gather")):

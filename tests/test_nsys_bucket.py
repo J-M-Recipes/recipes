@@ -49,6 +49,27 @@ def test_buckets_kernel_summary_and_accounts_for_wall_residual(tmp_path):
     assert result["buckets"]["other_gpu"]["total_ms"] == 6.0
 
 
+def test_e1_v2_real_grouped_gemm_kernel_names_are_bucketed(tmp_path):
+    report = tmp_path / "cuda_gpu_kern_sum.csv"
+    report.write_text(
+        'Time (%),Total Time (ns),Instances,Avg (ns),Med (ns),Min (ns),Max (ns),StdDev (ns),Name\n'
+        '1,1563525595,300,0,0,0,0,0,"bmm_E2m1_E2m1E2m1_Fp32_Ab16_Bb16_Cb16_t128x32x512u2_s5_et128x32_m256x32x64_c2x1x1_rM_TN_transOut_schedS_biasFp32M_bN_tma_tmaSf_rgTma_clmp_swiGlu_dynB_sm100f"\n'
+        '1,780136061,300,0,0,0,0,0,"bmm_Bfloat16_E2m1E2m1_Fp32_Ab16_Bb16_t128x32x512u2_s4_et128x32_m256x32x64_c2x1x1_rM_TN_transOut_schedS_biasFp32M_bN_rgTma_clmp_dynB_sm100f"\n'
+        '1,453966014,11869,0,0,0,0,0,"nvjet_sm103_tst_64x8_64x16_2x1_v_bz_splitK_TNT"\n'
+        '1,114124800,35199,0,0,0,0,0,"void cublasLt::splitKreduce_kernel<(int)32, (int)16, int, float, __nv_bfloat16, float, __nv_bfloat16, (bool)0, float, __nv_bfloat16, __nv_bfloat16, (bool)1, (bool)0, (bool)0, (bool)0>(cublasLt::cublasSplitKParams<T6>, const T4 *, const T10 *, T9 *, T5 *, const T6 *, const T6 *, const T11 *, const T4 *, T11 *, void *, long, T6 *, int *, T6 *, T6 *, const T6 *, const T6 *, const T6 *, const T6 *, const T6 *)"\n'
+    )
+    module = _load_module()
+
+    result = module.summarize_report(report, steps=140, wall_ms=8217.965)
+
+    assert result["buckets"]["routed_moe"]["total_ms"] == 2343.661656
+    assert result["buckets"]["routed_moe"]["instances"] == 600
+    assert result["buckets"]["dense_gemm"]["total_ms"] == 568.090814
+    assert result["buckets"]["dense_gemm"]["instances"] == 47068
+    assert result["buckets"]["other_gpu"]["total_ms"] == 0.0
+
+
+
 def test_capture_control_atomically_waits_for_matching_ack(tmp_path):
     control = tmp_path / "nsys-control"
 

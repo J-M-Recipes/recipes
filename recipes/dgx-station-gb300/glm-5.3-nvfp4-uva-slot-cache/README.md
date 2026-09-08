@@ -161,6 +161,12 @@ bash scripts/launch-slotcache-portable.sh sc13g-mtp-ctx512k 112 \
   --speculative-config '{"method":"mtp","num_speculative_tokens":1}'
 ```
 
+### E1 v2 live profile: bookkeeping hypothesis falsified
+
+The September 8 E1 v2 profiler retry completed collection and restored the preserved 512K/MTP incumbent. Contract verdict is **INCONCLUSIVE by design** because the live bundle intentionally lacks engine-core/graph-node evidence and hash-bound CUDA API attribution; offline analysis is published separately, not retroactively promoted to contract evidence.
+
+Corrected kernel bucketing shows the recoverable bookkeeping target was too small: `fused_bookkeeping + scalar_gather = 1.557518722 ms/step`, below the 2.0 ms/step gate. Dominant corrected GPU buckets are `routed_moe` 22.121659 ms/step, `masked_row_copy` 20.097824 ms/step, and `dense_gemm` 9.414931 ms/step. Full receipts, exclusions, and analysis: [`results/2026-09-08-e1-v2-live/`](results/2026-09-08-e1-v2-live/).
+
 ### Secondary structured-output V2 release-candidate receipts
 
 The V2 structured-output receipts in [`results/2026-09-07-secondary-structured-v2/`](results/2026-09-07-secondary-structured-v2/) are a public-safe experimental release-candidate evidence update. They do **not** change the original campaign verdict, do **not** make MTP the default, and do **not** quality-approve MTP.

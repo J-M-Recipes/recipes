@@ -227,7 +227,7 @@ def test_e1_verdict_remains_inconclusive_without_engine_core_graph_evidence(tmp_
     }
     (tmp_path / "profiled-probe.json").write_text(json.dumps(probe))
     (tmp_path / "unprofiled-probe.json").write_text(json.dumps(probe))
-    buckets = {name: {"per_step_ms": 0.0} for name in ("fused_bookkeeping", "masked_row_copy", "routed_moe", "scalar_gather", "mla_attention", "mtp_verify", "other_gpu")}
+    buckets = {name: {"per_step_ms": 0.0} for name in ("fused_bookkeeping", "masked_row_copy", "routed_moe", "dense_gemm", "scalar_gather", "mla_attention", "mtp_verify", "other_gpu")}
     buckets["fused_bookkeeping"]["per_step_ms"] = 1.5
     buckets["scalar_gather"]["per_step_ms"] = 0.6
     (tmp_path / "nsys-buckets.json").write_text(json.dumps({"buckets": buckets}))
@@ -259,7 +259,7 @@ def e1_receipts(directory: Path):
     }
     (directory / "profiled-probe.json").write_text(json.dumps(probe))
     (directory / "unprofiled-probe.json").write_text(json.dumps(probe))
-    buckets = {name: {"per_step_ms": 0.0} for name in ("fused_bookkeeping", "masked_row_copy", "routed_moe", "scalar_gather", "mla_attention", "mtp_verify", "other_gpu")}
+    buckets = {name: {"per_step_ms": 0.0} for name in ("fused_bookkeeping", "masked_row_copy", "routed_moe", "dense_gemm", "scalar_gather", "mla_attention", "mtp_verify", "other_gpu")}
     buckets["fused_bookkeeping"]["per_step_ms"] = 1.5
     buckets["scalar_gather"]["per_step_ms"] = 0.6
     (directory / "nsys-buckets.json").write_text(json.dumps({"schema":"glm53-nsys-buckets-v1", "steps": 128, "source_report": "e1_cuda_gpu_kern_sum.csv", "buckets": buckets}))
@@ -272,6 +272,18 @@ def e1_receipts(directory: Path):
     hashes["profile-wall-seconds.txt"] = __import__('hashlib').sha256((directory / "profile-wall-seconds.txt").read_bytes()).hexdigest()
     hashes["nsys-buckets.json"] = __import__('hashlib').sha256((directory / "nsys-buckets.json").read_bytes()).hexdigest()
     (directory / "api-attribution.json").write_text(json.dumps({"schema":"glm53-e1-api-attribution-v1","complete":True,"attributable_cuda_api_ms_per_step":0.1,"source_sha256": hashes}))
+
+
+def test_e1_verdict_accepts_corrected_dense_gemm_bucket_set(tmp_path):
+    e1_receipts(tmp_path)
+    out = tmp_path / "e1-verdict.json"
+    result = run("e1", tmp_path, out)
+    assert result.returncode == 0, result.stderr
+    receipt = json.loads(out.read_text())
+    assert "kernel bucket set mismatch" not in receipt["issues"]
+    assert receipt["valid"] is True
+    assert receipt["pass"] is True
+
 
 
 def test_e1_verdict_requires_api_attribution_to_bind_all_current_inputs(tmp_path):

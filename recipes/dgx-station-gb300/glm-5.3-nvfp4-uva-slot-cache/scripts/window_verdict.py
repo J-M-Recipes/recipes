@@ -181,7 +181,7 @@ def e1_verdict(directory: Path) -> dict[str, Any]:
 
     if probe_identity(profiled) != probe_identity(unprofiled):
         receipt["issues"].append("profiled/unprofiled probe provenance mismatch")
-    required_buckets = {"fused_bookkeeping", "masked_row_copy", "routed_moe", "scalar_gather", "mla_attention", "mtp_verify", "other_gpu"}
+    required_buckets = {"fused_bookkeeping", "masked_row_copy", "routed_moe", "dense_gemm", "scalar_gather", "mla_attention", "mtp_verify", "other_gpu"}
     present_buckets = set((buckets.get("buckets") or {}).keys())
     if buckets.get("source_report") not in ("e1_cuda_gpu_kern_sum.csv", str(directory / "e1_cuda_gpu_kern_sum.csv")):
         receipt["issues"].append("nsys bucket source report mismatch")
