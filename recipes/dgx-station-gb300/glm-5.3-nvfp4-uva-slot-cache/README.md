@@ -1,6 +1,6 @@
 # GLM-5.3-NVFP4-One-GB300
 
-**Status: experimental** · V1 baseline 33.8 tok/s C1 · sc13g slot-cache 43.1 tok/s C1 / 92.0 agg C4 / 95.6 agg C8 · MTP(1) audited as faster but **not** a quality-approved default · DFlash2-over-UVA stopped at its K4 acceptance gate (1.5718 < 3.0) · daily serving profile remains 512K context / 48 GiB bf16 KV with MTP(1)
+**Status: experimental** · V1 baseline 33.8 tok/s C1 · sc13g slot-cache 43.1 tok/s C1 / 92.0 agg C4 / 95.6 agg C8 · MTP(1) audited as faster but **not** a quality-approved default · DFlash2-over-UVA stopped at K4 (1.5718 < 3.0) · PR #1 demand-fill DMA stopped after losing to matched eager Triton by 3.28% at C1 · daily serving profile remains 512K context / 48 GiB bf16 KV with MTP(1)
 
 ![Memory map](diagrams/memory-map.svg)
 
@@ -193,6 +193,14 @@ Public-safe copies include source and published SHA-256 hashes in `public-eviden
 The September 7 DFlash2 experiment is complete and **not promoted**. Static target/draft geometry passed. The first launch failed during CUDA-graph capture when the slot-cache statistics hook attempted an unsupported capture-time operation; a one-axis retry with explicit `--enforce-eager` booted and served the fixed two-prose/two-code battery. Weighted accepted length was **1.5718** (2,048 completion tokens / 1,303 verification steps), below the frozen **3.0** stop gate. Median decode throughput inside the acceptance harness was 7.8775 tok/s.
 
 Per the predeclared contract, no C1/C4/C8 candidate bench, teacher-forced quality campaign, or 512K DFlash promotion was run. The exact preserved 512K/MTP daily lane was restarted and verified by authenticated model inventory (`max_model_len=524288`) plus an exact `RESTORE_OK` completion. This is a negative transfer result for K4 over the single-GB300 selective-UVA/slot-cache path, not a verdict on DFlash2's HBM-resident results. Evidence: [`results/2026-09-07-dflash2-uva/`](results/2026-09-07-dflash2-uva/). Idea credit: keys (drowzeys); draft model: incoai.
+
+### PR #1 demand-fill DMA experiment: stopped at continue gate
+
+Fabian ([`onthehub97`](https://github.com/onthehub97), [`@onthexitter69`](https://x.com/onthexitter69)) correctly identified that slot-cache miss fills used Triton SM kernels and contributed an opt-in `cudaMemcpyAsync` backend in [PR #1](https://github.com/J-M-Recipes/recipes/pull/1). We tested exact head `698e7d14e36dcdf3c40123faedb6e8f37b17799f` on the GB300. Its CUDA suite passed **5/5**, and all 75 MoE layers classified their mapped expert banks as registered host memory with H2D copies.
+
+The end-to-end result was negative. With model, image, slot geometry, MTP(1), prompts and repetitions matched, DMA eager measured **8.75 / 34.00 / 33.40 tok/s** at C1/C4/C8 versus **9.04 / 35.31 / 34.89** for Triton eager and **55.27 / 103.29 / 100.59** for Triton with CUDA graphs. DMA lost to the eager control by **3.28% at C1**, failing the frozen requirement to win by at least 5%. We stopped before profiler, teacher-forced, and 512K-promotion stages and restored the preserved 512K/MTP daily lane.
+
+This does not show that GB300 copy engines cannot help. It shows that four individual host-issued copies per miss, a per-layer device-to-host descriptor synchronization, demand fills on the current layer's critical path, and mandatory eager execution do not beat the existing implementation. Batched submissions, graph compatibility and correctness-preserving expert prefetch remain separate research directions. Full receipts and startup amendments: [`results/2026-09-07-dma-demand-fill/`](results/2026-09-07-dma-demand-fill/).
 
 ### MTP recorded but not quality-approved
 
