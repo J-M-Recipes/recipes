@@ -18,7 +18,9 @@ SLOT_CACHE_PER_LAYER="${SLOT_CACHE_PER_LAYER:-/w/configs/slots-8400.json}"
 AT_KEY="${AT_KEY:-slotcache-S$SLOTS}"
 IMAGE="${IMAGE:-vllm-glm53-uva:v0.28.0-2cf0a691}"
 CONTAINER_NAME="${CONTAINER_NAME:-glm53-big-$RUN}"
-COMPILATION_CONFIG="${COMPILATION_CONFIG:-{\"mode\":3,\"backend\":\"eager\"}}"
+if [ -z "${COMPILATION_CONFIG:-}" ]; then
+  COMPILATION_CONFIG='{"mode":3,"backend":"eager"}'
+fi
 # Context-profile overrides. Defaults preserve the measured sc13g flags (8 GiB KV / 65k).
 # The live-tested 512K daily profile (see results/2026-09-07-ctx512k-live/) is launched with:
 #   KV_CACHE_MEMORY=51539607552 MAX_MODEL_LEN=524288 MAX_NUM_SEQS=1 \
@@ -116,7 +118,8 @@ if [ "${NSYS:-0}" = "1" ]; then
   )
 fi
 
-docker run -d --name "$CONTAINER_NAME" --gpus all --shm-size 32g --network host \
+DOCKER="${DOCKER:-docker}"
+"$DOCKER" run -d --name "$CONTAINER_NAME" --gpus all --shm-size 32g --network host \
   ${docker_extra[@]+"${docker_extra[@]}"} \
   "${docker_mounts[@]}" \
   -e VLLM_LOGGING_LEVEL=INFO \

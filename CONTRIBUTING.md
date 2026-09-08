@@ -46,7 +46,7 @@ Every recipe lives at `recipes/<hardware-slug>/<recipe-slug>/` and contains:
 ## Workflow
 
 ```bash
-uv venv .venv && uv pip install -p .venv/bin/python jsonschema pyyaml pytest
+uv venv .venv && uv pip install -p .venv/bin/python jsonschema pyyaml pytest numpy
 .venv/bin/python -m pytest tests -q
 .venv/bin/python scripts/check_recipe.py --all
 .venv/bin/python scripts/render_index.py

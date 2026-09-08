@@ -130,6 +130,152 @@ def throughput_verdict(baseline_dir: Path, candidate_dir: Path) -> dict[str, Any
     }
 
 
+def e1_verdict(directory: Path) -> dict[str, Any]:
+    required = (
+        "profiled-probe.json",
+        "unprofiled-probe.json",
+        "nsys-buckets.json",
+        "container.log",
+        "e1_cuda_gpu_kern_sum.csv",
+        "e1_cuda_kern_exec_sum.csv",
+        "e1_cuda_gpu_trace.csv",
+        "e1_cuda_api_trace.csv",
+        "profile-wall-seconds.txt",
+    )
+    missing = [name for name in required if not (directory / name).is_file()]
+    receipt: dict[str, Any] = {
+        "schema": "glm53-e1-verdict-v2",
+        "gate": "e1",
+        "verdict": "INCONCLUSIVE",
+        "valid": False,
+        "pass": False,
+        "issues": [],
+    }
+    if missing:
+        receipt["issues"].append("missing required profiler receipts: " + ", ".join(missing))
+        return receipt
+    profiled = json.loads((directory / "profiled-probe.json").read_text())
+    unprofiled = json.loads((directory / "unprofiled-probe.json").read_text())
+    buckets = json.loads((directory / "nsys-buckets.json").read_text())
+    steps = int(profiled["summary"]["verification_steps"])
+    profiled_speed = float(profiled["summary"]["decode_tok_s_median"])
+    unprofiled_speed = float(unprofiled["summary"]["decode_tok_s_median"])
+    slowdown = max(0.0, 1.0 - profiled_speed / unprofiled_speed) if unprofiled_speed > 0 else 1.0
+
+    def probe_identity(payload: dict[str, Any]) -> tuple[Any, ...]:
+        rows = payload.get("rows") or []
+        row_identity = tuple(
+            (row.get("index"), row.get("kind"), row.get("completion_tokens"), row.get("finish_reason"))
+            for row in rows
+            if isinstance(row, dict)
+        )
+        summary = payload.get("summary") or {}
+        return (
+            payload.get("schema"),
+            payload.get("model"),
+            payload.get("max_tokens"),
+            summary.get("requests"),
+            summary.get("completion_tokens"),
+            row_identity,
+        )
+
+    if probe_identity(profiled) != probe_identity(unprofiled):
+        receipt["issues"].append("profiled/unprofiled probe provenance mismatch")
+    required_buckets = {"fused_bookkeeping", "masked_row_copy", "routed_moe", "scalar_gather", "mla_attention", "mtp_verify", "other_gpu"}
+    present_buckets = set((buckets.get("buckets") or {}).keys())
+    if buckets.get("source_report") not in ("e1_cuda_gpu_kern_sum.csv", str(directory / "e1_cuda_gpu_kern_sum.csv")):
+        receipt["issues"].append("nsys bucket source report mismatch")
+    log = (directory / "container.log").read_text(errors="replace")
+    lowered_log = log.lower()
+    def finite_number(value: Any, name: str) -> float | None:
+        if not isinstance(value, (int, float)) or isinstance(value, bool):
+            receipt["issues"].append(f"non-numeric {name}")
+            return None
+        number = float(value)
+        if number != number or number in (float("inf"), float("-inf")):
+            receipt["issues"].append(f"non-finite {name}")
+            return None
+        return number
+
+    if steps < 50:
+        receipt["issues"].append("fewer than 50 verification steps")
+    if slowdown > 0.20:
+        receipt["issues"].append("profiler slowdown exceeds 20%")
+    if present_buckets != required_buckets:
+        receipt["issues"].append("kernel bucket set mismatch")
+    for bucket_name in sorted(present_buckets & required_buckets):
+        finite_number((buckets.get("buckets") or {}).get(bucket_name, {}).get("per_step_ms"), f"{bucket_name}.per_step_ms")
+    engine_evidence = directory / "engine-core-graph-evidence.json"
+    if not engine_evidence.is_file():
+        receipt["issues"].append("missing engine-core/graph-node evidence")
+    else:
+        try:
+            engine = json.loads(engine_evidence.read_text())
+            if not (engine.get("schema") == "glm53-e1-engine-core-graph-evidence-v1" and engine.get("engine_core_capture") is True and engine.get("graph_node_capture") is True):
+                receipt["issues"].append("invalid engine-core/graph-node evidence")
+        except (OSError, ValueError, TypeError, json.JSONDecodeError):
+            receipt["issues"].append("invalid engine-core/graph-node evidence")
+    for expected_ack in ("profile_control ack start e1-profile-v2", "profile_control ack stop e1-profile-v2"):
+        if expected_ack not in lowered_log:
+            receipt["issues"].append("missing container profile control ACK")
+            break
+    for needle in ("profile control error", "profiler error", "cuda error", "nsys error", "report-generation error"):
+        if needle in lowered_log:
+            receipt["issues"].append("profiler/report error present: " + needle)
+            break
+    # Fail closed on API attribution: v2 accepts an explicit hash-bound attribution receipt.
+    api_attr = directory / "api-attribution.json"
+    source_sha256 = {
+        name: __import__("hashlib").sha256((directory / name).read_bytes()).hexdigest()
+        for name in (
+            "e1_cuda_gpu_kern_sum.csv",
+            "e1_cuda_kern_exec_sum.csv",
+            "e1_cuda_gpu_trace.csv",
+            "e1_cuda_api_trace.csv",
+            "profiled-probe.json",
+            "profile-wall-seconds.txt",
+            "nsys-buckets.json",
+        )
+    }
+    api_ms = None
+    if api_attr.is_file():
+        attribution = json.loads(api_attr.read_text())
+        value = attribution.get("attributable_cuda_api_ms_per_step")
+        if (
+            attribution.get("schema") == "glm53-e1-api-attribution-v1"
+            and attribution.get("complete") is True
+            and isinstance(value, (int, float))
+            and not isinstance(value, bool)
+            and value >= 0
+            and attribution.get("source_sha256") == source_sha256
+        ):
+            api_ms = float(value)
+        else:
+            receipt["issues"].append("invalid hash-bound CUDA API attribution")
+    else:
+        receipt["issues"].append("missing hash-bound CUDA API attribution")
+    gpu_ms = 0.0
+    bucket_payload = buckets.get("buckets") or {}
+    for bucket_name in ("fused_bookkeeping", "scalar_gather"):
+        bucket_value = bucket_payload.get(bucket_name, {}).get("per_step_ms")
+        if isinstance(bucket_value, (int, float)) and not isinstance(bucket_value, bool):
+            gpu_ms += float(bucket_value)
+    recoverable = None if receipt["issues"] else gpu_ms + float(api_ms)
+    receipt.update({
+        "verification_steps": steps,
+        "profile_slowdown_fraction": round(slowdown, 9),
+        "gpu_recoverable_ms_per_step": round(gpu_ms, 9),
+        "attributable_cuda_api_ms_per_step": api_ms,
+        "recoverable_ms_per_step": recoverable,
+        "source_sha256": source_sha256,
+    })
+    if recoverable is not None:
+        receipt["valid"] = True
+        receipt["pass"] = recoverable >= 2.0
+        receipt["verdict"] = "PASS" if receipt["pass"] else "STOP"
+    return receipt
+
+
 def quality_verdict(path: Path) -> dict[str, Any]:
     rows = [json.loads(line) for line in path.read_text().splitlines() if line.strip()]
     identities = [(row.get("task_id"), row.get("repeat")) for row in rows]
@@ -181,6 +327,10 @@ def main() -> int:
     throughput.add_argument("candidate_dir", type=Path)
     throughput.add_argument("output", type=Path)
 
+    e1 = sub.add_parser("e1")
+    e1.add_argument("directory", type=Path)
+    e1.add_argument("output", type=Path)
+
     quality = sub.add_parser("quality")
     quality.add_argument("evidence", type=Path)
     quality.add_argument("output", type=Path)
@@ -191,6 +341,8 @@ def main() -> int:
             verdict = acceptance_verdict(args.baseline, args.candidate)
         elif args.command == "throughput":
             verdict = throughput_verdict(args.baseline_dir, args.candidate_dir)
+        elif args.command == "e1":
+            verdict = e1_verdict(args.directory)
         else:
             verdict = quality_verdict(args.evidence)
     except (OSError, ValueError, KeyError, TypeError, json.JSONDecodeError) as exc:

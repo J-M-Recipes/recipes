@@ -49,6 +49,6 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for the full contract and [schemas/recipe
 ## Verify locally
 
 ```bash
-uv venv .venv && uv pip install -p .venv/bin/python jsonschema pyyaml pytest
+uv venv .venv && uv pip install -p .venv/bin/python jsonschema pyyaml pytest numpy
 .venv/bin/python -m pytest tests -q && .venv/bin/python scripts/check_recipe.py --all
 ```
