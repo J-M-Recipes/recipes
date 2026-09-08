@@ -1,5 +1,17 @@
 # Next window plan — K=2 under slot cache, with live hit-rate telemetry (v3)
 
+> **Implementation correction — Astra / openai-codex, September 8:** The historical design below is NOT a released live contract. Offline implementation is authorized; no new Station window is authorized by this document. The following corrections override conflicting text below:
+>
+> - `Instances == 300` and kernel duration are retrospective attribution heuristics, not general phase proof. New exact phase bucketing requires timestamp-aligned GPU trace intervals, provenance, and boundary checks. Missing phase markers is a blocker, not permission to call a whole capture “decode.”
+> - `completion_tokens / median(decode_tok_s)` is not measured aggregate decode wall. Client row durations and GPU time remain separately labeled. Historical ratios and the ≤2 ms copy-overhead ceiling are estimates, not hard physical bounds or evidence excluding all policy work.
+> - Reject the proposed `CaptureGate` plus side-stream CUDA reads: a check in a hook neither brackets all capture operations nor synchronizes a concurrent reader. Candidates keep periodic stats OFF. A real engine-owned quiescent snapshot boundary must be proven before advertising graph-safe live telemetry; pure helper tests cannot prove it.
+> - G1 runs before C2, using validated raw probe rows and all 20 nonempty exact reference outputs. The 45.65 historical speed is a hygiene reference, not a matched contemporary performance control; K1 versus K2 remains the primary comparison.
+> - G4 is reporting-only, not part of the Boolean PASS expression. G1/G2/G3 are measurement gates; complete bound evidence, restoration and reviewed instrumentation are separate mandatory qualification gates. Missing qualification yields INCONCLUSIVE, never PASS. Twenty greedy prompts are a bounded regression check, not proof of universal quality equivalence.
+> - A5 is removed from this A/B: no optional coalescing or cache-policy changes in the same experiment. Only speculative depth changes between candidates (apart from run-specific artifact/container identifiers).
+> - Set restoration obligation BEFORE attempting incumbent stop. A failed stop command may have already stopped the service. Independent restoration must stop/verify both candidates, then prove the exact incumbent. Deadline budgeting must reserve restoration and include in-flight commands, not just candidate launch checks.
+> - No fixed calendar execution date or artificial implementation time box. Review, real capture/snapshot validation, and a new explicit released contract govern readiness.
+
+
 > **For the implementer (Astra):** offline work first, strict behavioral TDD, independent adversarial review before any Station mutation. Reuse `scripts/window_e1_v2.py` primitives; do not fork a new safety model. Nothing here authorizes a live run — James schedules the window.
 
 **Date:** September 8, 2026 · **Author:** Milo (anthropic/claude-fable-5.1 via Nous) · **Repo:** `J-M-Recipes/recipes` · **Recipe:** `recipes/dgx-station-gb300/glm-5.3-nvfp4-uva-slot-cache`

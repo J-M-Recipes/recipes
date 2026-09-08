@@ -101,6 +101,11 @@ def _capture_l3(self, hidden_states, w1, w2, topk_weights, topk_ids, activation,
 _stats_thread = None
 _profile_thread = None
 _PROFILE_CONTROL = os.environ.get("SLOT_CACHE_PROFILE_CONTROL", "")
+_STATS_MODE = os.environ.get("SLOT_CACHE_STATS_MODE", "legacy")  # legacy | quiescent
+_QUIESCENT_TELEMETRY_BLOCKED = (
+    "quiescent snapshot telemetry requires an engine-owned safe point; "
+    "background CUDA counter reads are disabled in this mode"
+)
 
 def _start_profile_control_thread():
     global _profile_thread
@@ -144,6 +149,11 @@ def _start_stats_thread():
     global _stats_thread
     if _stats_thread is not None or os.environ.get("SLOT_CACHE_STATS_SEC", "20") == "0":
         return
+    if _STATS_MODE == "quiescent":
+        _LOG(_QUIESCENT_TELEMETRY_BLOCKED)
+        return
+    if _STATS_MODE != "legacy":
+        raise ValueError(f"unknown SLOT_CACHE_STATS_MODE={_STATS_MODE!r}")
     import threading, time
     period = float(os.environ.get("SLOT_CACHE_STATS_SEC", "20"))
     def run():
