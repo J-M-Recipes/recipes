@@ -1,6 +1,6 @@
 # E1 v2 live profile — 2026-09-08
 
-Final state: **profile collected; contract verdict INCONCLUSIVE by design; offline analysis falsified the bookkeeping hypothesis.**
+Final state: **profile collected; contract verdict INCONCLUSIVE by design; decode-only attribution corrected after separating prefill bypass kernels; offline analysis falsified the bookkeeping hypothesis.**
 
 ## Timeline
 
@@ -48,25 +48,23 @@ missing hash-bound CUDA API attribution
 
 The targeted bookkeeping hypothesis is falsified: `fused_bookkeeping + scalar_gather = 1.557518722 ms/step`, below the 2.0 ms/step opportunity gate.
 
-This profile is GPU-bound at the window level: wall is `8217.965 ms / 140 = 58.699750 ms/step`; aggregate GPU kernels are `8389.216241 ms / 140 = 59.922973 ms/step`, exceeding wall by `1.223223 ms/step` because kernel summaries aggregate overlapped GPU work.
+Correction, September 8, 2026: the first cut divided the whole capture by the 140 verification steps and misattributed prompt/prefill bypass kernels to decode. Separating rows by instance count gives decode wall `256 tokens / 45.648 tok/s / 140 = 40.06 ms/step` and decode aggregate GPU `(8389.2 - 2351.4) / 140 = 43.13 ms/step`. The decode path is still GPU-bound because aggregate GPU work exceeds decode wall; kernel summaries aggregate overlapped GPU work and are not a critical-path decomposition.
 
-## Corrected GPU buckets
+## Correction 2026-09-08: decode-only attribution
 
-Corrected buckets from `analysis/corrected-buckets.json`:
+The first published table was a corrected whole-capture GPU bucket table, not a decode-only attribution table. It included four prompt/prefill rows: two `Instances == 300` bypass MoE GEMM rows (`4 requests * 75 cached layers`) plus two `Instances == 4` prompt rows. See `analysis/decode-only-attribution.md` and reproduce with `analysis/decode_only_buckets.py`.
 
-| bucket | ms/step | % aggregate GPU | instances | rows |
+Second correction: the first cut also misread vLLM `backend=eager` as eager decode execution. It only disables Inductor. Decode is CUDA-graph captured: the decode rows show about `4407` kernel instances/step, while the API trace shows about `189` kernel-launch API calls/step plus `3.06` `cudaGraphLaunch_v10000` calls/step. Therefore roughly `4200` kernels/step are replayed inside CUDA graphs. The `5.52 ms/step` launch-API time is mostly overlapped and is not a first-order lever.
+
+| bucket | ms/step | % decode GPU | instances | rows |
 |---|---:|---:|---:|---:|
-| routed_moe | 22.121659 | 36.916825% | 22,050 | 4 |
-| masked_row_copy | 20.097824 | 33.539430% | 42,900 | 1 |
-| dense_gemm | 9.414931 | 15.711723% | 124,007 | 27 |
-| fused_bookkeeping | 1.053915 | 1.758784% | 10,725 | 1 |
-| scalar_gather | 0.503603 | 0.840418% | 33,991 | 7 |
-| mla_attention | 0.315024 | 0.525715% | 23,226 | 2 |
-| mtp_verify | 0.000000 | 0.000000% | 0 | 0 |
-| memcpy/memset | 0.000000 | 0.000000% | 0 | 0 |
-| other | 6.416016 | 10.707106% | 360,725 | 66 |
+| masked_row_copy | 20.10 | 46.6% | 42,900 | 1 |
+| dense_gemm | 9.41 | 21.8% | 124,007 | 27 |
+| other | 7.18 | 16.6% | 417,934 | 73 |
+| routed_moe | 5.38 | 12.5% | 21,450 | 2 |
+| fused_bookkeeping | 1.05 | 2.4% | 10,725 | 1 |
 
-The pre-fix live bucket file had `other_gpu = 37.952606 ms/step`. Corrected bucketing reattributes `31.536590 ms/step` of that bucket to `routed_moe` and `dense_gemm`, leaving `other = 6.416016 ms/step`.
+The prefill-attributed aggregate GPU total is 2351.4 ms. The full profiled wall was 8.218 s; decode reconstructed from throughput is 5.608 s; the residual `8.218 - 5.608 = 2.61 s` is prefill plus TTFT for four prompts, about 0.65 s each. That matches the bypass cost of about `5.2 + 2.6 = 7.8 ms/layer` across 75 cached layers, or about 0.59 s per prompt before smaller overheads.
 
 ## CUDA API attribution
 
@@ -84,21 +82,24 @@ Caveat: `cudaEventSynchronize` duration is host blocking/wait time. It is not pr
 
 `masked_row_copy` is a dominant bucket at `20.097824 ms/step` in the kernel summary. The full GPU trace has `42,900 = 143 * 75 * 4` calls. Treating the last 140 inferred slot-cache steps as the verification window gives `42,000 / 140 = 300` calls/step: 75 cached layers times four launches.
 
-Per-call distribution over all rows: min `0.992 us`, p50 `34.144 us`, p95 `214.496 us`, p99 `323.616 us`, max `519.168 us`. About 14.16% of calls in the last 140 inferred steps are below 10 us. The launch pattern is fixed `GrdY=(768, 384, 96, 48)` for w13 weights, w2 weights, w13 scales, and w2 scales. Early inferred cached layers L3–L7 are slowest.
+Per-call distribution over all rows: min `0.992 us`, p50 `34.144 us`, p95 `214.496 us`, p99 `323.616 us`, max `519.168 us`. The earlier about-15% near-empty note was dominated by the small scale-tensor launches; only about `2.4%` of w13 launches are below 10 us. The launch pattern is fixed `GrdY=(768, 384, 96, 48)` for w13 weights, w2 weights, w13 scales, and w2 scales. Inferred from w13 copy-duration quantization, misses are about `4.4` per layer-step, implied hit rate is about `0.73`, and byte movement alone is about `18 ms/step` of the `20.1 ms/step` bucket. That makes `masked_row_copy` about `90%` C2C bandwidth cost and only about `2 ms/step` launch/empty-program overhead.
 
 ## Ranked next experiments
 
-1. **Reduce or eliminate slot-cache row copies for cached hits/misses** — expected save `5–12 ms/step`, confidence medium. Evidence: `masked_row_copy` is `20.1 ms/step`; many calls are small or empty, but weight-row copy modes are still about 150 us and 75 us.
-2. **MoE GEMM shape/tuning pass for routed grouped GEMMs** — expected save `3–8 ms/step`, confidence medium. Evidence: `routed_moe` is the largest single bucket at `22.1 ms/step`; the top two long-shape rows are `16.7 ms/step`.
-3. **Enable/capture full decode CUDA graphs or reduce eager launch count** — expected save `1–3 ms/step`, confidence medium. Evidence: non-graph launch APIs are `5.52 ms/step` and about `189` calls/step; mode 3 eager is not full decode graph replay.
-4. **Fuse or remove remaining non-GEMM `other` kernels** — expected save `1–2 ms/step`, confidence low/medium. Evidence: remaining `other` is `6.4 ms/step` across 66 rows.
-5. **Validate cached-layer allocation / early-layer slot pressure** — expected save `1–4 ms/step`, confidence low. Evidence: inferred early layers L3–L7 are slowest and configured slots correlate with copy time.
+1. **Reduce miss bytes by improving hit rate / slot budget** — expected save still first-order, confidence medium. Evidence: inferred w13 quantization gives about `4.4` missed experts per layer-step, implied hit rate about `0.73`, and byte movement alone about `18 ms/step` of the `20.1 ms/step` `masked_row_copy` bucket.
+2. **Amortize miss bytes across more tokens per step, especially MTP K=2** — expected save first-order if quality holds, confidence medium/low. Evidence: row-copy byte cost is per layer-step, so more accepted tokens per step amortize C2C movement; this matches `research/next-experiments-plan-2026-09-07.md`.
+3. **Skip empty masks / coalesce row-copy launches** — expected save `≤2 ms/step`, confidence low/medium. Evidence: inferred byte movement is about 90% of `masked_row_copy`; only about 2.4% of w13 launches are below 10 us, so launch/empty-program overhead is not the 5–12 ms lever.
+4. **Fuse or remove remaining non-GEMM `other` kernels** — expected save `1–2 ms/step`, confidence low/medium. Evidence: decode-only `other` is `7.18 ms/step`, including scalar gather at `0.50 ms/step` and MLA attention at `0.32 ms/step`.
+5. **MoE GEMM shape/tuning pass for routed grouped GEMMs** — low priority for decode. Evidence: decode-path routed MoE GEMMs are only `5.38 ms/step`; the previous `22.1 ms/step` figure included prompt/prefill bypass rows.
+6. **CUDA graph enablement** — not a current experiment. Evidence: decode is already graph-captured; about `4407` kernel instances/step are represented by about `189` eager kernel-launch APIs/step plus `3.06` CUDA graph launches/step.
+
+Separate prefill/TTFT note: the bypass path costs about `7.8 ms/layer` across 75 cached layers, roughly `0.6 s` per short prompt here. That is worth a separate TTFT experiment, but it is not the current decode target.
 
 ## Limitations
 
 - The trace has no layer id column; per-layer conclusions are inferred from launch ordering and config layer order.
 - The full trace contains 143 inferred slot-cache steps, while the profile verdict/summary window uses 140 verification steps. The analysis explicitly uses the 140-step denominator for the published bucket table.
 - Bytes moved for `masked_row_copy` are an upper bound because the trace does not expose the `mask` population per call.
-- `live-receipts/nsys-buckets.json` was generated by the pre-fix regex and is preserved as-is. Use `analysis/corrected-buckets.json` for the corrected bucket table.
+- `live-receipts/nsys-buckets.json` was generated by the pre-fix regex and is preserved as-is. Use `analysis/decode-only-attribution.md` for the corrected decode-only bucket table; `analysis/corrected-buckets.json` is the superseded whole-capture corrected table.
 - Aggregate GPU kernel time can exceed wall time because Nsight kernel summaries sum overlapped work across streams.
 - The live receipt tree excludes large or sensitive raw artifacts listed in `RECEIPTS-EXCLUDED.md`.

@@ -1,3 +1,13 @@
+# CORRECTION — September 8, 2026
+
+This file's original headline and bucket interpretation below are superseded for decode attribution. The first cut divided the whole Nsight capture by 140 verification steps and did not separate prompt/prefill bypass kernels. The corrected decode-only attribution is in [`decode-only-attribution.md`](decode-only-attribution.md) and is reproducible with [`decode_only_buckets.py`](decode_only_buckets.py).
+
+Corrected headline: decode wall is `40.1 ms/step`, decode aggregate GPU is `43.1 ms/step`, `masked_row_copy` is `20.10 ms/step` (46.6% of decode GPU, about half of decode wall), and decode-path routed MoE GEMMs are `5.38 ms/step`. The older `58.7/59.9 ms/step` figures below are whole-profile numbers with prefill/TTFT included, and the older `routed_moe = 22.1 ms/step` conclusion included prefill bypass rows.
+
+Additional correction: the CUDA-graph interpretation below is also superseded. `backend=eager` disables Inductor; it does not mean eager decode execution. Decode rows contain about `4407` kernel instances/step, while the CUDA API trace has about `189` kernel-launch APIs/step plus `3.06` CUDA graph launches/step, so roughly `4200` kernels/step are replayed inside graphs. The `5.52 ms/step` launch-API number is mostly overlapped and is not a first-order lever. Row-copy launch coalescing / empty-mask skipping is therefore demoted to `≤2 ms/step`; inferred byte movement is about 90% of `masked_row_copy`, with hit-rate/slot-budget changes and MTP K=2 as the remaining first-order levers. The text below is preserved as historical analysis, not deleted.
+
+---
+
 # E1 v2 Nsight findings — GLM-5.3 NVFP4, GB300, K=1
 
 ## Headline numbers
