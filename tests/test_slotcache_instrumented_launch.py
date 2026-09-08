@@ -120,6 +120,7 @@ def _base_env(tmp_path: Path, *, fakebin: Path, record: Path, secret="synthetic-
         "SLOT_CACHE_QUIESCENT_SNAPSHOTS": "1",
         "SLOT_CACHE_PATCHED_RUNNER": str(runner),
         "SLOT_CACHE_PATCHED_RUNNER_SHA256": runner_sha,
+        "SLOT_CACHE_SOURCE_RUNNER": str(PINNED_SOURCE),
         "IMAGE": IMAGE_SHA,
         "SLOT_CACHE_RUN_ID": "run-a",
         "SLOT_CACHE_SOURCE_SHA": SOURCE_SHA,

@@ -198,7 +198,8 @@ class Runner(ExtractedRunner):
  def eplb_step(self): pass
  def _get_or_create_async_output_copy_stream(self): return 'stream'
  def get_routed_experts(self,total): return None
-r=Runner(); r.execute_model_state=None; r.speculative_config=SpecConfig(); r.parallel_config=SimpleNamespace(distributed_executor_backend='x',data_parallel_size=1,use_ubatching=False,num_ubatches=1); r.cache_config=SimpleNamespace(kv_sharing_fast_prefill=False,mamba_cache_mode='none'); r.input_batch=InputBatch(); r.cascade_attn_enabled=False; r.kv_cache_config=SimpleNamespace(kv_cache_groups=[]); r.attn_groups={{}}; r.model_config=SimpleNamespace(is_encoder_decoder=False); r.eplb_state=None; r.vllm_config=object(); r.broadcast_pp_output=False; r.is_pooling_model=False; r.use_aux_hidden_state_outputs=False; r.supports_mm_inputs=False; r.kv_connector_output=None; r.num_accepted_tokens=NumAccepted(); r.drafter=None; r.num_spec_tokens=0; r.effective_drafter_max_model_len=999; r.valid_sampled_token_count_event=None; r.device='cuda:0'; r.discard_request_mask=SimpleNamespace(gpu='mask'); r.requests={{}}; r.use_async_scheduling=False; r.routed_experts_initialized=False; r.check_ep_fault=False; r.slot_cache_window_controller=inst.SlotCacheWindowController(enabled=True, snapshot_dir=Path('/private/tmp'), windows=(inst.SlotCacheWindow(1,2),), run_id='realgen', k_mode='K2'); r.model=FakeModel(); r.use_v2_model_runner=False
+SNAPSHOT_DIR=Path({str(tmp_path)!r}); SNAPSHOT_DIR.mkdir(exist_ok=True)
+r=Runner(); r.execute_model_state=None; r.speculative_config=SpecConfig(); r.parallel_config=SimpleNamespace(distributed_executor_backend='x',data_parallel_size=1,use_ubatching=False,num_ubatches=1); r.cache_config=SimpleNamespace(kv_sharing_fast_prefill=False,mamba_cache_mode='none'); r.input_batch=InputBatch(); r.cascade_attn_enabled=False; r.kv_cache_config=SimpleNamespace(kv_cache_groups=[]); r.attn_groups={{}}; r.model_config=SimpleNamespace(is_encoder_decoder=False); r.eplb_state=None; r.vllm_config=object(); r.broadcast_pp_output=False; r.is_pooling_model=False; r.use_aux_hidden_state_outputs=False; r.supports_mm_inputs=False; r.kv_connector_output=None; r.num_accepted_tokens=NumAccepted(); r.drafter=None; r.num_spec_tokens=0; r.effective_drafter_max_model_len=999; r.valid_sampled_token_count_event=None; r.device='cuda:0'; r.discard_request_mask=SimpleNamespace(gpu='mask'); r.requests={{}}; r.use_async_scheduling=False; r.routed_experts_initialized=False; r.check_ep_fault=False; r.slot_cache_window_controller=inst.SlotCacheWindowController(enabled=True, snapshot_dir=SNAPSHOT_DIR, windows=(inst.SlotCacheWindow(1,2),), run_id='realgen', k_mode='K2'); r.model=FakeModel(); r.use_v2_model_runner=False
 r.execute_model(sched())
 try:
  r.sample_tokens(None)
@@ -209,7 +210,7 @@ trace_pushes=[p for p in pushes if isinstance(p,str) and p.startswith('slotcache
 print({{'local_step': r.slot_cache_window_controller.local_step, 'trace_pushes': trace_pushes}})
 assert any(':boundary:sample_exception:' in x and ':step:1:' in x for x in trace_pushes), trace_pushes
 assert any(':boundary:target_forward:' in x and ':step:2:' in x for x in trace_pushes), trace_pushes
-r_target=Runner(); r_target.__dict__.update(r.__dict__.copy()); r_target.slot_cache_window_controller=inst.SlotCacheWindowController(enabled=True, snapshot_dir=Path('/private/tmp'), windows=(), run_id='realgen-target', k_mode='K2'); r_target.use_v2_model_runner=False; r_target.execute_model_state=None
+r_target=Runner(); r_target.__dict__.update(r.__dict__.copy()); r_target.slot_cache_window_controller=inst.SlotCacheWindowController(enabled=True, snapshot_dir=SNAPSHOT_DIR, windows=(), run_id='realgen-target', k_mode='K2'); r_target.use_v2_model_runner=False; r_target.execute_model_state=None
 original_target=ValueError('synthetic target identity')
 def fail_target(**kw): raise original_target
 r_target._model_forward=fail_target
@@ -219,7 +220,7 @@ except ValueError as exc:
  assert exc is original_target
 else:
  raise AssertionError('target exception must propagate')
-r_draft=Runner(); r_draft.__dict__.update(r.__dict__.copy()); r_draft.slot_cache_window_controller=inst.SlotCacheWindowController(enabled=True, snapshot_dir=Path('/private/tmp'), windows=(), run_id='realgen-draft', k_mode='K2'); r_draft.use_v2_model_runner=False; r_draft.execute_model_state=None
+r_draft=Runner(); r_draft.__dict__.update(r.__dict__.copy()); r_draft.slot_cache_window_controller=inst.SlotCacheWindowController(enabled=True, snapshot_dir=SNAPSHOT_DIR, windows=(), run_id='realgen-draft', k_mode='K2'); r_draft.use_v2_model_runner=False; r_draft.execute_model_state=None
 class SpecConfigDraft(SpecConfig):
  def use_ngram_gpu(self): return True
 r_draft.speculative_config=SpecConfigDraft(); r_draft.drafter=NgramProposerGPU(); r_draft._input_fits_in_drafter=lambda common: True; r_draft._sample=lambda logits, spec_meta: SimpleNamespace(sampled_token_ids='sampled')
