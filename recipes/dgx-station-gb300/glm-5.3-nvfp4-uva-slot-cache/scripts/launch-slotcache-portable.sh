@@ -86,7 +86,38 @@ if [ -n "$DRAFT_MODEL_DIR" ]; then
   docker_mounts+=( -v "$DRAFT_MODEL_DIR:/draft:ro" )
 fi
 
+docker_extra=()
+profile_env=()
+container_cmd=("${vllm_args[@]}")
+if [ "${NSYS:-0}" = "1" ]; then
+  NSYS_INSTALL_DIR="${NSYS_INSTALL_DIR:-/opt/nvidia/nsight-systems/2025.6.3}"
+  NSYS_TARGET_DIR="$NSYS_INSTALL_DIR/target-linux-sbsa-armv8"
+  NSYS_OUTPUT="${NSYS_OUTPUT:-/wcap/e1-profile}"
+  NSYS_CONTROL="${NSYS_CONTROL:-/wcap/nsys-control}"
+  if [ ! -x "$NSYS_TARGET_DIR/nsys" ]; then
+    echo "missing executable nsys target: $NSYS_TARGET_DIR/nsys" >&2
+    exit 2
+  fi
+  case "$NSYS_OUTPUT:$NSYS_CONTROL" in
+    /wcap/*:/wcap/*) ;;
+    *) echo "NSYS_OUTPUT and NSYS_CONTROL must be under /wcap" >&2; exit 2 ;;
+  esac
+  # Nsight's target binary refuses direct invocation. Preserve the install tree at
+  # its absolute path and invoke it through a symlink inside the writable capture mount.
+  ln -sfn "$NSYS_TARGET_DIR/nsys" "$CAPTURE_DIR/nsys-cli"
+  docker_mounts+=( -v "$NSYS_INSTALL_DIR:$NSYS_INSTALL_DIR:ro" )
+  docker_extra+=( --cap-add SYS_ADMIN --security-opt seccomp=unconfined --entrypoint /wcap/nsys-cli )
+  profile_env+=( -e "SLOT_CACHE_PROFILE_CONTROL=$NSYS_CONTROL" )
+  container_cmd=(
+    profile --trace=cuda,nvtx --sample=none --cpuctxsw=none
+    --cuda-graph-trace=node --capture-range=cudaProfilerApi
+    --capture-range-end=stop --force-overwrite=true -o "$NSYS_OUTPUT"
+    /usr/local/bin/vllm serve "${vllm_args[@]}"
+  )
+fi
+
 docker run -d --name "$CONTAINER_NAME" --gpus all --shm-size 32g --network host \
+  ${docker_extra[@]+"${docker_extra[@]}"} \
   "${docker_mounts[@]}" \
   -e VLLM_LOGGING_LEVEL=INFO \
   -e "VLLM_AUTOTUNE_CACHE_KEY=$AT_KEY" \
@@ -101,8 +132,9 @@ docker run -d --name "$CONTAINER_NAME" --gpus all --shm-size 32g --network host 
   -e SLOT_CACHE_LOGIT_RING="${LOGIT_RING:-0}" \
   -e SLOT_CACHE_STATS_SEC="${STATS_SEC:-20}" \
   -e SLOT_CACHE_BYPASS_TOKENS="${BYPASS:-16}" \
+  ${profile_env[@]+"${profile_env[@]}"} \
   -e "VLLM_API_KEY=$API_KEY" \
   "$IMAGE" \
-  "${vllm_args[@]}"
+  "${container_cmd[@]}"
 
 echo "launched $CONTAINER_NAME SLOT_CACHE=$SLOTS offload=420 per_layer=$SLOT_CACHE_PER_LAYER"

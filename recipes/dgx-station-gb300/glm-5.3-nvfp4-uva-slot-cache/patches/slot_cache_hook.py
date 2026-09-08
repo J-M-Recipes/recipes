@@ -3,6 +3,8 @@
 # Fixed shapes, no host sync -> CUDA-graph capturable. Bypass to plain UVA when M*K > S (prefill).
 import os, sys, sys, torch
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from slot_cache_stats import summarize_window
+from slot_cache_profile_control import handle_command as handle_profile_command
 
 S_SLOTS = int(os.environ.get("SLOT_CACHE", "0"))
 BYPASS_ABOVE = int(os.environ.get("SLOT_CACHE_BYPASS_TOKENS", "16"))   # M > this -> bypass (prefill)
@@ -97,6 +99,47 @@ def _capture_l3(self, hidden_states, w1, w2, topk_weights, topk_ids, activation,
     _cap["n"] += 1
     if _cap["n"] == _CAP_N: _LOG(f"CAPTURE done: {_CAP_N} decode steps for layer 3")
 _stats_thread = None
+_profile_thread = None
+_PROFILE_CONTROL = os.environ.get("SLOT_CACHE_PROFILE_CONTROL", "")
+
+def _start_profile_control_thread():
+    global _profile_thread
+    if not _PROFILE_CONTROL or _profile_thread is not None:
+        return
+    import threading, time
+    def run():
+        state = "idle"; last = ""
+        while True:
+            time.sleep(0.05)
+            try:
+                try:
+                    with open(_PROFILE_CONTROL) as f: command = f.read().strip()
+                except FileNotFoundError:
+                    continue
+                if not command or command.startswith("ACK ") or command == last:
+                    continue
+                last = command
+                state, ack = handle_profile_command(
+                    command,
+                    state=state,
+                    start=lambda: torch.cuda.cudart().cudaProfilerStart(),
+                    stop=lambda: torch.cuda.cudart().cudaProfilerStop(),
+                )
+                tmp = _PROFILE_CONTROL + ".tmp"
+                with open(tmp, "w") as f: f.write(ack + "\n")
+                os.replace(tmp, _PROFILE_CONTROL)
+                _LOG(f"PROFILE_CONTROL {ack}")
+            except Exception as e:
+                _LOG(f"profile control error {e!r}")
+                try:
+                    tmp = _PROFILE_CONTROL + ".tmp"
+                    with open(tmp, "w") as f: f.write(f"ERROR {type(e).__name__}: {e}\n")
+                    os.replace(tmp, _PROFILE_CONTROL)
+                except Exception:
+                    pass
+    _profile_thread = threading.Thread(target=run, daemon=True, name="slotcache-profile-control")
+    _profile_thread.start()
+
 def _start_stats_thread():
     global _stats_thread
     if _stats_thread is not None or os.environ.get("SLOT_CACHE_STATS_SEC", "20") == "0":
@@ -110,19 +153,24 @@ def _start_stats_thread():
             try:
                 _ring_dump()
                 if len(_registry) < 70: continue
-                tot_m = tot_s = 0; per = []
+                tot_m = tot_r = tot_s = 0; per = []
                 for lc in list(_registry.values()):
-                    m = int(lc.misses.item()); st = int(lc.step.item())
-                    pm, ps = last.get(lc.name, (0, 0)); last[lc.name] = (m, st)
-                    dm, ds = m - pm, st - ps
-                    if ds > 0: per.append((lc.name, dm / (ds * 8)))
-                    tot_m += dm; tot_s += ds
-                if tot_s > 0:
+                    m = int(lc.misses.item()); r = int(lc.routes.item()); st = int(lc.step.item())
+                    pm, pr, ps = last.get(lc.name, (0, 0, 0)); last[lc.name] = (m, r, st)
+                    dm, dr, ds = m - pm, r - pr, st - ps
+                    summary = summarize_window(delta_misses=dm, delta_routes=dr, delta_steps=ds)
+                    if summary is None: continue
+                    per.append((lc.name, summary["hit_rate"]))
+                    tot_m += dm; tot_r += dr; tot_s += ds
+                total = summarize_window(delta_misses=tot_m, delta_routes=tot_r, delta_steps=tot_s)
+                if total is not None and per:
                     per.sort(key=lambda x: x[1])
-                    hit = 1 - tot_m / (tot_s * 8)
-                    _LOG(f"STATS window {period:.0f}s: steps/layer={tot_s/len(_registry):.0f} misses/step/layer={tot_m/max(1,tot_s):.2f} HIT={hit:.3f} "
-                         f"best={per[0][0].split('.')[2]}:{1-per[0][1]:.2f} worst={per[-1][0].split('.')[2]}:{1-per[-1][1]:.2f} "
-                         f"median_layer_hit={1-per[len(per)//2][1]:.2f}")
+                    _LOG(f"STATS window {period:.0f}s: steps/layer={tot_s/len(per):.0f} "
+                         f"misses/step/layer={total['misses_per_step']:.2f} "
+                         f"routes/step/layer={total['routes_per_step']:.2f} HIT={total['hit_rate']:.3f} "
+                         f"best={per[-1][0].split('.')[2]}:{per[-1][1]:.2f} "
+                         f"worst={per[0][0].split('.')[2]}:{per[0][1]:.2f} "
+                         f"median_layer_hit={per[len(per)//2][1]:.2f}")
             except Exception as e:
                 _LOG(f"stats error {e!r}")
     _stats_thread = threading.Thread(target=run, daemon=True, name="slotcache-stats"); _stats_thread.start()
@@ -134,7 +182,8 @@ def _install_triton():
 
     @triton.jit
     def fused_bookkeeping(ids_ptr, e2s_ptr, s2e_ptr, last_ptr, step_ptr,
-                          src_out_ptr, dst_out_ptr, mask_out_ptr, slot_out_ptr, miss_count_ptr,
+                          src_out_ptr, dst_out_ptr, mask_out_ptr, slot_out_ptr,
+                          miss_count_ptr, route_count_ptr,
                           N: tl.constexpr, S: tl.constexpr, E: tl.constexpr, SB: tl.constexpr):
         step = tl.load(step_ptr)
         soff = tl.arange(0, SB); smask = soff < S
@@ -164,6 +213,7 @@ def _install_triton():
             tl.store(last_ptr + final, step, mask=final < S)
         tl.store(step_ptr, step + 1)
         tl.atomic_add(miss_count_ptr, nmiss)
+        tl.atomic_add(route_count_ptr, N)
 
     @triton.jit
     def masked_row_copy(src_ptr, dst_ptr, src_idx_ptr, dst_idx_ptr, mask_ptr, row_elems, BLOCK: tl.constexpr):
@@ -212,6 +262,7 @@ class LayerCache:
         self.last = torch.full((S,), -1, dtype=torch.int64, device=dev)
         self.step = torch.zeros((), dtype=torch.int64, device=dev)
         self.misses = torch.zeros((), dtype=torch.int64, device=dev)
+        self.routes = torch.zeros((), dtype=torch.int64, device=dev)
         self.SB = 1
         while self.SB < S: self.SB *= 2
         self.rows = {k: (self._rows64(self.host[k]), self._rows64(self.slots[k])) for k in ("w13", "w2")}
@@ -248,7 +299,7 @@ def _cache_forward(lc, topk_ids, N):
     """topk_ids: int32 [N] flat global expert ids. Returns int32 [N] slot ids; performs misses."""
     triton, fused, mcopy = _ensure_triton()
     b = lc.bufs_for(N)
-    fused[(1,)](topk_ids, lc.e2s, lc.s2e, lc.last, lc.step, b["src"], b["dst"], b["mask"], b["slot"], lc.misses,
+    fused[(1,)](topk_ids, lc.e2s, lc.s2e, lc.last, lc.step, b["src"], b["dst"], b["mask"], b["slot"], lc.misses, lc.routes,
                 N=N, S=lc.S, E=lc.E, SB=lc.SB)
     BLOCK = 2048
     for k in ("w13", "w2"):
@@ -334,7 +385,8 @@ def install():
                         _registry[w1.data_ptr()] = lc
                         del self._slot_cache_deferred[key]
                         _LOG(f"cache built for {name}: S={lc.S} E={lc.E} slot bytes={sum(t.numel()*t.element_size() for t in lc.slots.values())/1e9:.2f} GB")
-                        if len(_registry) >= 75: _start_stats_thread()
+                        if len(_registry) >= 75:
+                            _start_stats_thread(); _start_profile_control_thread()
                         break
             M = hidden_states.shape[0]
             if lc is None or M > BYPASS_ABOVE or M * topk_ids.shape[1] > lc.S:

@@ -68,8 +68,14 @@ runtime:
     sha256: 38a36cfec0e0cf06e00e406b1d3f015b51d9147289269d4a180d161ba1c3eec7
     purpose: FFI router path used by sc11/sc12/sc13 slot-cache variants.
   - path: patches/slot_cache_hook.py
-    sha256: 889613f0dc2e371a715a8c43e6ac0858d6ad7aefda7308ac67e8a2343cd715ad
-    purpose: Latest per-layer slot-cache hook; builds per-layer HBM expert slots and routes decode through cached slots.
+    sha256: 2e7fb1e5dd621eb465add5a5766fe01dd0a7bc2872ecdb70027b251a43cfdc46
+    purpose: Latest per-layer slot-cache hook; routes through cached experts, counts observed routes for hit telemetry, and supports opt-in CUDA profiler control.
+  - path: patches/slot_cache_stats.py
+    sha256: e13bc7898095baa437e1cb1fc6f0482d17cafd97107ef71fc4a66f2893dcb4d3
+    purpose: Pure observed-route telemetry math imported by the slot-cache hook.
+  - path: patches/slot_cache_profile_control.py
+    sha256: b36171596eb4168f4d08008bdf2385ad7b4b8bc4494e96bae5997f9043bc48c2
+    purpose: Pure START/STOP state machine used by the opt-in CUDA profiler controller.
   - path: configs/slots-8400.json
     sha256: 4ee071670e13f199658776ddb7b508c9a068657ea631a0cb4287db0a2afeeaed
     purpose: Non-code per-layer HBM slot allocation map for the packaged slot-cache launcher.

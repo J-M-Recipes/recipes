@@ -10,7 +10,9 @@ from pathlib import Path
 REPO_ROOT = Path(__file__).resolve().parents[1]
 RECIPE = REPO_ROOT / "recipes/dgx-station-gb300/glm-5.3-nvfp4-uva-slot-cache"
 SCRIPTS = RECIPE / "scripts"
+PATCHES = RECIPE / "patches"
 INSPECT = RECIPE / "results/2026-09-06-sc13g-slotcache-eager/container-inspect-sanitized.json"
+WINDOW_BASELINE = RECIPE / "research/window-live-baseline-2026-09-07.json"
 
 
 def _run(cmd, *, env=None, cwd=None):
@@ -205,6 +207,54 @@ def test_portable_launcher_preserves_sc13g_flags_and_uses_packaged_hook_paths(tm
     assert f"{RECIPE / 'patches/sitecustomize.py'}:/usr/lib/python3.12/sitecustomize.py:ro" in mounts
 
 
+def test_512k_mtp_k1_matches_live_args_and_k2_changes_only_speculative_depth(tmp_path):
+    fakebin = tmp_path / "bin"
+    fakebin.mkdir()
+    home = tmp_path / "home"
+    home.mkdir()
+    (home / ".glm_api_key").write_text("synthetic-secret-key\n")
+    baseline = json.loads(WINDOW_BASELINE.read_text())["args"][1:]
+
+    def launch(k: int) -> list[str]:
+        record = tmp_path / f"docker-k{k}.json"
+        _fake_docker_recorder(fakebin, record)
+        result = _run(
+            [
+                "bash", str(SCRIPTS / "launch-slotcache-portable.sh"), f"mtp{k}", "112",
+                "--speculative-config", json.dumps({"method": "mtp", "num_speculative_tokens": k}, separators=(",", ":")),
+            ],
+            env={
+                "PATH": f"{fakebin}:{os.environ['PATH']}",
+                "HOME": str(home),
+                "MODEL_DIR": "/models/glm",
+                "CACHE_DIR": str(tmp_path / "cache"),
+                "CAPTURE_DIR": str(tmp_path / f"capture-k{k}"),
+                "KV_CACHE_MEMORY": "51539607552",
+                "MAX_MODEL_LEN": "524288",
+                "MAX_NUM_SEQS": "1",
+                "SLOT_CACHE_PER_LAYER": "/w/configs/slots-5792-ctx512k.json",
+                "AT_KEY": "slotcache-S112",
+            },
+            cwd=tmp_path,
+        )
+        assert result.returncode == 0, result.stderr
+        argv = json.loads(record.read_text())
+        image_index = argv.index("vllm-glm53-uva:v0.28.0-2cf0a691")
+        return argv[image_index + 1 :]
+
+    k1 = launch(1)
+    k2 = launch(2)
+    expected_k1 = [
+        '{"method":"mtp","num_speculative_tokens":1}' if arg == '{"method":"mtp","num_speculative_tokens":1}' else arg
+        for arg in baseline
+    ]
+    assert k1 == expected_k1
+    differing = [(left, right) for left, right in zip(k1, k2) if left != right]
+    assert differing == [
+        ('{"method":"mtp","num_speculative_tokens":1}', '{"method":"mtp","num_speculative_tokens":2}')
+    ]
+
+
 def _serve(handler_cls):
     server = ThreadingHTTPServer(("127.0.0.1", 0), handler_cls)
     thread = threading.Thread(target=server.serve_forever, daemon=True)
@@ -318,6 +368,183 @@ def test_health_check_rejects_missing_expected_model(tmp_path):
 
     assert result.returncode != 0
     assert "expected model 'glm-5.3-big'" in result.stderr
+
+
+def test_slot_cache_stats_uses_observed_routes_not_a_fixed_token_denominator():
+    sys.path.insert(0, str(PATCHES))
+    try:
+        from slot_cache_stats import summarize_window
+    finally:
+        sys.path.pop(0)
+
+    mtp_one = summarize_window(delta_misses=400, delta_routes=800, delta_steps=100)
+    mtp_two = summarize_window(delta_misses=400, delta_routes=1600, delta_steps=100)
+
+    assert mtp_one == {
+        "hit_rate": 0.5,
+        "misses_per_step": 4.0,
+        "routes_per_step": 8.0,
+    }
+    assert mtp_two == {
+        "hit_rate": 0.75,
+        "misses_per_step": 4.0,
+        "routes_per_step": 16.0,
+    }
+
+
+def test_slot_cache_stats_rejects_empty_or_reset_windows():
+    sys.path.insert(0, str(PATCHES))
+    try:
+        from slot_cache_stats import summarize_window
+    finally:
+        sys.path.pop(0)
+
+    assert summarize_window(delta_misses=0, delta_routes=0, delta_steps=0) is None
+    assert summarize_window(delta_misses=-1, delta_routes=8, delta_steps=1) is None
+    assert summarize_window(delta_misses=1, delta_routes=-8, delta_steps=1) is None
+    assert summarize_window(delta_misses=1, delta_routes=8, delta_steps=-1) is None
+
+
+def test_slot_cache_hook_counts_routed_expert_uses_for_stats():
+    source = (PATCHES / "slot_cache_hook.py").read_text()
+
+    assert "route_count_ptr" in source
+    assert "tl.atomic_add(route_count_ptr, N)" in source
+    assert "self.routes" in source
+    assert "summarize_window" in source
+    assert "tot_m / (tot_s * 8)" not in source
+
+
+def test_profile_control_transitions_are_idempotent():
+    sys.path.insert(0, str(PATCHES))
+    try:
+        from slot_cache_profile_control import handle_command
+    finally:
+        sys.path.pop(0)
+
+    calls = []
+    start = lambda: calls.append("start")
+    stop = lambda: calls.append("stop")
+
+    state, ack = handle_command("START e1-run", state="idle", start=start, stop=stop)
+    assert (state, ack, calls) == ("running:e1-run", "ACK START e1-run", ["start"])
+    state, ack = handle_command("START e1-run", state=state, start=start, stop=stop)
+    assert (state, ack, calls) == ("running:e1-run", "ACK START e1-run", ["start"])
+    state, ack = handle_command("STOP e1-run", state=state, start=start, stop=stop)
+    assert (state, ack, calls) == ("stopped:e1-run", "ACK STOP e1-run", ["start", "stop"])
+
+
+def test_profile_control_rejects_nonzero_cuda_profiler_status():
+    sys.path.insert(0, str(PATCHES))
+    try:
+        from slot_cache_profile_control import handle_command
+    finally:
+        sys.path.pop(0)
+
+    try:
+        handle_command(
+            "START e1-run",
+            state="idle",
+            start=lambda: 7,
+            stop=lambda: 0,
+        )
+    except RuntimeError as exc:
+        assert "CUDA profiler START failed with status 7" in str(exc)
+    else:
+        raise AssertionError("nonzero CUDA profiler status was accepted")
+
+
+def test_profile_control_rejects_nonzero_cuda_profiler_stop_status():
+    sys.path.insert(0, str(PATCHES))
+    try:
+        from slot_cache_profile_control import handle_command
+    finally:
+        sys.path.pop(0)
+
+    try:
+        handle_command(
+            "STOP e1-run",
+            state="running:e1-run",
+            start=lambda: 0,
+            stop=lambda: 11,
+        )
+    except RuntimeError as exc:
+        assert "CUDA profiler STOP failed with status 11" in str(exc)
+    else:
+        raise AssertionError("nonzero CUDA profiler stop status was accepted")
+
+
+def test_profile_control_rejects_wrong_run_or_invalid_command():
+    sys.path.insert(0, str(PATCHES))
+    try:
+        from slot_cache_profile_control import handle_command
+    finally:
+        sys.path.pop(0)
+
+    noop = lambda: None
+    try:
+        handle_command("STOP other", state="running:e1-run", start=noop, stop=noop)
+    except ValueError as exc:
+        assert "does not match active run" in str(exc)
+    else:
+        raise AssertionError("wrong run id was accepted")
+
+    try:
+        handle_command("DROP TABLE", state="idle", start=noop, stop=noop)
+    except ValueError as exc:
+        assert "expected START or STOP" in str(exc)
+    else:
+        raise AssertionError("invalid command was accepted")
+
+
+def test_portable_launcher_nsys_mode_profiles_vllm_inside_container(tmp_path):
+    record = tmp_path / "docker-argv.json"
+    fakebin = tmp_path / "bin"
+    fakebin.mkdir()
+    _fake_docker_recorder(fakebin, record)
+    home = tmp_path / "home"
+    home.mkdir()
+    (home / ".glm_api_key").write_text("synthetic-secret-key\n")
+    nsys_install = tmp_path / "nsys-install"
+    nsys_target = nsys_install / "target-linux-sbsa-armv8"
+    nsys_target.mkdir(parents=True)
+    _write_executable(nsys_target / "nsys", "#!/usr/bin/env bash\nexit 0\n")
+    capture = tmp_path / "capture"
+
+    result = _run(
+        ["bash", str(SCRIPTS / "launch-slotcache-portable.sh"), "e1-nsys", "112"],
+        env={
+            "PATH": f"{fakebin}:{os.environ['PATH']}",
+            "HOME": str(home),
+            "MODEL_DIR": "/models/glm",
+            "CACHE_DIR": str(tmp_path / "cache"),
+            "CAPTURE_DIR": str(capture),
+            "NSYS": "1",
+            "NSYS_INSTALL_DIR": str(nsys_install),
+            "NSYS_OUTPUT": "/wcap/e1-profile",
+            "NSYS_CONTROL": "/wcap/nsys-control",
+        },
+        cwd=tmp_path,
+    )
+
+    assert result.returncode == 0, result.stderr
+    argv = json.loads(record.read_text())
+    assert ["--cap-add", "SYS_ADMIN"] == argv[argv.index("--cap-add") : argv.index("--cap-add") + 2]
+    assert ["--security-opt", "seccomp=unconfined"] == argv[argv.index("--security-opt") : argv.index("--security-opt") + 2]
+    assert f"{nsys_install}:{nsys_install}:ro" in argv
+    assert ["--entrypoint", "/wcap/nsys-cli"] == argv[argv.index("--entrypoint") : argv.index("--entrypoint") + 2]
+    assert (capture / "nsys-cli").is_symlink()
+    assert os.readlink(capture / "nsys-cli") == str(nsys_target / "nsys")
+    env_values = [argv[i + 1] for i, token in enumerate(argv[:-1]) if token == "-e"]
+    assert "SLOT_CACHE_PROFILE_CONTROL=/wcap/nsys-control" in env_values
+    image_index = argv.index("vllm-glm53-uva:v0.28.0-2cf0a691")
+    assert argv[image_index + 1 : image_index + 12] == [
+        "profile", "--trace=cuda,nvtx", "--sample=none", "--cpuctxsw=none",
+        "--cuda-graph-trace=node", "--capture-range=cudaProfilerApi",
+        "--capture-range-end=stop", "--force-overwrite=true", "-o", "/wcap/e1-profile",
+        "/usr/local/bin/vllm",
+    ]
+    assert argv[image_index + 12 : image_index + 14] == ["serve", "/model"]
 
 
 def test_rollback_dry_run_is_cwd_independent_and_has_no_docker_side_effects(tmp_path):
