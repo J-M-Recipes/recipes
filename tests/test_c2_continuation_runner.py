@@ -14,6 +14,9 @@ RUNNER = RECIPE / "scripts/window_c2_continuation.py"
 LAUNCHER = RECIPE / "scripts/launch-slotcache-portable.sh"
 PATCH_GENERATOR = RECIPE / "scripts/apply_slot_cache_instrumentation_patch.py"
 PINNED_SOURCE = REPO_ROOT / "tests/fixtures/k2-v3-runtime-source/vllm/v1/worker/gpu_model_runner.py"
+C2_EVIDENCE_FIXTURES = REPO_ROOT / "tests/fixtures/c2-prior-evidence"
+C1_FIXTURE_ROOT = C2_EVIDENCE_FIXTURES / "c1"
+K1_FIXTURE_ROOT = C2_EVIDENCE_FIXTURES / "k1"
 INCUMBENT = "glm53-big-sc13g-mtp-ctx512k-keep-pre-dflash2-20260907"
 C2 = "glm53-big-c2-continuation-k2"
 IMAGE_ID = "sha256:61fc8a896b0a4fbbbdc063bc4b0dbc25ce98e02b5050c24aeb7830ac02039b14"
@@ -232,14 +235,14 @@ sys.exit(2)
 """)
 
 
-def base_cmd(tmp_path: Path, out: Path, c1_root=Path('/tmp/c1-live-76fff65'), k1_root=Path('/tmp/k1-live-aa3c645')):
+def base_cmd(tmp_path: Path, out: Path, c1_root=C1_FIXTURE_ROOT, k1_root=K1_FIXTURE_ROOT):
     root=tmp_path/'root'; root.mkdir(exist_ok=True); (root/'CONTROL').write_text('RUN\n'); (root/'RELEASE').write_text('c2-continuation-20260909\n')
     return [sys.executable, str(RUNNER), '--root', str(root), '--recipe', str(RECIPE), '--out', str(out), '--run-id', 'c2-continuation-20260909', '--c1-root', str(c1_root), '--k1-root', str(k1_root), '--docker', str(fake_docker(tmp_path)), '--bash', str(fake_bash(tmp_path)), '--python', str(fake_python(tmp_path)), '--health', str(fake_health(tmp_path)), '--api-probe', str(fake_api_probe(tmp_path)), '--nsys', str(fake_nsys(tmp_path)), '--host-operation-lock', str(tmp_path/'host.lock'), '--systemd-run', str(fake_systemd_run(tmp_path)), '--systemctl', str(fake_systemctl(tmp_path)), '--timer-python', 'python', '--command-timeout-sec', '5', '--window-deadline-sec', '20']
 
 
 def run_runner(tmp_path: Path, env_extra=None, extra_args=()):
     log=tmp_path/'events.jsonl'; state=tmp_path/'docker-state.json'; state.write_text(json.dumps({INCUMBENT: True})+'\n')
-    env=dict(os.environ, FAKE_LOG=str(log), FAKE_DOCKER_STATE=str(state), FAKE_SYSTEMD_REGISTRY=str(tmp_path/'systemd-registry.json'), BOUND_INCUMBENT_GREEDY='/tmp/c1-live-76fff65/quality/incumbent-greedy.json', **(env_extra or {}))
+    env=dict(os.environ, FAKE_LOG=str(log), FAKE_DOCKER_STATE=str(state), FAKE_SYSTEMD_REGISTRY=str(tmp_path/'systemd-registry.json'), BOUND_INCUMBENT_GREEDY=str(C1_FIXTURE_ROOT/'quality/incumbent-greedy.json'), **(env_extra or {}))
     result=subprocess.run(base_cmd(tmp_path, tmp_path/'receipts')+list(extra_args), env=env, text=True, capture_output=True, check=False)
     return result, log, state
 
@@ -325,7 +328,7 @@ def test_c2_continuation_binds_c1_k1_artifacts_launches_only_k2_and_restores(tmp
 def test_c2_continuation_refuses_nonempty_output_before_any_action(tmp_path):
     out = tmp_path/'receipts'; out.mkdir(); (out/'old').write_text('x')
     log=tmp_path/'events.jsonl'; state=tmp_path/'docker-state.json'; state.write_text(json.dumps({INCUMBENT: True})+'\n')
-    env=dict(os.environ, FAKE_LOG=str(log), FAKE_DOCKER_STATE=str(state), FAKE_SYSTEMD_REGISTRY=str(tmp_path/'systemd-registry.json'), BOUND_INCUMBENT_GREEDY='/tmp/c1-live-76fff65/quality/incumbent-greedy.json')
+    env=dict(os.environ, FAKE_LOG=str(log), FAKE_DOCKER_STATE=str(state), FAKE_SYSTEMD_REGISTRY=str(tmp_path/'systemd-registry.json'), BOUND_INCUMBENT_GREEDY=str(C1_FIXTURE_ROOT/'quality/incumbent-greedy.json'))
     result=subprocess.run(base_cmd(tmp_path, out), env=env, text=True, capture_output=True, check=False)
     assert result.returncode != 0
     assert 'output directory is not empty' in result.stderr
@@ -333,7 +336,7 @@ def test_c2_continuation_refuses_nonempty_output_before_any_action(tmp_path):
 
 
 def test_c2_continuation_rejects_bad_c1_hash_before_timer_or_stop(tmp_path):
-    bad_c1 = tmp_path/'bad-c1'; subprocess.run(['cp','-R','/tmp/c1-live-76fff65', str(bad_c1)], check=True)
+    bad_c1 = tmp_path/'bad-c1'; subprocess.run(['cp','-R',str(C1_FIXTURE_ROOT), str(bad_c1)], check=True)
     (bad_c1/'c1-gate.json').write_text('{"pass": true}\n')
     out=tmp_path/'receipts'; log=tmp_path/'events.jsonl'; state=tmp_path/'docker-state.json'; state.write_text(json.dumps({INCUMBENT: True})+'\n')
     env=dict(os.environ, FAKE_LOG=str(log), FAKE_DOCKER_STATE=str(state), FAKE_SYSTEMD_REGISTRY=str(tmp_path/'systemd-registry.json'), BOUND_INCUMBENT_GREEDY=str(bad_c1/'quality/incumbent-greedy.json'))
