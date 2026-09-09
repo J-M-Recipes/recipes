@@ -159,7 +159,13 @@ def read_systemd_timer(args: argparse.Namespace, out: Path, timer_unit: str, ser
     service = systemctl_show(args, out, service_unit, ("LoadState", "ActiveState", "ExecStart"))
     if timer.get("ActiveState") != "active" or (timer.get("Triggers") and timer.get("Triggers") != service_unit):
         raise C2Failed("RESTORE_TIMER_INVALID", "systemd restore timer readback mismatch")
-    observed = _extract_execstart(service.get("ExecStart", ""))
+    exec_start = service.get("ExecStart", "")
+    # Require one structured executable field; never infer it from argv[0].
+    path_match = re.fullmatch(r"\{ path=(/[^\s;{}\\]+) ; argv\[\]=[^{}]* ; \}", exec_start.strip())
+    path_fields = re.findall(r"(?:\{\s*|;\s*)path\b", exec_start)
+    if not path_match or len(path_fields) != 1 or not expected_cmd or path_match[1] != expected_cmd[0]:
+        raise C2Failed("RESTORE_TIMER_INVALID", "systemd restore service ExecStart mismatch")
+    observed = _extract_execstart(exec_start)
     if observed != expected_cmd:
         raise C2Failed("RESTORE_TIMER_INVALID", "systemd restore service ExecStart mismatch")
     if "--restore-only" not in observed or any(arg.startswith("/Users/") for arg in observed):
@@ -460,6 +466,15 @@ def gate(args: argparse.Namespace, out: Path, runtime_recipe: Path) -> None:
 
 
 def arm_restore_timer(args: argparse.Namespace, out: Path, runtime_recipe: Path) -> dict[str, Any]:
+    try:
+        resolved_python = shutil.which(args.timer_python)
+        if resolved_python is None:
+            raise ValueError("executable not found")
+        timer_python = Path(resolved_python).resolve(strict=True)
+        if not timer_python.is_file() or not os.access(timer_python, os.X_OK):
+            raise ValueError("not an executable regular file")
+    except (OSError, RuntimeError, ValueError) as exc:
+        raise C2Failed("RESTORE_TIMER_INVALID", f"cannot resolve timer Python executable: {args.timer_python}") from exc
     runner = runtime_recipe / "scripts/window_c2_continuation.py"
     helper = runtime_recipe / "scripts/window_e1_v2.py"
     health = runtime_recipe / "scripts/health-check.sh"
@@ -476,7 +491,7 @@ def arm_restore_timer(args: argparse.Namespace, out: Path, runtime_recipe: Path)
     unit = f"glm53-c2-continuation-restore-{args.run_id}-{os.getpid()}"
     deadline_us = int((time.time() + max(args.window_deadline_sec, 0.001)) * 1_000_000)
     restore_out = Path("/tmp") / f"glm53-c2-continuation-restore-{args.run_id}-{os.getpid()}"
-    restore_cmd = [args.timer_python, str(restore_runner), "--restore-only", "--out", str(restore_out), "--docker", args.docker, "--host-operation-lock", str(args.host_operation_lock) + ".timer", "--command-timeout-sec", str(min(args.command_timeout_sec, args.restore_budget_sec)), "--readiness-timeout-sec", str(min(args.readiness_timeout_sec, args.restore_budget_sec)), "--health", str(restore_health)]
+    restore_cmd = [str(timer_python), str(restore_runner), "--restore-only", "--out", str(restore_out), "--docker", args.docker, "--host-operation-lock", str(args.host_operation_lock) + ".timer", "--command-timeout-sec", str(min(args.command_timeout_sec, args.restore_budget_sec)), "--readiness-timeout-sec", str(min(args.readiness_timeout_sec, args.restore_budget_sec)), "--health", str(restore_health)]
     if args.docker_context:
         restore_cmd += ["--docker-context", args.docker_context]
     if any(arg.startswith("/Users/") for arg in restore_cmd):
