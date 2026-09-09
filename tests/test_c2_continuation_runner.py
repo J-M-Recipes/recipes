@@ -367,10 +367,17 @@ def load_runner_module():
 
 def test_restore_timer_arms_with_resolved_python(tmp_path, monkeypatch):
     runner = load_runner_module()
+    real_python = (tmp_path / 'python-real').resolve()
+    real_python.write_text('#!/bin/sh\nexit 0\n')
+    real_python.chmod(0o755)
+    python_alias = tmp_path / 'python3'
+    python_alias.symlink_to(real_python)
+    assert python_alias.resolve(strict=True) == real_python
+    assert str(python_alias) != str(real_python)
     resolutions = []
     def resolve_python(command):
         resolutions.append(command)
-        return '/usr/bin/python3'
+        return str(python_alias)
     monkeypatch.setattr(runner.shutil, 'which', resolve_python)
     args = types.SimpleNamespace(
         timer_python='python3', run_id='offline-execstart-test',
@@ -382,7 +389,7 @@ def test_restore_timer_arms_with_resolved_python(tmp_path, monkeypatch):
     bundle = Path('/tmp') / f'glm53-c2-continuation-restore-bundle-{args.run_id}-{os.getpid()}'
     restore_out = Path('/tmp') / f'glm53-c2-continuation-restore-{args.run_id}-{os.getpid()}'
     expected = [
-        '/usr/bin/python3', str(bundle / 'scripts/window_c2_continuation.py'),
+        str(real_python), str(bundle / 'scripts/window_c2_continuation.py'),
         '--restore-only', '--out', str(restore_out), '--docker', '/usr/bin/docker',
         '--host-operation-lock', '/tmp/c2-test.lock.timer',
         '--command-timeout-sec', '5', '--readiness-timeout-sec', '10',
@@ -399,7 +406,7 @@ def test_restore_timer_arms_with_resolved_python(tmp_path, monkeypatch):
             text = ('LoadState=loaded\nActiveState=active\n'
                     'NextElapseUSecRealtime=1060000000\n')
         else:
-            text = ('LoadState=loaded\nActiveState=inactive\nExecStart={ path=/usr/bin/python3 ; argv[]='
+            text = (f'LoadState=loaded\nActiveState=inactive\nExecStart={{ path={real_python} ; argv[]='
                     + runner.shlex.join(expected) + ' ; ignore_errors=no ; }\n')
         return subprocess.CompletedProcess(argv, 0, text, '')
     monkeypatch.setattr(runner.time, 'time', lambda: 1000)
