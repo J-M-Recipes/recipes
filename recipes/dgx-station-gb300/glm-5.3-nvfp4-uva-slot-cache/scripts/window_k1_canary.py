@@ -35,7 +35,7 @@ import window_e1_v2 as v2  # noqa: E402
 RUN_ID = "k1-canary-20260908"
 CANDIDATE = "glm53-big-k1-canary-instrumented"
 SPEC_K1 = '{"method":"mtp","num_speculative_tokens":1}'
-TRACE_TOKEN = "k1-canary-trace-0001"
+TRACE_MARKER = "k1-canary-trace-0001"
 EXPERT_LAYER_IDS = tuple(range(3, 78))
 ARCHIVED_SOURCE_RUNNER = Path("sources/vllm/v1/worker/gpu_model_runner.py")
 SOURCE_RUNNER = None
@@ -870,12 +870,12 @@ def run_canary(args: argparse.Namespace) -> int:
         v2.require_ok(v2.run_logged([health_command(args, runtime_recipe)], out / "health.txt", env=v2.health_env(os.environ), timeout=args.readiness_timeout_sec), "readiness")
         v2.require_ok(v2.run_logged([args.python, str(runtime_recipe / "scripts/dflash2_acceptance_probe.py"), "--base-url", "http://127.0.0.1:30001", "--model", v2.MODEL, "--api-key-file", v2.CONTROLLED_ENV["API_KEY_FILE"], "--max-tokens", "192", "--out", str(out / "k1-canary-probe.json")], out / "raw-logs/probes.log", timeout=args.command_timeout_sec), "canary warmup probe")
         verify_probe_reaches_window(out / "k1-canary-probe.json")
-        v2.require_ok(v2.run_logged([args.python, str(runtime_recipe / "scripts/nsys_capture_control.py"), str(out / "k1-canary-nsys-control"), "START", TRACE_TOKEN], out / "nsys-control.log", timeout=args.command_timeout_sec), "nsys start")
-        v2.check_control_ack(out / "nsys-control.log", "START", TRACE_TOKEN)
+        v2.require_ok(v2.run_logged([args.python, str(runtime_recipe / "scripts/nsys_capture_control.py"), str(out / "k1-canary-nsys-control"), "START", TRACE_MARKER], out / "nsys-control.log", timeout=args.command_timeout_sec), "nsys start")
+        v2.check_control_ack(out / "nsys-control.log", "START", TRACE_MARKER)
         v2.require_ok(v2.run_logged([args.python, str(runtime_recipe / "scripts/dflash2_acceptance_probe.py"), "--base-url", "http://127.0.0.1:30001", "--model", v2.MODEL, "--api-key-file", v2.CONTROLLED_ENV["API_KEY_FILE"], "--max-tokens", "192", "--out", str(out / "k1-canary-profiled-probe.json")], out / "raw-logs/probes.log", timeout=args.command_timeout_sec), "profiled canary probe")
         verify_probe_reaches_window(out / "k1-canary-profiled-probe.json")
-        v2.require_ok(v2.run_logged([args.python, str(runtime_recipe / "scripts/nsys_capture_control.py"), str(out / "k1-canary-nsys-control"), "STOP", TRACE_TOKEN], out / "nsys-control.log", timeout=args.command_timeout_sec), "nsys stop")
-        v2.check_control_ack(out / "nsys-control.log", "STOP", TRACE_TOKEN)
+        v2.require_ok(v2.run_logged([args.python, str(runtime_recipe / "scripts/nsys_capture_control.py"), str(out / "k1-canary-nsys-control"), "STOP", TRACE_MARKER], out / "nsys-control.log", timeout=args.command_timeout_sec), "nsys stop")
+        v2.check_control_ack(out / "nsys-control.log", "STOP", TRACE_MARKER)
         snapshot = parse_snapshot(out)
         docker(args, out, "stop", "-t", "120", CANDIDATE)
         stopped = docker(args, out, "inspect", "-f", "{{.State.Running}}", CANDIDATE, allow_fail=True).stdout.strip()
