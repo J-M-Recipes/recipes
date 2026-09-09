@@ -165,7 +165,7 @@ def test_snapshot_device_helper_fail_closes_and_private_copies_with_fake_tensors
             return [[None for _ in range(shape[1])] for _ in range(shape[0])]
 
     registry = {}
-    for layer in list(range(75))[::-1]:
+    for layer in list(range(3, 78))[::-1]:
         registry[layer] = SimpleNamespace(
             name=f"model.layers.{layer}.mlp.experts",
             misses=Scalar(layer),
@@ -182,13 +182,13 @@ def test_snapshot_device_helper_fail_closes_and_private_copies_with_fake_tensors
         metadata={"boundary": "step_complete"},
         expected_layers=75,
     )
-    assert snap.layer_ids == list(range(75))
-    assert snap.counters_device[0] == [0, 100, 7]
-    assert snap.counters_device[74] == [74, 174, 7]
-    registry[0].misses.value = 999
-    assert snap.counters_device[0] == [0, 100, 7]
+    assert snap.layer_ids == list(range(3, 78))
+    assert snap.counters_device[0] == [3, 103, 7]
+    assert snap.counters_device[74] == [77, 177, 7]
+    registry[3].misses.value = 999
+    assert snap.counters_device[0] == [3, 103, 7]
 
-    del registry[73]
+    del registry[76]
     assert slot_cache_hook.slot_cache_snapshot_device(
         trace_id="slotcache:run",
         provenance={"run_id": "run", "source_sha": "c" * 64, "engine_generation": 1, "seq": 2},

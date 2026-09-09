@@ -1,0 +1,171 @@
+{
+  "c2_authorized": false,
+  "candidate": "glm53-big-c1-quality-k1",
+  "candidate_proof": {
+    "actual_args": [
+      "profile",
+      "--trace=cuda,nvtx",
+      "--sample=none",
+      "--cpuctxsw=none",
+      "--cuda-graph-trace=node",
+      "--capture-range=cudaProfilerApi",
+      "--capture-range-end=stop",
+      "--force-overwrite=true",
+      "-o",
+      "/wcap/glm53-big-c1-quality-k1",
+      "/usr/local/bin/vllm",
+      "serve",
+      "/model",
+      "--host",
+      "0.0.0.0",
+      "--port",
+      "30001",
+      "--served-model-name",
+      "glm-5.3-big",
+      "--trust-remote-code",
+      "--quantization",
+      "modelopt",
+      "--load-format",
+      "safetensors",
+      "--offload-backend",
+      "uva",
+      "--cpu-offload-gb",
+      "420",
+      "--cpu-offload-params",
+      "routed_experts.w13_weight",
+      "routed_experts.w2_weight",
+      "--gpu-memory-utilization",
+      "0.95",
+      "--kv-cache-dtype",
+      "bfloat16",
+      "--kv-cache-memory",
+      "51539607552",
+      "--max-model-len",
+      "524288",
+      "--max-num-seqs",
+      "1",
+      "--max-num-batched-tokens",
+      "8192",
+      "--enable-auto-tool-choice",
+      "--tool-call-parser",
+      "glm47",
+      "--reasoning-parser",
+      "glm45",
+      "--compilation-config",
+      "{\"mode\":3,\"backend\":\"eager\"}",
+      "--speculative-config",
+      "{\"method\":\"mtp\",\"num_speculative_tokens\":1}"
+    ],
+    "argv": [
+      "bash",
+      "/home/milo/c1-quality-20260909/output-76fff65-r1/restore-bundle/scripts/launch-slotcache-portable.sh",
+      "c1-quality",
+      "112",
+      "--speculative-config",
+      "{\"method\":\"mtp\",\"num_speculative_tokens\":1}"
+    ],
+    "candidate": "c1",
+    "config_digest": "cbb82b152cf0145032b35bc592d01120e68dbb780f57b6ed1a07bac74d61d98d",
+    "container_name": "glm53-big-c1-quality-k1",
+    "env": {
+      "API_KEY_FILE": "/home/milo/.glm_api_key",
+      "AT_KEY": "slotcache-S112",
+      "BYPASS": "16",
+      "CACHE_DIR": "/home/milo/vllm-cache",
+      "CAPTURE": "0",
+      "COMPILATION_CONFIG": "{\"mode\":3,\"backend\":\"eager\"}",
+      "IMAGE": "vllm-glm53-uva:v0.28.0-2cf0a691@sha256:61fc8a896b0a4fbbbdc063bc4b0dbc25ce98e02b5050c24aeb7830ac02039b14",
+      "KV_CACHE_MEMORY": "51539607552",
+      "LOGIT_RING": "0",
+      "MAX_MODEL_LEN": "524288",
+      "MAX_NUM_SEQS": "1",
+      "MODEL_DIR": "/home/exx/models/GLM-5.3-NVFP4-big",
+      "NSYS": "1",
+      "ROUTER": "ffi",
+      "SLOT_CACHE_PER_LAYER": "/w/configs/slots-5792-ctx512k.json",
+      "STATS_SEC": "0",
+      "UNPACKED": "0"
+    },
+    "observed_config_image": "vllm-glm53-uva:v0.28.0-2cf0a691@sha256:61fc8a896b0a4fbbbdc063bc4b0dbc25ce98e02b5050c24aeb7830ac02039b14",
+    "observed_container_id": "c6287adc96dbdaf133c2f36d046ecb048075d7b6ede6825adebb86f1ba5d54b2",
+    "observed_container_name": "glm53-big-c1-quality-k1",
+    "observed_image_digest": "sha256:61fc8a896b0a4fbbbdc063bc4b0dbc25ce98e02b5050c24aeb7830ac02039b14",
+    "observed_max_model_len": "524288",
+    "observed_max_num_seqs": "1",
+    "observed_model": "glm-5.3-big",
+    "observed_speculative_config": {
+      "method": "mtp",
+      "num_speculative_tokens": 1
+    },
+    "running": true,
+    "source_manifest_sha256": "946338ad97a4ffc541598f578ee60d8cb0587ac9f7e40d1b6e56ab2c0cd009ed",
+    "speculative_config": "{\"method\":\"mtp\",\"num_speculative_tokens\":1}"
+  },
+  "files": {
+    "c1-gate.json": {
+      "bytes": 89,
+      "sha256": "0bf616eb2a7962ce54135065233d899c25fa6844fda8839aeb1ded52a1ca0994"
+    },
+    "c1/acceptance-512.json": {
+      "bytes": 2325,
+      "sha256": "64271ced8af2e96d3ffcb5392794fdb6157f291233bd522ce403679d01c6b7ae"
+    },
+    "preflight/candidate-image-proof.json": {
+      "bytes": 327,
+      "sha256": "a5bb8b587468dc4df24e6e9fc0de2cdcb5b1b756a08aaef6e6803f35a5e9f2d2"
+    },
+    "preflight/incumbent-proof.json": {
+      "bytes": 1656,
+      "sha256": "a7ad79b7b31365e7c59418e57eff15032c794524346bb43b16767980722dd247"
+    },
+    "preflight/restore-timer-armed-readback.json": {
+      "bytes": 2960,
+      "sha256": "fd2cdf9b35d47a31b002736ecf92117ec03117f65ac583b75451e491256f6bd1"
+    },
+    "preflight/restore-timer-cancelled-readback.json": {
+      "bytes": 2334,
+      "sha256": "8ab511510984a1481f5e0559eb79b1fda63fd2a645869861ae5e0e161b00d7fe"
+    },
+    "quality/c1-compare.txt": {
+      "bytes": 29,
+      "sha256": "4ceab3061a50ab083691be0539c94f0179e6930809f87ba0a623331351c84648"
+    },
+    "quality/c1-greedy.json": {
+      "bytes": 12890,
+      "sha256": "c8172e6f286d6394aca925ca969dc656fb38f724addd42425f6871036c0116d5"
+    },
+    "quality/incumbent-greedy.json": {
+      "bytes": 12890,
+      "sha256": "c8172e6f286d6394aca925ca969dc656fb38f724addd42425f6871036c0116d5"
+    },
+    "restore/completion.json": {
+      "bytes": 719,
+      "sha256": "58aa9ccb9965997b4609ca359fcb4b4d0ac83c1a47a07b62188c60c4958cf1ab"
+    },
+    "restore/models.json": {
+      "bytes": 453,
+      "sha256": "bda5088167070451778e9ce7501886d3bb6a7d43f7035a4425082806f0ef631b"
+    },
+    "restore/service-proof.json": {
+      "bytes": 1656,
+      "sha256": "a7ad79b7b31365e7c59418e57eff15032c794524346bb43b16767980722dd247"
+    },
+    "source-manifest.json": {
+      "bytes": 3677,
+      "sha256": "946338ad97a4ffc541598f578ee60d8cb0587ac9f7e40d1b6e56ab2c0cd009ed"
+    }
+  },
+  "gate": {
+    "baseline_speed": 45.65,
+    "pass": true,
+    "quality_pass": true,
+    "speed": 45.747
+  },
+  "incumbent": "glm53-big-sc13g-mtp-ctx512k-keep-pre-dflash2-20260907",
+  "promotion_authorized": false,
+  "published_source_commit": "f7912f9055d524b387d154db5defe8683a50c9ce",
+  "run_id": "c1-quality-20260909",
+  "schema": "glm53-c1-quality-gate-receipt-v1",
+  "source_manifest_sha256": "946338ad97a4ffc541598f578ee60d8cb0587ac9f7e40d1b6e56ab2c0cd009ed",
+  "verdict": "PASS"
+}

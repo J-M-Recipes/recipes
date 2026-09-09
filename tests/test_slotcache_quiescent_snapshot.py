@@ -1,7 +1,10 @@
 import ast
+import json
 import os
+import runpy
 import sys
 from pathlib import Path
+from types import SimpleNamespace
 
 import pytest
 
@@ -233,6 +236,141 @@ def test_quiescent_mode_returns_before_thread_start_or_cuda_counter_access(monke
     assert namespace["_stats_thread"] is None
     assert namespace["events"] == []
     assert namespace["logs"] == ["quiescent snapshot telemetry requires an engine-owned safe point"]
+
+
+def test_sitecustomize_registers_slot_cache_hook_as_import_identity_for_snapshots(tmp_path, monkeypatch):
+    monkeypatch.setenv("SLOT_CACHE", "1")
+    monkeypatch.setenv("SLOT_CACHE_HOOK", str(PATCHES / "slot_cache_hook.py"))
+    monkeypatch.delenv("EXACT_PIN", raising=False)
+    monkeypatch.delenv("ROUTE_TRACE_DIR", raising=False)
+    monkeypatch.delenv("VLLM_AUTOTUNE_CACHE_KEY", raising=False)
+    monkeypatch.setenv("SLOT_CACHE_STATS_SEC", "0")
+    monkeypatch.setenv("SLOT_CACHE_QUIESCENT_SNAPSHOTS", "1")
+    monkeypatch.setenv("SLOT_CACHE_SNAPSHOT_DIR", str(tmp_path))
+    monkeypatch.setenv("SLOT_CACHE_WINDOW_STEPS", "100:164")
+    monkeypatch.setenv("SLOT_CACHE_SOURCE_SHA", "a" * 64)
+    monkeypatch.setenv("SLOT_CACHE_RUN_ID", "run-k1-offline")
+    monkeypatch.setenv("SLOT_CACHE_K_MODE", "K1")
+    monkeypatch.setenv("SLOT_CACHE_EXPECTED_LAYERS", "75")
+    old_meta_path = list(sys.meta_path)
+    old_path = list(sys.path)
+    sys.modules.pop("slot_cache_hook", None)
+    sys.modules.pop("slot_cache_window_instrumentation", None)
+    try:
+        sitecustomize_globals = runpy.run_path(str(PATCHES / "sitecustomize.py"))
+        producer_hook = sitecustomize_globals["_m"]
+        assert sys.modules["slot_cache_hook"] is producer_hook
+
+        class Scalar:
+            device = "cuda:0"
+            def __init__(self, value):
+                self.value = value
+            def clone_value(self):
+                return self.value
+
+        producer_hook._registry = {
+            layer: SimpleNamespace(
+                name=f"model.layers.{layer}.mlp.experts",
+                misses=Scalar(layer),
+                routes=Scalar(layer + 100),
+                step=Scalar(7),
+            )
+            for layer in range(3, 78)
+        }
+        producer_hook.torch = None
+
+        sys.path.insert(0, str(PATCHES))
+        try:
+            import slot_cache_window_instrumentation as inst
+        finally:
+            sys.path.pop(0)
+
+        controller = inst.SlotCacheWindowController.from_env()
+        snapshot = controller.maybe_snapshot_device(
+            metadata={
+                "engine_step": 100,
+                "boundary": "step_complete",
+                "phase_flags": {"canonical_phase": "decode", "has_decode": True},
+                "valid_for_campaign": False,
+                "campaign_validity_blocker": "external_canary_not_proven",
+            }
+        )
+
+        assert snapshot is not None
+        assert snapshot.layer_ids == list(range(3, 78))
+        controller.finalize_slot_cache_snapshot(snapshot)
+        rows = [json.loads(line) for line in controller.reserve_output_path().read_text().splitlines()]
+        assert rows[0]["schema"] == "slot-cache-quiescent-snapshot-v1"
+        assert rows[0]["metadata"]["valid_for_campaign"] is False
+        assert rows[0]["layers"]["77"] == {"misses": 77, "routes": 177, "steps": 7}
+    finally:
+        sys.meta_path[:] = old_meta_path
+        sys.path[:] = old_path
+        sys.modules.pop("slot_cache_hook", None)
+        sys.modules.pop("slot_cache_window_instrumentation", None)
+
+
+def _run_sitecustomize_with_temp_slot_hook(monkeypatch, hook_path):
+    monkeypatch.setenv("SLOT_CACHE", "1")
+    monkeypatch.setenv("SLOT_CACHE_HOOK", str(hook_path))
+    monkeypatch.delenv("EXACT_PIN", raising=False)
+    monkeypatch.delenv("ROUTE_TRACE_DIR", raising=False)
+    monkeypatch.delenv("VLLM_AUTOTUNE_CACHE_KEY", raising=False)
+    return runpy.run_path(str(PATCHES / "sitecustomize.py"))
+
+
+def test_sitecustomize_exec_failure_restores_prior_slot_cache_hook_binding(tmp_path, monkeypatch):
+    prior_hook = SimpleNamespace(marker="prior")
+    hook_path = tmp_path / "slot_cache_hook.py"
+    hook_path.write_text("PARTIAL = 'exec-started'\nraise RuntimeError('boom during exec')\n")
+    old_meta_path = list(sys.meta_path)
+    sys.modules["slot_cache_hook"] = prior_hook
+    try:
+        _run_sitecustomize_with_temp_slot_hook(monkeypatch, hook_path)
+        assert sys.modules["slot_cache_hook"] is prior_hook
+        assert not hasattr(sys.modules["slot_cache_hook"], "PARTIAL")
+    finally:
+        sys.meta_path[:] = old_meta_path
+        if sys.modules.get("slot_cache_hook") is prior_hook:
+            sys.modules.pop("slot_cache_hook", None)
+
+
+def test_sitecustomize_install_failure_restores_prior_slot_cache_hook_binding(tmp_path, monkeypatch):
+    prior_hook = SimpleNamespace(marker="prior")
+    hook_path = tmp_path / "slot_cache_hook.py"
+    hook_path.write_text("PARTIAL = 'install-started'\ndef install():\n    raise RuntimeError('boom during install')\n")
+    old_meta_path = list(sys.meta_path)
+    sys.modules["slot_cache_hook"] = prior_hook
+    try:
+        _run_sitecustomize_with_temp_slot_hook(monkeypatch, hook_path)
+        assert sys.modules["slot_cache_hook"] is prior_hook
+        assert not hasattr(sys.modules["slot_cache_hook"], "PARTIAL")
+    finally:
+        sys.meta_path[:] = old_meta_path
+        if sys.modules.get("slot_cache_hook") is prior_hook:
+            sys.modules.pop("slot_cache_hook", None)
+
+
+def test_sitecustomize_repeated_execution_reuses_installed_slot_cache_hook_module(tmp_path, monkeypatch):
+    hook_path = tmp_path / "slot_cache_hook.py"
+    hook_path.write_text("_registry = {}\ndef install():\n    _registry.setdefault('install_count', 0)\n    _registry['install_count'] += 1\n")
+    old_meta_path = list(sys.meta_path)
+    sys.modules.pop("slot_cache_hook", None)
+    try:
+        first_globals = _run_sitecustomize_with_temp_slot_hook(monkeypatch, hook_path)
+        first_hook = first_globals["_m"]
+        first_registry = first_hook._registry
+        first_registry["sentinel"] = object()
+
+        second_globals = _run_sitecustomize_with_temp_slot_hook(monkeypatch, hook_path)
+
+        assert second_globals["_m"] is first_hook
+        assert sys.modules["slot_cache_hook"] is first_hook
+        assert first_hook._registry is first_registry
+        assert first_hook._registry["install_count"] == 1
+    finally:
+        sys.meta_path[:] = old_meta_path
+        sys.modules.pop("slot_cache_hook", None)
 
 
 def test_unknown_stats_mode_raises_before_thread_start_or_cuda_counter_access(monkeypatch):

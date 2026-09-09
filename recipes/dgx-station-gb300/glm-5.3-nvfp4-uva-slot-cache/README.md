@@ -38,10 +38,10 @@ Patch pins in [`recipe.yaml`](recipe.yaml):
 | file | sha256 | purpose |
 |---|---|---|
 | `patches/sitecustomize-bigv1.py` | `1238cf28c4d61fde53a223799c3df43333d8095e44d9437b49c6037cbbf4ff57` | V1 route/autotune hook |
-| `patches/sitecustomize.py` | `6b9b7a76d77bde03d1b4ee2f0daed7e1cc6feba8718fad526c9fe334bbf3b2a0` | slot-cache sitecustomize hook |
+| `patches/sitecustomize.py` | `eb09aed881c840b834700f7d6df1c478efd5b10b8190cba2781f4629287a97a0` | slot-cache sitecustomize hook |
 | `patches/exact_pin.py` | `93c8ee1420be870c505330f387f3168147539d6277be9500aae866d7bbf21bf0` | pinned-host tensor helper |
 | `patches/ffi_route.py` | `38a36cfec0e0cf06e00e406b1d3f015b51d9147289269d4a180d161ba1c3eec7` | FFI router path |
-| `patches/slot_cache_hook.py` | `27241f2ba66736ade5717201f33b3d175860c11de84fb81578ff9b753bedd1b7` | latest per-layer slot-cache hook + quiescent snapshot registry helpers |
+| `patches/slot_cache_hook.py` | `e4f7f6f3d94e4bb2c9b6bb8e3a02401df339ce440a5e963abab0b5414b439629` | latest per-layer slot-cache hook + quiescent snapshot registry helpers |
 | `patches/slot_cache_window_instrumentation.py` | `9f0c75b25438c63511a5b2580a4c0a77520f232e2affe109dd0ba3908477e453` | opt-in engine-owned bounded-window snapshot controller |
 | `scripts/apply_slot_cache_instrumentation_patch.py` | `8b4b3ae177618875378154681a43c16bf4cc265c6f073fb1dd6ef2562c45106b` | exact-hash guarded pinned `gpu_model_runner.py` patch-copy adapter |
 | `configs/slots-8400.json` | `4ee071670e13f199658776ddb7b508c9a068657ea631a0cb4287db0a2afeeaed` | per-layer slot allocation |
@@ -84,10 +84,10 @@ The optional quiescent snapshot instrumentation is accepted only as an offline-r
 | Deterministically generated patched runner | `2268a6dafda69566d4128bb9b589bdecb22e3e7eb8d0b7e1155f2bb1ce8e3cd4` |
 | Instrumentation adapter | `9f0c75b25438c63511a5b2580a4c0a77520f232e2affe109dd0ba3908477e453` |
 | Staged generator | `8b4b3ae177618875378154681a43c16bf4cc265c6f073fb1dd6ef2562c45106b` |
-| Slot-cache hook | `27241f2ba66736ade5717201f33b3d175860c11de84fb81578ff9b753bedd1b7` |
+| Slot-cache hook | `e4f7f6f3d94e4bb2c9b6bb8e3a02401df339ce440a5e963abab0b5414b439629` |
 | Portable launcher | `aebe4fab6272a8ded9d2e871d5b9c536b641634ae9b10232db9fa5c33bcac04d` |
 
-Review invalidation scope: only the portable launcher hash changed from the prior offline-reviewed envelope; instrumentation adapter, staged generator, generated patched runner, slot-cache hook, pinned source, and local image identity hashes are preserved. The launcher change restores disabled/default `IMAGE` behavior while preserving the stricter opt-in instrumentation image gate.
+Review invalidation scope: the portable launcher change restores disabled/default `IMAGE` behavior while preserving the stricter opt-in instrumentation image gate. The slot-cache hook now binds all75 readiness to the exact GLM-5.3 expert-layer set `3..77`; its current review provenance is recorded in `RUNTIME-CANARY-ACCEPTANCE.md`. Instrumentation adapter, staged generator, generated patched runner, pinned source, and local image identity hashes are preserved.
 
 When `SLOT_CACHE_QUIESCENT_SNAPSHOTS=1`, the launcher intentionally narrows topology to a single GPU/non-parallel vLLM runtime (`pipeline_parallel_size=1`, `tensor_parallel_size=1`, `data_parallel_size=1`, `decode_context_parallel_size=1`, `use_ubatching=false`) and fail-closes outside that envelope. Disabled/default launches remain uninstrumented and default to image tag `vllm-glm53-uva:v0.28.0-2cf0a691`; disabled explicit `IMAGE` overrides are preserved.
 

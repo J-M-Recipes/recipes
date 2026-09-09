@@ -31,6 +31,7 @@ _registry = {}      # id(w13_param.data_ptr) -> LayerCache
 _COUNTER_COLUMNS = ("misses", "routes", "steps")
 _COUNTER_ATTRS = {"misses": "misses", "routes": "routes", "steps": "step"}
 _LAYER_ID_RE = __import__("re").compile(r"(?:^|\.)layers\.(\d+)\.")
+_FIRST_EXPERT_LAYER = 3
 
 
 @dataclass
@@ -63,7 +64,7 @@ def _canonical_registry(expected_layers: int = 75) -> list[tuple[int, object]] |
             return None
         seen.add(layer_id)
         rows.append((layer_id, lc))
-    if seen != set(range(expected_layers)):
+    if seen != set(range(_FIRST_EXPERT_LAYER, _FIRST_EXPERT_LAYER + expected_layers)):
         return None
     return sorted(rows, key=lambda pair: pair[0])
 

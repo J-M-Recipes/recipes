@@ -59,9 +59,27 @@ if os.environ.get("SLOT_CACHE"):
     _hook_path = os.environ.get("SLOT_CACHE_HOOK", "/w/slot_cache_hook.py")
     try:
         import importlib.util as _ilu
-        _spec = _ilu.spec_from_file_location("slot_cache_hook", _hook_path)
-        _m = _ilu.module_from_spec(_spec); _spec.loader.exec_module(_m)
-        _m.install()
+        _name = "slot_cache_hook"
+        _m = sys.modules.get(_name)
+        if not getattr(_m, "_SLOT_CACHE_SITE_INSTALLED", False):
+            _prior = _m
+            _had_prior = _name in sys.modules
+            _spec = _ilu.spec_from_file_location(_name, _hook_path)
+            if _spec is None or _spec.loader is None:
+                raise ImportError(f"cannot load {_name} from {_hook_path!r}")
+            _m = _ilu.module_from_spec(_spec)
+            sys.modules[_name] = _m
+            try:
+                _spec.loader.exec_module(_m)
+                _m.install()
+                _m._SLOT_CACHE_SITE_INSTALLED = True
+            except Exception:
+                if sys.modules.get(_name) is _m:
+                    if _had_prior:
+                        sys.modules[_name] = _prior
+                    else:
+                        sys.modules.pop(_name, None)
+                raise
     except Exception as _e:
         sys.stderr.write(f"SLOT_CACHE hook FAILED to install: {_e!r}\n")
 
