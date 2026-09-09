@@ -207,12 +207,12 @@ for suffix in ('cuda_gpu_kern_sum','cuda_kern_exec_sum','cuda_gpu_trace','cuda_a
 
 def fake_systemd_run(tmp_path: Path) -> Path:
     return make_executable(tmp_path / "fake-systemd-run", """#!/usr/bin/env python3
-import datetime, json, os, pathlib, sys, time
+import datetime, json, os, pathlib, shlex, sys, time
 reg=pathlib.Path(os.environ['FAKE_SYSTEMD_REGISTRY']); log=pathlib.Path(os.environ['FAKE_LOG'])
 with log.open('a') as f: f.write(json.dumps({'kind':'systemd-run','argv':sys.argv[1:]})+'\\n')
 args=sys.argv[1:]; unit=args[args.index('--unit')+1]; cal=args[args.index('--on-calendar')+1]; cmd=args[args.index('--')+1:]
 next_us=int(datetime.datetime.strptime(cal,'%Y-%m-%d %H:%M:%S UTC').replace(tzinfo=datetime.timezone.utc).timestamp()*1000000)
-data={'units':{unit+'.service':{'LoadState':'loaded','ActiveState':'inactive','ExecStart':' '.join(cmd)}, unit+'.timer':{'LoadState':'loaded','ActiveState':'active','Triggers':unit+'.service','NextElapseUSecRealtime':str(next_us),'NextElapseUSecMonotonic':str(int((time.monotonic()+60)*1000000))}}}
+data={'units':{unit+'.service':{'LoadState':'loaded','ActiveState':'inactive','ExecStart':'{ path='+cmd[0]+' ; argv[]='+shlex.join(cmd)+' ; ignore_errors=no ; }'}, unit+'.timer':{'LoadState':'loaded','ActiveState':'active','Triggers':unit+'.service','NextElapseUSecRealtime':str(next_us),'NextElapseUSecMonotonic':str(int((time.monotonic()+60)*1000000))}}}
 reg.write_text(json.dumps(data)); print('Running timer as unit: '+unit+'.timer')
 """)
 
@@ -237,7 +237,7 @@ sys.exit(2)
 
 def base_cmd(tmp_path: Path, out: Path, c1_root=C1_FIXTURE_ROOT, k1_root=K1_FIXTURE_ROOT):
     root=tmp_path/'root'; root.mkdir(exist_ok=True); (root/'CONTROL').write_text('RUN\n'); (root/'RELEASE').write_text('c2-continuation-20260909\n')
-    return [sys.executable, str(RUNNER), '--root', str(root), '--recipe', str(RECIPE), '--out', str(out), '--run-id', 'c2-continuation-20260909', '--c1-root', str(c1_root), '--k1-root', str(k1_root), '--docker', str(fake_docker(tmp_path)), '--bash', str(fake_bash(tmp_path)), '--python', str(fake_python(tmp_path)), '--health', str(fake_health(tmp_path)), '--api-probe', str(fake_api_probe(tmp_path)), '--nsys', str(fake_nsys(tmp_path)), '--host-operation-lock', str(tmp_path/'host.lock'), '--systemd-run', str(fake_systemd_run(tmp_path)), '--systemctl', str(fake_systemctl(tmp_path)), '--timer-python', 'python', '--command-timeout-sec', '5', '--window-deadline-sec', '20']
+    return [sys.executable, str(RUNNER), '--root', str(root), '--recipe', str(RECIPE), '--out', str(out), '--run-id', 'c2-continuation-20260909', '--c1-root', str(c1_root), '--k1-root', str(k1_root), '--docker', str(fake_docker(tmp_path)), '--bash', str(fake_bash(tmp_path)), '--python', str(fake_python(tmp_path)), '--health', str(fake_health(tmp_path)), '--api-probe', str(fake_api_probe(tmp_path)), '--nsys', str(fake_nsys(tmp_path)), '--host-operation-lock', str(tmp_path/'host.lock'), '--systemd-run', str(fake_systemd_run(tmp_path)), '--systemctl', str(fake_systemctl(tmp_path)), '--timer-python', str(tmp_path/'fake-python'), '--command-timeout-sec', '5', '--window-deadline-sec', '20']
 
 
 def run_runner(tmp_path: Path, env_extra=None, extra_args=()):
@@ -363,6 +363,156 @@ def load_runner_module():
     sys.modules[spec.name] = module
     spec.loader.exec_module(module)
     return module
+
+
+def test_restore_timer_arms_with_resolved_python(tmp_path, monkeypatch):
+    runner = load_runner_module()
+    real_python = (tmp_path / 'python-real').resolve()
+    real_python.write_text('#!/bin/sh\nexit 0\n')
+    real_python.chmod(0o755)
+    python_alias = tmp_path / 'python3'
+    python_alias.symlink_to(real_python)
+    assert python_alias.resolve(strict=True) == real_python
+    assert str(python_alias) != str(real_python)
+    resolutions = []
+    def resolve_python(command):
+        resolutions.append(command)
+        return str(python_alias)
+    monkeypatch.setattr(runner.shutil, 'which', resolve_python)
+    args = types.SimpleNamespace(
+        timer_python='python3', run_id='offline-execstart-test',
+        docker='/usr/bin/docker', docker_context='offline-context',
+        host_operation_lock='/tmp/c2-test.lock', command_timeout_sec=5,
+        restore_budget_sec=10, readiness_timeout_sec=20, window_deadline_sec=60,
+        systemd_run='offline-systemd-run', systemctl='offline-systemctl', sudo=False,
+    )
+    bundle = Path('/tmp') / f'glm53-c2-continuation-restore-bundle-{args.run_id}-{os.getpid()}'
+    restore_out = Path('/tmp') / f'glm53-c2-continuation-restore-{args.run_id}-{os.getpid()}'
+    expected = [
+        str(real_python), str(bundle / 'scripts/window_c2_continuation.py'),
+        '--restore-only', '--out', str(restore_out), '--docker', '/usr/bin/docker',
+        '--host-operation-lock', '/tmp/c2-test.lock.timer',
+        '--command-timeout-sec', '5', '--readiness-timeout-sec', '10',
+        '--health', str(bundle / 'scripts/health-check.sh'),
+        '--docker-context', 'offline-context',
+    ]
+    submitted = []
+    def systemd(argv, log, timeout):
+        if argv[0] == args.systemd_run:
+            submitted.extend(argv[argv.index('--') + 1:])
+            return subprocess.CompletedProcess(argv, 0, '', '')
+        assert argv[0] == args.systemctl
+        if argv[-1].endswith('.timer'):
+            text = ('LoadState=loaded\nActiveState=active\n'
+                    'NextElapseUSecRealtime=1060000000\n')
+        else:
+            text = (f'LoadState=loaded\nActiveState=inactive\nExecStart={{ path={real_python} ; argv[]='
+                    + runner.shlex.join(expected) + ' ; ignore_errors=no ; }\n')
+        return subprocess.CompletedProcess(argv, 0, text, '')
+    monkeypatch.setattr(runner.time, 'time', lambda: 1000)
+    monkeypatch.setattr(runner.v2, 'run_logged', systemd)
+    try:
+        payload = runner.arm_restore_timer(args, tmp_path, RECIPE)
+        assert resolutions == ['python3']
+        assert submitted == expected
+        assert payload['restore_cmd'] == payload['exec_start_argv'] == expected
+        assert payload['expected_restore_cmd_sha256'] == payload['exec_start_sha256']
+    finally:
+        runner.shutil.rmtree(bundle, ignore_errors=True)
+
+
+def test_restore_timer_rejects_wrong_path_with_exact_argv(monkeypatch, tmp_path):
+    import pytest
+    runner = load_runner_module()
+    expected = ['/usr/bin/python3', '/tmp/bundle/runner.py', '--restore-only']
+    def show(args, out, unit, props):
+        if unit.endswith('.timer'):
+            return {'ActiveState': 'active', 'NextElapseUSecRealtime': '1060000000'}
+        return {'ActiveState': 'inactive', 'ExecStart':
+                '{ path=/opt/wrong/python3 ; argv[]=' + runner.shlex.join(expected) + ' ; ignore_errors=no ; }'}
+    monkeypatch.setattr(runner, 'systemctl_show', show)
+    with pytest.raises(runner.C2Failed, match='restore service ExecStart mismatch') as error:
+        runner.read_systemd_timer(None, tmp_path, 'test.timer', 'test.service', 1060000000, expected)
+    assert error.value.code == 'RESTORE_TIMER_INVALID'
+
+
+def test_restore_timer_rejects_invalid_path_fields_with_exact_argv(monkeypatch, tmp_path):
+    import pytest
+    runner = load_runner_module()
+    expected = ['/usr/bin/python3', '/tmp/bundle/runner.py', '--restore-only']
+    argv = runner.shlex.join(expected)
+    valid = '{ path=/usr/bin/python3 ; argv[]=' + argv + ' ; ignore_errors=no ; }'
+    exec_start = valid
+    def show(args, out, unit, props):
+        if unit.endswith('.timer'):
+            return {'ActiveState': 'active', 'NextElapseUSecRealtime': '1060000000'}
+        return {'ActiveState': 'inactive', 'ExecStart': exec_start}
+    monkeypatch.setattr(runner, 'systemctl_show', show)
+    assert runner.read_systemd_timer(None, tmp_path, 'test.timer', 'test.service', 1060000000, expected)['exec_start_argv'] == expected
+    cases = [
+        ('missing', valid.replace('path=/usr/bin/python3 ; ', '')),
+        ('unstructured', argv),
+        ('empty', valid.replace('path=/usr/bin/python3', 'path=')),
+        ('relative', valid.replace('path=/usr/bin/python3', 'path=usr/bin/python3')),
+        ('extra-token', valid.replace('path=/usr/bin/python3', 'path=/usr/bin/python3 extra')),
+        ('quoted', valid.replace('path=/usr/bin/python3', 'path="/usr/bin/python3"')),
+        ('malformed-escape', valid.replace('path=/usr/bin/python3', r'path=/usr/bin/python3\xZZ')),
+        ('duplicate-before-argv', valid.replace(' ; argv[]=', ' ; path=/usr/bin/python3 ; argv[]=')),
+        ('duplicate-after-argv', valid.replace('ignore_errors=no', 'path=/opt/wrong/python3')),
+        ('duplicate-identical', valid.replace('ignore_errors=no', 'path=/usr/bin/python3')),
+        ('malformed-duplicate', valid.replace('ignore_errors=no', ' path =/usr/bin/python3')),
+        ('multiple-entries', valid + ' ' + valid),
+    ]
+    for label, exec_start in cases:
+        # Keep argv unchanged so rejection cannot be credited to argv equality.
+        assert runner._extract_execstart(exec_start) == expected, label
+        with pytest.raises(runner.C2Failed, match='restore service ExecStart mismatch') as error:
+            runner.read_systemd_timer(None, tmp_path, 'test.timer', 'test.service', 1060000000, expected)
+        assert error.value.code == 'RESTORE_TIMER_INVALID', label
+
+
+def test_restore_timer_rejects_wrong_path_and_changed_argv(monkeypatch, tmp_path):
+    import pytest
+    runner = load_runner_module()
+    expected = ['/usr/bin/python3', '/tmp/bundle/runner.py', '--restore-only',
+                '--out', '/tmp/restore', '--docker-context', 'offline-context']
+    observed = list(expected)
+    def show(args, out, unit, props):
+        if unit.endswith('.timer'):
+            return {'ActiveState': 'active', 'NextElapseUSecRealtime': '1060000000'}
+        return {'ActiveState': 'inactive', 'ExecStart':
+                '{ path=' + observed[0] + ' ; argv[]=' + runner.shlex.join(observed) + ' ; }'}
+    monkeypatch.setattr(runner, 'systemctl_show', show)
+    cases = [['/opt/wrong/python3', *expected[1:]]]
+    cases += [expected[:i] + ['changed'] + expected[i + 1:] for i in range(1, len(expected))]
+    cases += [expected[:-1], expected + ['--extra']]
+    for observed in cases:
+        with pytest.raises(runner.C2Failed, match='restore service ExecStart mismatch') as error:
+            runner.read_systemd_timer(None, tmp_path, 'test.timer', 'test.service', 1060000000, expected)
+        assert error.value.code == 'RESTORE_TIMER_INVALID'
+
+
+def test_restore_timer_resolution_failure_precedes_systemd(tmp_path, monkeypatch):
+    import pytest
+    runner = load_runner_module()
+    nonexec = tmp_path / 'nonexec'
+    nonexec.write_text('not executable')
+    nonexec.chmod(0o600)
+    dangling = tmp_path / 'dangling'
+    dangling.symlink_to(tmp_path / 'missing')
+    loop = tmp_path / 'loop'
+    loop.symlink_to(loop)
+    calls = []
+    def no_systemd(*args, **kwargs):
+        calls.append(args)
+        raise AssertionError('systemd action before resolution validation')
+    monkeypatch.setattr(runner.v2, 'run_logged', no_systemd)
+    for resolved in (None, str(tmp_path / 'missing'), str(tmp_path), str(nonexec), str(dangling), str(loop)):
+        monkeypatch.setattr(runner.shutil, 'which', lambda command: resolved)
+        with pytest.raises(runner.C2Failed, match='cannot resolve timer Python executable') as error:
+            runner.arm_restore_timer(types.SimpleNamespace(timer_python='python3'), tmp_path, RECIPE)
+        assert error.value.code == 'RESTORE_TIMER_INVALID'
+    assert calls == []
 
 
 def load_instrumentation_helper():
