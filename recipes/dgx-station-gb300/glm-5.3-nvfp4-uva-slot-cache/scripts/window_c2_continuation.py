@@ -161,7 +161,7 @@ def read_systemd_timer(args: argparse.Namespace, out: Path, timer_unit: str, ser
         raise C2Failed("RESTORE_TIMER_INVALID", "systemd restore timer readback mismatch")
     exec_start = service.get("ExecStart", "")
     # Require one structured executable field; never infer it from argv[0].
-    path_match = re.fullmatch(r"\{ path=(/[^\s;{}\\]+) ; argv\[\]=[^{}]* ; \}", exec_start.strip())
+    path_match = re.fullmatch(r"\{ path=(/[^\s;{}\\]+) ; argv\[\]=[^{}]* \}", exec_start.strip())
     path_fields = re.findall(r"(?:\{\s*|;\s*)path\b", exec_start)
     if not path_match or len(path_fields) != 1 or not expected_cmd or path_match[1] != expected_cmd[0]:
         raise C2Failed("RESTORE_TIMER_INVALID", "systemd restore service ExecStart mismatch")
