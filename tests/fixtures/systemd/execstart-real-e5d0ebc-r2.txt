@@ -1,0 +1,22 @@
+$ sudo systemd-run --system --unit glm53-c2-continuation-restore-c2-continuation-20260909-577235 --description GLM53 C2 continuation restore failsafe c2-continuation-20260909 --property Type=oneshot --property CollectMode=inactive-or-failed --timer-property Persistent=true --on-calendar 2026-09-10 03:08:03 UTC -- /usr/bin/python3.12 /tmp/glm53-c2-continuation-restore-bundle-c2-continuation-20260909-577235/scripts/window_c2_continuation.py --restore-only --out /tmp/glm53-c2-continuation-restore-c2-continuation-20260909-577235 --docker docker --host-operation-lock /tmp/glm53-c2-continuation-host-operation.lock.timer --command-timeout-sec 1800.0 --readiness-timeout-sec 2400.0 --health /tmp/glm53-c2-continuation-restore-bundle-c2-continuation-20260909-577235/scripts/health-check.sh
+started=2026-09-09T19:08:03-0500
+Running timer as unit: glm53-c2-continuation-restore-c2-continuation-20260909-577235.timer
+Will run service as unit: glm53-c2-continuation-restore-c2-continuation-20260909-577235.service
+
+exit=0
+$ sudo systemctl --system show -p LoadState -p ActiveState -p Triggers -p NextElapseUSecRealtime -p NextElapseUSecMonotonic glm53-c2-continuation-restore-c2-continuation-20260909-577235.timer
+started=2026-09-09T19:08:03-0500
+NextElapseUSecRealtime=Wed 2026-09-09 22:08:03 CDT
+NextElapseUSecMonotonic=0
+Triggers=glm53-c2-continuation-restore-c2-continuation-20260909-577235.service
+LoadState=loaded
+ActiveState=active
+
+exit=0
+$ sudo systemctl --system show -p LoadState -p ActiveState -p ExecStart glm53-c2-continuation-restore-c2-continuation-20260909-577235.service
+started=2026-09-09T19:08:03-0500
+ExecStart={ path=/usr/bin/python3.12 ; argv[]=/usr/bin/python3.12 /tmp/glm53-c2-continuation-restore-bundle-c2-continuation-20260909-577235/scripts/window_c2_continuation.py --restore-only --out /tmp/glm53-c2-continuation-restore-c2-continuation-20260909-577235 --docker docker --host-operation-lock /tmp/glm53-c2-continuation-host-operation.lock.timer --command-timeout-sec 1800.0 --readiness-timeout-sec 2400.0 --health /tmp/glm53-c2-continuation-restore-bundle-c2-continuation-20260909-577235/scripts/health-check.sh ; ignore_errors=no ; start_time=[n/a] ; stop_time=[n/a] ; pid=0 ; code=(null) ; status=0/0 }
+LoadState=loaded
+ActiveState=inactive
+
+exit=0
