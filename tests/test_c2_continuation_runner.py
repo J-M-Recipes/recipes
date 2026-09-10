@@ -421,6 +421,25 @@ def test_restore_timer_arms_with_resolved_python(tmp_path, monkeypatch):
         runner.shutil.rmtree(bundle, ignore_errors=True)
 
 
+def test_restore_timer_accepts_real_execstart_metadata_without_final_semicolon(monkeypatch, tmp_path):
+    runner = load_runner_module()
+    expected = ['/usr/bin/python3.12', '/tmp/bundle/runner.py', '--restore-only']
+    exec_start = (
+        '{ path=/usr/bin/python3.12 ; argv[]=/usr/bin/python3.12 /tmp/bundle/runner.py --restore-only'
+        ' ; ignore_errors=no ; start_time=[n/a] ; stop_time=[n/a] ; pid=0 ; code=(null) ; status=0/0 }'
+    )
+    def show(args, out, unit, props):
+        if unit.endswith('.timer'):
+            return {'ActiveState': 'active', 'NextElapseUSecRealtime': '1060000000'}
+        return {'ActiveState': 'inactive', 'ExecStart': exec_start}
+    monkeypatch.setattr(runner, 'systemctl_show', show)
+    payload = runner.read_systemd_timer(None, tmp_path, 'test.timer', 'test.service', 1060000000, expected)
+    assert payload['status'] == 'armed'
+    assert payload['exec_start_argv'] == expected
+    assert payload['exec_start_sha256'] == payload['expected_restore_cmd_sha256']
+    assert payload['service']['ExecStart'] == exec_start
+
+
 def test_restore_timer_rejects_wrong_path_with_exact_argv(monkeypatch, tmp_path):
     import pytest
     runner = load_runner_module()
