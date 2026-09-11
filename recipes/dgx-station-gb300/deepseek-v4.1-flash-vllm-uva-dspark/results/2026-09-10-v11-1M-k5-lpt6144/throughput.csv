@@ -1,0 +1,30 @@
+config,concurrency_or_tokens,metric,value,unit,notes
+v11-1M-k5-lpt6144,1,decode_agg,82.1,tok/s,knee.sh 2 warm runs (v10 same engine config; v11 re-check 80.1 on 2026-09-11 06:02 after hot docker start)
+v11-1M-k5-lpt6144,2,decode_agg,119.2,tok/s,knee.sh 2 warm runs
+v11-1M-k5-lpt6144,4,decode_agg,164.5,tok/s,knee.sh 2 warm runs
+v11-1M-k5-lpt6144,8,decode_agg,237.0,tok/s,knee.sh 2 warm runs
+v11-1M-k5-lpt6144,12,decode_agg,251.6,tok/s,knee.sh 2 warm runs
+v11-1M-k5-lpt6144,16,decode_agg,286.5,tok/s,knee.sh 2 warm runs
+v11-1M-k5-lpt6144,1,agent_shell_ops,150.0,tok/s,agent_fixture.sh DSpark accept 90.8% 4.54 tok/step
+v11-1M-k5-lpt6144,1,agent_code,145.6,tok/s,agent_fixture.sh accept 63.8% 3.19 tok/step
+v11-1M-k5-lpt6144,1,agent_tool_json,131,tok/s,agent_fixture.sh accept 87.8% 4.39 tok/step (v7 same shapes; v10 sample had one cold-schema outlier)
+v11-1M-k5-lpt6144,1,agent_structured,115.8,tok/s,agent_fixture.sh accept 49.5%
+v11-1M-k5-lpt6144,1,agent_prose,92.8,tok/s,agent_fixture.sh accept 29.8% 1.49 tok/step
+v11-1M-k5-lpt6144,1,dspark_accept_weighted,59.6,percent,agent_fixture.sh five-category weighted; deterministic across v7/v10
+v11-1M-k5-lpt6144,24 turns,real_transcript_decode,88.1,tok/s,replay.py on 24 real Hermes turns; NOISY ±17 tok/s on rerun (90.6/119.4/124.3) — smoke only
+v11-1M-k5-lpt6144,24 turns,real_transcript_accept,49.1,percent,replay.py
+v11-1M-k5-lpt6144,6538,cold_prefill_ttft,0.37,s,cold_prefill_probe.py THINKING=0; 17866 tok/s
+v11-1M-k5-lpt6144,25920,cold_prefill_ttft,1.54,s,warm-shape run of 2 (cold-shape 4.5 s)
+v11-1M-k5-lpt6144,51797,cold_prefill_ttft,2.67,s,warm-shape run of 2 (cold-shape 5.53 s)
+v11-1M-k5-lpt6144,103814,cold_prefill_ttft,5.38,s,19340 tok/s
+v11-1M-k5-lpt6144,207000,cold_prefill_ttft,11.3,s,~18300 tok/s
+v11-1M-k5-lpt6144,415000,cold_prefill_ttft,24.9,s,~16700 tok/s
+v11-1M-k5-lpt6144,972435,cold_prefill_ttft,84.98,s,11443 tok/s; 0 preemptions; HBM 243246 MiB peak
+v11-1M-k5-lpt6144,8840,warm_prefix_ttft,0.360,s,prefix_ttft.py mean of 5 warm; cold same prompt 0.665 s (1.8x); includes first DSpark decode step
+v11-1M-k5-lpt6144,4 shorts during 480K prefill,short_ttft_under_long_prefill,0.97,s,starve.py max of 4 (0.97/1.09/0.89/0.92); without --long-prefill-token-threshold: 18.2/13.2/8.2/3.2 s
+v11-1M-k5-lpt6144,480000,long_prefill_wall_with_lpt6144,26.8,s,starve.py; 23.1 s without the flag (+16% cost of fairness)
+v11-1M-k5-lpt6144,-,kv_cache_available,10.05,GiB,gpu_worker.py log line
+v11-1M-k5-lpt6144,-,kv_cache_tokens,4785782,tokens,kv_cache_utils.py; 4.5x concurrency at 1M
+v11-1M-k5-lpt6144,-,cuda_graphs,1.52,GiB,model_runner.py
+v11-1M-k5-lpt6144,-,cold_boot_local_nvme,8,min,seeded autotune cache; 92 min from CIFS with retune
+v11-1M-k5-lpt6144,-,hot_docker_start,4,min,container restart with cached shards
