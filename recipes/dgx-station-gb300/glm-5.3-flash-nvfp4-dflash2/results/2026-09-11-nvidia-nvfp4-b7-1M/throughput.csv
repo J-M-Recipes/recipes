@@ -1,0 +1,29 @@
+run_id,config,metric,concurrency,value,unit,spread_pct,method,source
+2026-09-11,g7 daily (nvidia NVFP4 + DFlash2 b7 + mamba48 + 1M),C1 recipe-method,1,252.5,tok/s,0.5,history essay 512 tok thinking-default median of 3,c1-methods (g7 run)
+2026-09-11,g6 (same minus 1M ctx),C1 recipe-method,1,256.5,tok/s,0.7,history essay 512 tok median of 3,c1-g6-b7.txt
+2026-09-11,g6,C1 code 400,1,253.4,tok/s,0.2,median of 3,c1-g6-b7.txt
+2026-09-11,g6,C1 shell-ops 200,1,254.1,tok/s,0.1,median of 3,c1-g6-b7.txt
+2026-09-11,g6,C1 prose 300,1,174.7,tok/s,0.1,median of 3,c1-g6-b7.txt
+2026-09-11,g2 (nvidia + DFlash2 b8 default mamba38),C1 recipe-method,1,238.1,tok/s,0.7,median of 3,c1-g2.txt
+2026-09-11,g1 (LibertAI + DFlash2 b8),C1 recipe-method,1,235.5,tok/s,0.5,median of 3,c1-g1.txt
+2026-09-11,g4 (nvidia AR),C1 recipe-method,1,138.8,tok/s,0.5,median of 3,c1-g4.txt
+2026-09-11,g6,knee prose256,1,175.4,tok/s,11,warm discarded then mean of 3,results-g6-b7-clean.txt
+2026-09-11,g6,knee prose256,4,458.6,tok/s,10,mean of 3,results-g6-b7-clean.txt
+2026-09-11,g6,knee prose256,8,709.1,tok/s,5,mean of 3,results-g6-b7-clean.txt
+2026-09-11,g6,knee prose256,16,666.0,tok/s,4,queued (cap 9),results-g6-b7-clean.txt
+2026-09-11,g5b (DFlash2 b8 mamba80 cap16),knee prose256,16,1054.0,tok/s,10,mean of 3,results-g5b-clean.txt
+2026-09-11,g4 (AR cap23),knee prose256,16,1101.3,tok/s,1,mean of 3,results-g4-clean.txt
+2026-09-11,g8 (AR ratio3 cap50 fp32 ssm),conc 2.4K-in/384-out,32,1647.8,tok/s agg,0,mean of 3; per-user 55.4; TTFT p95 0.59s,conc-g8-ar-cap50.txt
+2026-09-11,g8,conc 2.4K-in/384-out,48,1681.2,tok/s agg,77,at cap; per-user 47.7; p95 spike = autotune,conc-g8-ar-cap50.txt
+2026-09-11,g9 (AR 640 bf16-ssm slots cap128),conc 2.4K-in/384-out,48,2213.5,tok/s agg,2,per-user 50.4; TTFT p95 0.76s,conc-g9-ar-cap128.txt
+2026-09-11,g9,conc 2.4K-in/384-out,96,3406.4,tok/s agg,1,per-user 38.6; TTFT p95 1.13s,conc-g9-ar-cap128.txt
+2026-09-11,g9,conc 2.4K-in/384-out,128,4025.1,tok/s agg,1,per-user 34.3; TTFT p95 1.41s,conc-g9-ar-cap128.txt
+2026-09-11,g10 (DFlash2 b7 120 slots cap24),conc 2.4K-in/384-out,8,743.0,tok/s agg,1,per-user 106.3,conc-g10-dflash-cap24.txt
+2026-09-11,g10,conc 2.4K-in/384-out,16,1180.1,tok/s agg,3,per-user 85.9,conc-g10-dflash-cap24.txt
+2026-09-11,g10,conc 2.4K-in/384-out,24,1482.1,tok/s agg,2,per-user 71.8; TTFT p95 0.53s,conc-g10-dflash-cap24.txt
+2026-09-11,g6,DFlash2 accept len,1,3.37,tokens,,7-class mean; rate 0.39; prose 0.29 math 0.61,accept-g6-b7.txt
+2026-09-11,g2,DFlash2 accept len,1,3.52,tokens,,7-class mean; rate 0.36,accept-g2.txt
+2026-09-11,KL nvidia vs FP8,mean abs dlogp,,0.136,nats,,40 prompts x 128 greedy tokens teacher-forced; argmax differs 15.6%,kl-cand-nvidia-on-FP8-text.json
+2026-09-11,KL LibertAI vs FP8,mean abs dlogp,,0.147,nats,,same; argmax differs 15.9%; nvidia closer on 27/40 bootstrap CI [0.004 0.017],kl-cand-libertai-on-FP8-text.json
+2026-09-11,g7,Hermes harness,,10/10,tool turns,,hermes chat custom[glm53] 10 prompts; 9/10 graded (grader regex miss; answer correct),harness-hermes-g7.txt
+2026-09-11,g7,tool gate,,10/10,parsed tool_calls,,tool_harness.py x2,harness-g7.txt

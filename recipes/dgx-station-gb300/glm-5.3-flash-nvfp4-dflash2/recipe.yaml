@@ -2,24 +2,25 @@ schema: jm-recipe/v1
 id: dgx-station-gb300/glm-5.3-flash-nvfp4-dflash2
 title: GLM-5.3-Flash NVFP4 + DFlash2 speculative decoding on one DGX Station GB300
 summary: >
-  355B-parameter GLM-5.3-Flash in NVFP4 served by SGLang with the DFlash2 block-diffusion draft model.
-  Interactive-optimised: 234 tok/s single-stream decode, ~825 tok/s aggregate at C8, sub-second cold prefill
-  to 8k tokens. Switch to plain autoregressive above C16.
+  GLM-5.3-Flash (320B MoE, 18B active) in NVIDIA's first-party NVFP4 served by released-track SGLang with the
+  DFlash2 block-diffusion draft (block 7), 1M context. Interactive: 252 tok/s single-stream, ~740 agg at C8.
+  Same weights in plain autoregressive mode serve 48 users at 50 tok/s each and 128 users at 34 tok/s each
+  (4,025 agg) on one GPU. Quality gate is teacher-forced logprob divergence vs the FP8 original, not eyeballing.
 status: verified
 owners: [jmeadlock, milo]
-updated: "2026-09-06"
-tags: [glm-5.3-flash, nvfp4, sglang, dflash2, speculative-decoding, single-gpu, interactive]
+updated: "2026-09-11"
+tags: [glm-5.3-flash, nvfp4, sglang, dflash2, speculative-decoding, single-gpu, interactive, high-concurrency, 1m-context]
 
 model:
   name: GLM-5.3-Flash
-  params: 355B (MoE)
-  repo: https://huggingface.co/LibertAIDAI/GLM-5.3-Flash-NVFP4
-  revision: aa28e1f54130286c95fee10d0705c74ce8743734
-  quantization: NVFP4 (ModelOpt)
+  params: 320B total / 18B active (MoE, 288 experts, 8 active; hybrid KDA + DSA + MLA attention)
+  repo: https://huggingface.co/nvidia/GLM-5.3-Flash-NVFP4
+  revision: 09b04e5e74bca08ca8549fc736d4cdd8624bfde3
+  quantization: "NVFP4 (NVIDIA ModelOpt, first-party; 204,475,659,764 bytes). Routed experts FP4; attention, shared experts, router, embeddings, lm_head unquantized (132 excluded modules). mean |dlogp| 0.136 vs zai-org/GLM-5.3-Flash FP8 on 5,120 teacher-forced tokens; argmax differs 15.6%. LibertAIDAI/GLM-5.3-Flash-NVFP4 (previous revision of this recipe): 0.147 / 15.9%. nvidia closer on 27/40 prompts, bootstrap 95% CI on the gap [0.004, 0.017]. Most divergence is shared NVFP4 bias: both quants pick the same non-FP8 token 10.3% of the time. Previous revision of this recipe used LibertAIDAI/GLM-5.3-Flash-NVFP4 @ aa28e1f54130286c95fee10d0705c74ce8743734 (run 2026-09-01); speed identical within noise (235.5 vs 238.1 C1); kept as control."
   draft:
     repo: https://huggingface.co/incoai/GLM-5.3-Flash-DFlash2
     revision: 7d74cdd881ed7e32c31175984a67823127b66cfe
-    method: DFlash2 block diffusion draft, 8-token blocks
+    method: DFlash2 block diffusion draft; served with --speculative-dflash-block-size 7 (block 8 minus the target token)
 
 hardware:
   profile: hardware/dgx-station-gb300.yaml
@@ -38,81 +39,106 @@ hardware:
 
 runtime:
   engine: SGLang
-  engine_version: 0.5.18 + PR #36507 (glm-5.3-flash-support, includes #36708 DFlash hidden-state adapter)
-  engine_commit: 0a6b5d8c7b92825eb2687946aba2c5f728d7382e
+  engine_version: main nightly 0.0.0.dev1+g00143e9c2 (includes #36507 GLM-5.3-Flash support and #38621 NVFP4 mixed-precision loading; no source build, no docker commit)
+  engine_commit: 00143e9c
   container:
-    image: glm53-nvfp4-sglang:gb300-v2
-    digest: sha256:f710fd42cf749cbc6c3e1799244b5bdefd3b8f34d978aa810a9c1f97f86b143a
-    dockerfile: scripts/build-image.sh
-    dockerfile_sha256: c7456c2c640cf3f87d0b7453b2c666425b2cd8fc3efb00badd618b0dfc1e87ef
-    base_image: lmsysorg/sglang:v0.5.18 @ sha256:9e148f5ac788e856a06166bd6347a831831eb9fcfab4d1770874823a7c29a1a1 (built 2026-08-21, upstream rev 71de97b264b04dcd514cf904003028aefe9775c8)
+    image: lmsysorg/sglang:nightly-dev-cu13-20260911-00143e9c
+    digest: sha256:f159f796afdd2bcfa924f4fa09564c82c7d54fc24b1ecae2e308213b8592cb0b
+    base_image: "released-track nightly, no source build. Replaces the frozen glm53-nvfp4-sglang:gb300-v2 @ sha256:f710fd42cf749cbc6c3e1799244b5bdefd3b8f34d978aa810a9c1f97f86b143a (scripts/build-image.sh) from run 2026-09-01; nightly reproduces its numbers (g0 vs g1 in throughput.csv)"
   key_libraries:
     torch: 2.13.0+cu130
-    transformers: 5.16.1
+    transformers: 5.12.1
     triton: 3.7.1
-    cudnn: 9.14.0.64-1
 
 launch:
-  script: scripts/launch-dflash2.sh
-  command: "MODEL_DIR=/path/to/GLM-5.3-Flash-NVFP4/<revision>/original DRAFT_DIR=/path/to/GLM-5.3-Flash-DFlash2 API_KEY=... bash scripts/launch-dflash2.sh && bash scripts/warmup.sh"
-  health: "curl -fs http://localhost:30000/health; then run scripts/warmup.sh — first hit of each batch shape pays up to 30 s of kernel autotune"
-  warmup: scripts/warmup.sh (fires C1/4/8/16/32 once each)
+  script: scripts/launch-glmf.sh
+  command: "TAG=daily IMAGE=lmsysorg/sglang:nightly-dev-cu13-20260911-00143e9c MODEL=/path/to/GLM-5.3-Flash-NVFP4 DRAFT=/path/to/GLM-5.3-Flash-DFlash2 SPEC=dflash KV=fp8_e4m3 MEM=0.85 CTX=1048576 MAXBS=16 EXTRA='--max-mamba-cache-size 48 --speculative-dflash-block-size 7' bash scripts/launch-glmf.sh"
+  health: "curl -fs http://localhost:30001/health; then warm every batch shape you will serve (python3 -c 'import flash_bench as fb; fb.knee(reps=0)' from scripts/). First hit of each new batch shape after boot is kernel autotune, not serving."
+  warmup: "python3 -c 'import flash_bench as fb; fb.knee(reps=0)' from scripts/ — warms C1..C32 once each; exact launch line in results/2026-09-11-nvidia-nvfp4-b7-1M/launch-command.txt"
   notable_flags:
+    - "VARIANT interactive_daily: as above: DFlash2 block 7, 48 mamba slots (9 running), 1M ctx, 576K-token KV pool. C1 252, C8 ~740."
+    - "VARIANT interactive_more_kv: drop --max-mamba-cache-size (default 38 slots, 7 running): 682K KV pool, C8 drops to ~490."
+    - "VARIANT batch_48_users: SPEC=none KV=fp8_e4m3 MEM=0.90 CTX=131072 MAXBS=128 EXTRA='--max-mamba-cache-size 640 --mamba-ssm-dtype bfloat16 --linear-attn-decode-backend triton' : 128 running, 201K KV pool, C48 2,214 agg / 50 per user, C128 4,025 / 34. bf16 SSM state is an accuracy-affecting change per SGLang docs; not KL-gated here."
+    - "VARIANT batch_fp32_state: SPEC=none MEM=0.90 MAXBS=128 EXTRA='--mamba-full-memory-ratio 3.0' : 254 slots / 50 running, 1.79M KV pool, C32 1,648 / 55 per user, C48 1,681 / 48."
+    - "ENV TORCHINDUCTOR_COMPILE_THREADS=1 — without it AR-mode CUDA graph capture dies with inductor 'Could not find an active GPU backend'"
     - "--quantization modelopt_fp4"
-    - "--speculative-algorithm DFLASH --speculative-draft-model-path /draft --speculative-draft-attention-backend fa4"
-    - "--tool-call-parser glm47 --reasoning-parser glm45  (REQUIRED for any agent/tool use; without them tool calls come back as plain text)"
-    - "--cuda-graph-max-bs 32 --max-running-requests 32 --max-prefill-tokens 8192 --chunked-prefill-size 8192"
+    - "--speculative-algorithm DFLASH --speculative-draft-model-path /draft --speculative-draft-attention-backend fa4 --speculative-dflash-block-size 7"
+    - "--tool-call-parser glm47 --reasoning-parser glm45  (REQUIRED for any agent/tool use)"
+    - "--cuda-graph-max-bs-decode N  (renamed from --cuda-graph-max-bs on the frozen image)"
+    - "--max-mamba-cache-size N : the concurrency knob. SGLang reserves 5 KDA state slots per running request under the default extra_buffer radix strategy; max_running_requests = slots/5. Each fp32 slot costs ~0.14 GB state + ~0.03 GB per draft token of intermediate state, all taken from the KV pool."
+    - "--kv-cache-dtype fp8_e4m3 : only the DSA indexer pool is fp8 on this model; the MLA KV stays bf16 (sgl-project/sglang#36830, index_kpool=4). Do not describe this recipe as FP8 KV."
 
 metrics:
-  - name: single-stream decode
-    value: 234.2
+  - name: single-stream decode (recipe method)
+    value: 252.5
     unit: tok/s
-    workload: C1, warm, prose prompts, DFlash2
-    aggregation: median of 3 warm runs
-    provenance: { run_id: 2026-09-01-flash-dflash2, method: "sequential chat completions after warmup.sh; tokens/s from streamed output timing", raw: throughput.csv }
-  - name: aggregate decode C8
-    value: 825.2
+    workload: C1, history essay, 512 output tokens, thinking default, DFlash2 block 7, 1M ctx
+    aggregation: median of 3 (spread <1%)
+    provenance: { run_id: 2026-09-11-nvidia-nvfp4-b7-1M, method: scripts/c1_methods.py, raw: throughput.csv }
+  - name: single-stream decode, code
+    value: 253.4
     unit: tok/s
-    workload: C8, warm, DFlash2
-    aggregation: single warm run
-    provenance: { run_id: 2026-09-01-flash-dflash2, method: "8 concurrent chat completions; sum of output tokens / wall time", raw: throughput.csv }
-  - name: aggregate decode C32 (AR config)
-    value: 1162.5
+    workload: C1, Python module prompt, 400 tokens
+    aggregation: median of 3
+    provenance: { run_id: 2026-09-11-nvidia-nvfp4-b7-1M, method: scripts/c1_methods.py, raw: throughput.csv }
+  - name: single-stream decode, plain autoregressive
+    value: 138.8
     unit: tok/s
-    workload: C32, warm, plain autoregressive (scripts/launch-ar.sh)
-    aggregation: single warm run
-    provenance: { run_id: 2026-09-01-flash-dflash2, method: "32 concurrent chat completions; sum of output tokens / wall time", raw: throughput.csv }
-  - name: TTFT under load
-    value: 0.19
-    unit: s
-    workload: 9th streamed request while 8 are running, DFlash2
-    provenance: { run_id: 2026-09-01-flash-dflash2, method: "time to first streamed token", raw: throughput.csv }
-  - name: cold prefill 8k
-    value: 0.29
-    unit: s
-    workload: 6,625-token prompt, cold KV, warm kernel shapes, DFlash2
-    provenance: { run_id: 2026-09-01-flash-dflash2, method: "TTFT of a fresh prompt (~22.5k tok/s prefill)", raw: throughput.csv }
-  - name: cold prefill 105k
-    value: 4.0
-    unit: s
-    workload: 105,434-token prompt, cold KV, warm kernel shapes, DFlash2
-    provenance: { run_id: 2026-09-01-flash-dflash2, method: "TTFT of a fresh prompt (~26.3k tok/s prefill)", raw: throughput.csv }
+    workload: C1 recipe method, SPEC=none
+    aggregation: median of 3
+    provenance: { run_id: 2026-09-11-nvidia-nvfp4-b7-1M, method: scripts/c1_methods.py, raw: throughput.csv }
+  - name: DFlash2 acceptance
+    value: 3.37
+    unit: accepted tokens per 7-token block (rate 0.39)
+    workload: mean over 7 prompt classes at C1; prose 0.29, code 0.41, math 0.61
+    provenance: { run_id: 2026-09-11-nvidia-nvfp4-b7-1M, method: scripts/accept_probe.py scraping scheduler accept-len lines, raw: throughput.csv }
+  - name: aggregate decode C8, DFlash2
+    value: 743.0
+    unit: tok/s
+    workload: 8 users, 2.4K-token prose prompt, 384 output, 120 slots
+    aggregation: mean of 3 after discarded warm pass (spread 1%); per-user 106 tok/s
+    provenance: { run_id: 2026-09-11-nvidia-nvfp4-b7-1M, method: scripts/conc_curve.py, raw: throughput.csv }
+  - name: aggregate decode C24, DFlash2
+    value: 1482.1
+    unit: tok/s
+    workload: 24 users, same prompt; per-user 71.8, TTFT p95 0.53 s
+    aggregation: mean of 3 (spread 2%)
+    provenance: { run_id: 2026-09-11-nvidia-nvfp4-b7-1M, method: scripts/conc_curve.py, raw: throughput.csv }
+  - name: aggregate decode C48, autoregressive
+    value: 2213.5
+    unit: tok/s
+    workload: 48 users, same prompt, 640 bf16 slots; per-user 50.4, TTFT p95 0.76 s
+    aggregation: mean of 3 (spread 2%)
+    provenance: { run_id: 2026-09-11-nvidia-nvfp4-b7-1M, method: scripts/conc_curve.py, raw: throughput.csv }
+  - name: aggregate decode C128, autoregressive
+    value: 4025.1
+    unit: tok/s
+    workload: 128 users, same prompt; per-user 34.3, TTFT p50 0.98 s / p95 1.41 s
+    aggregation: mean of 3 (spread 1%)
+    provenance: { run_id: 2026-09-11-nvidia-nvfp4-b7-1M, method: scripts/conc_curve.py, raw: throughput.csv }
+  - name: KV pool, daily config
+    value: 576000
+    unit: tokens
+    workload: 1M ctx, 48 slots, fp8 indexer + bf16 MLA KV
+    provenance: { run_id: 2026-09-11-nvidia-nvfp4-b7-1M, method: "SGLang boot log 'KV Cache is allocated'", raw: launch-command.txt }
 
 verification:
   gates:
-    schema:      { how: "scripts/check_recipe.py passes", last_pass_utc: "2026-09-06T15:00:00Z", run_id: 2026-09-01-flash-dflash2 }
-    digest:      { how: "docker image inspect reports the digest above; model dirs are the pinned revisions", last_pass_utc: "2026-09-06T14:40:00Z", run_id: 2026-09-01-flash-dflash2 }
-    health:      { how: "/health 200 after boot; warmup.sh completes all five shapes", last_pass_utc: "2026-09-02T00:00:00Z", run_id: 2026-09-01-flash-dflash2 }
-    quality:     { how: "coherent long-form output on the prose/code prompt set; DFlash2 accepts ~5 of 8 draft tokens per block; agent tool-calls parse with the two parsers on. No logprob-divergence gate was run for this recipe (see limits).", last_pass_utc: "2026-09-02T00:00:00Z", run_id: 2026-09-01-flash-dflash2, notes: "weaker gate than recipe 2's; stated, not hidden" }
-    performance: { how: "C1 median-of-3 within 5% of 234.2 tok/s after warmup", last_pass_utc: "2026-09-02T00:00:00Z", run_id: 2026-09-01-flash-dflash2 }
+    schema:      { how: "scripts/check_recipe.py passes", last_pass_utc: "2026-09-11T17:30:00Z", run_id: 2026-09-11-nvidia-nvfp4-b7-1M }
+    digest:      { how: "docker image inspect reports the digest above; model dir is the pinned revision, 204,475,659,764 bytes / 42 files byte-verified against the Hub listing", last_pass_utc: "2026-09-11T13:00:00Z", run_id: 2026-09-11-nvidia-nvfp4-b7-1M }
+    health:      { how: "/health 200 after boot; all shapes warmed", last_pass_utc: "2026-09-11T16:47:00Z", run_id: 2026-09-11-nvidia-nvfp4-b7-1M }
+    quality:     { how: "teacher-forced |dlogp| vs zai-org FP8 original on 40 prompts x 128 greedy tokens: nvidia 0.136 (argmax differs 15.6%) vs LibertAI 0.147 (15.9%); instrument self-consistency 0.00000. Plus 10/10 parsed tool calls (scripts/tool_harness.py) and a real Hermes agent harness 10/10 tool turns.", last_pass_utc: "2026-09-11T15:45:00Z", run_id: 2026-09-11-nvidia-nvfp4-b7-1M, notes: "replaces the output-judged gate of run 2026-09-01" }
+    performance: { how: "C1 recipe-method median-of-3 within 3% of 252.5 after warmup; C48 AR within 5% of 2,214", last_pass_utc: "2026-09-11T16:45:00Z", run_id: 2026-09-11-nvidia-nvfp4-b7-1M }
 
 limits:
-  - "DFlash2 is an interactive win: it loses to plain AR at C16+ (796 vs 1051 agg tok/s at C16). Use scripts/launch-ar.sh for batch work."
-  - "KV cache runs at SGLang's default for modelopt_fp4 (FP8 target KV; draft KV bf16 via fa4). This recipe accepts that. It is a quality tradeoff, and it is NOT what the GLM-5.3-big recipe on this same hardware allows — quality bars are per recipe."
-  - "First hit of every batch shape after a restart pays up to 30 s of kernel autotune. Run warmup.sh or your first benchmark measures autotune, not serving."
-  - "No teacher-forced divergence gate was run for this recipe; quality was judged on outputs and acceptance rate. A KL gate like recipe 2's would be stronger."
-  - "Image is a frozen `docker commit` of an SGLang PR branch, not a released tag. Reproduce with scripts/build-image.sh; results may drift once #36507 merges."
-  - "The 704 GB FP8 checkpoint of full GLM-5.3 does not fit this machine with SGLang CPU offload (host shm peak > 744 GiB). See research/failure-ledger.md."
+  - "CORRECTION to run 2026-09-01: 'DFlash2 loses to AR at C16+' was wrong. The cause was SGLang's default KDA state budget capping max_running_requests at 7; verification cost was not the issue. With slots raised, DFlash2 beats AR per running request through at least C24 (1,482 vs ~1,350 agg). What DFlash2 actually loses is memory: each slot carries 7 draft-token intermediate states in fp32 (bf16 SSM crashes the DFlash2 verify kernel on this image), so 120 slots cost 41 GB and leave a 134K KV pool. AR with bf16 state fits 640 slots in 43 GB. Pick DFlash2 for <=24 users, AR for more."
+  - "NVFP4 costs ~16% token-level disagreement with the FP8 original regardless of who quantized it. nvidia's mixed-precision recipe is measurably closer than LibertAI's, by ~0.3 pp argmax agreement. If token fidelity matters more than speed, serve the FP8 original with offload; that is a different recipe."
+  - "Concurrency is capped by KDA state slots, not compute: 5 slots per running request under the default radix strategy. Raise --max-mamba-cache-size (or --mamba-full-memory-ratio); the bytes come out of the KV pool one-for-one. --mamba-radix-cache-strategy no_buffer (3 slots/req) requires page_size 1 and is incompatible with this model's DSA page size."
+  - "First hit of every batch shape after a restart is kernel autotune (13 s TTFT at C16 observed). Warm every shape you will serve; the first pass at a new shape is not a measurement."
+  - "Do not enable HiCache on this model for agent traffic: host-tier load-back corrupts generation and drops tool calls (sgl-project/sglang#38031)."
+  - "The MLA KV cache is bf16 even with --kv-cache-dtype fp8_e4m3 (sgl-project/sglang#36830). Only the DSA indexer pool is fp8."
+  - "Native MTP drafter is in the checkpoint but SGLang's GLM-5.3 NextN path is broken (#37548, #36829). SGLang's cookbook MTP numbers for this model are measured with SGLANG_SIMULATE_ACC_LEN=3."
+  - "Draft acceptance is 0.29 on prose and 0.61 on math; a prose-heavy workload sees ~175 tok/s C1, not 252. Report the prompt with every C1 number."
 
 rollback:
   script: scripts/swap-model.sh
@@ -120,5 +146,8 @@ rollback:
 
 links:
   blog: https://al-engr.com/gb300-glm-53-testing.html
+  blog_round2: https://al-engr.com/gb300-glm-flash-round2.html
+  sglang_cookbook: https://docs.sglang.io/cookbook/autoregressive/GLM/GLM-5.3-Flash
+  reference_numbers: "catid/dgx_station_benchmarks (1x GB300 LibertAI DFlash2 C1 187, AR C1 126 on 8K prompts); NVIDIA forum ebfio (vLLM DFlash2 block 7, 305-470 tok/s, 54-67% acceptance)"
   origin_repo: https://github.com/jmeadlock/gb300-glm-flash-recipe
   sglang_pr: https://github.com/sgl-project/sglang/pull/36507
