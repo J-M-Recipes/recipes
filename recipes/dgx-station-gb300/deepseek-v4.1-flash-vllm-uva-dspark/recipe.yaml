@@ -1,0 +1,143 @@
+schema: jm-recipe/v1
+id: dgx-station-gb300/deepseek-v4.1-flash-vllm-uva-dspark
+title: DeepSeek-V4.1-Flash at 1M context on one DGX Station GB300 (vLLM UVA expert offload + DSpark)
+summary: >
+  The 510 GB DeepSeek-V4.1-Flash checkpoint (MXFP4 experts, FP8 Engram) does not fit 250 GiB of HBM.
+  This recipe serves it from one GB300 by offloading 70 GiB of routed-expert weights to Grace memory over
+  NVLink-C2C with vLLM's UVA backend, keeps the full 1,048,576-token context, and runs the in-checkpoint
+  DSpark drafter (k=5). ~82 tok/s single-stream prose, 130-150 tok/s on agent/code/tool text, 287 agg at C16,
+  a 972K-token prompt prefills in 85 s, and Hermes tool-calling passes 10/10 under the real agent harness.
+status: verified
+owners: [jmeadlock, milo]
+updated: "2026-09-11"
+tags: [deepseek-v4.1-flash, mxfp4, vllm, uva-offload, dspark, speculative-decoding, 1m-context, single-gpu, agent]
+
+model:
+  name: DeepSeek-V4.1-Flash
+  params: 284B (MoE, 384 routed experts) + Engram
+  repo: https://huggingface.co/deepseek-ai/DeepSeek-V4.1-Flash
+  revision: df42c109f1defefcbfcedbe7d905718a12266e40
+  quantization: as shipped — routed experts MXFP4 (I8 + E8M0 block scales), Engram and attention FP8. Nothing re-quantized.
+  draft:
+    repo: in-checkpoint (mtp.{0,1,2}.* tensors, 97 params)
+    revision: df42c109f1defefcbfcedbe7d905718a12266e40
+    method: DSpark, num_speculative_tokens=5
+
+hardware:
+  profile: hardware/dgx-station-gb300.yaml
+  nominal: { gpu_memory_gb: 288, host_memory_gb: 496 }
+  observed:
+    gpu: NVIDIA GB300
+    driver: "595.84"
+    cuda: "13.0 (container runtime)"
+    gpu_memory_visible_gib: 250.7
+    host_memory_gib: 494.5
+    os: Ubuntu 24.04.4 LTS
+    kernel: 6.17.0-1032-nvidia-64k
+    snapshot: results/2026-09-10-v11-1M-k5-lpt6144/system.json
+  required_settings:
+    - "Checkpoint on LOCAL NVMe. From a CIFS/SMB share, weight load is 1,246 s and the DSpark draft pass ~600 s, degrading with each back-to-back boot; from local RAID0 NVMe it is 133 s + 20 s. Boot 92 min → 8 min."
+    - "Mount a persistent /root/.cache/vllm so the FlashInfer autotune cache survives. Every distinct engine config (seqs/spec/ctx) hashes to a NEW empty dir and re-runs a 74-minute MoE autotune unless you pre-seed it (see README)."
+    - "Do NOT set CUDA_VISIBLE_DEVICES; DGX OS's docker config already hides the display GPU."
+
+runtime:
+  engine: vLLM
+  engine_version: 0.1.dev20904+g179dd0fa9 (DeepSeek-V4.1 day-0 image)
+  engine_commit: 179dd0fa9
+  container:
+    image: vllm/vllm-openai:deepseekv41-flash-0909
+    digest: sha256:00d577a6a63281e15336029d5bcee4e9a2cf182214a4f20ba6111b1c8e79893d
+    base_image: vllm/vllm-openai (upstream day-0 build, created 2026-09-10T06:39Z)
+  key_libraries:
+    torch: 2.13.0+cu130
+    transformers: 5.17.0
+    flashinfer: 0.6.18
+    triton: 3.7.1
+
+launch:
+  script: scripts/launch-dsv41-vllm.sh
+  command: "MODEL=/models/DeepSeek-V4.1-Flash-df42c109f1defefcbfcedbe7d905718a12266e40 TAG=v11-1M-k5-lpt6144 OFFGB=70 UTIL=0.94 SEQS=16 SPEC=dspark:5 CTX=1048576 EXTRA='--long-prefill-token-threshold 6144' bash scripts/launch-dsv41-vllm.sh"
+  health: "curl -fs http://localhost:30006/v1/models ; log must show 'Available KV cache memory: 10.05 GiB' and 'Loaded 210 configs' (not 'Autotuning process starts' followed by silence — that is the 74-min retune)"
+  warmup: "scripts/smoke_vllm.sh (arith, count, prose, tool call, thinking) then scripts/knee.sh once; first hit of each prompt-length class pays a few seconds of shape JIT"
+  notable_flags:
+    - "--offload-backend uva --cpu-offload-gb 70 --cpu-offload-params routed_experts.w13_weight routed_experts.w2_weight  (70 is the notch: 60 leaves KV at -2.61 GiB at 1M+DSpark; 40 is -6.96 even at 131K)"
+    - "--engram-config '{\"cpu_offload\": true}'  (189 GiB Engram table lives in Grace memory)"
+    - "--max-model-len 1048576  (full native context; costs 5.5 GiB of KV pool vs 131K and zero decode speed)"
+    - "--speculative-config '{\"method\":\"dspark\",\"num_speculative_tokens\":5}'  (k=5 beats k=3 on agent/code text; k=3 wins prose by ~10% — pick for your workload)"
+    - "--long-prefill-token-threshold 6144  (REQUIRED for mixed traffic: without it a 480K prefill starves a short request to 18 s TTFT; with it ~1 s, long prompt +16%)"
+    - "--tool-call-parser deepseek_v41 --reasoning-parser deepseek_v41 --enable-auto-tool-choice  (REQUIRED for agent use)"
+    - "--gpu-memory-utilization 0.94 --max-num-seqs 16 --max-num-batched-tokens 8192"
+
+metrics:
+  - name: single-stream decode (prose)
+    value: 82.1
+    unit: tok/s
+    workload: C1, warm, prose prompt, DSpark k=5, 1M context config
+    aggregation: mean of 2 warm runs (knee.sh); re-check 80.1 after hot restart 2026-09-11
+    provenance: { run_id: 2026-09-10-v11-1M-k5-lpt6144, method: "knee.sh: sequential streamed chat completion, output tokens / wall", raw: throughput.csv }
+  - name: agent text decode (shell/code/tool-json)
+    value: 145.6
+    unit: tok/s
+    workload: C1, warm, code-generation prompt, DSpark accept 63.8%
+    aggregation: single run; shell_ops 150.0 / tool_json 131 / structured 115.8 on the same fixture
+    provenance: { run_id: 2026-09-10-v11-1M-k5-lpt6144, method: "agent_fixture.sh: five prompt classes, /metrics DSpark accept deltas", raw: throughput.csv }
+  - name: aggregate decode C16
+    value: 286.5
+    unit: tok/s
+    workload: C16, warm, prose prompts, DSpark k=5
+    aggregation: mean of 2 warm runs
+    provenance: { run_id: 2026-09-10-v11-1M-k5-lpt6144, method: "knee.sh: 16 concurrent chat completions; sum of output tokens / wall", raw: throughput.csv }
+  - name: cold prefill 6.5k
+    value: 0.37
+    unit: s
+    workload: 6,538-token prompt, thinking off
+    provenance: { run_id: 2026-09-10-v11-1M-k5-lpt6144, method: "cold_prefill_probe.py TTFT (~17.9k tok/s)", raw: throughput.csv }
+  - name: cold prefill 104k
+    value: 5.38
+    unit: s
+    workload: 103,814-token prompt
+    provenance: { run_id: 2026-09-10-v11-1M-k5-lpt6144, method: "cold_prefill_probe.py TTFT (~19.3k tok/s)", raw: throughput.csv }
+  - name: cold prefill 972k
+    value: 84.98
+    unit: s
+    workload: 972,435-token prompt, 0 preemptions, HBM peak 243 GiB
+    provenance: { run_id: 2026-09-10-v11-1M-k5-lpt6144, method: "cold_prefill_probe.py TTFT (~11.4k tok/s)", raw: throughput.csv }
+  - name: short-request TTFT during a 480k prefill
+    value: 0.97
+    unit: s
+    workload: 4 short requests injected at 5 s intervals while a 480K-token prompt prefills
+    aggregation: max of 4 (0.89-1.09)
+    provenance: { run_id: 2026-09-10-v11-1M-k5-lpt6144, method: "starve.py; same test without --long-prefill-token-threshold gives 18.2 s", raw: throughput.csv }
+  - name: Hermes harness tool-call pass rate
+    value: 100
+    unit: percent
+    workload: 10 prompts each requiring a real tool, hermes chat --reasoning low
+    provenance: { run_id: 2026-09-10-v11-1M-k5-lpt6144, method: "harness_test.sh; tool_turns from the harness log + ground-truth answer/side-effect check", raw: harness-summary.md }
+
+verification:
+  gates:
+    schema:      { how: "scripts/check_recipe.py passes", last_pass_utc: "2026-09-11T11:30:00Z", run_id: 2026-09-10-v11-1M-k5-lpt6144 }
+    digest:      { how: "docker image inspect reports sha256:00d577a6…; /model mount is the df42c109 revision, 510,313,343,553 bytes byte-verified against the archive", last_pass_utc: "2026-09-11T11:07:00Z", run_id: 2026-09-10-v11-1M-k5-lpt6144 }
+    health:      { how: "/v1/models 200; log shows KV 10.05 GiB, 4,785,782 tokens, 'Loaded 210 configs'; smoke_vllm.sh 5/5", last_pass_utc: "2026-09-11T11:01:00Z", run_id: 2026-09-10-v11-1M-k5-lpt6144 }
+    quality:     { how: "smoke: 17×19=323, count 1-60 exact, coherent prose, parsed tool_call, thinking→answer; Hermes harness 10/10 tool calls with correct answers/side effects. No teacher-forced divergence gate (weights are as-shipped, nothing requantized).", last_pass_utc: "2026-09-11T11:06:00Z", run_id: 2026-09-10-v11-1M-k5-lpt6144 }
+    performance: { how: "knee.sh C1 within 5% of 82.1 tok/s warm (re-check 80.1 = -2.4%)", last_pass_utc: "2026-09-11T11:02:00Z", run_id: 2026-09-10-v11-1M-k5-lpt6144 }
+
+limits:
+  - "Decode is C2C-bandwidth + kernel bound, not HBM bound: ~1.1 GB of expert rows per token cross NVLink-C2C. Halving offload (70→60) does not fit at 1M; offload 60 at 131K/no-spec gave only +~8%."
+  - "The 82 tok/s number is prose. Agent text (shell, code, tool JSON) runs 130-150 tok/s because DSpark accepts 64-91% there vs 30% on prose. Quote the number for YOUR workload; do not quote 150 as 'the' speed."
+  - "Every new engine-config hash starts an empty FlashInfer autotune dir → 74-min MoE retune. Seed autotune_configs.json into the new hash dir BEFORE the tuner reads it (~60 s after 'Graph capturing finished') or pass a kernel-config that disables autotune. This recipe's hash: 08c89d94."
+  - "Hermes/OpenAI clients: the V4.1 chat template rejects reasoning_effort=medium (HTTP 400). Use low|high|xhigh|max or an int 1-100."
+  - "replay.py (real-transcript replay) has ±17 tok/s run-to-run spread at temperature 0 (batched MoE + speculative decode are not bit-deterministic). It is a smoke test. Decide on knee.sh."
+  - "Tested and NOT adopted (2026-09-11 overnight): THP enabled=always, pinned and unpinned (AnonHugePages stayed 2.5 GB both times — the 354 GB of weights sit in Shmem, and shmem_enabled=never was not changed), VLLM_WEIGHT_OFFLOADING_DISABLE_PIN_MEMORY=1 (-66 GB host RAM but knee C1 -7%), --language-model-only (+1.1 GiB KV, not enough for offload 65), VLLM_USE_RUST_FRONTEND=1 (no decode gain, 8k TTFT 0.37→0.52 s). See research/failure-ledger.md."
+  - "~110 GB of host shmem beyond the accounted pinned buffers is unexplained. Host sits at ~450/494 GB under load; there is no room for a second large model."
+  - "SGLang day-0 on this hardware bound at 3.3 tok/s (whole-layer expert copies). This recipe is vLLM-specific."
+
+rollback:
+  script: scripts/launch-dsv41-vllm.sh
+  summary: "docker stop the lane container; docker start the previous kept container (all bound configs are kept stopped under dsv41-vllm-<tag>, hot restart ~4 min) or relaunch the prior TAG with the same image. Production surfaces on other ports are never touched by this lane."
+
+links:
+  blog: https://al-engr.com/gb300-deepseek-flash-41-testing.html
+  vllm_recipe_upstream: https://recipes.vllm.ai/deepseek-ai/DeepSeek-V4.1-Flash
+  vllm_pr_partial_prefill: https://github.com/vllm-project/vllm/pull/52084
+  vllm_issue_starvation: https://github.com/vllm-project/vllm/issues/51454
