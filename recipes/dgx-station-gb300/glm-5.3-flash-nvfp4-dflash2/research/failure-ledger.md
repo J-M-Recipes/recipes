@@ -39,3 +39,17 @@ but not excluded by the failure above.
   this reason.
 - The v1 "concurrency cliff" (15 s TTFT at C8+) was first-hit kernel autotune per
   batch shape, not a server defect. Warm up after every start (see README).
+
+
+## Round 2 (2026-09-11) — what failed, and what round 1 got wrong
+
+- **Round-1 conclusion "DFlash2 loses to AR at C16+" was wrong.** SGLang's default KDA state budget capped `max_running_requests` at 7; the C16/C32 rows were 16–32 clients sharing 7 seats. With `--max-mamba-cache-size` raised, DFlash2 beats AR per running request through C24. Lesson: read `max_running_requests=` in the boot log before interpreting any concurrency ceiling on a hybrid-attention model.
+- **Round-1 "FP8 KV cache" claim was half true.** The boot log allocates two pools; the MLA KV is bf16. We had been reading the indexer pool's line.
+- `--max-mamba-cache-size 660` (AR) and `320`/`200` (DFlash2) → `Loaded weights leave no GPU memory for the KV cache`. DFlash2 slots cost ~0.14 GB state + 7 × 0.03 GB intermediate, fp32. Use the ratio form or size from the boot log constants.
+- `--mamba-ssm-dtype bfloat16` + DFlash2 → `lower_bound (safe gate) target verify is only supported by TritonKDAKernel; got FlashInferKDAKernel`. Works on AR with `--linear-attn-decode-backend triton`.
+- `--mamba-radix-cache-strategy no_buffer` → `AssertionError: no_buffer only supports page_size=1`.
+- AR-mode CUDA graph capture on the nightly image died with inductor `Could not find an active GPU backend` — compile-worker race; `TORCHINDUCTOR_COMPILE_THREADS=1` fixes it.
+- SGLang `--cpu-offload-gb` on the FP8 original: `functional_call got multiple values for keys ['self_attn.attn.dt_bias', 'self_attn.dt_bias'], which are tied`. Oracle was served with vLLM UVA offload instead (120 GB, 9-min boot, 21 autotune configs).
+- SGLang `/v1/completions` rejects `max_tokens=0`; teacher-forced scoring uses `max_tokens=1, echo=true` and drops the last token.
+- First `x_search`-style checks of community claims: ebfio's 54–67% acceptance is on a vLLM stack with block 7; ours is 0.39 mean on SGLang. Block 7 matched his C1 gain but not his acceptance. Unresolved.
+- Staging to a root-owned `/models` with `mkdir -p` silently no-ops and the size-verify reports every file as `MISMATCH … 0`. Use `sudo mkdir && chown` first.
