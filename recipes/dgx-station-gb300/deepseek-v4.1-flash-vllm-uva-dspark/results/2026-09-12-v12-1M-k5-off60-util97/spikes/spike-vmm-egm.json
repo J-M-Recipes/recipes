@@ -1,0 +1,46 @@
+{
+ "steps": {
+  "1_numa_and_granularity": {
+   "pass": true,
+   "numa_id": 0,
+   "gran_dev": 2097152,
+   "gran_host": 2097152
+  },
+  "2_mixed_backing_one_va": {
+   "pass": true,
+   "map_ms": 11.8,
+   "va": "0x340000000"
+  },
+  "3_torch_wrap": {
+   "pass": true,
+   "dtype": "torch.float16",
+   "shape": [
+    32,
+    9437184
+   ]
+  },
+  "4_roundtrip_dev_and_host_rows": {
+   "pass": true,
+   "bad_rows": []
+  },
+  "5_bandwidth": {
+   "pass": false,
+   "host_numa_vmm_GBps": 1.5,
+   "pinned_uva_GBps": 275.7,
+   "hbm_rows_GBps": 558.9,
+   "ratio_vmm_over_pinned": 0.005
+  },
+  "6_remap_same_va": {
+   "pass": true,
+   "row1_now_GBps": 475.0
+  }
+ },
+ "summary": {
+  "row_MiB": 18.0,
+  "granularity": 2097152,
+  "numa_id": 0,
+  "all_pass": false,
+  "torch": "2.13.0+cu130",
+  "driver": 13020
+ }
+}
