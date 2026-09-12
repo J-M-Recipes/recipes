@@ -7,6 +7,9 @@ summary: >
   NVLink-C2C with vLLM's UVA backend, keeps the full 1,048,576-token context, and runs the in-checkpoint
   DSpark drafter (k=5). ~89 tok/s single-stream prose, 140-160 tok/s on agent/code/tool text, 311 agg at C16,
   a 972K-token prompt prefills in 85 s, and Hermes tool-calling passes 10/10 under the real agent harness.
+  Release "Sixty" (2026-09-12): this is the config to run. Two nights and a day of measurement closed the
+  residency axis (no faster GPU→Grace path exists on GB300) and the speculation-depth axis (no static k fits;
+  vLLM's adaptive verification works but its ~7 GiB graph-capture cost is forced — issue #56626).
 status: verified
 owners: [jmeadlock, milo]
 updated: "2026-09-12"
@@ -63,7 +66,7 @@ launch:
     - "--offload-backend uva --cpu-offload-gb 60 --cpu-offload-params routed_experts.w13_weight routed_experts.w2_weight  (v12: 60 fits at 1M+DSpark once util is 0.97 — KV 4.89 GiB, 2.22x at 1M; 12.7 GiB fewer expert bytes over C2C = +12% C1. v11 used 70 at util 0.94; 40 does not fit even at 131K)"
     - "--engram-config '{\"cpu_offload\": true}'  (189 GiB Engram table lives in Grace memory)"
     - "--max-model-len 1048576  (full native context; costs 5.5 GiB of KV pool vs 131K and zero decode speed)"
-    - "--speculative-config '{\"method\":\"dspark\",\"num_speculative_tokens\":5}'  (k=5 beats k=3 on agent/code text; k=3 wins prose by ~10% — pick for your workload)"
+    - "--speculative-config '{\"method\":\"dspark\",\"num_speculative_tokens\":5}'  (k=5 for agent lanes. Same-window 2026-09-12: k=1 gives +23% C1 / +33% C16 on prose and loses shell/code/tool-json by ~30%; k=5 the reverse. No static k fits both; the drafter's window multiplies unique experts fetched per step 3.7x at k=5. Adaptive verification (V2 runner) lands between with no losing category but misses both static peaks — see limits)"
     - "--long-prefill-token-threshold 6144  (REQUIRED for mixed traffic: without it a 480K prefill starves a short request to 18 s TTFT; with it ~1 s, long prompt +16%)"
     - "--tool-call-parser deepseek_v41 --reasoning-parser deepseek_v41 --enable-auto-tool-choice  (REQUIRED for agent use)"
     - "--gpu-memory-utilization 0.97 --max-num-seqs 16 --max-num-batched-tokens 8192  (util alone moves nothing: at 70 it only grew KV 10→17.5 GiB with identical tok/s. util is the headroom that lets OFFGB drop; OFFGB is the lever)"
@@ -145,6 +148,9 @@ limits:
   - "Tested and NOT adopted (2026-09-11 overnight): THP enabled=always, pinned and unpinned (AnonHugePages stayed 2.5 GB both times — the 354 GB of weights sit in Shmem, and shmem_enabled=never was not changed), VLLM_WEIGHT_OFFLOADING_DISABLE_PIN_MEMORY=1 (-66 GB host RAM but knee C1 -7%), --language-model-only (+1.1 GiB KV, not enough for offload 65), VLLM_USE_RUST_FRONTEND=1 (no decode gain, 8k TTFT 0.37→0.52 s). See research/failure-ledger.md."
   - "~110 GB of host shmem beyond the accounted pinned buffers is unexplained. Host sits at ~450/494 GB under load; there is no room for a second large model."
   - "SGLang day-0 on this hardware bound at 3.3 tok/s (whole-layer expert copies). This recipe is vLLM-specific."
+  - "Residency axis CLOSED (2026-09-12, three spikes in results/…/spikes): GPU reads Grace either via ATS (cudaHostAlloc/cudaHostRegister, ~340 GB/s, no placement control — what the UVA offloader already uses) or via its own page table (cuMemCreate HOST_NUMA, managed PreferredLocation=CPU: ~90 GB/s). Managed memory migrates whole ranges on fault and settles at 155 GB/s once oversubscribed. A hot/cold expert split under one pointer cannot beat off60; a two-tensor kernel row-map is the only remaining route and is not worth its autotune+parity cost for <=+20% single-stream."
+  - "Speculation depth CLOSED at k=5 (2026-09-12, results/…/ksweep): k=1 110.8/312.6/422.2 vs k=5 90.1/244.9/316.9 on prose knees, but agent classes -30% at k=1. enable_adaptive_verification (VLLM_USE_V2_MODEL_RUNNER=1) boots only at --cpu-offload-gb 66 because model_runner forces FULL_AND_PIECEWISE capture (7.07 GiB vs ~1.1 on V1) and overrides a user cudagraph_mode silently; at off66 it measures 101.8 C1 / prose 104.1 / shell 145.3 — between the static points, below both. Upstream: vllm-project/vllm#56626. Do not spend boots on this until that lands."
+  - "Every new verify shape (k, runner, adaptive, graph mode) is a new FlashInfer autotune hash = 74-min boot. Only offload GiB and gpu-memory-utilization keep the hash. Budget ~85 min per experimental boot on this lane."
 
 rollback:
   script: scripts/launch-dsv41-vllm.sh
@@ -155,3 +161,5 @@ links:
   vllm_recipe_upstream: https://recipes.vllm.ai/deepseek-ai/DeepSeek-V4.1-Flash
   vllm_pr_partial_prefill: https://github.com/vllm-project/vllm/pull/52084
   vllm_issue_starvation: https://github.com/vllm-project/vllm/issues/51454
+  vllm_issue_adaptive_cudagraph: https://github.com/vllm-project/vllm/issues/56626
+  vllm_rfc_expert_offload: https://github.com/vllm-project/vllm/issues/38256

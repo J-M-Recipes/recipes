@@ -1,6 +1,22 @@
 # DeepSeek-V4.1-Flash at 1M context on one DGX Station GB300
 
-**Status: verified** (2026-09-10/12) · **v12: 89 tok/s single-stream prose · 140–160 tok/s on agent/code text · 311 agg tok/s at C16** (v11: 82 / 130–150 / 287) · 972K-token prompt prefilled in 85 s · Hermes tool-calling 10/10
+**Release: Sixty** (2026-09-12) · **Status: verified** (2026-09-10/12) · **v12: 89 tok/s single-stream prose · 140–160 tok/s on agent/code text · 311 agg tok/s at C16** (v11: 82 / 130–150 / 287) · 972K-token prompt prefilled in 85 s · Hermes tool-calling 10/10
+
+## Release notes — Sixty (2026-09-12)
+
+This is the configuration to run: `OFFGB=60 UTIL=0.97`, DSpark k=5, 1,048,576 context, Engram in Grace. It is what `scripts/launch-dsv41-vllm.sh` launches by default. The measurement campaign that produced it is closed at this point; the lane runs on these flags until something upstream changes the picture.
+
+| axis | verdict | evidence |
+|---|---|---|
+| offloaded-expert bytes (the lever) | 60 GiB is the floor at 1M: −12.7 GiB over C2C = +14.7% C1 in a same-window pair; 40 does not fit even at 131K | [`night-two-ledger.md`](results/2026-09-12-v12-1M-k5-off60-util97/night-two-ledger.md) |
+| expert residency (hot in HBM, cold in Grace) | **closed** — ATS at 340 GB/s has no placement knob; every GPU-page-table path is ~90 GB/s; managed memory thrashes to 155 GB/s oversubscribed | [`spikes/`](results/2026-09-12-v12-1M-k5-off60-util97/spikes/) |
+| speculation depth | **closed at k=5** — k=1 wins prose and multi-stream by 23–33%, k=5 wins agent text by a third; adaptive verification works but its forced 7 GiB graph capture costs more residency than it earns | [`ksweep/`](results/2026-09-12-v12-1M-k5-off60-util97/ksweep/), [vllm#56626](https://github.com/vllm-project/vllm/issues/56626) |
+| where the step goes | MoE expert streaming 64% of GPU time at C1, 88% at C8; Grace fetch ≈ 9 ms of a 24 ms step | [`profile/`](results/2026-09-12-v12-1M-k5-off60-util97/profile/), [`routing/`](results/2026-09-12-v12-1M-k5-off60-util97/routing/) |
+| host-side (THP, unpinned, rust frontend, language-model-only) | nothing adopted | [`failure-ledger.md`](research/failure-ledger.md) |
+
+Not scheduled: a cuDNN discrete-mode MoE backend (per-expert pointers; the only way to cash the routing skew; 1–2 weeks), `--async-scheduling` (unmeasured; zero memory; likely small at C1), KV-dtype audit (capacity, not speed). Not pursued: REAP pruning, EGM/two-tensor row-map.
+
+Operating it: `docker update --restart unless-stopped dsv41-vllm-v12-1M-k5-off60-util97-BOUND-REF`; health is `GET /v1/models` on the lane port; hot restart ~4 min, cold ~8 with the seeded autotune cache. Previous bound configs stay as stopped containers for rollback.
 
 ## What this runs
 

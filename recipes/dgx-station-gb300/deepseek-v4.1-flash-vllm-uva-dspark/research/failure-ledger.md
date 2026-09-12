@@ -56,9 +56,23 @@ Win bar was set on `replay.py` (+5%), which turned out to have ±17 tok/s spread
 
 Lane rolled back to v11 at 05:56 CDT. Report and correction: the overnight operator followed the plan exactly; the wrong instrument was in the plan.
 
+## Day two (2026-09-12): residency, speculation depth, adaptive verification
+
+| exp | change | mechanism check | result | verdict |
+|---|---|---|---|---|
+| VMM/EGM spike | `cuMemCreate(HOST_NUMA)` rows mixed with HBM rows under one pointer | 5/6 steps pass; remap works | host-NUMA read **91 GB/s** vs 348 pinned | GPU-page-table path is 4× slower than ATS; closed |
+| managed spike | `cudaMallocManaged` + `cudaMemAdvise` variants | PreferredLocation=CPU 90 flat; plain migrates whole range | oversubscribed 8 GiB: **155 GB/s** flat | worse than today; residency axis closed |
+| k=1 | `num_speculative_tokens=1` | new hash, 79-min boot | C1 **110.8** (+23%), C16 **422** (+33%); shell/code/tool-json **−30%** | no static k fits; kept stopped |
+| adaptive #1 | `enable_adaptive_verification` + V2 runner, off60 | boot healthy | killed by our own fast-fail grep matching a WARNING | pattern fixed |
+| adaptive #2 | same | `Graph capturing … 7.07 GiB` | `Available KV cache memory: -0.69 GiB` | V2 capture costs ~6 GiB more than V1 |
+| adaptive #3 | off66 | KV 5.64 | C1 101.8; prose 104.1; shell 145.3 — between k=1 and k=5, below both | bar (prose ≥105 AND shell ≥150) missed |
+| adaptive #4 | + `cudagraph_mode: FULL_DECODE_ONLY` + `--async-scheduling`, off60 | identical 7.07 GiB | `model_runner.py` forces `FULL_AND_PIECEWISE` when adaptive is on; user value overridden silently | closed on this build; [vllm#56626](https://github.com/vllm-project/vllm/issues/56626) |
+
+Cost lesson: every one of these boots was a new verify shape and therefore a 74-minute autotune. Read the runner code path before the boot, not after.
+
 ## Not pursued, with reasons
 
 - **Re-quantizing.** Experts are already MXFP4, Engram FP8. Every "V4-Flash NVFP4/AWQ/GGUF" on the Hub is for the FP8-expert 0731 predecessor. llama.cpp has no Engram/CED support. No lever.
 - **Engram on NVMe.** Community did it with 64 GB RAM. We have 494 GB; it would only add latency.
 - **C4 bimodality** (two clusters in C4 knee runs). Interesting, not actionable.
-- **REAP expert pruning 384→256.** The one structural lever left — would put all experts in HBM and remove the C2C term. Multi-day; not started.
+- **REAP expert pruning 384→256.** Would put all experts in HBM and remove the C2C term, at the cost of no longer serving the shipped model. Not planned.
