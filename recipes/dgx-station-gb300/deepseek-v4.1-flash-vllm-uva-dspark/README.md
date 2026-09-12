@@ -105,6 +105,8 @@ Cost: KV 4.89 GiB = 2.33M tokens = **2.2 concurrent full-1M requests** (v11: 4.5
 
 Prefill, mixed-traffic and harness numbers were re-measured on v12 on 2026-09-12 (prefill 207K in 11.4 s, starve shorts 0.8–1.1 s under a 480K prefill, Hermes harness 10/10) and did not move — they are not offload-bound. See [harness-summary.md](results/2026-09-12-v12-1M-k5-off60-util97/harness-summary.md).
 
+**Where the decode step goes** (torch profiler, k=5): MoE expert streaming is 64% of GPU time at C1 and 88% at C8; attention 17%/6%. A k=5 verify window touches 3.7× the unique experts of one token (router property, ±3% across categories), a quarter of them in Grace — which is why k=5 is +100% on shell and −11% on prose vs k=0. Details: [profile/](results/2026-09-12-v12-1M-k5-off60-util97/profile/README.md), [routing/](results/2026-09-12-v12-1M-k5-off60-util97/routing/README.md). A k sweep (1, 2) against a same-window k=5 control is in progress.
+
 **Why the offload lever stops here:** three spikes (VMM/EGM mixed backing, managed memory) show that on GB300 the only fast GPU→Grace read path is the pinned/ATS one the UVA offloader already uses (~340 GB/s); every path that allows per-row placement runs at ~90 GB/s, and oversubscribed managed memory settles at 155 GB/s. Details and scripts in [results/…/spikes/](results/2026-09-12-v12-1M-k5-off60-util97/spikes/README.md).
 
 ### v11 — `OFFGB=70 UTIL=0.94` (baseline; use if you need >2 concurrent 1M contexts)
