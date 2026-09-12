@@ -1,12 +1,12 @@
 # DeepSeek-V4.1-Flash at 1M context on one DGX Station GB300
 
-**Status: verified** (2026-09-10/11) · 82 tok/s single-stream prose · 130–150 tok/s on agent/code text · 287 agg tok/s at C16 · 972K-token prompt prefilled in 85 s · Hermes tool-calling 10/10
+**Status: verified** (2026-09-10/12) · **v12: 89 tok/s single-stream prose · 140–160 tok/s on agent/code text · 311 agg tok/s at C16** (v11: 82 / 130–150 / 287) · 972K-token prompt prefilled in 85 s · Hermes tool-calling 10/10
 
 ## What this runs
 
-[`deepseek-ai/DeepSeek-V4.1-Flash`](https://huggingface.co/deepseek-ai/DeepSeek-V4.1-Flash) @ `df42c109`, **as shipped** — 510 GB of MXFP4 routed experts, FP8 Engram table, FP8 attention. Nothing is re-quantized. It does not fit the ~250 GiB of HBM the GB300 exposes, so this recipe puts 70 GiB of expert weights and the 189 GiB Engram table in Grace LPDDR5X and lets the GPU read them over NVLink-C2C through vLLM's UVA offload backend. Full native context (1,048,576 tokens) stays on. The in-checkpoint DSpark drafter runs at k=5.
+[`deepseek-ai/DeepSeek-V4.1-Flash`](https://huggingface.co/deepseek-ai/DeepSeek-V4.1-Flash) @ `df42c109`, **as shipped** — 510 GB of MXFP4 routed experts, FP8 Engram table, FP8 attention. Nothing is re-quantized. It does not fit the ~250 GiB of HBM the GB300 exposes, so this recipe puts 60 GiB of expert weights (v12; v11 used 70) and the 189 GiB Engram table in Grace LPDDR5X and lets the GPU read them over NVLink-C2C through vLLM's UVA offload backend. Full native context (1,048,576 tokens) stays on. The in-checkpoint DSpark drafter runs at k=5.
 
-The result is a single-box agent lane: prose decode is C2C-bound at ~82 tok/s, but the text agents actually emit — shell, code, tool-call JSON — runs 130–150 tok/s because the drafter accepts 64–91% of its guesses there. The number to quote is the one for your workload.
+The result is a single-box agent lane: prose decode is C2C-bound at ~89 tok/s, but the text agents actually emit — shell, code, tool-call JSON — runs 140–160 tok/s because the drafter accepts 64–91% of its guesses there. The number to quote is the one for your workload.
 
 ## Hardware
 
@@ -35,7 +35,7 @@ Full lock: [`results/…/software-lock.txt`](results/2026-09-10-v11-1M-k5-lpt614
 
 ```bash
 MODEL=/models/DeepSeek-V4.1-Flash-df42c109f1defefcbfcedbe7d905718a12266e40 \
-TAG=v11-1M-k5-lpt6144 OFFGB=70 UTIL=0.94 SEQS=16 SPEC=dspark:5 CTX=1048576 \
+TAG=v12-1M-k5-off60-util97 OFFGB=60 UTIL=0.97 SEQS=16 SPEC=dspark:5 CTX=1048576 \
 EXTRA='--long-prefill-token-threshold 6144' \
 bash scripts/launch-dsv41-vllm.sh
 # ~8 min cold with a seeded autotune cache, ~4 min hot restart. Then:
@@ -46,10 +46,10 @@ The server command inside the container:
 
 ```
 vllm serve /model --served-model-name dsv41-flash-uva --trust-remote-code --tensor-parallel-size 1 \
-  --offload-backend uva --cpu-offload-gb 70 \
+  --offload-backend uva --cpu-offload-gb 60 \
   --cpu-offload-params routed_experts.w13_weight routed_experts.w2_weight \
   --engram-config '{"cpu_offload": true}' \
-  --max-model-len 1048576 --max-num-seqs 16 --max-num-batched-tokens 8192 --gpu-memory-utilization 0.94 \
+  --max-model-len 1048576 --max-num-seqs 16 --max-num-batched-tokens 8192 --gpu-memory-utilization 0.97 \
   --speculative-config '{"method":"dspark","num_speculative_tokens":5}' \
   --tool-call-parser deepseek_v41 --reasoning-parser deepseek_v41 --enable-auto-tool-choice \
   --long-prefill-token-threshold 6144 --port 30006
@@ -57,7 +57,7 @@ vllm serve /model --served-model-name dsv41-flash-uva --trust-remote-code --tens
 
 Flags that matter, and why:
 
-- **`--cpu-offload-gb 70`** is the notch, not a guess. 40 → KV −6.96 GiB even at 131K. 60 → fits at 131K without spec (12.03 GiB) but −2.61 GiB at 1M+DSpark. 70 → 10.05 GiB KV = 4.79M tokens = 4.5 concurrent 1M requests. Halving offload does not halve decode time; C2C traffic is ~30% of the token budget, kernels are the rest.
+- **`--cpu-offload-gb 60` with `--gpu-memory-utilization 0.97`** is v12's notch. ~~60 → −2.61 GiB at 1M+DSpark~~ — that was measured at util 0.94. At 0.97 it fits: KV 4.89 GiB = 2.33M tokens = 2.2 concurrent 1M requests, and the 12.7 GiB of experts that move back into HBM buy +12% single-stream decode in a same-window comparison (89.2 vs 79.5). 40 still does not fit even at 131K. The fetch tax is ~4 ms of an ~11 ms step (~36%), measured against an all-HBM two-Station run; util alone moves nothing (at 70 it only grew KV). If you need more than two concurrent 1M contexts, use the v11 flags (`OFFGB=70 UTIL=0.94`, 82 tok/s, 4.5× at 1M).
 - **`--max-model-len 1048576`** costs 5.5 GiB of KV pool relative to 131K and nothing in decode speed. There is no reason to run this model small.
 - **`--speculative-config dspark k=5`.** The drafter is in the checkpoint (`mtp.*`). k=5 wins agent text by ~10% over k=3; k=3 wins prose by ~10% with 70% acceptance vs 60%. Pick for your traffic.
 - **`--long-prefill-token-threshold 6144`** is what makes one lane serve mixed traffic. Without it a 480K prefill starves a short request to 18 s TTFT (vLLM [#51454](https://github.com/vllm-project/vllm/issues/51454)); with it, 0.9–1.1 s, and the long prompt pays +16%. The older `--max-num-partial-prefills` flags are gone from this vLLM.
@@ -75,11 +75,37 @@ FlashInfer autotunes the MXFP4 MoE kernels and caches the result under a hash of
 | digest | image sha256 matches; `/model` is the `df42c109` revision, byte-verified | 2026-09-11 |
 | health | `/v1/models` 200; log shows `Available KV cache memory: 10.05 GiB`, `Loaded 210 configs`; `smoke_vllm.sh` 5/5 | 2026-09-11 |
 | quality | smoke (arith 323, count 1–60, prose, parsed `tool_call`, thinking→`36`); **Hermes harness 10/10** tool calls with correct answers and side effects ([harness-summary.md](results/2026-09-10-v11-1M-k5-lpt6144/harness-summary.md)). No requant, so no divergence gate. | 2026-09-11 |
-| performance | `knee.sh` C1 within 5% of 82.1 tok/s warm (re-check 80.1) | 2026-09-11 |
+| performance | `knee.sh` C1 within 5% of 89.2 tok/s warm vs a same-window v11 control (79.5) | 2026-09-12 |
 
 **On instruments.** `knee.sh` runs each concurrency twice and the two runs agree within ~1%; it is the decision metric. `replay.py` replays 24 real agent turns and is useful as a workload-shaped smoke test, but at temperature 0 it swings **±17 tok/s** run to run (batched MoE + speculative decode are not bit-deterministic). We published an overnight "win" on it and retracted it the next morning when the knee said the opposite. Bench on the tight instrument.
 
 ## Results
+
+### v12 — `OFFGB=60 UTIL=0.97` (current)
+
+Run [`2026-09-12-v12-1M-k5-off60-util97`](results/2026-09-12-v12-1M-k5-off60-util97/) · raw: [`throughput.csv`](results/2026-09-12-v12-1M-k5-off60-util97/throughput.csv) · how it was chosen: [`night-two-ledger.md`](results/2026-09-12-v12-1M-k5-off60-util97/night-two-ledger.md) · warm, on-box, measured against a same-window v11 control boot (79.5 C1) because the reference drifts ~3% day to day.
+
+**Decode (knee, prose prompts, DSpark k=5)**
+
+| C1 | C2 | C4 | C8 | C12 | C16 |
+|---|---|---|---|---|---|
+| **89.2** | 124.9 | 173.4 | 233.7 | 270.8 | **311.4** |
+
+**Decode by content class (C1, `agent_fixture.sh`)** — every class moved +10–12% with acceptance unchanged, which is what a pure bandwidth change looks like:
+
+| class | tok/s | DSpark accept | tok/step |
+|---|---|---|---|
+| shell_ops | 160.3 | 90.8% | 4.54 |
+| code | 153.7 | 63.8% | 3.19 |
+| tool_json | 141.9 | 87.8% | 4.39 |
+| structured | 122.7 | 49.5% | 2.48 |
+| prose | 97.7 | 29.8% | 1.49 |
+
+Cost: KV 4.89 GiB = 2.33M tokens = **2.2 concurrent full-1M requests** (v11: 4.5). Host 432/494 GiB. First boot on the new flags pays the 74-minute autotune (new hash `9ac7b387`); after that ~8 min.
+
+Prefill, mixed-traffic and harness numbers below were measured on v11 and are not expected to move (they are not offload-bound); they will be re-measured on v12 in the next round.
+
+### v11 — `OFFGB=70 UTIL=0.94` (baseline; use if you need >2 concurrent 1M contexts)
 
 Run [`2026-09-10-v11-1M-k5-lpt6144`](results/2026-09-10-v11-1M-k5-lpt6144/) · raw: [`throughput.csv`](results/2026-09-10-v11-1M-k5-lpt6144/throughput.csv) · warm, on-box.
 
@@ -89,7 +115,9 @@ Run [`2026-09-10-v11-1M-k5-lpt6144`](results/2026-09-10-v11-1M-k5-lpt6144/) · r
 |---|---|---|---|---|---|
 | 82.1 | 119.2 | 164.5 | 237.0 | 251.6 | 286.5 |
 
-**Decode by content class (C1, `agent_fixture.sh`)** — this is where DSpark earns its keep:
+Same-night re-measurement of this config on 2026-09-11 gave 79.5 / 229.4 / 281.7 — the ~3% drift band.
+
+**Decode by content class (C1, `agent_fixture.sh`)**
 
 | class | tok/s | DSpark accept | tok/step |
 |---|---|---|---|
@@ -119,11 +147,11 @@ Zero preemptions at 972K; HBM peaked at 243 GiB. Warm prefix on an 8.8K-token sy
 
 ## Known limits
 
-See `limits:` in [`recipe.yaml`](recipe.yaml). The short version: decode is C2C + kernel bound so offload tuning is nearly exhausted at 70; quote the tok/s for your content class, not the best one; the autotune hash trap is real; `reasoning_effort: medium` is rejected by the template (use `low|high|xhigh|max`); ~110 GB of host shmem is unaccounted for and the host has no room for a second big model.
+See `limits:` in [`recipe.yaml`](recipe.yaml). The short version: decode is C2C + kernel bound and the offloaded-expert byte count is the lever (~0.76 tok/s per GiB moved into HBM; v12 spends the last HBM headroom on it and pays in KV); quote the tok/s for your content class, not the best one; the autotune hash trap is real; `reasoning_effort: medium` is rejected by the template (use `low|high|xhigh|max`); ~110 GB of host shmem is unaccounted for and the host has no room for a second big model.
 
 ## What didn't work
 
-[`research/failure-ledger.md`](research/failure-ledger.md) — SGLang at 3.3 tok/s, four vLLM UVA failures before the first bind, the offload bracket, the autotune misses, and a full overnight of decode experiments (THP, unpinned host memory, `--language-model-only`, Rust frontend) that produced one real lesson about instruments and zero adopted flags.
+[`research/failure-ledger.md`](research/failure-ledger.md) — SGLang at 3.3 tok/s, four vLLM UVA failures before the first bind, the offload bracket, the autotune misses, a first overnight of decode experiments (THP, unpinned host memory, `--language-model-only`, Rust frontend) that produced one real lesson about instruments and zero adopted flags, and a second night (k-sweep, util-only, off60) that produced v12 — see [`night-two-ledger.md`](results/2026-09-12-v12-1M-k5-off60-util97/night-two-ledger.md).
 
 ## Rollback
 

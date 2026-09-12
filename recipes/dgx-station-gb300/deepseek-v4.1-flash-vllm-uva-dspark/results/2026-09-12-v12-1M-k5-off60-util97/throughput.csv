@@ -1,0 +1,18 @@
+config,concurrency_or_tokens,metric,value,unit,notes
+v12-1M-k5-off60-util97,1,decode_agg,89.2,tok/s,knee.sh 2 warm runs 2026-09-12 00:54 CDT; same-window v11 control C1 79.5 (T1c 22:56) and 79.5 (T2 23:08)
+v12-1M-k5-off60-util97,2,decode_agg,124.9,tok/s,knee.sh 2 warm runs 2026-09-12 00:54 CDT; same-window v11 control C1 79.5 (T1c 22:56) and 79.5 (T2 23:08)
+v12-1M-k5-off60-util97,4,decode_agg,173.4,tok/s,knee.sh 2 warm runs 2026-09-12 00:54 CDT; same-window v11 control C1 79.5 (T1c 22:56) and 79.5 (T2 23:08)
+v12-1M-k5-off60-util97,8,decode_agg,233.7,tok/s,knee.sh 2 warm runs 2026-09-12 00:54 CDT; same-window v11 control C1 79.5 (T1c 22:56) and 79.5 (T2 23:08)
+v12-1M-k5-off60-util97,12,decode_agg,270.8,tok/s,knee.sh 2 warm runs 2026-09-12 00:54 CDT; same-window v11 control C1 79.5 (T1c 22:56) and 79.5 (T2 23:08)
+v12-1M-k5-off60-util97,16,decode_agg,311.4,tok/s,knee.sh 2 warm runs 2026-09-12 00:54 CDT; same-window v11 control C1 79.5 (T1c 22:56) and 79.5 (T2 23:08)
+v12-1M-k5-off60-util97,1,agent_shell_ops,160.3,tok/s,agent_fixture.sh DSpark accept 90.8% 4.54 tok/step
+v12-1M-k5-off60-util97,1,agent_code,153.7,tok/s,agent_fixture.sh DSpark accept 63.8% 3.19 tok/step
+v12-1M-k5-off60-util97,1,agent_tool_json,141.9,tok/s,agent_fixture.sh DSpark accept 87.8% 4.39 tok/step
+v12-1M-k5-off60-util97,1,agent_structured,122.7,tok/s,agent_fixture.sh DSpark accept 49.5% 2.48 tok/step
+v12-1M-k5-off60-util97,1,agent_prose,97.7,tok/s,agent_fixture.sh DSpark accept 29.7% 1.49 tok/step
+v12-1M-k5-off60-util97,1,dspark_accept_weighted,59.6,percent,agent_fixture.sh five-category weighted; identical to v11 — bandwidth change not a spec-decode change
+v12-1M-k5-off60-util97,-,kv_cache_available,4.89,GiB,gpu_worker.py log line (v11: 10.05)
+v12-1M-k5-off60-util97,-,kv_cache_tokens,2326569,tokens,kv_cache_utils.py; 2.22x concurrency at 1M (v11: 4.5x)
+v12-1M-k5-off60-util97,-,cpu_offloaded_params,61.17,GiB,uva.py log line (v11: 73.83); 12.66 GiB of experts moved Grace→HBM
+v12-1M-k5-off60-util97,-,cold_boot_new_hash,82,min,first boot: new FlashInfer autotune hash 9ac7b387 → full 74-min tune; subsequent boots ~8 min on cache hit
+v12-1M-k5-off60-util97,-,host_memory_used,432,GiB,of 494; no swap
