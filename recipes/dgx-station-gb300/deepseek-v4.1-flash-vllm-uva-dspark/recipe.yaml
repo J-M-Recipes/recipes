@@ -73,7 +73,7 @@ metrics:
     value: 89.2
     unit: tok/s
     workload: C1, warm, prose prompt, DSpark k=5, 1M context config, offload 60 / util 0.97
-    aggregation: mean of 2 warm runs (knee.sh); same-window v11 control measured 79.5 twice that night (reference drifts ~3%/day, so verdicts use a same-window control)
+    aggregation: mean of 2 warm runs (knee.sh); CONFIRMED 2026-09-12 03:02 by a second boot — 89.6 C1 nine minutes after a v11 control boot measured 78.1 (+14.7%); earlier same-window v11 controls 79.5 and 79.5. Reference drifts ~3%/day, so verdicts use a same-window control
     provenance: { run_id: 2026-09-12-v12-1M-k5-off60-util97, method: "knee.sh: sequential streamed chat completion, output tokens / wall", raw: throughput.csv }
   - name: agent text decode (shell/code/tool-json)
     value: 153.7
@@ -130,9 +130,9 @@ verification:
   gates:
     schema:      { how: "scripts/check_recipe.py passes", last_pass_utc: "2026-09-12T08:10:00Z", run_id: 2026-09-12-v12-1M-k5-off60-util97 }
     digest:      { how: "docker image inspect reports sha256:00d577a6…; /model mount is the df42c109 revision, 510,313,343,553 bytes byte-verified against the archive", last_pass_utc: "2026-09-11T11:07:00Z", run_id: 2026-09-10-v11-1M-k5-lpt6144 }
-    health:      { how: "/v1/models 200; log shows offloaded 61.17 GiB, KV 4.89 GiB, 2,326,569 tokens, 2.22x at 1M; smoke_vllm.sh pass", last_pass_utc: "2026-09-12T05:53:00Z", run_id: 2026-09-12-v12-1M-k5-off60-util97 }
+    health:      { how: "/v1/models 200; log shows offloaded 61.17 GiB, KV 4.89 GiB, 2,326,569 tokens, 2.22x at 1M, 'Loaded' configs for hash 9ac7b387 (10-min boot); smoke pass", last_pass_utc: "2026-09-12T08:02:00Z", run_id: 2026-09-12-v12-1M-k5-off60-util97 }
     quality:     { how: "smoke: 17×19=323, count 1-60 exact, coherent prose, parsed tool_call, thinking→answer; Hermes harness 10/10 tool calls with correct answers/side effects. No teacher-forced divergence gate (weights are as-shipped, nothing requantized).", last_pass_utc: "2026-09-11T11:06:00Z", run_id: 2026-09-10-v11-1M-k5-lpt6144 }
-    performance: { how: "knee.sh C1 within 5% of 89.2 tok/s warm, measured against a same-window v11 control boot (79.5)", last_pass_utc: "2026-09-12T05:54:00Z", run_id: 2026-09-12-v12-1M-k5-off60-util97 }
+    performance: { how: "knee.sh C1 within 5% of 89.2 tok/s warm vs a same-window v11 control; confirm pair 2026-09-12: control 78.1 → v12 89.6 (+14.7%), C16 269.6 → 312.4. starve.py on v12: 4 shorts during a 480K prefill 0.81–1.09 s TTFT (unchanged from v11); cold prefill on v12 207K tokens 11.37 s / 18.2k tok/s (v11: 11.3 s)", last_pass_utc: "2026-09-12T08:03:00Z", run_id: 2026-09-12-v12-1M-k5-off60-util97 }
 
 limits:
   - "Decode is C2C-bandwidth + kernel bound, not HBM bound. CORRECTED 2026-09-12: the v11 claim that offload 60 does not fit at 1M was measured at util 0.94; at util 0.97 it fits (KV 4.89 GiB) and gives +12% C1 in a same-window comparison. Measured fetch tax: k=0 step 11.1 ms vs 7.1 ms all-HBM (catid 2×Station PP2, rev dba1be0a) ≈ 4 ms ≈ 36% of the step. Slope ≈ 0.76 tok/s per GiB of experts moved Grace→HBM."
