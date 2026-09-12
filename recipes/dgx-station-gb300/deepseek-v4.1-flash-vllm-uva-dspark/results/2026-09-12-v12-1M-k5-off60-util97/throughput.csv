@@ -16,3 +16,10 @@ v12-1M-k5-off60-util97,-,kv_cache_tokens,2326569,tokens,kv_cache_utils.py; 2.22x
 v12-1M-k5-off60-util97,-,cpu_offloaded_params,61.17,GiB,uva.py log line (v11: 73.83); 12.66 GiB of experts moved Grace→HBM
 v12-1M-k5-off60-util97,-,cold_boot_new_hash,82,min,first boot: new FlashInfer autotune hash 9ac7b387 → full 74-min tune; subsequent boots ~8 min on cache hit
 v12-1M-k5-off60-util97,-,host_memory_used,432,GiB,of 494; no swap
+v12-1M-k5-off60-util97,1,decode_agg_confirm,89.6,tok/s,knee.sh second boot 2026-09-12 03:02 CDT; v11 control boot 9 min earlier 78.1 (+14.7%)
+v12-1M-k5-off60-util97,8,decode_agg_confirm,241.5,tok/s,confirm pair; v11 control 222.5
+v12-1M-k5-off60-util97,16,decode_agg_confirm,312.4,tok/s,confirm pair; v11 control 269.6
+v12-1M-k5-off60-util97,4 shorts during 480K prefill,short_ttft_under_long_prefill,1.09,s,starve.py on v12 max of 4 (1.09/0.92/0.81/1.03); solo 0.09 s; long 480K wall 24.9 s
+v12-1M-k5-off60-util97,6472,cold_prefill_ttft,0.48,s,cold_prefill_probe.py on v12 THINKING=0 warm-shape run of 2 (first hit 0.78 s = shape JIT); 13.6k tok/s
+v12-1M-k5-off60-util97,51901,cold_prefill_ttft,2.68,s,warm-shape run of 2 (cold-shape 3.78 s); 19.4k tok/s
+v12-1M-k5-off60-util97,207419,cold_prefill_ttft,11.37,s,run of 2 (11.39/11.37); 18.2k tok/s — identical to v11's 11.3 s at 207K: prefill is not offload-bound

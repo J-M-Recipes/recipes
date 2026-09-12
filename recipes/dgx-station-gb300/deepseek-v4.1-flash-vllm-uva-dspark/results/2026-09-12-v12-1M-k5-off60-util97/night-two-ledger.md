@@ -12,3 +12,15 @@ One axis per boot, `knee.sh` C1/C8/C16 as verdict, `agent_fixture.sh` as context
 | T5 | v11 + `--enable-return-routed-experts` | 73.83 | 10.05 | 74.9 / 219.4 / 269.3 | — | — | diagnostic: capture costs ~6%; decode top-73% expert share 0.987; usage-chosen cold 24% takes 2.7% of traffic (leave-one-out) vs 24% positional; agent↔prose rank ρ 0.15 |
 
 Slope: ~0.76 tok/s per GiB of experts moved Grace→HBM (2× the linear-bytes model). Reference drift ~3%/day means the wash band (±1.5%) needs a same-window control boot.
+
+## Confirm pair (2026-09-12 02:52–03:03 CDT)
+
+Requested by James after promotion. v11 REF kneed live as control, then v12 booted (hash `9ac7b387` cached → 10 min) and kneed nine minutes later.
+
+| | C1 | C8 | C16 | fixture prose / shell |
+|---|---|---|---|---|
+| v11 control 02:53 | 78.1 | 222.5 | 269.6 | — |
+| v12 03:02 | **89.6** | **241.5** | **312.4** | 98.0 / 160.8 |
+| Δ | +14.7% | +8.5% | +15.9% | |
+
+Two v12 boots (89.2, 89.6) vs three v11 controls across two windows (79.5, 79.5, 78.1). `starve.py` on v12: shorts 0.81–1.09 s during a 480K prefill — the fairness flag is unaffected by the offload change. Cold prefill on v12: 6.5K 0.48 s, 52K 2.68 s, 207K 11.37 s (18.2k tok/s) — same as v11. Prefill is not offload-bound.
