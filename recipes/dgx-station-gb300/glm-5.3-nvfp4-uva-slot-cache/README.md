@@ -1,6 +1,6 @@
 # GLM-5.3-NVFP4-One-GB300
 
-**Status: experimental** · V1 baseline 33.8 tok/s C1 · sc13g slot-cache 43.1 tok/s C1 / 92.0 agg C4 / 95.6 agg C8 · MTP(1) audited as faster but **not** a quality-approved default · DFlash2-over-UVA, PR #1 demand-fill DMA, offline cache-policy reallocation, and simple trace prediction all failed their frozen continue gates · daily serving profile remains 512K context / 48 GiB bf16 KV with MTP(1)
+**Status: experimental** · V1 baseline 33.8 tok/s C1 · sc13g slot-cache 43.1 tok/s C1 / 92.0 agg C4 / 95.6 agg C8 · MTP(1) audited as faster but **not** a quality-approved default · DFlash2-over-UVA, PR #1 demand-fill DMA, offline cache-policy reallocation, and simple trace prediction all failed their frozen continue gates · daily serving profile is now **256K context / 24 GiB bf16 KV / 7,360 slots** with MTP(1): 51.3 tok/s C1 vs 44.8 at 512K and 34.1 at 1M in a matched September 13 window, greedy-identical across all three
 
 ![Memory map](diagrams/memory-map.svg)
 
@@ -45,6 +45,8 @@ Patch pins in [`recipe.yaml`](recipe.yaml):
 | `patches/slot_cache_window_instrumentation.py` | `9f0c75b25438c63511a5b2580a4c0a77520f232e2affe109dd0ba3908477e453` | opt-in engine-owned bounded-window snapshot controller |
 | `scripts/apply_slot_cache_instrumentation_patch.py` | `8b4b3ae177618875378154681a43c16bf4cc265c6f073fb1dd6ef2562c45106b` | exact-hash guarded pinned `gpu_model_runner.py` patch-copy adapter |
 | `configs/slots-8400.json` | `4ee071670e13f199658776ddb7b508c9a068657ea631a0cb4287db0a2afeeaed` | per-layer slot allocation |
+| `configs/slots-7360-ctx256k.json` | `ae65b4070cd21dd06d47487d8722916203cc98f8634cf662c6fe92c953120f0c` | per-layer slot allocation, 256K daily profile (September 13) |
+| `configs/slots-2672-ctx1m.json` | `449fbfaaa79b6ab9fbd76c95d10537e05b8a8cbcd84d1727a820772e30a3deac` | per-layer slot allocation, 1M long-context option |
 
 ## Launch
 
@@ -162,7 +164,36 @@ Evidence gates:
 | 32k | 26,392 | 7.59 s | 3,477 tok/s |
 | 64k | 52,740 | 14.45 s | 3,649 tok/s |
 
-### Long-context profile: why the daily serving config is 512K / 48 GiB KV
+### Long-context profile: the daily serving config is 256K / 24 GiB KV (measured September 13, 2026)
+
+On September 13, 2026 we finally measured the context↔slot curve live instead of trusting the September 7 planning numbers. Three one-axis clones of the sc13g slot-cache + MTP(1) incumbent (same image `vllm-glm53-uva:v0.28.0-2cf0a691`, same model, only `--kv-cache-memory` / `--max-model-len` / `SLOT_CACHE_PER_LAYER` differ) ran the same warm → greedy ×3 → 512-token probe window back to back on the same host. Receipts: [`results/2026-09-13-context-slot-curve/`](results/2026-09-13-context-slot-curve/).
+
+| profile | context | bf16 KV | slots (per-layer range) | predicted hit (planning) | **live hit** | **misses / step / layer** | **512-tok decode median, n=8** | outcome |
+|---|---:|---:|---:|---:|---:|---:|---:|---|
+| **ctx256k** | **262,144** | **24.0 GiB** | **7,360 (64–176)** | 0.6982 | **0.61** | **3.12** | **51.29 tok/s** | **selected daily profile, September 13** |
+| ctx512k | 524,288 | 48.0 GiB | 5,792 (48–96) | 0.6166 | 0.53 | 3.77 | 44.83 tok/s | daily profile September 7–13; kept as the mid option |
+| ctx1m | 1,048,576 | 96.0 GiB | 2,672 (32–48) | 0.4016 | 0.17 | 6.82 | 34.14 tok/s | loads and serves (engine init 92 s after weights); kept as a special long-context option |
+
+Decode tracks expert-cache misses almost linearly: 256K is **+14.4%** over 512K and 1M is **−23.9%**, a 1.5× range end to end, all paid per token regardless of prompt length. Quality is a non-axis: greedy outputs over 20 fixed prompts were **20/20 identical** in-lane ×3 on every profile and **20/20 identical cross-lane** (512K↔256K and 512K↔1M). The September 7 "1M too slow during startup" abort was cold-load impatience, not a failure. The 512K lane's TTFT and acceptance counters in this window are invalid (another client hit the endpoint mid-probe); its decode figure stands and matches the September 9 historical 45.747 tok/s. Eight short-prompt requests per lane is a matched comparison, not a long-context benchmark.
+
+Practical read: 1M is a real profile at a real, always-on cost. If a session needs it, swap lanes (cold load is the price); do not run it as the default.
+
+Launch the 256K daily profile from the portable script with the documented overrides:
+
+```bash
+MODEL_DIR=/home/exx/models/GLM-5.3-NVFP4-big \
+CACHE_DIR=$HOME/vllm-cache \
+API_KEY_FILE=$HOME/.glm_api_key \
+KV_CACHE_MEMORY=25769803776 MAX_MODEL_LEN=262144 MAX_NUM_SEQS=1 \
+SLOT_CACHE_PER_LAYER=/w/configs/slots-7360-ctx256k.json \
+bash scripts/launch-slotcache-portable.sh sc13g-mtp-ctx256k 112 \
+  --compilation-config '{"mode":3,"backend":"eager"}' \
+  --speculative-config '{"method":"mtp","num_speculative_tokens":1}'
+```
+
+For 512K use `KV_CACHE_MEMORY=51539607552 MAX_MODEL_LEN=524288 SLOT_CACHE_PER_LAYER=/w/configs/slots-5792-ctx512k.json`; for 1M use `KV_CACHE_MEMORY=103079215104 MAX_MODEL_LEN=1048576 SLOT_CACHE_PER_LAYER=/w/configs/slots-2672-ctx1m.json`.
+
+#### History: why the daily serving config was 512K / 48 GiB KV (September 7–13)
 
 On September 7, 2026 we sized three context profiles for the sc13g slot-cache + MTP(1) build and settled on **512K context (524,288 tokens) with a 48.0 GiB bf16 KV cache** as the daily profile, balancing decode speed against context headroom. The reasoning: every GiB of KV comes straight out of the HBM expert-slot budget, and decode speed follows the slot budget. Live receipts: [`results/2026-09-07-ctx512k-live/`](results/2026-09-07-ctx512k-live/).
 
@@ -174,7 +205,7 @@ On September 7, 2026 we sized three context profiles for the sc13g slot-cache + 
 
 The "mean predicted hit allocation" figures are planning numbers computed from per-layer routing-trace hit curves — not measured runtime hit rates. The live 512K launch (`glm53-big-sc13g-mtp-ctx512k`, receipt `ctx512k-20260907-090009`) reserved 48.0 GiB KV for 548,800 tokens of KV capacity (1.05x concurrency at 524,288), loaded with the 5,792-slot map packaged as [`configs/slots-5792-ctx512k.json`](configs/slots-5792-ctx512k.json), and passed a near-window probe: a **480,011-prompt-token** request completed in 142.7 s cold — an effective **3,363 tok/s** across the near-480k prefill — and its cached repeat returned exactly `CTX512K OK` in 1.393 s (prefix-cache hit), with no OOM and 16,902 MiB still free afterward. Prefill scales with prompt size on this build (see the warm ladder above: 3,383 tok/s at 8k, 3,477 at 32k, 3,649 at 64k — measured on the 65k-profile slot-cache build, before the 512K profile), so the near-window figure is an effective rate for one giant prompt, not a steady-state prefill benchmark. Context sizing changes no quality verdict; the MTP and structured-output caveats below are unaffected.
 
-Launch the 512K daily profile from the portable script with the documented overrides:
+The September 7 launch of the then-daily 512K profile, for provenance:
 
 ```bash
 MODEL_DIR=/home/exx/models/GLM-5.3-NVFP4-big \

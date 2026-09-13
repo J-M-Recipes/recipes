@@ -6,14 +6,15 @@ summary: >-
   with bf16 KV; the slot-cache variants keep a small per-layer HBM expert cache. MTP(1) has audited warm C1 speed upside, but the
   frozen quality campaign is INCONCLUSIVE and MTP is not the quality-approved default. DFlash2-over-UVA was stopped at K4,
   PR #1 demand-fill DMA lost to matched eager Triton, and offline cache-policy plus simple trace-prediction candidates missed
-  their frozen continue gates. The live-tested daily profile remains
-  512K context with 48 GiB bf16 KV; see results/2026-09-07-ctx512k-live/, results/2026-09-07-dflash2-uva/,
+  their frozen continue gates. The live-tested daily profile is
+  256K context with 24 GiB bf16 KV and 7,360 expert slots (51.3 tok/s C1 vs 44.8 at 512K and 34.1 at 1M, greedy-identical,
+  matched window 2026-09-13); see results/2026-09-13-context-slot-curve/, results/2026-09-07-ctx512k-live/, results/2026-09-07-dflash2-uva/,
   results/2026-09-07-dma-demand-fill/, and results/2026-09-07-offline-cache-prefetch/.
 status: experimental
 owners:
 - jmeadlock
 - milo
-updated: '2026-09-08'
+updated: '2026-09-13'
 tags:
 - glm-5.3
 - nvfp4
@@ -85,6 +86,14 @@ runtime:
   - path: configs/slots-8400.json
     sha256: 4ee071670e13f199658776ddb7b508c9a068657ea631a0cb4287db0a2afeeaed
     purpose: Non-code per-layer HBM slot allocation map for the packaged slot-cache launcher.
+  - path: configs/slots-7360-ctx256k.json
+    sha256: ae65b4070cd21dd06d47487d8722916203cc98f8634cf662c6fe92c953120f0c
+    purpose: Per-layer HBM slot allocation map for the 256K context / 24 GiB KV daily profile selected 2026-09-13 (7,360 slots,
+      min 64 / max 176 per layer; live hit 0.61, 51.29 tok/s C1 median in results/2026-09-13-context-slot-curve/).
+  - path: configs/slots-2672-ctx1m.json
+    sha256: 449fbfaaa79b6ab9fbd76c95d10537e05b8a8cbcd84d1727a820772e30a3deac
+    purpose: Per-layer HBM slot allocation map for the 1M context / 96 GiB KV long-context option (2,672 slots, min 32 / max 48;
+      live hit 0.17, 34.14 tok/s C1 median). Loads and serves; not the daily profile.
   - path: configs/slots-5792-ctx512k.json
     sha256: 73962276498626af16baaa7c8737384960aff8718d254e66ab92610570c9743c
     purpose: Per-layer HBM slot allocation map for the live-tested 512K context / 48 GiB KV daily profile (5,792 slots over
@@ -100,7 +109,7 @@ launch:
     --max-num-seqs 4.'
   - 'Slot-cache measured sc13g: --cpu-offload-gb 420 to offload routed experts, SLOT_CACHE=112, SLOT_CACHE_PER_LAYER=/w/trace/r1-base/slots-8400.json,
     SLOT_CACHE_ROUTER=ffi, bypass prefill above 16 tokens.'
-  - 'Live-tested 512K daily profile (2026-09-07, container glm53-big-sc13g-mtp-ctx512k): --kv-cache-memory 51539607552 (48
+  - 'Live-tested 512K profile, daily 2026-09-07 to 2026-09-13 ( container glm53-big-sc13g-mtp-ctx512k): --kv-cache-memory 51539607552 (48
     GiB), --max-model-len 524288, --max-num-seqs 1, SLOT_CACHE=112, SLOT_CACHE_PER_LAYER=configs/slots-5792-ctx512k.json,
     MTP(1). Launched from the portable script via KV_CACHE_MEMORY / MAX_MODEL_LEN / MAX_NUM_SEQS / SLOT_CACHE_PER_LAYER overrides.
     See results/2026-09-07-ctx512k-live/.'
@@ -112,8 +121,13 @@ launch:
     tag/digest-tag/mismatched IMAGE values are rejected. SLOT_CACHE_RECIPE_SHA is the deterministic current recipe source-artifact
     hash over sorted relative-path/byte-count/file-sha rows excluding results/capture/cache-like trees; it is not a historical result manifest.'
   - 'Portable launcher SHA-256: aebe4fab6272a8ded9d2e871d5b9c536b641634ae9b10232db9fa5c33bcac04d. Review invalidation is scoped to the launcher hash only; instrumentation adapter, staged generator, generated patched runner, slot-cache hook, pinned source, and local image identity hashes are preserved.'
-  - 'Rejected 1M profile (2026-09-07): 96 GiB KV left only 2,672 expert slots (mean predicted hit allocation 0.4016 versus
-    0.6166 at 512K); the launch was aborted during startup as too slow for daily use and archived, not deleted.'
+  - 'Daily profile since 2026-09-13 (container glm53-big-sc13g-mtp-ctx256k-DAILY-20260913): --kv-cache-memory 25769803776 (24 GiB),
+    --max-model-len 262144, --max-num-seqs 1, SLOT_CACHE=112, SLOT_CACHE_PER_LAYER=configs/slots-7360-ctx256k.json, MTP(1).
+    Matched-window 512-token decode median 51.29 tok/s vs 44.83 (512K) and 34.14 (1M); greedy 20/20 identical across all three.
+    See results/2026-09-13-context-slot-curve/.'
+  - '1M profile (measured 2026-09-13, previously aborted 2026-09-07 during startup): 96 GiB KV, 2,672 slots, live hit 0.17,
+    34.14 tok/s C1 median, engine init 92 s after weights, 1,097,600-token KV. Serves correctly; kept as a swap-in long-context
+    option (container glm53-big-sc13g-mtp-ctx1m-keep-measured-20260913), not the default.'
   - Do not use /home/milo/gb300-big-v1/Dockerfile for this recipe; it is an unrelated SGLang Dockerfile.
 metrics:
 - name: V1 baseline single-stream decode
