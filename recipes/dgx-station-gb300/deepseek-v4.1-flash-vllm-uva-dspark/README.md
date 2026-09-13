@@ -14,7 +14,7 @@ This is the configuration to run: `OFFGB=60 UTIL=0.97`, DSpark k=5, 1,048,576 co
 | where the step goes | MoE expert streaming 64% of GPU time at C1, 88% at C8; Grace fetch ≈ 9 ms of a 24 ms step | [`profile/`](results/2026-09-12-v12-1M-k5-off60-util97/profile/), [`routing/`](results/2026-09-12-v12-1M-k5-off60-util97/routing/) |
 | host-side (THP, unpinned, rust frontend, language-model-only) | nothing adopted | [`failure-ledger.md`](research/failure-ledger.md) |
 
-Not scheduled: a cuDNN discrete-mode MoE backend (per-expert pointers; the only way to cash the routing skew; 1–2 weeks), `--async-scheduling` (unmeasured; zero memory; likely small at C1), KV-dtype audit (capacity, not speed). Not pursued: REAP pruning, EGM/two-tensor row-map.
+Not scheduled: a cuDNN discrete-mode MoE backend (per-expert pointers; the only way to cash the routing skew; 1–2 weeks), `--async-scheduling` (unmeasured; zero memory; likely small at C1), KV-dtype audit (capacity, not speed). Not pursued: REAP pruning, EGM/two-tensor row-map. Open since 2026-09-13: a **rebase probe** onto a mainline nightly (see Software) and the **V1 batch-size K-schedule** `num_speculative_tokens_per_batch_size=[[1,2,5],[3,16,1]]` (+28–33% at C8–C16, no C1 risk) — neither run yet.
 
 Operating it: `docker update --restart unless-stopped dsv41-vllm-v12-1M-k5-off60-util97-BOUND-REF`; health is `GET /v1/models` on the lane port; hot restart ~4 min, cold ~8 with the seeded autotune cache. Previous bound configs stay as stopped containers for rollback.
 
@@ -44,6 +44,24 @@ Profile: [`hardware/dgx-station-gb300.yaml`](../../../hardware/dgx-station-gb300
 | vLLM | `0.1.dev20904+g179dd0fa9` |
 | Libraries | torch 2.13.0+cu130 · transformers 5.17.0 · flashinfer 0.6.18 · triton 3.7.1 |
 | Model | `deepseek-ai/DeepSeek-V4.1-Flash` @ `df42c109f1defefcbfcedbe7d905718a12266e40`, 510,313,343,553 bytes, byte-verified |
+
+### Image pin is a moving target — rebase candidate identified (2026-09-13)
+
+This image was built from vLLM staging branch `dsv41-feat` @ `e47aa780`, which no longer exists
+under that name: it was replaced by **`dsv41-optimized`** (HEAD is the same `e47aa780`,
+2026-09-10). DeepSeek-V4.1-Flash reached **vLLM main** the same day (#56228, then **#56214
+"[Model] Support DeepSeek-V4.1-Flash" merged 2026-09-11**), so main is now *ahead* of this pin
+on model support while the remaining perf kernels stay staged on `dsv41-optimized`.
+
+Not yet tested here. The candidate is `vllm/vllm-openai:nightly-2671fedf…` (2026-09-13 06:15Z;
+cu129 sibling 06:27Z), which carries #56228/#56214 plus DeepSelect top-k (#56464) and the Triton
+input-metadata fusion (#56562). It predates #56512 (Engram prefetch/DP-shard) and #56682, so
+those want the next nightly. **v0.29.0 will not work — it predates the DSV4.1 merge.** All flags
+in this recipe still map to current mainline names; `--engram-config '{"cpu_offload":true}'`
+becomes redundant once #56512 is in the image (CPU offload becomes the default there).
+
+Everything above is measured against the pinned image and stands until a rebase is run
+same-window against the live `-BOUND-REF`.
 
 Full lock: [`results/…/software-lock.txt`](results/2026-09-10-v11-1M-k5-lpt6144/software-lock.txt) · exact command: [`launch-command.txt`](results/2026-09-10-v11-1M-k5-lpt6144/launch-command.txt).
 
