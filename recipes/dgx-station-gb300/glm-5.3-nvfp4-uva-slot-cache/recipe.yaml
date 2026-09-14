@@ -121,7 +121,15 @@ launch:
     tag/digest-tag/mismatched IMAGE values are rejected. SLOT_CACHE_RECIPE_SHA is the deterministic current recipe source-artifact
     hash over sorted relative-path/byte-count/file-sha rows excluding results/capture/cache-like trees; it is not a historical result manifest.'
   - 'Portable launcher SHA-256: aebe4fab6272a8ded9d2e871d5b9c536b641634ae9b10232db9fa5c33bcac04d. Review invalidation is scoped to the launcher hash only; instrumentation adapter, staged generator, generated patched runner, slot-cache hook, pinned source, and local image identity hashes are preserved.'
-  - 'Daily profile since 2026-09-13 (container glm53-big-sc13g-mtp-ctx256k-DAILY-20260913): --kv-cache-memory 25769803776 (24 GiB),
+  - 'Daily profile since 2026-09-14 10:35 CDT (container glm53-big-sc13g-mtp2-ctx256k-K2fuse-DAILY-20260914, promoted by James):
+    the 2026-09-13 256K daily args plus SLOT_CACHE_HOOK=patches/slot_cache_hook_v2.py SLOT_CACHE_SCALAR_FUSE=1 (one Triton launch
+    replaces three index_put_ scalar-slot copies per layer-step; 20/20 greedy-identical to stock) and MTP num_speculative_tokens=2.
+    C1 512-token median 54.69 tok/s vs 51.40 K1 control, +7.25% paired [95% CI +4.33, +10.44], 8/8 prompt wins; K=2 teacher-forced
+    margins reproduce the 2026-09-13 fair gate (11 sites, max |dlogp| 4.50). Rollback: docker start
+    glm53-big-sc13g-mtp-ctx256k-K1-daily-keep-pre-fuse-20260913. See results/2026-09-14-agent-remap-draftcorr-scalarfuse-k2/.'
+  - 'Measured dead on 2026-09-14 (same results dir): agent-traffic slot remap (+0.002 hit on 96,504 captured agent steps),
+    MTP-draft routing prefetch (draft->next-step main overlap 0.0316 vs chance 0.0312), --max-num-batched-tokens 16384 (+0.19%).'
+  - 'Previous daily 2026-09-13 to 2026-09-14 (container glm53-big-sc13g-mtp-ctx256k-DAILY-20260913, kept as K1-daily-keep-pre-fuse): --kv-cache-memory 25769803776 (24 GiB),
     --max-model-len 262144, --max-num-seqs 1, SLOT_CACHE=112, SLOT_CACHE_PER_LAYER=configs/slots-7360-ctx256k.json, MTP(1).
     Matched-window 512-token decode median 51.29 tok/s vs 44.83 (512K) and 34.14 (1M); greedy 20/20 identical across all three.
     See results/2026-09-13-context-slot-curve/.'
@@ -130,6 +138,15 @@ launch:
     option (container glm53-big-sc13g-mtp-ctx1m-keep-measured-20260913), not the default.'
   - Do not use /home/milo/gb300-big-v1/Dockerfile for this recipe; it is an unrelated SGLang Dockerfile.
 metrics:
+- name: K2 + scalar-fuse daily single-stream decode (promoted 2026-09-14)
+  value: 54.69
+  unit: tok/s
+  workload: C1, 8 prompts (prose/code/reason/list/dialog) x 512 generated tokens x 3 scored reps, temp 0, 256K profile, hook v2 SCALAR_FUSE=1, MTP(2)
+  aggregation: median of per-prompt medians; control (same window, K1 stock hook) 51.40; paired +7.25% [95% CI +4.33, +10.44]
+  provenance:
+    run_id: 2026-09-14-agent-remap-draftcorr-scalarfuse-k2
+    method: scripts/speed_reps.py (2026-09-13 instrument)
+    raw: windows/E-k2-scalarfuse/speed-reps.json
 - name: V1 baseline single-stream decode
   value: 33.8
   unit: tok/s

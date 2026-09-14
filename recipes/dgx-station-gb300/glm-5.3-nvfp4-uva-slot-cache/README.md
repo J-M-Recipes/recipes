@@ -1,6 +1,6 @@
 # GLM-5.3-NVFP4-One-GB300
 
-**Status: experimental** · V1 baseline 33.8 tok/s C1 · sc13g slot-cache 43.1 tok/s C1 / 92.0 agg C4 / 95.6 agg C8 · MTP(1) audited as faster but **not** a quality-approved default · DFlash2-over-UVA, PR #1 demand-fill DMA, offline cache-policy reallocation, and simple trace prediction all failed their frozen continue gates · daily serving profile is now **256K context / 24 GiB bf16 KV / 7,360 slots** with MTP(1): 51.3 tok/s C1 vs 44.8 at 512K and 34.1 at 1M in a matched September 13 window, greedy-identical across all three
+**Status: experimental** · V1 baseline 33.8 tok/s C1 · sc13g slot-cache 43.1 tok/s C1 / 92.0 agg C4 / 95.6 agg C8 · MTP(1) audited as faster but **not** a quality-approved default · DFlash2-over-UVA, PR #1 demand-fill DMA, offline cache-policy reallocation, and simple trace prediction all failed their frozen continue gates · daily serving profile is **256K context / 24 GiB bf16 KV / 7,360 slots** with **hook v2 scalar-fuse + MTP(2)** since September 14 (54.7 tok/s C1, +7.25% over the K1 stock-hook control, fuse 20/20 greedy-identical, K=2 margins = the Sept-13 fair gate); the K1 profile measured 51.3 tok/s C1 vs 44.8 at 512K and 34.1 at 1M on September 13. Measured dead September 14: agent-traffic slot remap, MTP-draft prefetch, 16K batched tokens
 
 ![Memory map](diagrams/memory-map.svg)
 
