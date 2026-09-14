@@ -178,6 +178,15 @@ Decode tracks expert-cache misses almost linearly: 256K is **+14.4%** over 512K 
 
 Practical read: 1M is a real profile at a real, always-on cost. If a session needs it, swap lanes (cold load is the price); do not run it as the default.
 
+#### Same day, later: 256K is fully usable; K=2 is quality-equivalent but not promoted; LRU beats explicit expert pinning
+
+Receipts: [`results/2026-09-13-k2-fair-gate-needle-trace/`](results/2026-09-13-k2-fair-gate-needle-trace/) and [`results/2026-09-13-k2-selfrepeat-quality/`](results/2026-09-13-k2-selfrepeat-quality/).
+
+- **Usable context on the 256K profile:** a three-variant needle ladder (single key, five ordered keys at 10–90% depth, real key vs four same-prefix decoys) passed **18/18** through a 240K target (211K actual prompt tokens) with prefill flat at ~3.4–3.5K tok/s and 62 s wall at the top rung. The declared window is not paying for context nobody can use. The lever for longer windows is decoupling KV from expert slots, not declaring less.
+- **K=2 fair gate:** the 11 prompts where K1 and K2 greedy text differ were teacher-forced on *both* servers; the model's logprobs at every divergence site are byte-identical between servers (max |Δ| 0.0), and where the lanes disagree the model rates them near-ties (K1 rank-1 at 5 sites, K2 at 3, neither at 3). Self-fidelity is symmetric (0.946 vs 0.943 rank-1). The frozen task ladder agrees: 191/200 vs 190/200, 0 losses / 1 win / 99 ties. **The greedy-identical gate was the wrong instrument for a K change**; the September 9 "9/20 hard fail" is retracted on quality grounds.
+- **K=2 speed:** +3.17% C1 at 256K (8 prompts × 512, 3 scored reps, paired 95% bootstrap CI +0.5…+6.1, 6/8 wins; reasoning/list/code up, prose −2%). Below the +5% bar. **K1-256K stays daily.** K2 is reopened as the lane that benefits most from any future miss reduction.
+- **Routing trace, same slot budget:** static oracle expert pin 0.633 mean hit vs **LRU 0.719**; hybrids in between. Cross-layer expert overlap is at random chance (0.031); step-to-step overlap 0.27. On GLM-5.3 a cache beats any fixed allocation; the remaining signal for "speculative allocation" is one step ahead (MTP draft routing → async miss fill), not across layers.
+
 Launch the 256K daily profile from the portable script with the documented overrides:
 
 ```bash
