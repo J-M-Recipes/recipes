@@ -1,10 +1,14 @@
 # DeepSeek-V4.1-Flash at 1M context on one DGX Station GB300
 
-**Release: Sixty** (2026-09-12) · **Status: verified** (2026-09-10/12) · **v12: 89 tok/s single-stream prose · 140–160 tok/s on agent/code text · 311 agg tok/s at C16** (v11: 82 / 130–150 / 287) · 972K-token prompt prefilled in 85 s · Hermes tool-calling 10/10
+**Release: Sixty-K** (2026-09-14) · **Status: verified** (2026-09-10/12/14) · **v13: 90 tok/s single-stream prose · 140–160 tok/s on agent/code text · 429 agg tok/s at C16** (v12: 89 / 140–160 / 311 · v11: 82 / 130–150 / 287) · 972K-token prompt prefilled in 85 s · Hermes tool-calling 10/10
+
+## Release notes — Sixty-K (2026-09-14)
+
+**v13 is v12 plus one line:** `num_speculative_tokens_per_batch_size=[[1,2,5],[3,16,1]]` — DSpark drafts 5 tokens while one or two sequences are running and 1 token at three or more. Same offload, same KV, same autotune hash, same weights and verifier. Two same-window pairs against v12: C1/C2 unchanged, **C4 +27%, C8 +26%, C12 +27%, C16 +35% (429 tok/s)**. Fixture acceptance identical (tool_json −7% both pairs, flagged in the results README). Also in this round: `--async-scheduling` is a wash (±3%), and a cache-independent depth map shows **decode flat from 6K to 425K tokens (−7%)** — attention is not the lever on this box, expert fetch is. Details: [`results/2026-09-14-round3-ksched-depth/`](results/2026-09-14-round3-ksched-depth/README.md).
 
 ## Release notes — Sixty (2026-09-12)
 
-This is the configuration to run: `OFFGB=60 UTIL=0.97`, DSpark k=5, 1,048,576 context, Engram in Grace. It is what `scripts/launch-dsv41-vllm.sh` launches by default. The measurement campaign that produced it is closed at this point; the lane runs on these flags until something upstream changes the picture.
+This was the configuration to run before v13: `OFFGB=60 UTIL=0.97`, DSpark k=5, 1,048,576 context, Engram in Grace. v13 keeps all of it and adds the k-schedule.
 
 | axis | verdict | evidence |
 |---|---|---|
@@ -14,9 +18,9 @@ This is the configuration to run: `OFFGB=60 UTIL=0.97`, DSpark k=5, 1,048,576 co
 | where the step goes | MoE expert streaming 64% of GPU time at C1, 88% at C8; Grace fetch ≈ 9 ms of a 24 ms step | [`profile/`](results/2026-09-12-v12-1M-k5-off60-util97/profile/), [`routing/`](results/2026-09-12-v12-1M-k5-off60-util97/routing/) |
 | host-side (THP, unpinned, rust frontend, language-model-only) | nothing adopted | [`failure-ledger.md`](research/failure-ledger.md) |
 
-Not scheduled: a cuDNN discrete-mode MoE backend (per-expert pointers; the only way to cash the routing skew; 1–2 weeks), `--async-scheduling` (unmeasured; zero memory; likely small at C1), KV-dtype audit (capacity, not speed). Not pursued: REAP pruning, EGM/two-tensor row-map. Open since 2026-09-13: a **rebase probe** onto a mainline nightly (see Software) and the **V1 batch-size K-schedule** `num_speculative_tokens_per_batch_size=[[1,2,5],[3,16,1]]` (+28–33% at C8–C16, no C1 risk) — neither run yet.
+Not scheduled: a cuDNN discrete-mode MoE backend (per-expert pointers; the only way to cash the routing skew; 1–2 weeks), `--async-scheduling` (unmeasured; zero memory; likely small at C1), KV-dtype audit (capacity, not speed). Not pursued: REAP pruning, EGM/two-tensor row-map. The **batch-size K-schedule** became v13 on 2026-09-14 (+26–35% at C4–C16, C1 flat). `--async-scheduling` measured 2026-09-14: wash. The rebase probe onto `dsv41-optimized` is deprioritized by the depth map (decode flat to 425K; attention megakernels would not move throughput here).
 
-Operating it: `docker update --restart unless-stopped dsv41-vllm-v12-1M-k5-off60-util97-BOUND-REF`; health is `GET /v1/models` on the lane port; hot restart ~4 min, cold ~8 with the seeded autotune cache. Previous bound configs stay as stopped containers for rollback.
+Operating it: `docker update --restart unless-stopped dsv41-vllm-v13-1M-ksched-BOUND-REF`; health is `GET /v1/models` on the lane port; hot restart ~4 min, cold ~8 with the seeded autotune cache. Previous bound configs stay as stopped containers for rollback.
 
 ## What this runs
 
@@ -69,7 +73,7 @@ Full lock: [`results/…/software-lock.txt`](results/2026-09-10-v11-1M-k5-lpt614
 
 ```bash
 MODEL=/models/DeepSeek-V4.1-Flash-df42c109f1defefcbfcedbe7d905718a12266e40 \
-TAG=v12-1M-k5-off60-util97 OFFGB=60 UTIL=0.97 SEQS=16 SPEC=dspark:5 CTX=1048576 \
+TAG=v13-1M-ksched OFFGB=60 UTIL=0.97 SEQS=16 SPEC=dspark:5 KSCHED='[[1,2,5],[3,16,1]]' CTX=1048576 \
 EXTRA='--long-prefill-token-threshold 6144' \
 bash scripts/launch-dsv41-vllm.sh
 # ~8 min cold with a seeded autotune cache, ~4 min hot restart. Then:
@@ -84,7 +88,7 @@ vllm serve /model --served-model-name dsv41-flash-uva --trust-remote-code --tens
   --cpu-offload-params routed_experts.w13_weight routed_experts.w2_weight \
   --engram-config '{"cpu_offload": true}' \
   --max-model-len 1048576 --max-num-seqs 16 --max-num-batched-tokens 8192 --gpu-memory-utilization 0.97 \
-  --speculative-config '{"method":"dspark","num_speculative_tokens":5}' \
+  --speculative-config '{"method":"dspark","num_speculative_tokens":5,"num_speculative_tokens_per_batch_size":[[1,2,5],[3,16,1]]}' \
   --tool-call-parser deepseek_v41 --reasoning-parser deepseek_v41 --enable-auto-tool-choice \
   --long-prefill-token-threshold 6144 --port 30006
 ```
@@ -93,7 +97,7 @@ Flags that matter, and why:
 
 - **`--cpu-offload-gb 60` with `--gpu-memory-utilization 0.97`** is v12's notch. ~~60 → −2.61 GiB at 1M+DSpark~~ — that was measured at util 0.94. At 0.97 it fits: KV 4.89 GiB = 2.33M tokens = 2.2 concurrent 1M requests, and the 12.7 GiB of experts that move back into HBM buy +12% single-stream decode in a same-window comparison (89.2 vs 79.5). 40 still does not fit even at 131K. The fetch tax is ~4 ms of an ~11 ms step (~36%), measured against an all-HBM two-Station run; util alone moves nothing (at 70 it only grew KV). If you need more than two concurrent 1M contexts, use the v11 flags (`OFFGB=70 UTIL=0.94`, 82 tok/s, 4.5× at 1M).
 - **`--max-model-len 1048576`** costs 5.5 GiB of KV pool relative to 131K and nothing in decode speed. There is no reason to run this model small.
-- **`--speculative-config dspark k=5`.** The drafter is in the checkpoint (`mtp.*`). k=5 wins agent text by ~10% over k=3; k=3 wins prose by ~10% with 70% acceptance vs 60%. Pick for your traffic.
+- **`--speculative-config dspark k=5` + batch-size schedule `[[1,2,5],[3,16,1]]` (v13).** The drafter is in the checkpoint (`mtp.*`). At one or two streams k=5 wins agent text by a third over k=1 and loses prose by 8%; at three or more streams k=1 wins every point by 23–33% because a k=5 verify window multiplies unique experts fetched per step 3.7× and the batch already fills the step. The schedule takes each where it wins: C1 unchanged, C4–C16 +26–35%. If your lane is single-stream prose only, static k=3 (~+10% prose) is still a fair choice.
 - **`--long-prefill-token-threshold 6144`** is what makes one lane serve mixed traffic. Without it a 480K prefill starves a short request to 18 s TTFT (vLLM [#51454](https://github.com/vllm-project/vllm/issues/51454)); with it, 0.9–1.1 s, and the long prompt pays +16%. The older `--max-num-partial-prefills` flags are gone from this vLLM.
 - **`--tool-call-parser deepseek_v41 --reasoning-parser deepseek_v41 --enable-auto-tool-choice`** — without these, agent turns come back as narrated text.
 
@@ -115,7 +119,19 @@ FlashInfer autotunes the MXFP4 MoE kernels and caches the result under a hash of
 
 ## Results
 
-### v12 — `OFFGB=60 UTIL=0.97` (current)
+### v13 — v12 + `num_speculative_tokens_per_batch_size=[[1,2,5],[3,16,1]]` (current)
+
+Run [`2026-09-14-round3-ksched-depth`](results/2026-09-14-round3-ksched-depth/) · raw: [`throughput.csv`](results/2026-09-14-round3-ksched-depth/throughput.csv) · two same-window pairs against the v12 container, 18:02 and 18:27 CDT.
+
+**Decode (knee, prose prompts; mean of both pairs, v12 control mean in parentheses)**
+
+| C1 | C2 | C4 | C8 | C12 | C16 |
+|---|---|---|---|---|---|
+| **90.7** (90.6) | 127.2 (127.2) | **223.4** (175.9) | **319.1** (252.6) | **339.3** (266.5) | **429.0** (318.8) |
+
+C1 fixture classes and acceptance are the v12 numbers (the schedule is k=5 there). Decode vs prompt depth on the same boot: 124 / 117 / 114 / — / 122 tok/s at 6.5K / 53K / 106K / 212K / 425K — flat. Memory picture identical to v12 (hash 9ac7b387 hit, KV 4.87 GiB).
+
+### v12 — `OFFGB=60 UTIL=0.97` (superseded by v13, same flags minus the schedule)
 
 Run [`2026-09-12-v12-1M-k5-off60-util97`](results/2026-09-12-v12-1M-k5-off60-util97/) · raw: [`throughput.csv`](results/2026-09-12-v12-1M-k5-off60-util97/throughput.csv) · how it was chosen: [`night-two-ledger.md`](results/2026-09-12-v12-1M-k5-off60-util97/night-two-ledger.md) · warm, on-box, measured against a same-window v11 control boot (79.5 C1) because the reference drifts ~3% day to day.
 

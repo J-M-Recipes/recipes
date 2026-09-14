@@ -7,6 +7,7 @@ OFFGB="${OFFGB:-105}"
 UTIL="${UTIL:-0.92}"
 SEQS="${SEQS:-8}"
 SPEC="${SPEC:-}"   # e.g. SPEC=dspark:5
+KSCHED="${KSCHED:-}"   # v13: batch-size k-schedule, e.g. KSCHED='[[1,2,5],[3,16,1]]' = k=5 at 1-2 seqs, k=1 at 3-16 (needs SPEC)
 CTX="${CTX:-131072}"
 EXTRA="${EXTRA:-}"   # extra vllm args, e.g. partial-prefill knobs
 DOCKER_ENV="${DOCKER_ENV:-}"   # extra container env, e.g. DOCKER_ENV="-e VLLM_USE_RUST_FRONTEND=1 -e VLLM_WEIGHT_OFFLOADING_DISABLE_PIN_MEMORY=1"
@@ -31,11 +32,11 @@ docker run -d --name "$NAME" --gpus all --ipc host --network host \
   --engram-config '{"cpu_offload": true}' \
   --max-model-len "$CTX" --max-num-seqs "$SEQS" --max-num-batched-tokens 8192 \
   --gpu-memory-utilization "$UTIL" \
-  ${SPEC:+--speculative-config "{\"method\":\"${SPEC%%:*}\",\"num_speculative_tokens\":${SPEC##*:}}"} \
+  ${SPEC:+--speculative-config "{\"method\":\"${SPEC%%:*}\",\"num_speculative_tokens\":${SPEC##*:}${KSCHED:+,\"num_speculative_tokens_per_batch_size\":$KSCHED}}"} \
   --tool-call-parser deepseek_v41 --reasoning-parser deepseek_v41 --enable-auto-tool-choice \
   $EXTRA \
   --host 0.0.0.0 --port 30006
-echo "launched $NAME offload=${OFFGB}GB util=$UTIL seqs=$SEQS ctx=$CTX spec=[$SPEC] extra=[$EXTRA] env=[$DOCKER_ENV]"
+echo "launched $NAME offload=${OFFGB}GB util=$UTIL seqs=$SEQS ctx=$CTX spec=[$SPEC] ksched=[$KSCHED] extra=[$EXTRA] env=[$DOCKER_ENV]"
 nohup docker logs -f "$NAME" > "$LOG" 2>&1 &
 disown
 echo "log: $LOG"
