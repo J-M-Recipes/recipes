@@ -1,0 +1,21 @@
+--- model_runner.py.orig	2026-09-14 12:17:27
++++ model_runner.py	2026-09-14 14:56:20
+@@ -1752,6 +1752,8 @@
+             input_batch, batch_desc.cg_mode == CUDAGraphMode.FULL
+         )
+         self.step_timing.forward_start()
++        if self.adaptive_verification is not None and not dummy_run:
++            self.adaptive_verification.online_forward_start(input_batch)
+ 
+         # Run model.
+         if batch_desc.cg_mode == CUDAGraphMode.FULL:
+@@ -1815,6 +1817,9 @@
+             assert slot_mappings is not None
+             routed_experts = capturer.get_routed_experts(slot_mappings, num_toks)
+ 
++        if self.adaptive_verification is not None and not dummy_run:
++            self.adaptive_verification.online_forward_end()
++
+         finished_req_ids = scheduler_output.finished_req_ids
+         self.execute_model_state = ExecuteModelState(
+             input_batch=input_batch,

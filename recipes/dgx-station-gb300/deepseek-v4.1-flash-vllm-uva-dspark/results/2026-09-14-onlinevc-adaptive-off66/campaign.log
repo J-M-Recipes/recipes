@@ -1,0 +1,238 @@
+2026-09-14 14:57:18 CDT ONLINEVC start: online verify curve vs boot curve, adaptive k=5, off66/util0.97, V2 runner
+2026-09-14 14:57:19 CDT dropped page cache; avail=463GiB used=31GiB
+2026-09-14 14:57:19 CDT starting dsv41-vllm-ADAPT-off66-k5-EXP for control
+dsv41-vllm-ADAPT-off66-k5-EXP
+2026-09-14 14:57:21 CDT waiting bind for dsv41-vllm-ADAPT-off66-k5-EXP
+2026-09-14 14:57:21 CDT still booting dsv41-vllm-ADAPT-off66-k5-EXP t=0s gpu=0%
+2026-09-14 14:57:36 CDT still booting dsv41-vllm-ADAPT-off66-k5-EXP t=15s gpu=0%
+2026-09-14 14:58:21 CDT still booting dsv41-vllm-ADAPT-off66-k5-EXP t=60s gpu=0%
+2026-09-14 14:58:37 CDT still booting dsv41-vllm-ADAPT-off66-k5-EXP t=75s gpu=0%
+2026-09-14 14:59:23 CDT still booting dsv41-vllm-ADAPT-off66-k5-EXP t=122s gpu=3%
+2026-09-14 15:00:24 CDT still booting dsv41-vllm-ADAPT-off66-k5-EXP t=183s gpu=0%
+2026-09-14 15:01:25 CDT still booting dsv41-vllm-ADAPT-off66-k5-EXP t=244s gpu=1%
+2026-09-14 15:02:25 CDT still booting dsv41-vllm-ADAPT-off66-k5-EXP t=304s gpu=100%
+2026-09-14 15:02:40 CDT BOUND dsv41-vllm-ADAPT-off66-k5-EXP after 319s
+2026-09-14 15:02:40 CDT SMOKE control
+ARITH '323'
+SMOKE_PASS
+2026-09-14 15:02:42 CDT KNEE control
+[CONTROL-adapt-for-ONLINEVC] conc= 1:   101.5 agg tok/s  101.46 per-stream  (runs 101.3/101.6)
+[CONTROL-adapt-for-ONLINEVC] conc= 2:   133.8 agg tok/s   66.89 per-stream  (runs 127.5/140.1)
+[CONTROL-adapt-for-ONLINEVC] conc= 4:   203.1 agg tok/s   50.77 per-stream  (runs 203.0/203.2)
+[CONTROL-adapt-for-ONLINEVC] conc= 8:   294.7 agg tok/s   36.84 per-stream  (runs 294.8/294.6)
+[CONTROL-adapt-for-ONLINEVC] conc=12:   333.9 agg tok/s   27.82 per-stream  (runs 328.9/338.9)
+[CONTROL-adapt-for-ONLINEVC] conc=16:   407.4 agg tok/s   25.46 per-stream  (runs 400.4/414.3)
+2026-09-14 15:03:39 CDT FIXTURE control
+[CONTROL-adapt-for-ONLINEVC] tool_json    138.3 tok/s  accept=84.3%  acc/step=4.21  tokens=318
+      (99, 0.87, 'tool_calls', True, "I'll run both checks in parallel.  ")
+      (60, 0.47, 'tool_calls', True, "I'll read the file first.  ")
+[CONTROL-adapt-for-ONLINEVC] code         143.8 tok/s  accept=57.1%  acc/step=2.86  tokens=596
+      (214, 1.44, 'stop', False, '```python def knee(rows):     """Return the concurrency where marginal gain per ')
+      (84, 0.62, 'stop', False, '```bash #!/usr/bin/env bash set -euo pipefail  : "${SRC:?SRC is not set}"  for i')
+[CONTROL-adapt-for-ONLINEVC] shell_ops    144.1 tok/s  accept=81.4%  acc/step=4.07  tokens=144
+      (72, 0.5, 'stop', False, 'docker stop dsv41-vllm-v7 docker rename dsv41-vllm-v7 dsv41-vllm-v7-old sudo sh ')
+[CONTROL-adapt-for-ONLINEVC] structured   123.6 tok/s  accept=42.1%  acc/step=2.10  tokens=424
+      (102, 0.72, 'stop', False, "I'll research both approaches to give you accurate numbers.  ")
+      (110, 0.99, 'stop', False, '- weights load: complete — 14.2 GB across 4 shards in 38.6 s - KV cache: allocat')
+[CONTROL-adapt-for-ONLINEVC] prose        103.6 tok/s  accept=18.1%  acc/step=0.90  tokens=400
+      (200, 1.94, 'length', False, 'Speculative decoding speeds up generation by having a small, cheap "draft" model')
+[CONTROL-adapt-for-ONLINEVC] weighted accept=51.9%
+2026-09-14 15:03:54 CDT CONTROL C1=101.5 C8=294.7 C16=407.4 | prose=103.6(0.18) shell_ops=144.1(0.81) code=143.8(0.57) tool_json=138.3(0.84) structured=123.6(0.42) wacc=0.519
+dsv41-vllm-ADAPT-off66-k5-EXP
+2026-09-14 15:04:01 CDT stopped dsv41-vllm-ADAPT-off66-k5-EXP
+2026-09-14 15:04:03 CDT dropped page cache; avail=465GiB used=28GiB
+85c24926fa1a730eb765e29f63eea0f114dafdedaf8b514a5e7221505bbe3ee9
+launched dsv41-vllm-ONLINEVC-off66-k5 offload=66GB util=0.97 seqs=16 ctx=1048576 spec=[] extra=[--long-prefill-token-threshold 6144 --speculative-config {"method":"dspark","num_speculative_tokens":5,"enable_adaptive_verification":true}] env=[-e VLLM_USE_V2_MODEL_RUNNER=1 -e VLLM_DSPARK_ONLINE_VERIFY_CURVE=1 -v ~/dsv41/patches/onlinevc/model_runner.py:/usr/local/lib/python3.12/dist-packages/vllm/v1/worker/gpu/model_runner.py:ro -v ~/dsv41/patches/onlinevc/adaptive_verification.py:/usr/local/lib/python3.12/dist-packages/vllm/v1/worker/gpu/spec_decode/adaptive_verification.py:ro]
+log: ~/dsv41/dsv41-vllm-ONLINEVC-off66-k5.log
+2026-09-14 15:09:08 CDT waiting bind for dsv41-vllm-ONLINEVC-off66-k5
+2026-09-14 15:09:08 CDT still booting dsv41-vllm-ONLINEVC-off66-k5 t=0s gpu=0%
+2026-09-14 15:09:23 CDT still booting dsv41-vllm-ONLINEVC-off66-k5 t=15s gpu=0%
+2026-09-14 15:10:08 CDT still booting dsv41-vllm-ONLINEVC-off66-k5 t=60s gpu=97%
+2026-09-14 15:10:23 CDT still booting dsv41-vllm-ONLINEVC-off66-k5 t=75s gpu=0%
+2026-09-14 15:11:08 CDT still booting dsv41-vllm-ONLINEVC-off66-k5 t=120s gpu=0%
+2026-09-14 15:11:23 CDT still booting dsv41-vllm-ONLINEVC-off66-k5 t=135s gpu=21%
+2026-09-14 15:12:08 CDT still booting dsv41-vllm-ONLINEVC-off66-k5 t=180s gpu=0%
+2026-09-14 15:12:23 CDT BOUND dsv41-vllm-ONLINEVC-off66-k5 after 195s
+2026-09-14 15:12:23 CDT SMOKE
+ARITH '323'
+SMOKE_PASS
+2026-09-14 15:12:25 CDT WARM fixture (discarded) ONLINEVC-off66-k5
+[ONLINEVC-off66-k5-warm] tool_json    130.5 tok/s  accept=84.3%  acc/step=4.21  tokens=318
+      (99, 1.0, 'tool_calls', True, "I'll run both checks in parallel.  ")
+      (60, 0.47, 'tool_calls', True, "I'll read the file first.  ")
+[ONLINEVC-off66-k5-warm] code         130.8 tok/s  accept=53.3%  acc/step=2.66  tokens=643
+      (246, 2.16, 'stop', False, '```python def knee(rows):     """Return the concurrency where marginal gain per ')
+      (91, 0.62, 'stop', False, '```bash #!/usr/bin/env bash set -euo pipefail  : "${SRC:?SRC is not set}"  for i')
+[ONLINEVC-off66-k5-warm] shell_ops    143.7 tok/s  accept=82.9%  acc/step=4.14  tokens=144
+      (72, 0.5, 'stop', False, 'docker stop dsv41-vllm-v7 docker rename dsv41-vllm-v7 dsv41-vllm-v7-old sudo sh ')
+[ONLINEVC-off66-k5-warm] structured   124.2 tok/s  accept=41.7%  acc/step=2.08  tokens=439
+      (102, 0.71, 'stop', False, "I'll research both approaches to give you accurate numbers.  ")
+      (113, 1.0, 'stop', False, '- weights load: complete — 14.2 GB across 4 shards in 38.6 s - KV cache: allocat')
+[ONLINEVC-off66-k5-warm] prose        105.4 tok/s  accept=19.2%  acc/step=0.96  tokens=398
+      (199, 1.9, 'stop', False, 'Speculative decoding speeds up generation by having a small, cheap "draft" model')
+[ONLINEVC-off66-k5-warm] weighted accept=51.0%
+=== ONLINEVC-off66-k5 curve facts Mon Sep 14 03:12:41 PM CDT 2026 ===
+DSpark online verify curve ENABLED (window=32 min_samples=3 rebuild_every=32)
+DSpark boot verify curve (tokens, ms): [(88, 51.793), (96, 55.204), (144, 77.624), (192, 102.179), (384, 194.113), (768, 370.747), (1536, 356.842), (3072, 385.213), (6144, 438.174), (8192, 577.87)]
+DSpark boot draft curve (reqs, ms): [(16, 1.486)]
+DSpark online verify curve after 416 obs (tokens, boot_ms, online_ms, n): [(2, 12.51, 13.76, 76), (4, 19.38, 19.14, 91), (6, 21.49, 24.15, 248)]
+Graph capturing finished in 71 secs, took 7.07 GiB
+Available KV cache memory: 5.64 GiB
+Graph capturing finished in 37 secs, took 6.12 GiB
+2026-09-14 15:12:41 CDT KNEE ONLINEVC-off66-k5
+[ONLINEVC-off66-k5] conc= 1:   107.0 agg tok/s  107.02 per-stream  (runs 108.4/105.6)
+[ONLINEVC-off66-k5] conc= 2:   128.8 agg tok/s   64.40 per-stream  (runs 113.2/144.4)
+[ONLINEVC-off66-k5] conc= 4:   188.3 agg tok/s   47.08 per-stream  (runs 170.5/206.1)
+[ONLINEVC-off66-k5] conc= 8:   299.6 agg tok/s   37.45 per-stream  (runs 299.0/300.2)
+[ONLINEVC-off66-k5] conc=12:   355.1 agg tok/s   29.59 per-stream  (runs 358.7/351.5)
+[ONLINEVC-off66-k5] conc=16:   410.6 agg tok/s   25.66 per-stream  (runs 412.2/408.9)
+2026-09-14 15:13:37 CDT FIXTURE ONLINEVC-off66-k5
+[ONLINEVC-off66-k5] tool_json    163.2 tok/s  accept=84.3%  acc/step=4.21  tokens=318
+      (99, 0.6, 'tool_calls', True, "I'll run both checks in parallel.  ")
+      (60, 0.38, 'tool_calls', True, "I'll read the file first.  ")
+[ONLINEVC-off66-k5] code         137.0 tok/s  accept=50.9%  acc/step=2.55  tokens=565
+      (195, 1.44, 'stop', False, '```python def knee(rows):     """Return the concurrency where marginal gain per ')
+      (84, 0.6, 'stop', False, '```bash #!/usr/bin/env bash set -euo pipefail  : "${SRC:?SRC is not set}"  for i')
+[ONLINEVC-off66-k5] shell_ops    143.9 tok/s  accept=82.9%  acc/step=4.14  tokens=144
+      (72, 0.5, 'stop', False, 'docker stop dsv41-vllm-v7 docker rename dsv41-vllm-v7 dsv41-vllm-v7-old sudo sh ')
+[ONLINEVC-off66-k5] structured   124.2 tok/s  accept=42.6%  acc/step=2.13  tokens=441
+      (102, 0.71, 'stop', False, "I'll research both approaches to give you accurate numbers.  ")
+      (124, 1.15, 'stop', False, '- weights load: complete — 14.2 GB across 4 shards in 38.6 s - KV cache: allocat')
+[ONLINEVC-off66-k5] prose        104.5 tok/s  accept=18.6%  acc/step=0.93  tokens=398
+      (199, 1.9, 'stop', False, 'Speculative decoding speeds up generation by having a small, cheap "draft" model')
+[ONLINEVC-off66-k5] weighted accept=50.2%
+=== ONLINEVC-off66-k5 curve facts Mon Sep 14 03:13:52 PM CDT 2026 ===
+DSpark online verify curve ENABLED (window=32 min_samples=3 rebuild_every=32)
+DSpark boot verify curve (tokens, ms): [(88, 51.793), (96, 55.204), (144, 77.624), (192, 102.179), (384, 194.113), (768, 370.747), (1536, 356.842), (3072, 385.213), (6144, 438.174), (8192, 577.87)]
+DSpark boot draft curve (reqs, ms): [(16, 1.486)]
+DSpark online verify curve after 1665 obs (tokens, boot_ms, online_ms, n): [(2, 12.51, 13.73, 368), (4, 19.38, 19.79, 411), (6, 21.49, 25.58, 318), (8, 21.94, 28.95, 114), (12, 25.19, 35.4, 112), (16, 32.46, 40.95, 185), (24, 48.04, 49.82, 127), (32, 51.31, 58.96, 15), (40, 55.73, 65.85, 3), (48, 62.07, 56.54, 3), (56, 64.95, 78.46, 6)]
+DSpark online verify curve after 2081 obs (tokens, boot_ms, online_ms, n): [(2, 12.51, 13.78, 379), (4, 19.38, 18.92, 430), (6, 21.49, 24.11, 382), (8, 21.94, 29.23, 122), (12, 25.19, 35.4, 123), (16, 32.46, 41.8, 205), (24, 48.04, 53.65, 249), (32, 51.31, 62.33, 98), (40, 55.73, 67.71, 71), (48, 62.07, 72.4, 9), (56, 64.95, 78.46, 6), (96, 83.57, 70.87, 3)]
+DSpark online verify curve after 2497 obs (tokens, boot_ms, online_ms, n): [(2, 12.51, 13.83, 506), (4, 19.38, 19.16, 561), (6, 21.49, 24.18, 540), (8, 21.94, 29.23, 122), (12, 25.19, 35.4, 123), (16, 32.46, 41.8, 205), (24, 48.04, 53.65, 249), (32, 51.31, 62.33, 98), (40, 55.73, 67.71, 71), (48, 62.07, 72.4, 9), (56, 64.95, 78.46, 6), (96, 83.57, 70.87, 3)]
+Graph capturing finished in 71 secs, took 7.07 GiB
+Available KV cache memory: 5.64 GiB
+Graph capturing finished in 37 secs, took 6.12 GiB
+2026-09-14 15:13:52 CDT LEDGER | ONLINEVC-off66-k5 | 15:04 | 15:13 | online verify curve | ctrl C1=101.5 C8=294.7 C16=407.4 prose=103.6(0.18) shell_ops=144.1(0.81) code=143.8(0.57) tool_json=138.3(0.84) structured=123.6(0.42) wacc=0.519 | cand C1=107.0 C8=299.6 C16=410.6 | prose=104.5(0.19) shell_ops=143.9(0.83) code=137.0(0.51) tool_json=163.2(0.84) structured=124.2(0.43) wacc=0.502 |
+2026-09-14 15:13:52 CDT FINISH: stop candidate, keep container
+dsv41-vllm-ONLINEVC-off66-k5
+dsv41-vllm-ADAPT-off66-k5-EXP
+2026-09-14 15:13:59 CDT lane left dark; REF is dsv41-vllm-v12-1M-k5-off60-util97-BOUND-REF (start manually when wanted)
+2026-09-14 15:13:59 CDT ONLINEVC done
+2026-09-14 15:18:34 CDT ONLINEVC start: online verify curve vs boot curve, adaptive k=5, off66/util0.97, V2 runner
+2026-09-14 15:18:36 CDT dropped page cache; avail=465GiB used=29GiB
+2026-09-14 15:18:36 CDT starting dsv41-vllm-ADAPT-off66-k5-EXP for control
+dsv41-vllm-ADAPT-off66-k5-EXP
+2026-09-14 15:18:38 CDT waiting bind for dsv41-vllm-ADAPT-off66-k5-EXP
+2026-09-14 15:18:38 CDT still booting dsv41-vllm-ADAPT-off66-k5-EXP t=0s gpu=0%
+2026-09-14 15:18:53 CDT still booting dsv41-vllm-ADAPT-off66-k5-EXP t=15s gpu=0%
+2026-09-14 15:19:38 CDT still booting dsv41-vllm-ADAPT-off66-k5-EXP t=60s gpu=0%
+2026-09-14 15:19:53 CDT still booting dsv41-vllm-ADAPT-off66-k5-EXP t=75s gpu=0%
+2026-09-14 15:20:40 CDT still booting dsv41-vllm-ADAPT-off66-k5-EXP t=122s gpu=3%
+2026-09-14 15:21:41 CDT still booting dsv41-vllm-ADAPT-off66-k5-EXP t=183s gpu=0%
+2026-09-14 15:22:42 CDT still booting dsv41-vllm-ADAPT-off66-k5-EXP t=244s gpu=94%
+2026-09-14 15:23:42 CDT still booting dsv41-vllm-ADAPT-off66-k5-EXP t=304s gpu=0%
+2026-09-14 15:23:57 CDT BOUND dsv41-vllm-ADAPT-off66-k5-EXP after 319s
+2026-09-14 15:23:57 CDT SMOKE control
+ARITH '323'
+SMOKE_PASS
+2026-09-14 15:23:58 CDT KNEE control
+[CONTROL-adapt-for-ONLINEVC-p2] conc= 1:   101.9 agg tok/s  101.92 per-stream  (runs 102.1/101.8)
+[CONTROL-adapt-for-ONLINEVC-p2] conc= 2:   140.4 agg tok/s   70.19 per-stream  (runs 135.2/145.5)
+[CONTROL-adapt-for-ONLINEVC-p2] conc= 4:   212.0 agg tok/s   52.99 per-stream  (runs 214.4/209.5)
+[CONTROL-adapt-for-ONLINEVC-p2] conc= 8:   295.6 agg tok/s   36.95 per-stream  (runs 298.3/293.0)
+[CONTROL-adapt-for-ONLINEVC-p2] conc=12:   338.7 agg tok/s   28.22 per-stream  (runs 337.7/339.7)
+[CONTROL-adapt-for-ONLINEVC-p2] conc=16:   411.9 agg tok/s   25.74 per-stream  (runs 417.0/406.7)
+2026-09-14 15:24:54 CDT FIXTURE control
+[CONTROL-adapt-for-ONLINEVC-p2] tool_json    146.0 tok/s  accept=84.3%  acc/step=4.21  tokens=318
+      (99, 0.75, 'tool_calls', True, "I'll run both checks in parallel.  ")
+      (60, 0.47, 'tool_calls', True, "I'll read the file first.  ")
+[CONTROL-adapt-for-ONLINEVC-p2] code         139.4 tok/s  accept=55.2%  acc/step=2.76  tokens=596
+      (214, 1.52, 'stop', False, '```python def knee(rows):     """Return the concurrency where marginal gain per ')
+      (84, 0.62, 'stop', False, '```bash #!/usr/bin/env bash set -euo pipefail  : "${SRC:?SRC is not set}"  for i')
+[CONTROL-adapt-for-ONLINEVC-p2] shell_ops    145.5 tok/s  accept=81.4%  acc/step=4.07  tokens=144
+      (72, 0.49, 'stop', False, 'docker stop dsv41-vllm-v7 docker rename dsv41-vllm-v7 dsv41-vllm-v7-old sudo sh ')
+[CONTROL-adapt-for-ONLINEVC-p2] structured   125.0 tok/s  accept=42.7%  acc/step=2.13  tokens=422
+      (102, 0.71, 'stop', False, "I'll research both approaches to give you accurate numbers.  ")
+      (109, 0.97, 'stop', False, '- weights load: complete — 14.2 GB across 4 shards in 38.6 s - KV cache: allocat')
+[CONTROL-adapt-for-ONLINEVC-p2] prose        103.3 tok/s  accept=18.7%  acc/step=0.93  tokens=400
+      (200, 1.94, 'length', False, 'Speculative decoding speeds up generation by having a small, cheap "draft" model')
+[CONTROL-adapt-for-ONLINEVC-p2] weighted accept=51.6%
+2026-09-14 15:25:09 CDT CONTROL C1=101.9 C8=295.6 C16=411.9 | prose=103.3(0.19) shell_ops=145.5(0.81) code=139.4(0.55) tool_json=146.0(0.84) structured=125.0(0.43) wacc=0.516
+dsv41-vllm-ADAPT-off66-k5-EXP
+2026-09-14 15:25:17 CDT stopped dsv41-vllm-ADAPT-off66-k5-EXP
+2026-09-14 15:25:18 CDT dropped page cache; avail=466GiB used=27GiB
+3323d2f83834ae9f3a6274c5399caf1a395e56f4b3fddaa08e058f32ef4c4227
+launched dsv41-vllm-ONLINEVC-off66-k5-p2 offload=66GB util=0.97 seqs=16 ctx=1048576 spec=[] extra=[--long-prefill-token-threshold 6144 --speculative-config {"method":"dspark","num_speculative_tokens":5,"enable_adaptive_verification":true}] env=[-e VLLM_USE_V2_MODEL_RUNNER=1 -e VLLM_DSPARK_ONLINE_VERIFY_CURVE=1 -v ~/dsv41/patches/onlinevc/model_runner.py:/usr/local/lib/python3.12/dist-packages/vllm/v1/worker/gpu/model_runner.py:ro -v ~/dsv41/patches/onlinevc/adaptive_verification.py:/usr/local/lib/python3.12/dist-packages/vllm/v1/worker/gpu/spec_decode/adaptive_verification.py:ro]
+log: ~/dsv41/dsv41-vllm-ONLINEVC-off66-k5-p2.log
+2026-09-14 15:30:23 CDT waiting bind for dsv41-vllm-ONLINEVC-off66-k5-p2
+2026-09-14 15:30:23 CDT still booting dsv41-vllm-ONLINEVC-off66-k5-p2 t=0s gpu=0%
+2026-09-14 15:30:38 CDT still booting dsv41-vllm-ONLINEVC-off66-k5-p2 t=15s gpu=0%
+2026-09-14 15:31:23 CDT still booting dsv41-vllm-ONLINEVC-off66-k5-p2 t=60s gpu=95%
+2026-09-14 15:31:38 CDT still booting dsv41-vllm-ONLINEVC-off66-k5-p2 t=75s gpu=0%
+2026-09-14 15:32:23 CDT still booting dsv41-vllm-ONLINEVC-off66-k5-p2 t=120s gpu=0%
+2026-09-14 15:32:38 CDT still booting dsv41-vllm-ONLINEVC-off66-k5-p2 t=135s gpu=1%
+2026-09-14 15:33:23 CDT still booting dsv41-vllm-ONLINEVC-off66-k5-p2 t=180s gpu=0%
+2026-09-14 15:33:38 CDT BOUND dsv41-vllm-ONLINEVC-off66-k5-p2 after 195s
+2026-09-14 15:33:38 CDT SMOKE
+ARITH '323'
+SMOKE_PASS
+2026-09-14 15:33:40 CDT WARM fixture (discarded) ONLINEVC-off66-k5-p2
+[ONLINEVC-off66-k5-p2-warm] tool_json    130.0 tok/s  accept=84.3%  acc/step=4.21  tokens=318
+      (99, 1.01, 'tool_calls', True, "I'll run both checks in parallel.  ")
+      (60, 0.48, 'tool_calls', True, "I'll read the file first.  ")
+[ONLINEVC-off66-k5-p2-warm] code         130.7 tok/s  accept=54.0%  acc/step=2.70  tokens=642
+      (246, 2.16, 'stop', False, '```python def knee(rows):     """Return the concurrency where marginal gain per ')
+      (91, 0.62, 'stop', False, '```bash #!/usr/bin/env bash set -euo pipefail  : "${SRC:?SRC is not set}"  for i')
+[ONLINEVC-off66-k5-p2-warm] shell_ops    143.5 tok/s  accept=81.4%  acc/step=4.07  tokens=144
+      (72, 0.5, 'stop', False, 'docker stop dsv41-vllm-v7 docker rename dsv41-vllm-v7 dsv41-vllm-v7-old sudo sh ')
+[ONLINEVC-off66-k5-p2-warm] structured   123.0 tok/s  accept=41.7%  acc/step=2.08  tokens=441
+      (102, 0.71, 'stop', False, "I'll research both approaches to give you accurate numbers.  ")
+      (124, 1.15, 'stop', False, '- weights load: complete — 14.2 GB across 4 shards in 38.6 s - KV cache: allocat')
+[ONLINEVC-off66-k5-p2-warm] prose        104.7 tok/s  accept=18.6%  acc/step=0.93  tokens=398
+      (199, 1.9, 'stop', False, 'Speculative decoding speeds up generation by having a small, cheap "draft" model')
+[ONLINEVC-off66-k5-p2-warm] weighted accept=50.9%
+=== ONLINEVC-off66-k5-p2 curve facts Mon Sep 14 03:33:56 PM CDT 2026 ===
+DSpark online verify curve ENABLED (window=32 min_samples=3 rebuild_every=32)
+DSpark boot verify curve (tokens, ms): [(88, 51.989), (96, 55.813), (144, 77.868), (192, 102.918), (384, 194.792), (768, 373.124), (1536, 358.509), (3072, 387.324), (6144, 439.786), (8192, 579.978)]
+DSpark boot draft curve (reqs, ms): [(16, 1.483)]
+DSpark online verify curve after 416 obs (tokens, boot_ms, online_ms, n): [(2, 12.42, 13.75, 79), (4, 19.38, 19.21, 81), (6, 21.45, 24.24, 255)]
+Graph capturing finished in 71 secs, took 7.07 GiB
+Available KV cache memory: 5.64 GiB
+Graph capturing finished in 38 secs, took 6.12 GiB
+2026-09-14 15:33:56 CDT KNEE ONLINEVC-off66-k5-p2
+[ONLINEVC-off66-k5-p2] conc= 1:   103.2 agg tok/s  103.16 per-stream  (runs 104.7/101.7)
+[ONLINEVC-off66-k5-p2] conc= 2:   129.1 agg tok/s   64.57 per-stream  (runs 111.7/146.6)
+[ONLINEVC-off66-k5-p2] conc= 4:   192.1 agg tok/s   48.02 per-stream  (runs 170.9/213.3)
+[ONLINEVC-off66-k5-p2] conc= 8:   300.6 agg tok/s   37.57 per-stream  (runs 302.0/299.2)
+[ONLINEVC-off66-k5-p2] conc=12:   352.5 agg tok/s   29.38 per-stream  (runs 354.4/350.6)
+[ONLINEVC-off66-k5-p2] conc=16:   399.7 agg tok/s   24.98 per-stream  (runs 402.7/396.8)
+2026-09-14 15:34:53 CDT FIXTURE ONLINEVC-off66-k5-p2
+[ONLINEVC-off66-k5-p2] tool_json    165.2 tok/s  accept=86.0%  acc/step=4.30  tokens=318
+      (99, 0.58, 'tool_calls', True, "I'll run both checks in parallel.  ")
+      (60, 0.38, 'tool_calls', True, "I'll read the file first.  ")
+[ONLINEVC-off66-k5-p2] code         141.8 tok/s  accept=54.4%  acc/step=2.72  tokens=604
+      (214, 1.51, 'stop', False, '```python def knee(rows):     """Return the concurrency where marginal gain per ')
+      (84, 0.61, 'stop', False, '```bash #!/usr/bin/env bash set -euo pipefail  : "${SRC:?SRC is not set}"  for i')
+[ONLINEVC-off66-k5-p2] shell_ops    144.1 tok/s  accept=82.9%  acc/step=4.14  tokens=144
+      (72, 0.5, 'stop', False, 'docker stop dsv41-vllm-v7 docker rename dsv41-vllm-v7 dsv41-vllm-v7-old sudo sh ')
+[ONLINEVC-off66-k5-p2] structured   124.4 tok/s  accept=42.0%  acc/step=2.10  tokens=441
+      (102, 0.72, 'stop', False, "I'll research both approaches to give you accurate numbers.  ")
+      (124, 1.13, 'stop', False, '- weights load: complete — 14.2 GB across 4 shards in 38.6 s - KV cache: allocat')
+[ONLINEVC-off66-k5-p2] prose        104.7 tok/s  accept=18.6%  acc/step=0.93  tokens=398
+      (199, 1.89, 'stop', False, 'Speculative decoding speeds up generation by having a small, cheap "draft" model')
+[ONLINEVC-off66-k5-p2] weighted accept=51.5%
+=== ONLINEVC-off66-k5-p2 curve facts Mon Sep 14 03:35:07 PM CDT 2026 ===
+DSpark online verify curve ENABLED (window=32 min_samples=3 rebuild_every=32)
+DSpark boot verify curve (tokens, ms): [(88, 51.989), (96, 55.813), (144, 77.868), (192, 102.918), (384, 194.792), (768, 373.124), (1536, 358.509), (3072, 387.324), (6144, 439.786), (8192, 579.978)]
+DSpark boot draft curve (reqs, ms): [(16, 1.483)]
+DSpark online verify curve after 1666 obs (tokens, boot_ms, online_ms, n): [(2, 12.42, 13.82, 360), (4, 19.38, 19.9, 403), (6, 21.45, 25.41, 324), (8, 22.03, 29.3, 134), (12, 25.22, 35.57, 112), (16, 32.82, 41.31, 180), (24, 47.98, 50.49, 99), (32, 51.42, 59.61, 42), (40, 56.06, 65.17, 3), (56, 65.42, 77.07, 5)]
+DSpark online verify curve after 2082 obs (tokens, boot_ms, online_ms, n): [(2, 12.42, 13.82, 377), (4, 19.38, 19.62, 420), (6, 21.45, 23.95, 388), (8, 22.03, 29.3, 138), (12, 25.22, 36.05, 121), (16, 32.82, 41.85, 204), (24, 47.98, 53.69, 215), (32, 51.42, 62.09, 136), (40, 56.06, 68.95, 49), (48, 62.23, 73.08, 4), (56, 65.42, 77.07, 5), (64, 70.36, 87.23, 4), (72, 73.92, 87.25, 10), (80, 76.78, 98.02, 8)]
+DSpark online verify curve after 2499 obs (tokens, boot_ms, online_ms, n): [(2, 12.42, 13.76, 503), (4, 19.38, 19.12, 545), (6, 21.45, 24.05, 554), (8, 22.03, 29.3, 138), (12, 25.22, 36.05, 121), (16, 32.82, 41.85, 204), (24, 47.98, 53.69, 215), (32, 51.42, 62.09, 136), (40, 56.06, 68.95, 49), (48, 62.23, 73.08, 4), (56, 65.42, 77.07, 5), (64, 70.36, 87.23, 4), (72, 73.92, 87.25, 10), (80, 76.78, 98.02, 8)]
+Graph capturing finished in 71 secs, took 7.07 GiB
+Available KV cache memory: 5.64 GiB
+Graph capturing finished in 38 secs, took 6.12 GiB
+2026-09-14 15:35:08 CDT LEDGER | ONLINEVC-off66-k5-p2 | 15:25 | 15:35 | online verify curve | ctrl C1=101.9 C8=295.6 C16=411.9 prose=103.3(0.19) shell_ops=145.5(0.81) code=139.4(0.55) tool_json=146.0(0.84) structured=125.0(0.43) wacc=0.516 | cand C1=103.2 C8=300.6 C16=399.7 | prose=104.7(0.19) shell_ops=144.1(0.83) code=141.8(0.54) tool_json=165.2(0.86) structured=124.4(0.42) wacc=0.515 |
+2026-09-14 15:35:08 CDT FINISH: stop candidate, keep container
+dsv41-vllm-ONLINEVC-off66-k5-p2
+dsv41-vllm-ADAPT-off66-k5-EXP
+2026-09-14 15:35:15 CDT lane left dark; REF is dsv41-vllm-v12-1M-k5-off60-util97-BOUND-REF (start manually when wanted)
+2026-09-14 15:35:15 CDT ONLINEVC done
