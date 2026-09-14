@@ -5,14 +5,15 @@ summary: >
   The 510 GB DeepSeek-V4.1-Flash checkpoint (MXFP4 experts, FP8 Engram) does not fit 250 GiB of HBM.
   This recipe serves it from one GB300 by offloading 60 GiB of routed-expert weights to Grace memory over
   NVLink-C2C with vLLM's UVA backend, keeps the full 1,048,576-token context, and runs the in-checkpoint
-  DSpark drafter (k=5). ~89 tok/s single-stream prose, 140-160 tok/s on agent/code/tool text, 311 agg at C16,
-  a 972K-token prompt prefills in 85 s, and Hermes tool-calling passes 10/10 under the real agent harness.
-  Release "Sixty" (2026-09-12): this is the config to run. Two nights and a day of measurement closed the
-  residency axis (no faster GPU→Grace path exists on GB300) and the speculation-depth axis (no static k fits;
-  vLLM's adaptive verification works but its ~7 GiB graph-capture cost is forced — issue #56626).
+  DSpark drafter on a batch-size schedule (k=5 at 1-2 streams, k=1 at 3-16). ~90 tok/s single-stream prose,
+  140-160 tok/s on agent/code/tool text, 429 agg at C16, a 972K-token prompt prefills in 85 s, and Hermes
+  tool-calling passes 10/10 under the real agent harness. Release "Sixty-K" v13 (2026-09-14): one config line over
+  "Sixty" (v12), +26-35% at 4-16 streams, C1 unchanged, quality-neutral (verification untouched), two same-window
+  pairs. Earlier rounds closed the residency axis (no faster GPU→Grace path on GB300) and static k (no single k
+  fits); a decode-vs-depth map shows decode flat to 425K tokens, so attention is not the lever on this box either.
 status: verified
 owners: [jmeadlock, milo]
-updated: "2026-09-12"
+updated: "2026-09-14"
 tags: [deepseek-v4.1-flash, mxfp4, vllm, uva-offload, dspark, speculative-decoding, 1m-context, single-gpu, agent]
 
 model:
@@ -24,7 +25,7 @@ model:
   draft:
     repo: in-checkpoint (mtp.{0,1,2}.* tensors, 97 params)
     revision: df42c109f1defefcbfcedbe7d905718a12266e40
-    method: DSpark, num_speculative_tokens=5
+    method: DSpark, num_speculative_tokens=5 with num_speculative_tokens_per_batch_size=[[1,2,5],[3,16,1]] (v13)
 
 hardware:
   profile: hardware/dgx-station-gb300.yaml
@@ -59,19 +60,43 @@ runtime:
 
 launch:
   script: scripts/launch-dsv41-vllm.sh
-  command: "MODEL=/models/DeepSeek-V4.1-Flash-df42c109f1defefcbfcedbe7d905718a12266e40 TAG=v12-1M-k5-off60-util97 OFFGB=60 UTIL=0.97 SEQS=16 SPEC=dspark:5 CTX=1048576 EXTRA='--long-prefill-token-threshold 6144' bash scripts/launch-dsv41-vllm.sh"
-  health: "curl -fs http://localhost:30006/v1/models ; log must show 'Total CPU offloaded parameters: 61.17', 'Available KV cache memory: 4.89 GiB' and 'Loaded 210 configs' (hash 9ac7b387) (not 'Autotuning process starts' followed by silence — that is the 74-min retune)"
+  command: "MODEL=/models/DeepSeek-V4.1-Flash-df42c109f1defefcbfcedbe7d905718a12266e40 TAG=v13-1M-ksched OFFGB=60 UTIL=0.97 SEQS=16 SPEC=dspark:5 KSCHED='[[1,2,5],[3,16,1]]' CTX=1048576 EXTRA='--long-prefill-token-threshold 6144' bash scripts/launch-dsv41-vllm.sh"
+  health: "curl -fs http://localhost:30006/v1/models ; log must show 'Total CPU offloaded parameters: 61.17', 'Available KV cache memory: 4.87 GiB' (4.89 on v12) and 'Loaded 210 configs' (hash 9ac7b387 — the k-schedule does not change the hash) (not 'Autotuning process starts' followed by silence — that is the 74-min retune)"
   warmup: "scripts/smoke_vllm.sh (arith, count, prose, tool call, thinking) then scripts/knee.sh once; first hit of each prompt-length class pays a few seconds of shape JIT"
   notable_flags:
     - "--offload-backend uva --cpu-offload-gb 60 --cpu-offload-params routed_experts.w13_weight routed_experts.w2_weight  (v12: 60 fits at 1M+DSpark once util is 0.97 — KV 4.89 GiB, 2.22x at 1M; 12.7 GiB fewer expert bytes over C2C = +12% C1. v11 used 70 at util 0.94; 40 does not fit even at 131K)"
     - "--engram-config '{\"cpu_offload\": true}'  (189 GiB Engram table lives in Grace memory)"
     - "--max-model-len 1048576  (full native context; costs 5.5 GiB of KV pool vs 131K and zero decode speed)"
-    - "--speculative-config '{\"method\":\"dspark\",\"num_speculative_tokens\":5}'  (k=5 for agent lanes. Same-window 2026-09-12: k=1 gives +23% C1 / +33% C16 on prose and loses shell/code/tool-json by ~30%; k=5 the reverse. No static k fits both; the drafter's window multiplies unique experts fetched per step 3.7x at k=5. Adaptive verification (V2 runner) lands between with no losing category but misses both static peaks — see limits)"
+    - "--speculative-config '{\"method\":\"dspark\",\"num_speculative_tokens\":5,\"num_speculative_tokens_per_batch_size\":[[1,2,5],[3,16,1]]}'  (v13: k=5 while 1-2 sequences run, k=1 at 3-16; entries are (range_start,range_end,k) inclusive. Two same-window pairs 2026-09-14: C1/C2 ±0%, C4 +27%, C8 +26%, C12 +27%, C16 +35%; fixture acceptance identical; autotune hash unchanged. Why k=5 for agent lanes at low batch: Same-window 2026-09-12: k=1 gives +23% C1 / +33% C16 on prose and loses shell/code/tool-json by ~30%; k=5 the reverse. No static k fits both; the drafter's window multiplies unique experts fetched per step 3.7x at k=5. Adaptive verification (V2 runner) lands between with no losing category but misses both static peaks — see limits)"
     - "--long-prefill-token-threshold 6144  (REQUIRED for mixed traffic: without it a 480K prefill starves a short request to 18 s TTFT; with it ~1 s, long prompt +16%)"
     - "--tool-call-parser deepseek_v41 --reasoning-parser deepseek_v41 --enable-auto-tool-choice  (REQUIRED for agent use)"
     - "--gpu-memory-utilization 0.97 --max-num-seqs 16 --max-num-batched-tokens 8192  (util alone moves nothing: at 70 it only grew KV 10→17.5 GiB with identical tok/s. util is the headroom that lets OFFGB drop; OFFGB is the lever)"
 
 metrics:
+  - name: aggregate decode C16 — v13
+    value: 429.0
+    unit: tok/s
+    workload: C16, warm, prose prompts, DSpark schedule k=5@1-2 / k=1@3-16, 1M context config, offload 60 / util 0.97
+    aggregation: mean of two same-window pairs (430.8, 427.1) vs v12 controls (317.6, 320.0) = +35%
+    provenance: { run_id: 2026-09-14-round3-ksched-depth, method: "knee.sh: 16 concurrent chat completions; sum of output tokens / wall", raw: throughput.csv }
+  - name: aggregate decode C8 — v13
+    value: 319.1
+    unit: tok/s
+    workload: C8, warm, prose prompts, DSpark schedule
+    aggregation: mean of two pairs (320.1, 318.0) vs v12 controls (257.8, 247.4) = +26%
+    provenance: { run_id: 2026-09-14-round3-ksched-depth, method: "knee.sh", raw: throughput.csv }
+  - name: single-stream decode (prose) — v13
+    value: 90.7
+    unit: tok/s
+    workload: C1, warm, prose prompt; the schedule is k=5 here so this is the v12 number re-measured
+    aggregation: mean of two pairs (91.2, 90.2) vs v12 controls (90.3, 90.9) = +0.1%
+    provenance: { run_id: 2026-09-14-round3-ksched-depth, method: "knee.sh", raw: throughput.csv }
+  - name: decode at 425K prompt depth — v12/v13
+    value: 121.8
+    unit: tok/s
+    workload: C1, 424,726-token prompt, streamed first→last token of 192 output tokens (cache-independent)
+    aggregation: mean of 2 runs (127.1, 116.4); 6.5K depth 123.8 on the same boot — decode is flat with depth (−7% at 425K)
+    provenance: { run_id: 2026-09-14-round3-ksched-depth, method: "depth_knee.py v2", raw: throughput.csv }
   - name: single-stream decode (prose)
     value: 89.2
     unit: tok/s
@@ -135,7 +160,7 @@ verification:
     digest:      { how: "docker image inspect reports sha256:00d577a6…; /model mount is the df42c109 revision, 510,313,343,553 bytes byte-verified against the archive", last_pass_utc: "2026-09-11T11:07:00Z", run_id: 2026-09-10-v11-1M-k5-lpt6144 }
     health:      { how: "/v1/models 200; log shows offloaded 61.17 GiB, KV 4.89 GiB, 2,326,569 tokens, 2.22x at 1M, 'Loaded' configs for hash 9ac7b387 (10-min boot); smoke pass", last_pass_utc: "2026-09-12T08:02:00Z", run_id: 2026-09-12-v12-1M-k5-off60-util97 }
     quality:     { how: "smoke: 17×19=323, count 1-60 exact, coherent prose, parsed tool_call, thinking→answer; Hermes harness 10/10 tool calls with correct answers/side effects. No teacher-forced divergence gate (weights are as-shipped, nothing requantized).", last_pass_utc: "2026-09-11T11:06:00Z", run_id: 2026-09-10-v11-1M-k5-lpt6144 }
-    performance: { how: "knee.sh C1 within 5% of 89.2 tok/s warm vs a same-window v11 control; confirm pair 2026-09-12: control 78.1 → v12 89.6 (+14.7%), C16 269.6 → 312.4. starve.py on v12: 4 shorts during a 480K prefill 0.81–1.09 s TTFT (unchanged from v11); cold prefill on v12 207K tokens 11.37 s / 18.2k tok/s (v11: 11.3 s)", last_pass_utc: "2026-09-12T08:03:00Z", run_id: 2026-09-12-v12-1M-k5-off60-util97 }
+    performance: { how: "v13 2026-09-14: two same-window pairs, C16 430.8/427.1 vs v12 317.6/320.0, C1 91.2/90.2 vs 90.3/90.9; fixture wacc 0.596 both. v12: knee.sh C1 within 5% of 89.2 tok/s warm vs a same-window v11 control; confirm pair 2026-09-12: control 78.1 → v12 89.6 (+14.7%), C16 269.6 → 312.4. starve.py on v12: 4 shorts during a 480K prefill 0.81–1.09 s TTFT (unchanged from v11); cold prefill on v12 207K tokens 11.37 s / 18.2k tok/s (v11: 11.3 s)", last_pass_utc: "2026-09-14T23:28:00Z", run_id: 2026-09-14-round3-ksched-depth }
 
 limits:
   - "Decode is C2C-bandwidth + kernel bound, not HBM bound. CORRECTED 2026-09-12: the v11 claim that offload 60 does not fit at 1M was measured at util 0.94; at util 0.97 it fits (KV 4.89 GiB) and gives +12% C1 in a same-window comparison. Measured fetch tax: k=0 step 11.1 ms vs 7.1 ms all-HBM (catid 2×Station PP2, rev dba1be0a) ≈ 4 ms ≈ 36% of the step. Slope ≈ 0.76 tok/s per GiB of experts moved Grace→HBM."
