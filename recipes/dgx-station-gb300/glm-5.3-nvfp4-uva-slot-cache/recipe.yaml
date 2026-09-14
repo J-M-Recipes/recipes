@@ -1,20 +1,18 @@
 schema: jm-recipe/v1
 id: dgx-station-gb300/glm-5.3-nvfp4-uva-slot-cache
-title: GLM-5.3-NVFP4-One-GB300
+title: Full GLM-5.3 NVFP4 on one DGX Station GB300 (vLLM UVA offload + HBM expert slot cache + MTP)
 summary: >-
-  Experimental vLLM UVA offload recipe for full GLM-5.3 NVFP4 on one DGX Station GB300. V1 keeps routed experts in host memory
-  with bf16 KV; the slot-cache variants keep a small per-layer HBM expert cache. MTP(1) has audited warm C1 speed upside, but the
-  frozen quality campaign is INCONCLUSIVE and MTP is not the quality-approved default. DFlash2-over-UVA was stopped at K4,
-  PR #1 demand-fill DMA lost to matched eager Triton, and offline cache-policy plus simple trace-prediction candidates missed
-  their frozen continue gates. The live-tested daily profile is
-  256K context with 24 GiB bf16 KV and 7,360 expert slots (51.3 tok/s C1 vs 44.8 at 512K and 34.1 at 1M, greedy-identical,
-  matched window 2026-09-13); see results/2026-09-13-context-slot-curve/, results/2026-09-07-ctx512k-live/, results/2026-09-07-dflash2-uva/,
-  results/2026-09-07-dma-demand-fill/, and results/2026-09-07-offline-cache-prefetch/.
+  Full GLM-5.3 NVFP4 (~433 GB) on one DGX Station GB300 with vLLM 0.28 UVA expert offload plus a per-layer HBM expert slot cache
+  (7,360 slots), a fused slot-cache hook, and MTP(2). Daily profile: 256K context, 24 GiB bf16 KV, single user. 54.7 tok/s C1
+  vs 33.8 for the offload-only V1 baseline (+62%), decode noninferiority vs V1 established by full-token teacher-forced logprobs
+  (3,071 tokens, byte-identical), 18/18 needle ladder to 211K tokens, model identity verified against HF LFS sha256.
+  Closed levers with receipts: DFlash2-over-UVA, demand-fill DMA, offline slot reallocation, trace prediction, agent-traffic
+  slot remap, MTP-draft prefetch, 16K batched tokens. See results/2026-09-14-agent-remap-draftcorr-scalarfuse-k2/.
 status: verified
 owners:
 - jmeadlock
 - milo
-updated: '2026-09-13'
+updated: '2026-09-14'
 tags:
 - glm-5.3
 - nvfp4
@@ -22,7 +20,7 @@ tags:
 - uva
 - cpu-offload
 - slot-cache
-- experimental
+- mtp
 model:
   name: GLM-5.3
   params: 744B (MoE)
@@ -148,7 +146,7 @@ metrics:
 - name: K2 + scalar-fuse daily single-stream decode (promoted 2026-09-14)
   value: 54.69
   unit: tok/s
-  workload: C1, 8 prompts (prose/code/reason/list/dialog) x 512 generated tokens x 3 scored reps, temp 0, 256K profile, hook v2 SCALAR_FUSE=1, MTP(2)
+  workload: C1, 8 prompts x 512 tokens, n=3, 256K ctx, slot cache 7,360 + fused hook + MTP(2); V1 baseline 33.8
   aggregation: median of per-prompt medians; control (same window, K1 stock hook) 51.40; paired +7.25% [95% CI +4.33, +10.44]
   provenance:
     run_id: 2026-09-14-agent-remap-draftcorr-scalarfuse-k2

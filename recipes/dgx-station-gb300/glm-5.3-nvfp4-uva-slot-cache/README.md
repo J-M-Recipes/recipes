@@ -1,4 +1,4 @@
-# GLM-5.3-NVFP4-One-GB300
+# Full GLM-5.3 NVFP4 on one DGX Station GB300
 
 **Status: daily-serving, single-user** (`--max-num-seqs 1`, C1-optimized; batch >1 not validated on this profile) · daily since September 14, 2026: **256K context / 24 GiB bf16 KV / 7,360 slots / hook scalar-fuse / MTP(2)**, **54.7 tok/s C1** (+7.25% over the K1 stock-hook control, +62% over the 33.8 tok/s V1 baseline) · launched from this tree by `scripts/launch-slotcache-portable.sh` (live-tested September 14, args byte-identical to the promoted lane) · **decode noninferiority vs V1 formally established**: 3,071 teacher-forced tokens across 20 prompts scored on the V1 reference and on the daily lane, max |Δlogp| = 0.0 (byte-identical), `scripts/tf_noninferiority.py` · model identity verified: 89/89 HF LFS files match local sha256 at the pinned revision · closed levers with receipts: DFlash2-over-UVA, demand-fill DMA, offline slot reallocation, trace prediction, agent-traffic slot remap, MTP-draft prefetch, 16K batched tokens.
 
