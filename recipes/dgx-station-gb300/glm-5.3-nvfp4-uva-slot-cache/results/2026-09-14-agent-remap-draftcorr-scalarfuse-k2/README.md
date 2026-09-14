@@ -41,3 +41,15 @@ E's margin summary is numerically identical to the Sept-13 K=2 fair gate (11 sit
 - Sequence and timestamps: `LEDGER.md` on the Station, 2026-09-14 04:5x–10:3x CDT. Interrupted 08:47–09:20 for an electrician shutdown (clean `docker stop` + `shutdown -h`); phase 3 resumed after reboot.
 
 `promotion_authorized=true` for this result only, by James, 2026-09-14 10:3x CDT. Written by Milo on Claude (claude-fable-5-1, extended thinking).
+
+## Later the same day: recipe completion (windows F, G)
+
+| window | container | what | result |
+|---|---|---|---|
+| F-recipe-daily | `glm53-big-recipe-daily-portable-20260914` | the daily launched **from this recipe tree** via `scripts/launch-slotcache-portable.sh` with the documented one-liner | vLLM args byte-identical to the promoted E lane; 20/20 greedy-identical to E; 54.38 tok/s C1 (max spread 0.01%); real Hermes tool-loop gate passed |
+| G-v1-reference | `glm53-big-v1g-keep` | V1 reference (no slot cache, no MTP, offload 200) scoring the same 20 reference texts | 3,071 tokens scored, instrument repeat-identical |
+| F vs G | `windows/F-recipe-daily/noninferiority-vs-V1.json` | `scripts/tf_noninferiority.py --compare` | **max \|Δlogp\| = 0.0 over 3,071 tokens** — the daily lane (slot cache + fused hook + MTP(2)) computes the same per-token logprobs as the offload-only baseline, byte-identical. NONINFERIOR=true. |
+
+Model identity: `sources/GLM-5.3-NVFP4-big.local-sha256.txt` (97 files, 433 GB) matches all 89 HF LFS sha256 for `incoai/GLM-5.3-NVFP4@54e5252`.
+
+Ops note: the first `docker start` of E after stopping B OOMed mid slot-build because HBM had not been released 5 s after the stop; poll `nvidia-smi` for < 2 GiB before starting the next lane. `phase4.log` is the run log.

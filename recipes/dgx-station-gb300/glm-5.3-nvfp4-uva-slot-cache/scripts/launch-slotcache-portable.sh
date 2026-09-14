@@ -33,6 +33,10 @@ fi
 # The live-tested 512K daily profile (see results/2026-09-07-ctx512k-live/) is launched with:
 #   KV_CACHE_MEMORY=51539607552 MAX_MODEL_LEN=524288 MAX_NUM_SEQS=1 \
 #   SLOT_CACHE_PER_LAYER=/w/configs/slots-5792-ctx512k.json bash scripts/launch-slotcache-portable.sh sc13g-mtp-ctx512k 112 ...
+# The DAILY profile since 2026-09-14 (results/2026-09-14-agent-remap-draftcorr-scalarfuse-k2/, 54.69 tok/s C1) is:
+#   KV_CACHE_MEMORY=25769803776 MAX_MODEL_LEN=262144 MAX_NUM_SEQS=1 SCALAR_FUSE=1 \
+#   SLOT_CACHE_PER_LAYER=/w/configs/slots-7360-ctx256k.json bash scripts/launch-slotcache-portable.sh daily 112 \
+#     --speculative-config '{"method":"mtp","num_speculative_tokens":2}'
 KV_CACHE_MEMORY="${KV_CACHE_MEMORY:-8589934592}"
 MAX_MODEL_LEN="${MAX_MODEL_LEN:-65536}"
 MAX_NUM_SEQS="${MAX_NUM_SEQS:-4}"
@@ -404,6 +408,7 @@ DOCKER="${DOCKER:-docker}"
   -e SLOT_CACHE_ROUTER="${ROUTER:-ffi}" \
   -e SLOT_CACHE_PER_LAYER="$SLOT_CACHE_PER_LAYER" \
   -e SLOT_CACHE_UNPACKED="${UNPACKED:-0}" \
+  -e SLOT_CACHE_SCALAR_FUSE="${SCALAR_FUSE:-0}" \
   -e SLOT_CACHE_LOGIT_RING="${LOGIT_RING:-0}" \
   -e SLOT_CACHE_STATS_SEC="${STATS_SEC:-20}" \
   -e SLOT_CACHE_BYPASS_TOKENS="${BYPASS:-16}" \

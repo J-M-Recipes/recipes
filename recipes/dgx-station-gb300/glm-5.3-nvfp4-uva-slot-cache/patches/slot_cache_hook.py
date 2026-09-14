@@ -127,7 +127,8 @@ if _ROUTER == "ffi":
         if ws is None:
             ws = _FFI_WS[M] = _ffi_route.RouteWorkspace(M, K, E, device)
         return ws
-_UNPACKED = os.environ.get("SLOT_CACHE_UNPACKED", "0") == "1"   # pass (ids, fp32 weights) instead of packed bf16
+_UNPACKED = os.environ.get("SLOT_CACHE_UNPACKED", "0") == "1"
+_SCALAR_FUSE = os.environ.get("SLOT_CACHE_SCALAR_FUSE", "0") == "1"   # daily since 2026-09-14; one Triton launch for the 3 scalar slot copies   # pass (ids, fp32 weights) instead of packed bf16
 _cap = {"n": 0, "w": False, "logits": None, "bias": None, "seen_capture": False}
 _TRT_ROUTE = None
 if os.environ.get("SLOT_CACHE_ROUTER", "") == "trt":
@@ -320,6 +321,17 @@ def _install_triton():
         tl.atomic_add(route_count_ptr, N)
 
     @triton.jit
+    def masked_scalar_copy3(a_src, a_dst, b_src, b_dst, c_src, c_dst, src_idx_ptr, dst_idx_ptr, mask_ptr, N: tl.constexpr, NB: tl.constexpr):
+        # SLOT_CACHE_SCALAR_FUSE=1: one launch copies the 3 fp32 per-expert scalars expert->slot for each miss k
+        # (replaces 3x torch index_put_ + 2x .long() per layer-step; measured +4.58% C1 on 2026-09-14, 20/20 greedy-identical).
+        k = tl.arange(0, NB); inb = k < N
+        miss = (tl.load(mask_ptr + k, mask=inb, other=0) != 0) & inb
+        si = tl.load(src_idx_ptr + k, mask=inb, other=0); di = tl.load(dst_idx_ptr + k, mask=inb, other=0)
+        tl.store(a_dst + di, tl.load(a_src + si, mask=miss, other=0.0), mask=miss)
+        tl.store(b_dst + di, tl.load(b_src + si, mask=miss, other=0.0), mask=miss)
+        tl.store(c_dst + di, tl.load(c_src + si, mask=miss, other=0.0), mask=miss)
+
+    @triton.jit
     def masked_row_copy(src_ptr, dst_ptr, src_idx_ptr, dst_idx_ptr, mask_ptr, row_elems, BLOCK: tl.constexpr):
         k = tl.program_id(0); blk = tl.program_id(1)
         m = tl.load(mask_ptr + k)
@@ -329,7 +341,7 @@ def _install_triton():
         v = tl.load(src_ptr + s * row_elems + off, mask=valid, other=0)
         tl.store(dst_ptr + d * row_elems + off, v, mask=valid)
 
-    return triton, fused_bookkeeping, masked_row_copy
+    return triton, fused_bookkeeping, masked_row_copy, masked_scalar_copy3
 
 
 class LayerCache:
@@ -375,6 +387,11 @@ class LayerCache:
         self.scal_pad = [torch.cat([s, torch.zeros(1, dtype=s.dtype, device=dev)]) if s is not None else None for s in self.scalars]
         self.scal_slot_pad = [torch.zeros(S + 1, dtype=s.dtype, device=dev) if s is not None else None for s in self.scalars]
         self.scalar_slots = [p[:S] if p is not None else None for p in self.scal_slot_pad]
+        self.scal3 = None
+        if len(self.scal_pad) == 3 and all(p is not None and p.dtype == torch.float32 and p.is_contiguous() for p in self.scal_pad):
+            self.scal3 = [(sp, ssp) for sp, ssp in zip(self.scal_pad, self.scal_slot_pad)]
+        if _SCALAR_FUSE and self.scal3 is None:
+            _LOG(f"scalar_fuse not applicable for {name}: dtypes={[None if p is None else str(p.dtype) for p in self.scal_pad]}")
         self.bufs = {}
 
     @staticmethod
@@ -401,7 +418,7 @@ def _ensure_triton():
 
 def _cache_forward(lc, topk_ids, N):
     """topk_ids: int32 [N] flat global expert ids. Returns int32 [N] slot ids; performs misses."""
-    triton, fused, mcopy = _ensure_triton()
+    triton, fused, mcopy, scopy3 = _ensure_triton()
     b = lc.bufs_for(N)
     fused[(1,)](topk_ids, lc.e2s, lc.s2e, lc.last, lc.step, b["src"], b["dst"], b["mask"], b["slot"], lc.misses, lc.routes,
                 N=N, S=lc.S, E=lc.E, SB=lc.SB)
@@ -412,9 +429,13 @@ def _cache_forward(lc, topk_ids, N):
     for k in lc.rows_res:
         src, dst = lc.rows_res[k]; n = src.shape[1]
         mcopy[(N, triton.cdiv(n, BLOCK))](src, dst, b["src"], b["dst"], b["mask"], n, BLOCK=BLOCK)
-    for sp, ssp in zip(lc.scal_pad, lc.scal_slot_pad):
-        if sp is not None:
-            ssp.index_put_((b["dst"].long(),), sp[b["src"].long()])
+    if _SCALAR_FUSE and lc.scal3 is not None:
+        a, bb, c = lc.scal3
+        scopy3[(1,)](a[0], a[1], bb[0], bb[1], c[0], c[1], b["src"], b["dst"], b["mask"], N=N, NB=triton.next_power_of_2(N))
+    else:
+        for sp, ssp in zip(lc.scal_pad, lc.scal_slot_pad):
+            if sp is not None:
+                ssp.index_put_((b["dst"].long(),), sp[b["src"].long()])
     return b["slot"]
 
 
@@ -594,4 +615,4 @@ def install():
             loader.exec_module = exec_module
             return spec
     sys.meta_path.insert(0, _Finder())
-    _LOG(f"installed: S={S_SLOTS} per_layer={len(_PER_LAYER)} bypass_above_tokens={BYPASS_ABOVE}")
+    _LOG(f"installed: S={S_SLOTS} per_layer={len(_PER_LAYER)} bypass_above_tokens={BYPASS_ABOVE} scalar_fuse={_SCALAR_FUSE}")

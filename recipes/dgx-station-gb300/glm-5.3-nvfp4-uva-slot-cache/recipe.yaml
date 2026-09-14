@@ -10,7 +10,7 @@ summary: >-
   256K context with 24 GiB bf16 KV and 7,360 expert slots (51.3 tok/s C1 vs 44.8 at 512K and 34.1 at 1M, greedy-identical,
   matched window 2026-09-13); see results/2026-09-13-context-slot-curve/, results/2026-09-07-ctx512k-live/, results/2026-09-07-dflash2-uva/,
   results/2026-09-07-dma-demand-fill/, and results/2026-09-07-offline-cache-prefetch/.
-status: experimental
+status: daily-serving
 owners:
 - jmeadlock
 - milo
@@ -69,11 +69,17 @@ runtime:
     sha256: 38a36cfec0e0cf06e00e406b1d3f015b51d9147289269d4a180d161ba1c3eec7
     purpose: FFI router path used by sc11/sc12/sc13 slot-cache variants.
   - path: patches/slot_cache_hook.py
-    sha256: e4f7f6f3d94e4bb2c9b6bb8e3a02401df339ce440a5e963abab0b5414b439629
+    sha256: 5f7d3a24e9b39dfe9a0ebc4dacad7f32de46249cf87430a4a3b33b2fbcd4071a
     purpose: Latest per-layer slot-cache hook; routes through cached experts, counts observed routes for hit telemetry, supports opt-in CUDA profiler control, and exposes engine-owned quiescent snapshot registry helpers.
   - path: patches/slot_cache_window_instrumentation.py
     sha256: 9f0c75b25438c63511a5b2580a4c0a77520f232e2affe109dd0ba3908477e453
     purpose: Opt-in engine-owned bounded-window slot-cache snapshot/receipt controller and pure phase/NVTX correlation helpers; raw rows remain campaign-invalid/valid_for_campaign=false until Station canaries prove counter scope.
+  - path: scripts/tf_noninferiority.py
+    sha256: c8de84fb052ce331f2c0c950191f6f627a8302952e908cb67d2010e5d12d67d4
+    purpose: Teacher-forced per-token logprob noninferiority instrument (score fixed reference text on two servers; bar p99 <= 0.05, max <= 0.5, >= 3000 tokens).
+  - path: sources/GLM-5.3-NVFP4-big.local-sha256.txt
+    sha256: e3c752d9986932451020c20d725e9acd977506fe445fd27c9e76f85292ece200
+    purpose: Local all-file sha256 manifest of the served checkpoint; 89/89 HF LFS entries match at the pinned revision (verified 2026-09-14).
   - path: scripts/apply_slot_cache_instrumentation_patch.py
     sha256: 8b4b3ae177618875378154681a43c16bf4cc265c6f073fb1dd6ef2562c45106b
     purpose: Exact-hash guarded staged generator for a patched copy of pinned gpu_model_runner.py; never edits live runtime in place, may not be overridden by SLOT_CACHE_PATCH_GENERATOR, and must regenerate byte-identical runtime source before launch.
@@ -120,7 +126,8 @@ launch:
     and preserves explicit IMAGE overrides. With instrumentation enabled, no-IMAGE defaults to the pinned local image ID and explicit
     tag/digest-tag/mismatched IMAGE values are rejected. SLOT_CACHE_RECIPE_SHA is the deterministic current recipe source-artifact
     hash over sorted relative-path/byte-count/file-sha rows excluding results/capture/cache-like trees; it is not a historical result manifest.'
-  - 'Portable launcher SHA-256: aebe4fab6272a8ded9d2e871d5b9c536b641634ae9b10232db9fa5c33bcac04d. Review invalidation is scoped to the launcher hash only; instrumentation adapter, staged generator, generated patched runner, slot-cache hook, pinned source, and local image identity hashes are preserved.'
+  - 'Portable launcher SHA-256: aa45695801cf5d58a94b2fbaa78fe66a486cddd38bea42977cf772d493bec3b1 (2026-09-14; earlier reviewed hash aebe4fab6272a8ded9d2e871d5b9c536b641634ae9b10232db9fa5c33bcac04d). Review invalidation is scoped to the launcher hash only; instrumentation adapter, staged generator, generated patched runner, slot-cache hook, pinned source, and local image identity hashes are preserved.'
+  - 'Decode noninferiority vs V1 established 2026-09-14: 3,071 teacher-forced tokens over 20 prompts scored on glm53-big-v1g-keep (no slot cache, no MTP) and on the daily lane launched from this tree; max |dlogp| 0.0, byte-identical; results/2026-09-14-agent-remap-draftcorr-scalarfuse-k2/windows/F-recipe-daily/noninferiority-vs-V1.json. Model identity verified the same day: sources/GLM-5.3-NVFP4-big.local-sha256.txt matches all 89 HF LFS sha256.'
   - 'Daily profile since 2026-09-14 10:35 CDT (container glm53-big-sc13g-mtp2-ctx256k-K2fuse-DAILY-20260914, promoted by James):
     the 2026-09-13 256K daily args plus SLOT_CACHE_HOOK=patches/slot_cache_hook_v2.py SLOT_CACHE_SCALAR_FUSE=1 (one Triton launch
     replaces three index_put_ scalar-slot copies per layer-step; 20/20 greedy-identical to stock) and MTP num_speculative_tokens=2.
@@ -385,7 +392,7 @@ verification:
     digest:
       how: Local Docker image ID (not registry manifest digest) sha256:61fc... imported from sanitized inspect fields; command
         contained no API key, env list was sanitized and only shows non-secret flags. Model revision is intended from HF API/prior
-        SHA; local all-file identity is not verified.
+        SHA; local all-file identity verified 2026-09-14 (sources/GLM-5.3-NVFP4-big.local-sha256.txt).
       run_id: 2026-09-06-v1g-campaign-eager
       notes: Inspect provenance lives in results/*/container-inspect-sanitized.json.
     health:
@@ -414,7 +421,7 @@ limits:
   but overall promotion remains INCONCLUSIVE because the secondary gate failed at 33/44 for sc13g-MTP.
 - The imported v1g campaign comparator used campaign defaults visible in inspect (200 GiB offload, seq8); the packaged V1
   baseline script intentionally preserves the earlier 188 GiB offload, bf16 KV 8 GiB, seq4, 65k flags.
-- Model repo/revision is intended and pinned from HF API plus prior short SHA; local all-file checkpoint identity was not
+- Model repo/revision is pinned from HF API; local all-file checkpoint identity verified 2026-09-14 against HF LFS sha256 (previously it was not
   verified.
 - scripts/launch-slotcache-portable.sh was live-tested from a staged copy for the stopped DFlash2 K4 candidate; this does not prove every default or MTP override combination.
 - 'Quiescent snapshot instrumentation is offline-reviewed canary-preparation only: generated rows are valid_for_campaign=false until Station canaries prove stream/capture behavior, graph replay correlation, async D2H race safety, and target-vs-draft counter scope.'

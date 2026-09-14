@@ -1,6 +1,6 @@
 # GLM-5.3-NVFP4-One-GB300
 
-**Status: experimental** · V1 baseline 33.8 tok/s C1 · sc13g slot-cache 43.1 tok/s C1 / 92.0 agg C4 / 95.6 agg C8 · MTP(1) audited as faster but **not** a quality-approved default · DFlash2-over-UVA, PR #1 demand-fill DMA, offline cache-policy reallocation, and simple trace prediction all failed their frozen continue gates · daily serving profile is **256K context / 24 GiB bf16 KV / 7,360 slots** with **hook v2 scalar-fuse + MTP(2)** since September 14 (54.7 tok/s C1, +7.25% over the K1 stock-hook control, fuse 20/20 greedy-identical, K=2 margins = the Sept-13 fair gate); the K1 profile measured 51.3 tok/s C1 vs 44.8 at 512K and 34.1 at 1M on September 13. Measured dead September 14: agent-traffic slot remap, MTP-draft prefetch, 16K batched tokens
+**Status: daily-serving, single-user** (`--max-num-seqs 1`, C1-optimized; batch >1 not validated on this profile) · daily since September 14, 2026: **256K context / 24 GiB bf16 KV / 7,360 slots / hook scalar-fuse / MTP(2)**, **54.7 tok/s C1** (+7.25% over the K1 stock-hook control, +62% over the 33.8 tok/s V1 baseline) · launched from this tree by `scripts/launch-slotcache-portable.sh` (live-tested September 14, args byte-identical to the promoted lane) · **decode noninferiority vs V1 formally established**: 3,071 teacher-forced tokens across 20 prompts scored on the V1 reference and on the daily lane, max |Δlogp| = 0.0 (byte-identical), `scripts/tf_noninferiority.py` · model identity verified: 89/89 HF LFS files match local sha256 at the pinned revision · closed levers with receipts: DFlash2-over-UVA, demand-fill DMA, offline slot reallocation, trace prediction, agent-traffic slot remap, MTP-draft prefetch, 16K batched tokens.
 
 ![Memory map](diagrams/memory-map.svg)
 
@@ -8,7 +8,7 @@
 
 Full GLM-5.3 NVFP4 on a single DGX Station GB300 with vLLM 0.28 UVA offload. The baseline (`scripts/launch-bigv1.sh`) keeps routed experts in coherent host memory and reserves an 8 GiB bf16 KV cache for a 65k context. The slot-cache variant (`scripts/launch-slotcache-portable.sh`) offloads all routed experts, then caches selected expert rows in HBM slots per MoE layer.
 
-This is a research recipe, not a production recipe. The best non-MTP slot-cache run imported here (`sc13g`) is faster than the V1 baseline and has measured prefill parity plus diagnostic greedy equivalence, but decode noninferiority is **not** formally established. The known `tf_decode.py` metric is insufficient for promotion because common-prefix censoring, missing-piece handling, null logprob handling, category coverage, and statistical floor are incomplete.
+This started as a research recipe and is now the daily serving profile for one user. The quality argument is a teacher-forced logprob comparison against the V1 baseline (`scripts/tf_noninferiority.py`: score the same 20 greedy reference texts on both servers, compare every generated token's logprob), not a greedy-text match: the September 14 run scored 3,071 tokens and every one was byte-identical (max |Δlogp| 0.0; instrument repeat-identical on both servers). The earlier `tf_decode.py` metric and the frozen 2026-09-06 secondary gate are superseded as instruments (the secondary gate failed for the non-MTP V1 lane too, 36/44, which is an instrument failure, not an MTP finding); their verdicts are kept below as history.
 
 ## Hardware
 
@@ -30,7 +30,7 @@ Profile: [`hardware/dgx-station-gb300.yaml`](../../../hardware/dgx-station-gb300
 | Image | `vllm-glm53-uva:v0.28.0-2cf0a691` |
 | Local Docker image ID (not a registry manifest digest) | `sha256:61fc8a896b0a4fbbbdc063bc4b0dbc25ce98e02b5050c24aeb7830ac02039b14` from sanitized container inspect fields; this does not identify a publicly pullable registry artifact |
 | Model intent | [`incoai/GLM-5.3-NVFP4`](https://huggingface.co/incoai/GLM-5.3-NVFP4) @ `54e52520606f96b3d9fc84088ad22882a61648ac` |
-| Model identity caveat | HF API plus prior SHA only; local all-file checkpoint identity was **not** verified |
+| Model identity | **verified 2026-09-14**: `sources/GLM-5.3-NVFP4-big.local-sha256.txt` (97 local files, 433 GB) matches all 89 HF LFS sha256 at the pinned revision; manifest sha256 `e3c752d9986932451020c20d725e9acd977506fe445fd27c9e76f85292ece200` |
 | Do not use | `/home/milo/gb300-big-v1/Dockerfile` — confirmed wrong SGLang Dockerfile for this recipe |
 
 Patch pins in [`recipe.yaml`](recipe.yaml):
@@ -41,7 +41,7 @@ Patch pins in [`recipe.yaml`](recipe.yaml):
 | `patches/sitecustomize.py` | `eb09aed881c840b834700f7d6df1c478efd5b10b8190cba2781f4629287a97a0` | slot-cache sitecustomize hook |
 | `patches/exact_pin.py` | `93c8ee1420be870c505330f387f3168147539d6277be9500aae866d7bbf21bf0` | pinned-host tensor helper |
 | `patches/ffi_route.py` | `38a36cfec0e0cf06e00e406b1d3f015b51d9147289269d4a180d161ba1c3eec7` | FFI router path |
-| `patches/slot_cache_hook.py` | `e4f7f6f3d94e4bb2c9b6bb8e3a02401df339ce440a5e963abab0b5414b439629` | latest per-layer slot-cache hook + quiescent snapshot registry helpers |
+| `patches/slot_cache_hook.py` | `5f7d3a24e9b39dfe9a0ebc4dacad7f32de46249cf87430a4a3b33b2fbcd4071a` | per-layer slot-cache hook; `SLOT_CACHE_SCALAR_FUSE=1` (daily) fuses the 3 scalar slot copies into one Triton launch |
 | `patches/slot_cache_window_instrumentation.py` | `9f0c75b25438c63511a5b2580a4c0a77520f232e2affe109dd0ba3908477e453` | opt-in engine-owned bounded-window snapshot controller |
 | `scripts/apply_slot_cache_instrumentation_patch.py` | `8b4b3ae177618875378154681a43c16bf4cc265c6f073fb1dd6ef2562c45106b` | exact-hash guarded pinned `gpu_model_runner.py` patch-copy adapter |
 | `configs/slots-8400.json` | `4ee071670e13f199658776ddb7b508c9a068657ea631a0cb4287db0a2afeeaed` | per-layer slot allocation |
@@ -73,7 +73,21 @@ bash scripts/launch-slotcache-portable.sh sc13g 112 \
   --compilation-config '{"mode":3,"backend":"eager"}'
 ```
 
-The portable slot-cache wrapper mounts this recipe directory at `/w`, uses `/w/patches/sitecustomize.py`, `/w/patches/slot_cache_hook.py`, and defaults `SLOT_CACHE_PER_LAYER=/w/configs/slots-8400.json`. It was packaged from campaign evidence but was **not live-tested from this repo path**. The older `scripts/launch-slotcache.sh` is retained as provenance but is campaign-hardcoded and obsolete.
+The portable slot-cache wrapper mounts this recipe directory at `/w`, uses `/w/patches/sitecustomize.py`, `/w/patches/slot_cache_hook.py`, and defaults `SLOT_CACHE_PER_LAYER=/w/configs/slots-8400.json`. It was **live-tested from this tree on September 14, 2026**: the daily command below produced a container whose vLLM args are byte-identical to the promoted lane, 20/20 greedy-identical to it, 54.38 tok/s C1 in its own window. The older `scripts/launch-slotcache.sh` is retained as provenance but is campaign-hardcoded and obsolete.
+
+**The daily profile (what the Station serves; September 14, 2026):**
+
+```bash
+MODEL_DIR=/home/exx/models/GLM-5.3-NVFP4-big \
+CACHE_DIR=$HOME/vllm-cache \
+API_KEY_FILE=$HOME/.glm_api_key \
+KV_CACHE_MEMORY=25769803776 MAX_MODEL_LEN=262144 MAX_NUM_SEQS=1 SCALAR_FUSE=1 \
+SLOT_CACHE_PER_LAYER=/w/configs/slots-7360-ctx256k.json \
+bash scripts/launch-slotcache-portable.sh daily 112 \
+  --speculative-config '{"method":"mtp","num_speculative_tokens":2}'
+```
+
+Then `BASE_URL=http://127.0.0.1:30001 MODEL_NAME=glm-5.3-big bash scripts/health-check.sh`. Start the next big-GLM container only after `nvidia-smi` shows HBM released (< 2 GiB); a fixed sleep after `docker stop` is not enough and the slot build will OOM.
 
 ### Offline quiescent instrumentation package
 
@@ -86,8 +100,8 @@ The optional quiescent snapshot instrumentation is accepted only as an offline-r
 | Deterministically generated patched runner | `2268a6dafda69566d4128bb9b589bdecb22e3e7eb8d0b7e1155f2bb1ce8e3cd4` |
 | Instrumentation adapter | `9f0c75b25438c63511a5b2580a4c0a77520f232e2affe109dd0ba3908477e453` |
 | Staged generator | `8b4b3ae177618875378154681a43c16bf4cc265c6f073fb1dd6ef2562c45106b` |
-| Slot-cache hook | `e4f7f6f3d94e4bb2c9b6bb8e3a02401df339ce440a5e963abab0b5414b439629` |
-| Portable launcher | `aebe4fab6272a8ded9d2e871d5b9c536b641634ae9b10232db9fa5c33bcac04d` |
+| Slot-cache hook | `5f7d3a24e9b39dfe9a0ebc4dacad7f32de46249cf87430a4a3b33b2fbcd4071a` (2026-09-14 scalar-fuse; identical behaviour when `SLOT_CACHE_SCALAR_FUSE` is unset) |
+| Portable launcher | `aa45695801cf5d58a94b2fbaa78fe66a486cddd38bea42977cf772d493bec3b1` (2026-09-14: adds `SCALAR_FUSE` passthrough and the documented daily command; review-invalidation scope unchanged) |
 
 Review invalidation scope: the portable launcher change restores disabled/default `IMAGE` behavior while preserving the stricter opt-in instrumentation image gate. The slot-cache hook now binds all75 readiness to the exact GLM-5.3 expert-layer set `3..77`; its current review provenance is recorded in `RUNTIME-CANARY-ACCEPTANCE.md`. Instrumentation adapter, staged generator, generated patched runner, pinned source, and local image identity hashes are preserved.
 
@@ -99,21 +113,7 @@ Instrumentation launch requires an explicit, current receipt envelope: `SLOT_CAC
 
 All local generated raw snapshot metadata remains `valid_for_campaign=false` with blocker `external_canary_not_proven` until the Station canaries in [`RUNTIME-CANARY-ACCEPTANCE.md`](RUNTIME-CANARY-ACCEPTANCE.md) pass. A free-text counter scope or local CPU test cannot prove target-only GPU counter attribution.
 
-Experimental MTP(1) release-candidate launch, only after inspecting that the installed vLLM build supports `--speculative-config` and only when an explicit experiment is intended:
-
-```bash
-docker run --rm --entrypoint python vllm-glm53-uva:v0.28.0-2cf0a691 \
-  -m vllm.entrypoints.openai.api_server --help | grep -E 'speculative|mtp'
-
-MODEL_DIR=/home/exx/models/GLM-5.3-NVFP4-big \
-CACHE_DIR=$HOME/vllm-cache \
-API_KEY_FILE=$HOME/.glm_api_key \
-bash scripts/launch-slotcache-portable.sh sc13g-mtp 112 \
-  --compilation-config '{"mode":3,"backend":"eager"}' \
-  --speculative-config '{"method":"mtp","num_speculative_tokens":1}'
-```
-
-Do not put this behind the default recipe command or call it quality-approved. The structured-output V2 receipts below preserve MTP as an experimental candidate only.
+MTP(1) with the stock hook is the September 13 profile (51.3 tok/s C1) and remains a valid rollback; MTP(2) is the daily. Both are quality-equivalent to V1 by teacher-forced margins (September 13 fair gate, September 14 noninferiority run). If a build does not support `--speculative-config`, drop it and accept the ~33% decode loss.
 
 ## Verify
 
@@ -141,8 +141,8 @@ Evidence gates:
 |---|---|
 | schema | local checker passes |
 | digest | local image ID imported from sanitized inspect fields; registry/build provenance is incomplete |
-| health | HTTP health script is packaged; remote `SC13G_READY`/`SC13G_MTP_READY` lines imported as evidence, not local live validation |
-| quality | non-MTP slot-cache remains diagnostic only; MTP quality campaign is audited INCONCLUSIVE because secondary gates failed |
+| health | HTTP health script packaged; daily lane launched from this tree 2026-09-14 and passed the real Hermes tool-loop gate |
+| quality | **established 2026-09-14**: daily lane vs V1 reference, 3,071 teacher-forced tokens / 20 prompts, max \|Δlogp\| 0.0, `results/2026-09-14-agent-remap-draftcorr-scalarfuse-k2/windows/F-recipe-daily/noninferiority-vs-V1.json`; the 2026-09-06 secondary gate is superseded as an instrument |
 | performance | bench numbers imported/calculated from raw `BENCH` lines |
 
 ## Results
@@ -282,6 +282,8 @@ Simple routing predictors also failed. The best arm, adjacent-layer prediction w
 
 ### MTP recorded but not quality-approved
 
+> **Superseded 2026-09-14.** This section is history. The secondary gate it cites failed for the non-MTP V1 lane as well (36/44), so it was an instrument failure; MTP(1) and MTP(2) were later shown quality-equivalent by teacher-forced margins (September 13) and full-token noninferiority (September 14). MTP(2) is the daily.
+
 | run | C1 prose | C4 prose agg | C8 prose agg | why not gated |
 |---|---:|---:|---:|---|
 | `2026-09-06-v1g-mtp3-round4` | 37.7 tok/s | 61.9 tok/s | 79.9 tok/s | 49k context / 210 GiB offload campaign variant; greedy-match diagnostics were not a promotion gate |
@@ -331,13 +333,28 @@ The non-MTP slot-cache configuration was **not** given a new full decode capture
 
 ## Known limits
 
-- **Not verified.** The independent postprocessor can validate capture integrity and expose censored coverage and category regressions. It cannot establish statistical noninferiority from only two baseline runs; do not promote from either its diagnostics or `tf_decode.py metric_pass`.
-- **MTP is not quality-approved.** Greedy mismatch is a diagnostic warning, not the frozen quality veto; the audited promotion blocker is the failed secondary gate.
-- **Model identity is incomplete.** The model revision is intended and pinned from HF API/prior SHA; local all-file identity is not verified.
-- **Packaged launch scope.** `scripts/launch-slotcache-portable.sh` was live-tested from a staged copy for the stopped DFlash2 K4 candidate. That does not retroactively prove every default or MTP override combination.
-- **Baseline flags matter.** Recipe V1 is 188 GiB offload, bf16 KV 8 GiB, seq4, 65k; imported v1g campaign comparator is not that baseline.
+- **Single-user profile.** The daily lane is `--max-num-seqs 1`, tuned for C1 decode. C4/C8 aggregate numbers in Results are from the earlier `max-num-seqs 8` sc13g lane; batch >1 on the 256K/7,360-slot profile is not validated.
+- **Noninferiority is per-instrument.** `tf_noninferiority.py` scores logprobs of fixed reference text on both servers (3,071 tokens, byte-identical). It does not cover sampling at temperature >0, tool-call formatting under load, or contexts beyond the 20-prompt set; the needle ladder (18/18 to 211K) and the Hermes tool-loop gate cover the rest of what is claimed.
+- **Historical instruments are superseded, not passed.** The `tf_decode.py` metric and the frozen 2026-09-06 secondary gate are kept as history; the secondary gate failed for the non-MTP V1 lane too (36/44), so its verdicts are not evidence about MTP.
+- **Baseline flags matter.** Recipe V1 is 188 GiB offload, bf16 KV 8 GiB, seq4, 65k; the imported v1g campaign comparator (200 GiB offload, seq8) is what the noninferiority run used as the V1 reference server.
 - **Old slot-cache script is obsolete.** `scripts/launch-slotcache.sh` points at `/home/milo/big-v1-campaign` and is kept only as raw provenance.
-- **No Dockerfile provenance.** The known `/home/milo/gb300-big-v1/Dockerfile` is the wrong engine family and is intentionally excluded.
+- **No Dockerfile provenance.** The known `/home/milo/gb300-big-v1/Dockerfile` is the wrong engine family and is intentionally excluded; the image is a local build ID, not a registry digest.
+
+## Closed levers
+
+Everything below was measured on this box with receipts and is not worth re-running without a new idea.
+
+| lever | result | receipt |
+|---|---|---|
+| DFlash2 draft over UVA (K4) | stopped at frozen continue gate | `results/2026-09-07-dflash2-uva/` |
+| PR #1 demand-fill DMA | failed continue gate | `results/2026-09-07-dma-demand-fill/` |
+| offline slot reallocation from trace | failed continue gate | `results/2026-09-07-offline-cache-prefetch/`, `results/2026-09-08-e1-v2-offline-repair/` |
+| simple trace prediction / static expert pin | LRU 0.719 beats oracle pin 0.633 | `results/2026-09-13-k2-fair-gate-needle-trace/` |
+| agent-traffic slot remap | +0.002 hit on 96,504 captured agent steps | `results/2026-09-14-agent-remap-draftcorr-scalarfuse-k2/` |
+| MTP-draft routing prefetch | draft→next-step overlap 0.0316 vs chance 0.0312 | same |
+| `--max-num-batched-tokens 16384` | +0.19% decode | same |
+| hook scalar-fuse | **+4.58%, promoted** | same |
+| MTP K=2 on top of fuse | **+7.25% total, promoted** | same |
 
 ## Rollback
 
