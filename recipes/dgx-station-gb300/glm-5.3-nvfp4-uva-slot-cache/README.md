@@ -185,7 +185,7 @@ Receipts: [`results/2026-09-13-k2-fair-gate-needle-trace/`](results/2026-09-13-k
 - **Usable context on the 256K profile:** a three-variant needle ladder (single key, five ordered keys at 10–90% depth, real key vs four same-prefix decoys) passed **18/18** through a 240K target (211K actual prompt tokens) with prefill flat at ~3.4–3.5K tok/s and 62 s wall at the top rung. The declared window is not paying for context nobody can use. The lever for longer windows is decoupling KV from expert slots, not declaring less.
 - **K=2 fair gate:** the 11 prompts where K1 and K2 greedy text differ were teacher-forced on *both* servers; the model's logprobs at every divergence site are byte-identical between servers (max |Δ| 0.0), and where the lanes disagree the model rates them near-ties (K1 rank-1 at 5 sites, K2 at 3, neither at 3). Self-fidelity is symmetric (0.946 vs 0.943 rank-1). The frozen task ladder agrees: 191/200 vs 190/200, 0 losses / 1 win / 99 ties. **The greedy-identical gate was the wrong instrument for a K change**; the September 9 "9/20 hard fail" is retracted on quality grounds.
 - **K=2 speed:** +3.17% C1 at 256K (8 prompts × 512, 3 scored reps, paired 95% bootstrap CI +0.5…+6.1, 6/8 wins; reasoning/list/code up, prose −2%). Below the +5% bar. **K1-256K stays daily.** K2 is reopened as the lane that benefits most from any future miss reduction.
-- **Routing trace, same slot budget:** static oracle expert pin 0.633 mean hit vs **LRU 0.719**; hybrids in between. Cross-layer expert overlap is at random chance (0.031); step-to-step overlap 0.27. On GLM-5.3 a cache beats any fixed allocation; the remaining signal for "speculative allocation" is one step ahead (MTP draft routing → async miss fill), not across layers.
+- **Routing trace, same slot budget:** static oracle expert pin 0.633 mean hit vs **LRU 0.719**; hybrids in between. Cross-layer expert overlap is at random chance (0.031); step-to-step overlap 0.27. On GLM-5.3 a cache beats any fixed allocation; ~~the remaining signal for "speculative allocation" is one step ahead (MTP draft routing → async miss fill), not across layers.~~ **CORRECTED 2026-09-15:** the 0.719 figure was a `T//8000` subsample; exact full-trace replay at the same budget gives LRU **0.802** (1.584 misses/layer-step), so the conclusion holds with a higher ceiling. The MTP-draft prefetch mechanism is false: the MTP block has its own gate and experts, and draft(t)→main(t+1) overlap measured 0.0316 vs chance 0.0312 on 14,540 agent steps; previous-step prefetch has 0.000 coverage. See [`research/state-and-next-work-2026-09-15.md`](research/state-and-next-work-2026-09-15.md).
 
 Launch the 256K daily profile from the portable script with the documented overrides:
 
@@ -330,6 +330,18 @@ The slot-cache + MTP capture passed structural validation, with no malformed or 
 The remaining diagnostic flags were mean absolute logprob differences: **0.01939 versus 0.01882 globally**, and **0.01905 versus 0.01766 in code**. It therefore did not clear the original metric either. This near-floor result is not proof of harm or a statistical quality pass. See the [independent slot-cache + MTP audit](results/2026-09-06-round4-decode/sc13g-mtp-r4-audit.json) and [Round 4 log](results/2026-09-06-round4-decode/round4b.log).
 
 The non-MTP slot-cache configuration was **not** given a new full decode capture in Round 4. Its earlier prefill/greedy evidence cannot be silently upgraded by these MTP experiments.
+
+## State and next work (2026-09-15)
+
+Top-down review after the September 13–14 rounds: [`research/state-and-next-work-2026-09-15.md`](research/state-and-next-work-2026-09-15.md). Short form:
+
+- **The single-stream lane is at its floor.** Step budget is 18 ms C2C miss bytes + 9.4 ms dense GEMM + 5.4 ms routed MoE + ~7 ms other at 40 ms/step. The row copy runs at 87–105% of effective C2C peak, LRU is at the workload's locality ceiling, and every prefetch/remap/reallocation variant is closed with a receipt (table below). Remaining C1 items (K=3, vLLM 0.29 routing kernels) are each ≤5%.
+- **A — concurrency, untested, one boot.** `MAX_NUM_SEQS=4` on the daily args. Miss bytes are per step, not per token; V1 offload-only already gave 1.7× aggregate at C4. Judge with the session-ordered agent replay (±1% at 300 turns, from the DSV4.1 recipe) plus C1 `speed_reps.py` to prove no C1 regression. This is the fan-out lever, not the chat-turn lever.
+- **B — GLM-5.3-Flash is the 4× answer on this box** (all-HBM, 252 tok/s C1 measured, 305–470 reported on the same silicon class). That work belongs to the Flash recipe; this recipe should stop chasing tok/s once A is answered.
+- **C — retire the fork.** Evaluate upstream vLLM expert offload (issue #38256: pinned-host experts, GPU expert cache, LFRU, zero-copy on coherent platforms) against 54.7 C1 with the same instruments; if it matches, drop `slot_cache_hook.py`, the FFI seam, and the sitecustomize mount. Maintenance and OSS lever, weeks, only if the big model stays daily.
+- **Not next:** trained route predictor (research project, low prior), vLLM 0.29 for its own sake, more instrumentation.
+
+Station note: `:30001` was stopped 2026-09-14 ~12:00 CDT for another lane and is not auto-restored. Restart: `docker start glm53-big-sc13g-mtp2-ctx256k-K2fuse-DAILY-20260914` after `nvidia-smi` shows < 2 GiB.
 
 ## Known limits
 
