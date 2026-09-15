@@ -2,6 +2,10 @@
 
 **Reference release: Sixty-K Agent, v14** (2026-09-15; configuration unchanged by the evidence correction below) · Historical **v13: 90 tok/s single-stream prose · 140–160 tok/s on agent/code text · 429 agg tok/s at C16** (v12: 89 / 140–160 / 311 · v11: 82 / 130–150 / 287) · 972K-token prompt prefilled in 85 s · Hermes tool-calling 10/10
 
+## Round 7 — three matched boot pairs (September 15, 2026)
+
+v14 averaged **231.7 vs 196.2 tok/s** on initial recorded-history replay and **260.4 vs 217.8 tok/s** on identical-request repeats: mean paired gains **18.1% / 19.5%**, consistent in all three pairs. Both profiles passed **36/36 attempts on twelve unique closed-loop tasks**; mean suite wall time was **11.78 vs 14.79 seconds**. v13 retained lower median replay TTFT. All 3,600 replay captures and 72 task attempts were audited; both references are preserved and stopped. These are bounded workload results, not production capacity or broad quality equivalence. [Full findings and public-safe evidence](results/2026-09-15-round7-matched-results/README.md).
+
 ## Release notes — Sixty-K Agent, v14 (2026-09-15)
 
 One number changed: `KSCHED='[[1,4,5],[5,16,1]]'` — keep k=5 through four concurrent sequences, k=1 from five. Round 4 found v13 losing 9–12% on real Hermes agent transcripts at four workers (agent text accepts ~85% of drafts, so k=1 caps the step at one token); Round 5 confirmed it on a second pass and measured the fix. v14 on the same replay: 207 tok/s mean (v13 188, v12 207). C6–C16 knee identical to v13 (272 / 318 / 379 / 434). What it gives back: the C3/C4 prose gain (155 / 176, i.e. v12 level, vs v13's 195 / 225). Same autotune hash as v12/v13 — 454 s boot. Pick by traffic: agents at three-to-four streams → v14 (this lane's reference); batch prose throughput → v13. Bundle: `results/2026-09-15-round5-v14-agent-schedule/`.

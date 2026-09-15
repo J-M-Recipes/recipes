@@ -73,6 +73,30 @@ launch:
     - "--gpu-memory-utilization 0.97 --max-num-seqs 16 --max-num-batched-tokens 8192  (util alone moves nothing: at 70 it only grew KV 10→17.5 GiB with identical tok/s. util is the headroom that lets OFFGB drop; OFFGB is the lever)"
 
 metrics:
+  - name: initial recorded-history replay — v14 Round 7
+    value: 231.739247
+    unit: tok/s
+    workload: "20 sequences x 15 serial turns, 4 workers, low reasoning, 400-token cap; private flattened history, not live-agent capacity"
+    aggregation: "Arithmetic mean of three boot makespan rates; descriptive matched pairs, no significance test"
+    provenance: { run_id: 2026-09-15-round7-matched-results, method: "replay_matched.py; actual completion tokens / measured makespan", raw: throughput.csv }
+  - name: initial recorded-history replay — v13 Round 7
+    value: 196.163796
+    unit: tok/s
+    workload: "20 sequences x 15 serial turns, 4 workers, low reasoning, 400-token cap; private flattened history, not live-agent capacity"
+    aggregation: "Arithmetic mean of three boot makespan rates; descriptive matched pairs, no significance test"
+    provenance: { run_id: 2026-09-15-round7-matched-results, method: "replay_matched.py; actual completion tokens / measured makespan", raw: throughput.csv }
+  - name: identical-request replay repeat — v14 Round 7
+    value: 260.393964
+    unit: tok/s
+    workload: "20 sequences x 15 serial turns, 4 workers, low reasoning, 400-token cap; private flattened history, not live-agent capacity"
+    aggregation: "Arithmetic mean of three boot makespan rates; descriptive matched pairs, no significance test"
+    provenance: { run_id: 2026-09-15-round7-matched-results, method: "replay_matched.py; actual completion tokens / measured makespan", raw: throughput.csv }
+  - name: identical-request replay repeat — v13 Round 7
+    value: 217.819315
+    unit: tok/s
+    workload: "20 sequences x 15 serial turns, 4 workers, low reasoning, 400-token cap; private flattened history, not live-agent capacity"
+    aggregation: "Arithmetic mean of three boot makespan rates; descriptive matched pairs, no significance test"
+    provenance: { run_id: 2026-09-15-round7-matched-results, method: "replay_matched.py; actual completion tokens / measured makespan", raw: throughput.csv }
   - name: aggregate decode C16 — v13
     value: 429.0
     unit: tok/s
