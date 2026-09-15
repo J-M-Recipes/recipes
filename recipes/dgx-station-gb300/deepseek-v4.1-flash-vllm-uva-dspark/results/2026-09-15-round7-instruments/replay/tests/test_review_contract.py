@@ -41,7 +41,7 @@ class ReasoningBoundaryTests(unittest.TestCase):
              'usage':{'prompt_tokens':3, 'completion_tokens':4, 'total_tokens':7}},
         ]
         data = ''.join('data: '+json.dumps(e)+'\n\n' for e in events)+'data: [DONE]\n\n'
-        with patch.object(r.urllib.request,'urlopen',return_value=io.BytesIO(data.encode())):
+        with patch.object(r.urllib.request.OpenerDirector,'open',return_value=io.BytesIO(data.encode())):
             try:
                 out = r.stream_chat_completion('http://127.0.0.1/v1/chat/completions', b'{}')
             except r.ReplayError as exc:

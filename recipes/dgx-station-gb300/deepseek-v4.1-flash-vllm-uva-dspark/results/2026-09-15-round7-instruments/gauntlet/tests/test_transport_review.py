@@ -6,6 +6,6 @@ class TransportReviewTests(unittest.TestCase):
         event={'choices':[{'delta':{'content':'{}'},'finish_reason':'stop'}],
                'usage':{'prompt_tokens':3,'completion_tokens':2,'total_tokens':5}}
         body=('data: '+json.dumps(event)+'\n\n').encode()
-        with patch.object(g.urllib.request,'urlopen',return_value=io.BytesIO(body)):
+        with patch.object(g.urllib.request.OpenerDirector,'open',return_value=io.BytesIO(body)):
             with self.assertRaises(RuntimeError):
                 g.OpenAIClient('http://127.0.0.1:1/v1').chat([], 'test', [], 'low', 1500)

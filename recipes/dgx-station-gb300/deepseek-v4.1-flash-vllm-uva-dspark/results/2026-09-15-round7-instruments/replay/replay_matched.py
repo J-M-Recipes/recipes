@@ -23,6 +23,7 @@ import time
 import traceback
 import urllib.error
 import urllib.request
+import urllib.parse
 from typing import Any, Dict, Iterable, List, Optional, Tuple
 
 EXPECTED_SESSION_COUNT = 20
@@ -217,7 +218,25 @@ def load_fixture_path(path: pathlib.Path) -> LoadedFixture:
     return load_fixture_bytes(path.read_bytes())
 
 
+def validate_loopback_url(url: str) -> str:
+    if not isinstance(url, str) or any(ch.isspace() or ord(ch) < 32 for ch in url):
+        raise ReplayError("Round 7 requires a literal loopback HTTP URL")
+    try:
+        parsed = urllib.parse.urlsplit(url)
+        port = parsed.port
+    except ValueError as exc:
+        raise ReplayError("invalid loopback URL") from exc
+    if (parsed.scheme != "http" or parsed.hostname != "127.0.0.1"
+            or parsed.username is not None or parsed.password is not None
+            or parsed.query or parsed.fragment or port == 0):
+        raise ReplayError("Round 7 requires credential-free HTTP on 127.0.0.1")
+    return url
+
+
 def normalize_urls(base_url: str) -> Tuple[str, str]:
+    validate_loopback_url(base_url)
+    if urllib.parse.urlsplit(base_url).path not in ("", "/", "/v1", "/v1/"):
+        raise ReplayError("base URL must use the API root or /v1")
     base = base_url.rstrip("/")
     if base.endswith("/v1"):
         chat_root = base
@@ -228,11 +247,26 @@ def normalize_urls(base_url: str) -> Tuple[str, str]:
     return chat_root + "/chat/completions", metrics_root + "/metrics"
 
 
+class NoRedirectHandler(urllib.request.HTTPRedirectHandler):
+    def redirect_request(self, req, fp, code, msg, headers, newurl):
+        raise urllib.error.HTTPError(req.full_url, code, "redirects are forbidden", headers, fp)
+
+
+def open_loopback(request: Any, timeout: float):
+    url = request.full_url if isinstance(request, urllib.request.Request) else request
+    validate_loopback_url(url)
+    if isinstance(request, urllib.request.Request):
+        allowed = {key.lower(): value for key, value in auth_headers().items()}
+        if any(allowed.get(key.lower()) != value for key, value in request.header_items()):
+            raise ReplayError("custom request headers are unavailable in Round 7")
+    # A private opener cannot inherit the process-global proxy/auth/cookie state.
+    opener = urllib.request.build_opener(urllib.request.ProxyHandler({}), NoRedirectHandler())
+    return opener.open(request, timeout=timeout)
+
+
 def auth_headers() -> Dict[str, str]:
+    """Fixed non-authenticated headers; ambient credentials are never read."""
     headers = {"Content-Type": "application/json", "Accept": "text/event-stream"}
-    api_key = os.environ.get("OPENAI_API_KEY")
-    if api_key:
-        headers["Authorization"] = "Bearer " + api_key
     return headers
 
 
@@ -340,8 +374,9 @@ def validate_usage(usage: Any) -> Dict[str, int]:
     return out
 
 
-def stream_chat_completion(chat_url: str, body_bytes: bytes, timeout_s: int = CHAT_TIMEOUT_S, headers: Optional[Dict[str, str]] = None) -> Dict[str, Any]:
-    request = urllib.request.Request(chat_url, data=body_bytes, headers=auth_headers() if headers is None else headers, method="POST")
+def stream_chat_completion(chat_url: str, body_bytes: bytes, timeout_s: int = CHAT_TIMEOUT_S) -> Dict[str, Any]:
+    validate_loopback_url(chat_url)
+    request = urllib.request.Request(chat_url, data=body_bytes, headers=auth_headers(), method="POST")
     wall_start = time.time()
     mono_start = time.monotonic()
     first_offset: Optional[float] = None
@@ -410,7 +445,7 @@ def stream_chat_completion(chat_url: str, body_bytes: bytes, timeout_s: int = CH
                 _merge_tool_call_delta(tool_calls, delta.get("tool_calls"))
 
     try:
-        with urllib.request.urlopen(request, timeout=timeout_s) as response:
+        with open_loopback(request, timeout=timeout_s) as response:
             status = getattr(response, "status", 200)
             if status < 200 or status >= 300:
                 raise fail(f"chat HTTP status {status}")
@@ -497,8 +532,9 @@ def parse_metrics_text(text: str, required_metrics: Iterable[str] = REQUIRED_MET
 
 
 def fetch_metrics(metrics_url: str, timeout_s: int = METRICS_TIMEOUT_S) -> Dict[str, float]:
+    validate_loopback_url(metrics_url)
     try:
-        with urllib.request.urlopen(metrics_url, timeout=timeout_s) as response:
+        with open_loopback(metrics_url, timeout=timeout_s) as response:
             status = getattr(response, "status", 200)
             if status < 200 or status >= 300:
                 raise ReplayError(f"metrics HTTP status {status}")

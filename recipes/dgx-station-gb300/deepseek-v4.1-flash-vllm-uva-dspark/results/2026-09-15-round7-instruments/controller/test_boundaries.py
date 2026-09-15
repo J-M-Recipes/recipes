@@ -16,8 +16,8 @@ class ConcurrentWarmupTests(unittest.TestCase):
         wire=c._load_replay_module(Path(__file__).resolve().parents[1])
         packet=b'data: {"choices":[{"delta":{"content":"synthetic"},"finish_reason":"stop"}]}\n\ndata: {"choices":[],"usage":{"prompt_tokens":3,"completion_tokens":1,"total_tokens":4}}\n\ndata: [DONE]\n\n'
         response=io.BytesIO(packet);response.status=200
-        with patch('urllib.request.urlopen',return_value=response):
-            native=wire.stream_chat_completion('http://unused',b'{}',timeout_s=5)
+        with patch('urllib.request.OpenerDirector.open',return_value=response):
+            native=wire.stream_chat_completion('http://127.0.0.1:9',b'{}',timeout_s=5)
         active=0; peak=0; lock=threading.Lock(); calls=[]
         def transport(url,body,timeout_s):
             nonlocal active,peak

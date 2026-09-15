@@ -466,6 +466,8 @@ def wait_for_readiness(
     cid = str(docker.contract["profiles"][profile_key]["id"])
     deadline = time.monotonic() + timeout_s
     last_error = "not checked"
+    wire = _load_replay_module(pathlib.Path(__file__).resolve().parents[1])
+    wire.normalize_urls(base_url)
     url = _models_url(base_url)
     while time.monotonic() < deadline:
         control_check()
@@ -474,7 +476,7 @@ def wait_for_readiness(
         if not _docker_state(doc).get("Running"):
             raise ControllerError("container exited before readiness")
         try:
-            with urllib.request.urlopen(url, timeout=10) as response:
+            with wire.open_loopback(url, timeout=10) as response:
                 if getattr(response, "status", 200) < 200 or getattr(response, "status", 200) >= 300:
                     last_error = f"HTTP {getattr(response, 'status', 'unknown')}"
                 else:
@@ -797,14 +799,6 @@ class PhaseRunner:
             boot_dir,
             control_check=campaign.check_control_and_guard,
         )
-        warm_gauntlet = self._run_gauntlet(
-            campaign,
-            boot_dir,
-            tag=f"R7-p{pair}-{profile_key}-agent-warmup",
-            salt=f"r7-agent-warm-{self.run_id}-pair{pair}-{profile_key}",
-            subdir="gauntlet-warmup",
-            timeout_s=15 * 60,
-        )
         replay_initial = self._run_replay(
             campaign,
             boot_dir,
@@ -831,7 +825,6 @@ class PhaseRunner:
         )
         return {
             "prompt_warmups": warmups,
-            "gauntlet_warmup": warm_gauntlet,
             "replay_initial": replay_initial,
             "replay_repeat": replay_repeat,
             "gauntlet_scored": gauntlet_scored,

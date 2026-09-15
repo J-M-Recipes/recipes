@@ -68,3 +68,9 @@ A launch requires explicit `--release`, `--contract`, `--fixture`, `--output`, `
 ## Compatibility pilot provenance
 
 Excluded live pilots established ordered-replay capture, a cache-namespace control and a three-task native tool loop. Their private receipts are retained outside this source package. They are not a matched comparison or a score for the final twelve-task instrument. Subsequent fixes, including explicit seed and stricter grading, make the final instrument a separate version. No scored outcomes are included in this package, and pilot receipts must never be relabelled as scored data.
+
+## HTTP and private-output boundaries
+
+Replay, gauntlet and readiness use literal `http://127.0.0.1` URLs only. URL credentials, caller authentication, ambient API keys, ambient proxies and redirects are rejected or unavailable; no global urllib opener is inherited. The non-loopback and credential tests use only synthetic values and actual loopback test listeners.
+
+Raw JSONL and diagnostic logs are ignored by Git as a backstop, not as an access-control guarantee. The operator must still put captured output outside the release and all Git worktrees, under a private parent directory (`0700`) with a `0077` process umask. The recorded watchdog deadline/command/identity and output-location/mode proof are mandatory external release receipts; an active timer alone does not satisfy that gate.

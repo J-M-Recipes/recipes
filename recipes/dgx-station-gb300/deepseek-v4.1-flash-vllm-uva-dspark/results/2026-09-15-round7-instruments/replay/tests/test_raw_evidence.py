@@ -9,7 +9,7 @@ class RawEvidenceTests(unittest.TestCase):
         prefix=('data: '+json.dumps(event,ensure_ascii=False)+'\n\n').encode()
         for suffix in (b'',b'data: [DONE]\n\n'):
             raw=prefix+suffix
-            with self.subTest(complete=bool(suffix)),patch.object(r.urllib.request,'urlopen',return_value=io.BytesIO(raw)):
+            with self.subTest(complete=bool(suffix)),patch.object(r.urllib.request.OpenerDirector,'open',return_value=io.BytesIO(raw)):
                 if suffix:
                     result=r.stream_chat_completion('http://127.0.0.1/v1/chat/completions',b'{}')['response']
                 else:

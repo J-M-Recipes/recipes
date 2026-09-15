@@ -10,8 +10,8 @@ class RawCaptureTests(unittest.TestCase):
                 raw=packet+(b'data: [DONE]\n\n' if done else b'');response=io.BytesIO(raw);response.status=200
                 task=next(t for t in g.build_tasks() if t.kind=='structured');root=Path(d);fs=root/'task';fs.mkdir()
                 for name,content in task.files.items():g.SafeTaskFS(fs).write_file(name,content)
-                client=g.OpenAIClient('http://unused/v1',api_key=None,timeout_s=5)
-                with patch('urllib.request.urlopen',return_value=response):
+                client=g.OpenAIClient('http://127.0.0.1:9/v1',api_key=None,timeout_s=5)
+                with patch('urllib.request.OpenerDirector.open',return_value=response):
                     g.GauntletRunner(client,None).run_task(task,fs,root/'raw')
                 files=list((root/'raw').glob('*.jsonl'));self.assertEqual(1,len(files))
                 rows=[json.loads(line) for line in files[0].read_text().splitlines()]

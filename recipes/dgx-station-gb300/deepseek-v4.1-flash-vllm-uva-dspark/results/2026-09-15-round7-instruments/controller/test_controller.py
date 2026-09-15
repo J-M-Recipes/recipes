@@ -348,7 +348,9 @@ class PhaseRunnerTests(unittest.TestCase):
             replay_cmds = [cmd for cmd in fake.commands if "replay_matched.py" in cmd[1]]
             gauntlet_cmds = [cmd for cmd in fake.commands if "run_suite.py" in cmd[1]]
             self.assertEqual(2, len(replay_cmds))
-            self.assertEqual(2, len(gauntlet_cmds))
+            self.assertEqual(1, len(gauntlet_cmds))
+            self.assertEqual(["replay_matched.py", "replay_matched.py", "run_suite.py"],
+                             [Path(cmd[1]).name for cmd in fake.commands])
             self.assertEqual("r7-run-1-pair1", replay_cmds[0][replay_cmds[0].index("--cache-salt") + 1])
             self.assertEqual("r7-run-1-pair1", replay_cmds[1][replay_cmds[1].index("--cache-salt") + 1])
             self.assertIn("--cache-state", replay_cmds[0]); self.assertIn("initial", replay_cmds[0])

@@ -289,18 +289,17 @@ def prepare_task_dir(task: Task, task_dir: Path) -> None:
 
 
 def _endpoint_for_base_url(base_url: str) -> str:
-    base = base_url.rstrip("/")
-    if base.endswith("/chat/completions"):
-        return base
-    if base.endswith("/v1"):
-        return base + "/chat/completions"
-    return base + "/v1/chat/completions"
+    import sys
+    sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'replay'))
+    import replay_matched as wire
+    return wire.normalize_urls(base_url)[0]
 
 
 class OpenAIClient:
     def __init__(self, base_url: str, api_key: Optional[str] = None, timeout_s: int = 180):
         self.endpoint = _endpoint_for_base_url(base_url)
-        self.api_key = api_key if api_key is not None else os.environ.get("OPENAI_API_KEY")
+        if api_key is not None:
+            raise ValueError("Round 7 does not support credentials")
         self.timeout_s = timeout_s
         self.cache_salt = "r7-gauntlet-default"
 
@@ -324,10 +323,7 @@ class OpenAIClient:
         sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'replay'))
         import replay_matched as wire
         body = wire.canonical_json_bytes(payload)
-        headers = {'Content-Type':'application/json', 'Accept':'text/event-stream'}
-        if self.api_key:
-            headers['Authorization'] = 'Bearer ' + self.api_key
-        result = wire.stream_chat_completion(self.endpoint, body, self.timeout_s, headers=headers)
+        result = wire.stream_chat_completion(self.endpoint, body, self.timeout_s)
         content = result['response']['content']
         message = {'role':'assistant', 'content': content or None}
         if result['response']['tool_calls']:
