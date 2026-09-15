@@ -2,6 +2,10 @@
 
 **Release: Sixty-K** (2026-09-14) · **Status: verified** (2026-09-10/12/14) · **v13: 90 tok/s single-stream prose · 140–160 tok/s on agent/code text · 429 agg tok/s at C16** (v12: 89 / 140–160 / 311 · v11: 82 / 130–150 / 287) · 972K-token prompt prefilled in 85 s · Hermes tool-calling 10/10
 
+## Release notes — Sixty-K Agent, v14 (2026-09-15)
+
+One number changed: `KSCHED='[[1,4,5],[5,16,1]]'` — keep k=5 through four concurrent sequences, k=1 from five. Round 4 found v13 losing 9–12% on real Hermes agent transcripts at four workers (agent text accepts ~85% of drafts, so k=1 caps the step at one token); Round 5 confirmed it on a second pass and measured the fix. v14 on the same replay: 207 tok/s mean (v13 188, v12 207). C6–C16 knee identical to v13 (272 / 318 / 379 / 434). What it gives back: the C3/C4 prose gain (155 / 176, i.e. v12 level, vs v13's 195 / 225). Same autotune hash as v12/v13 — 454 s boot. Pick by traffic: agents at three-to-four streams → v14 (this lane's reference); batch prose throughput → v13. Bundle: `results/2026-09-15-round5-v14-agent-schedule/`.
+
 ## Release notes — Sixty-K (2026-09-14)
 
 **v13 is v12 plus one line:** `num_speculative_tokens_per_batch_size=[[1,2,5],[3,16,1]]` — DSpark drafts 5 tokens while one or two sequences are running and 1 token at three or more. Same offload, same KV, same weights and verifier; this schedule happens to share v12's autotune hash (other breakpoints retune — see limits). Two same-window pairs against v12: C1/C2 unchanged, **C4 +27%, C8 +26%, C12 +27%, C16 +35% (429 tok/s)**. Fixture acceptance identical (the tool_json −7% seen in Round 3 was fixture ordering — identical on v12 and v13 in every position, Round 4). **Caveat (Round 4, same night):** on real Hermes agent transcripts at 4 concurrent workers v13 measures **−12% vs v12** (207 vs 236 tok/s) — agent text accepts ~85% of drafts, so k=1 leaves tokens on the table that k=5 collects even at C4. Prose/mixed lanes: v13. Agent-heavy lanes at 3–4 streams: v12 flags, or `[[1,4,5],[5,16,1]]` (untested). Two alternate breakpoint sets both lost on the knee (C3 −9% / −20%); v13's are right for prose. Details: [`results/2026-09-14-round4-v13-validation/`](results/2026-09-14-round4-v13-validation/README.md). Also in this round: `--async-scheduling` is a wash (±3%), and a cache-independent depth map shows **decode flat from 6K to 425K tokens (−7%)** — attention is not the lever on this box, expert fetch is. Details: [`results/2026-09-14-round3-ksched-depth/`](results/2026-09-14-round3-ksched-depth/README.md).
@@ -119,7 +123,20 @@ FlashInfer autotunes the MXFP4 MoE kernels and caches the result under a hash of
 
 ## Results
 
-### v13 — v12 + `num_speculative_tokens_per_batch_size=[[1,2,5],[3,16,1]]` (current)
+### v14 — v13 with the k=5 band extended to C4: `[[1,4,5],[5,16,1]]` (current, agent lane)
+
+| | v14 | v13 | v12 |
+|---|---|---|---|
+| Real-agent replay, 4 workers (mean of two runs) | **207** (184 / 229) | 188 (171 / 206) | 207 (188 / 225) |
+| accepted/step on replay | 2.6–2.7 | 0.9 | 2.6–2.7 |
+| Knee C3 / C4 | 155 / 176 | **195 / 225** | 155 / 179 |
+| Knee C6 / C8 / C12 / C16 | 272 / 318 / 379 / 434 | 274 / 321 / 377 / 434 | 219 / 261 / 279 / 321 |
+| C1 knee / fixture tool_json | 91.0 / 158.7 | 91.5 / 158.7 | 91.1 / 158 |
+| Autotune hash / boot | 9ac7b387 / 454 s | 9ac7b387 / 151 s | 9ac7b387 |
+
+v14/v13 same window 2026-09-15 03:14–03:38 CDT; v12 knee column from Round 4 (2026-09-14, same night). The replay instrument's run-to-run spread is ~20%, so the table shows both runs; the means are what the decision rests on. Container `dsv41-vllm-v14-1M-ksched-agent-BOUND-REF`.
+
+### v13 — v12 + `num_speculative_tokens_per_batch_size=[[1,2,5],[3,16,1]]` (prose/throughput reference)
 
 Run [`2026-09-14-round3-ksched-depth`](results/2026-09-14-round3-ksched-depth/) · raw: [`throughput.csv`](results/2026-09-14-round3-ksched-depth/throughput.csv) · two same-window pairs against the v12 container, 18:02 and 18:27 CDT.
 
