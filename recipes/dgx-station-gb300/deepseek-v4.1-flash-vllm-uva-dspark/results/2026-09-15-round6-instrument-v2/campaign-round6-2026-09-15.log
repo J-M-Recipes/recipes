@@ -1,0 +1,30 @@
+2026-09-15 04:07:59 CDT ROUND6 start
+2026-09-15 04:08:00 CDT dropped page cache; avail=464GiB
+2026-09-15 04:08:00 CDT starting dsv41-vllm-v14-1M-ksched-agent-BOUND-REF
+2026-09-15 04:08:02 CDT waiting bind for dsv41-vllm-v14-1M-ksched-agent-BOUND-REF
+2026-09-15 04:12:50 CDT BOUND dsv41-vllm-v14-1M-ksched-agent-BOUND-REF after 288s
+SMOKE_PASS
+[R6-v14-a] REPLAY2 n=4 turns=300: agg 171.1 tok/s (boot est 171.4 CI95 166.3–176.3) over 398s, 68162 tok; accept=56.2% acc/step=2.81; prefix-cache hit 4.7% on 2092458 prompt tok; tool ttft med/p90 0.88/1.52s per-req 44.3; text ttft 0.76/1.05s per-req 41.7; errors 0
+[R6-v14-b] REPLAY2 n=4 turns=300: agg 174.1 tok/s (boot est 174.4 CI95 169.3–179.3) over 392s, 68236 tok; accept=56.4% acc/step=2.82; prefix-cache hit 5.1% on 2092458 prompt tok; tool ttft med/p90 0.86/1.28s per-req 46.2; text ttft 0.76/1.12s per-req 41.6; errors 0
+2026-09-15 04:26:05 CDT LEDGER | v14 replay2 | a agg=171.1 ci=[166.3, 176.3] acc=0.56 aps=2.81 pchit=0.05 ptok=2092458 ttft_tool=0.88/1.52 ttft_text=0.76/1.05 err=0 | b agg=174.1 ci=[169.3, 179.3] acc=0.56 aps=2.82 pchit=0.05 ptok=2092458 ttft_tool=0.86/1.28 ttft_text=0.76/1.12 err=0 |
+2026-09-15 04:26:13 CDT dropped page cache; avail=466GiB
+2026-09-15 04:26:13 CDT starting dsv41-vllm-v13-1M-ksched-BOUND-REF
+2026-09-15 04:26:15 CDT waiting bind for dsv41-vllm-v13-1M-ksched-BOUND-REF
+2026-09-15 04:31:04 CDT BOUND dsv41-vllm-v13-1M-ksched-BOUND-REF after 289s
+SMOKE_PASS
+[R6-v13-a] REPLAY2 n=4 turns=300: agg 150.0 tok/s (boot est 150.4 CI95 147.8–153.0) over 449s, 67421 tok; accept=86.5% acc/step=0.87; prefix-cache hit 4.8% on 2092458 prompt tok; tool ttft med/p90 0.91/1.42s per-req 36.4; text ttft 0.73/1.0s per-req 38.7; errors 0
+[R6-v13-b] REPLAY2 n=4 turns=300: agg 151.7 tok/s (boot est 152.3 CI95 149.9–154.9) over 441s, 66866 tok; accept=86.9% acc/step=0.88; prefix-cache hit 5.2% on 2092458 prompt tok; tool ttft med/p90 0.88/1.22s per-req 37.5; text ttft 0.73/0.94s per-req 38.6; errors 0
+2026-09-15 04:45:58 CDT LEDGER | v13 replay2 | a agg=150.0 ci=[147.8, 153.0] acc=0.86 aps=0.87 pchit=0.05 ptok=2092458 ttft_tool=0.91/1.42 ttft_text=0.73/1.0 err=0 | b agg=151.7 ci=[149.9, 154.9] acc=0.87 aps=0.88 pchit=0.05 ptok=2092458 ttft_tool=0.88/1.22 ttft_text=0.73/0.94 err=0 |
+2026-09-15 04:46:07 CDT dropped page cache; avail=466GiB
+a39dfb0cefc93003fcee5c03bf5c41e861db6696f41ef2749639c5ca60a95d00
+launched dsv41-vllm-R6-off55 offload=55GB util=0.97 seqs=16 ctx=1048576 spec=[] extra=[--long-prefill-token-threshold 6144 --speculative-config {"method":"dspark","num_speculative_tokens":5,"num_speculative_tokens_per_batch_size":[[1,4,5],[5,16,1]]}] env=[]
+log: /home/milo/dsv41/dsv41-vllm-R6-off55.log
+2026-09-15 04:46:09 CDT waiting bind for dsv41-vllm-R6-off55
+2026-09-15 04:52:26 CDT OFFGB=55 did not bind (expected if HBM headroom < 5 GiB); tail of log:
+(EngineCore pid=361) ValueError: To serve at least one request with the model's max seq len (1048576), (2.2 GiB KV cache is needed, which is larger than the available KV cache memory (0.65 GiB). Based on the available memory, the estimated maximum model length is 123264. Try increasing `gpu_memory_utilization` (which also controls CPU memory on the CPU backend) or decreasing `max_model_len` when initializing the engine. See https://docs.vllm.ai/en/latest/configuration/conserving_memory/ for more details.
+(APIServer pid=1)     raise RuntimeError(
+(APIServer pid=1) RuntimeError: Engine core initialization failed. See root cause above. Failed core proc(s): {}
+2026-09-15 04:52:26 CDT LEDGER | OFFGB=55 | did not bind |
+2026-09-15 04:52:27 CDT FINISH
+2026-09-15 04:52:27 CDT lane dark
+2026-09-15 04:52:27 CDT ROUND6 done
