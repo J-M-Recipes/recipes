@@ -4,7 +4,7 @@
 
 ## Release notes — Sixty-K (2026-09-14)
 
-**v13 is v12 plus one line:** `num_speculative_tokens_per_batch_size=[[1,2,5],[3,16,1]]` — DSpark drafts 5 tokens while one or two sequences are running and 1 token at three or more. Same offload, same KV, same autotune hash, same weights and verifier. Two same-window pairs against v12: C1/C2 unchanged, **C4 +27%, C8 +26%, C12 +27%, C16 +35% (429 tok/s)**. Fixture acceptance identical (tool_json −7% both pairs, flagged in the results README). Also in this round: `--async-scheduling` is a wash (±3%), and a cache-independent depth map shows **decode flat from 6K to 425K tokens (−7%)** — attention is not the lever on this box, expert fetch is. Details: [`results/2026-09-14-round3-ksched-depth/`](results/2026-09-14-round3-ksched-depth/README.md).
+**v13 is v12 plus one line:** `num_speculative_tokens_per_batch_size=[[1,2,5],[3,16,1]]` — DSpark drafts 5 tokens while one or two sequences are running and 1 token at three or more. Same offload, same KV, same weights and verifier; this schedule happens to share v12's autotune hash (other breakpoints retune — see limits). Two same-window pairs against v12: C1/C2 unchanged, **C4 +27%, C8 +26%, C12 +27%, C16 +35% (429 tok/s)**. Fixture acceptance identical (the tool_json −7% seen in Round 3 was fixture ordering — identical on v12 and v13 in every position, Round 4). **Caveat (Round 4, same night):** on real Hermes agent transcripts at 4 concurrent workers v13 measures **−12% vs v12** (207 vs 236 tok/s) — agent text accepts ~85% of drafts, so k=1 leaves tokens on the table that k=5 collects even at C4. Prose/mixed lanes: v13. Agent-heavy lanes at 3–4 streams: v12 flags, or `[[1,4,5],[5,16,1]]` (untested). Two alternate breakpoint sets both lost on the knee (C3 −9% / −20%); v13's are right for prose. Details: [`results/2026-09-14-round4-v13-validation/`](results/2026-09-14-round4-v13-validation/README.md). Also in this round: `--async-scheduling` is a wash (±3%), and a cache-independent depth map shows **decode flat from 6K to 425K tokens (−7%)** — attention is not the lever on this box, expert fetch is. Details: [`results/2026-09-14-round3-ksched-depth/`](results/2026-09-14-round3-ksched-depth/README.md).
 
 ## Release notes — Sixty (2026-09-12)
 
@@ -130,6 +130,8 @@ Run [`2026-09-14-round3-ksched-depth`](results/2026-09-14-round3-ksched-depth/) 
 | **90.7** (90.6) | 127.2 (127.2) | **223.4** (175.9) | **319.1** (252.6) | **339.3** (266.5) | **429.0** (318.8) |
 
 C1 fixture classes and acceptance are the v12 numbers (the schedule is k=5 there). Decode vs prompt depth on the same boot: 124 / 117 / 114 / — / 122 tok/s at 6.5K / 53K / 106K / 212K / 425K — flat. Memory picture identical to v12 (hash 9ac7b387 hit, KV 4.87 GiB).
+
+**Round 4 (same night, [`2026-09-14-round4-v13-validation`](results/2026-09-14-round4-v13-validation/README.md)):** C3 192.6 / C6 272.9 vs v12 155.2 / 219.1 (+24 / +25%). Real Hermes transcripts (`replay_c.py`): 1 worker v13 116.5 vs v12 111.3 (wash); **4 workers v13 207.0 vs v12 235.9 (−12%)** — accepted/step 0.87 at k=1 vs 2.70 at k=5, because agent text accepts 85%. Breakpoint alternatives `[[1,3,5],[4,16,1]]` and `[[1,2,5],[3,4,3],[5,16,1]]` both lose on the knee (C3 −20% / −9%). Quote v13 for prose/mixed load; for agent-heavy 3–4-stream lanes the v12 flags are still the better measured choice.
 
 ### v12 — `OFFGB=60 UTIL=0.97` (superseded by v13, same flags minus the schedule)
 
