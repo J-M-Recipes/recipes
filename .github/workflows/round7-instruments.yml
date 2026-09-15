@@ -1,0 +1,32 @@
+name: round7-instruments
+on:
+  pull_request:
+    paths:
+      - 'recipes/dgx-station-gb300/deepseek-v4.1-flash-vllm-uva-dspark/results/2026-09-15-round7-instruments/**'
+      - '.github/workflows/round7-instruments.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'recipes/dgx-station-gb300/deepseek-v4.1-flash-vllm-uva-dspark/results/2026-09-15-round7-instruments/**'
+      - '.github/workflows/round7-instruments.yml'
+jobs:
+  offline-contracts:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: replay contracts
+        working-directory: recipes/dgx-station-gb300/deepseek-v4.1-flash-vllm-uva-dspark/results/2026-09-15-round7-instruments/replay
+        run: python -m unittest discover -s tests -v
+      - name: tool contracts (real Docker controls are a separate Station gate)
+        working-directory: recipes/dgx-station-gb300/deepseek-v4.1-flash-vllm-uva-dspark/results/2026-09-15-round7-instruments/gauntlet
+        run: python -m unittest discover -s tests -v
+      - name: controller contracts and fake executable boundary
+        working-directory: recipes/dgx-station-gb300/deepseek-v4.1-flash-vllm-uva-dspark/results/2026-09-15-round7-instruments/controller
+        run: python -m unittest discover -v
+      - name: published source hashes
+        working-directory: recipes/dgx-station-gb300/deepseek-v4.1-flash-vllm-uva-dspark/results/2026-09-15-round7-instruments/controller
+        run: python -c 'import controller; from pathlib import Path; print(len(controller.verify_manifest(Path(".."))), "verified source files")'
