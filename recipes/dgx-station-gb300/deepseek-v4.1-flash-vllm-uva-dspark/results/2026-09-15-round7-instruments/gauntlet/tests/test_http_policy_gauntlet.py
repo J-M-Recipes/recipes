@@ -15,7 +15,7 @@ class GauntletCredentialTests(unittest.TestCase):
 
     def test_explicit_credentials_are_rejected(self):
         with self.assertRaisesRegex(ValueError,'credentials'):
-            g.OpenAIClient('http://127.0.0.1:30006/v1',api_key='SYNTHETIC_SENTINEL_NOT_A_CREDENTIAL')
+            g.OpenAIClient('http://127.0.0.1:30006/v1',api_key='test')
 
     def test_non_loopback_client_cannot_be_constructed(self):
         with self.assertRaises(RuntimeError):
