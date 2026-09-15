@@ -74,3 +74,7 @@ Excluded live pilots established ordered-replay capture, a cache-namespace contr
 Replay, gauntlet and readiness use literal `http://127.0.0.1` URLs only. URL credentials, caller authentication, ambient API keys, ambient proxies and redirects are rejected or unavailable; no global urllib opener is inherited. The non-loopback and credential tests use only synthetic values and actual loopback test listeners.
 
 Raw JSONL and diagnostic logs are ignored by Git as a backstop, not as an access-control guarantee. The operator must still put captured output outside the release and all Git worktrees, under a private parent directory (`0700`) with a `0077` process umask. The recorded watchdog deadline/command/identity and output-location/mode proof are mandatory external release receipts; an active timer alone does not satisfy that gate.
+
+### Sequential-chain evidence
+
+A required file counts at its **first successful read**. Those first accesses must follow the declared file order, with positive integer, nondecreasing model-turn identifiers spanning at least four distinct turns. Later rereads or unrelated reads cannot manufacture this evidence after an initial batch; unsuccessful reads do not count as access.

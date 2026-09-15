@@ -187,14 +187,22 @@ def evaluate_task_result(task: Task, final_content: str, trace: List[Mapping[str
     elif task.kind == "file_chain":
         schema_valid = _same_json_types(parsed, {"answer": task.expected["answer"]})
         answer_ok = parsed == {"answer": task.expected["answer"]}
-        observed_reads = [
-            event.get("args", {}).get("path")
-            for event in trace
-            if event.get("event") == "tool_call" and event.get("name") == "read_file" and event.get("result", {}).get("ok") is True
-        ]
         required = list(task.expected["required_reads"])
-        model_turns = {e.get("model_turn") for e in trace if e.get("event")=="tool_call" and e.get("name")=="read_file" and e.get("result",{}).get("ok") is True and type(e.get("model_turn")) is int}
-        chain_ok = _contains_subsequence(observed_reads, required) and len(model_turns) >= 4
+        first_reads = {}
+        for event in trace:
+            if event.get("event") != "tool_call" or event.get("name") != "read_file" or event.get("result", {}).get("ok") is not True:
+                continue
+            args = event.get("args")
+            path = args.get("path") if isinstance(args, Mapping) else None
+            if isinstance(path, str) and path in required and path not in first_reads:
+                first_reads[path] = event.get("model_turn")
+        first_turns = list(first_reads.values())
+        chain_ok = (
+            list(first_reads) == required
+            and all(type(turn) is int and turn > 0 for turn in first_turns)
+            and first_turns == sorted(first_turns)
+            and len(set(first_turns)) >= 4
+        )
         if not answer_ok:
             reasons.append("wrong_answer")
         if not chain_ok:
