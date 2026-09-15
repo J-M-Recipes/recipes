@@ -1,0 +1,205 @@
+2026-09-14 19:27:14 CDT ROUND4 start: which=ALL
+2026-09-14 19:27:16 CDT dropped page cache; avail=465GiB
+2026-09-14 19:27:16 CDT starting dsv41-vllm-v13-1M-ksched-BOUND-REF
+2026-09-14 19:27:18 CDT waiting bind for dsv41-vllm-v13-1M-ksched-BOUND-REF
+2026-09-14 19:31:51 CDT BOUND dsv41-vllm-v13-1M-ksched-BOUND-REF after 273s
+SMOKE_PASS
+2026-09-14 19:31:52 CDT A1 v13 fixture tool_json-first
+[R4-A1-v13-tjfirst] tool_json     95.7 tok/s  accept=87.8%  acc/step=4.39  tokens=318
+      (99, 2.0, 'tool_calls', True, "I'll run both checks in parallel.  ")
+      (60, 0.43, 'tool_calls', True, "I'll read the file first.  ")
+[R4-A1-v13-tjfirst] code         156.9 tok/s  accept=63.8%  acc/step=3.19  tokens=654
+      (243, 1.5, 'stop', False, '```python def knee(rows):     """Return the concurrency where marginal gain per ')
+      (84, 0.57, 'stop', False, '```bash #!/usr/bin/env bash set -euo pipefail  : "${SRC:?SRC is not set}"  for i')
+[R4-A1-v13-tjfirst] shell_ops    163.9 tok/s  accept=90.8%  acc/step=4.54  tokens=144
+      (72, 0.44, 'stop', False, 'docker stop dsv41-vllm-v7 docker rename dsv41-vllm-v7 dsv41-vllm-v7-old sudo sh ')
+[R4-A1-v13-tjfirst] structured   125.4 tok/s  accept=49.5%  acc/step=2.48  tokens=424
+      (102, 0.66, 'stop', False, "I'll research both approaches to give you accurate numbers.  ")
+      (110, 1.03, 'stop', False, '- weights load: complete — 14.2 GB sharded across 2 GPUs in 38.4 s - KV cache: a')
+[R4-A1-v13-tjfirst] prose         99.7 tok/s  accept=29.8%  acc/step=1.49  tokens=400
+      (200, 2.0, 'length', False, 'Speculative decoding speeds up generation by having a small, cheap "draft" model')
+[R4-A1-v13-tjfirst] weighted accept=59.6%
+2026-09-14 19:32:08 CDT A2 v13 fixture tool_json alone
+[R4-A2-v13-tjalone] tool_json    183.9 tok/s  accept=89.7%  acc/step=4.48  tokens=318
+      (99, 0.52, 'tool_calls', True, "I'll run both checks in parallel.  ")
+      (60, 0.34, 'tool_calls', True, "I'll read the file first.  ")
+[R4-A2-v13-tjalone] weighted accept=89.7%
+2026-09-14 19:32:10 CDT A3 v13 fixture default order
+[R4-A3-v13-default] tool_json    183.8 tok/s  accept=89.7%  acc/step=4.48  tokens=318
+      (99, 0.52, 'tool_calls', True, "I'll run both checks in parallel.  ")
+      (60, 0.34, 'tool_calls', True, "I'll read the file first.  ")
+[R4-A3-v13-default] code         156.8 tok/s  accept=63.8%  acc/step=3.19  tokens=654
+      (243, 1.51, 'stop', False, '```python def knee(rows):     """Return the concurrency where marginal gain per ')
+      (84, 0.57, 'stop', False, '```bash #!/usr/bin/env bash set -euo pipefail  : "${SRC:?SRC is not set}"  for i')
+[R4-A3-v13-default] shell_ops    164.0 tok/s  accept=90.8%  acc/step=4.54  tokens=144
+      (72, 0.43, 'stop', False, 'docker stop dsv41-vllm-v7 docker rename dsv41-vllm-v7 dsv41-vllm-v7-old sudo sh ')
+[R4-A3-v13-default] structured   126.0 tok/s  accept=49.5%  acc/step=2.48  tokens=424
+      (102, 0.64, 'stop', False, "I'll research both approaches to give you accurate numbers.  ")
+      (110, 1.03, 'stop', False, '- weights load: complete — 14.2 GB sharded across 2 GPUs in 38.4 s - KV cache: a')
+[R4-A3-v13-default] prose         99.7 tok/s  accept=29.8%  acc/step=1.49  tokens=400
+      (200, 2.0, 'length', False, 'Speculative decoding speeds up generation by having a small, cheap "draft" model')
+[R4-A3-v13-default] weighted accept=59.9%
+2026-09-14 19:32:24 CDT LEDGER | A v13 | tjfirst tool_json=95.7(0.88) code=156.9(0.64) shell_ops=163.9(0.91) structured=125.4(0.49) prose=99.7(0.30) wacc=0.596 | tjalone tool_json=183.9(0.90) wacc=0.897 | default tool_json=183.8(0.90) code=156.8(0.64) shell_ops=164.0(0.91) structured=126.0(0.49) prose=99.7(0.30) wacc=0.599 |
+2026-09-14 19:32:24 CDT B v13 replay n=1
+[R4-B-v13] REPLAY n=1: agg 116.5 tok/s over 43s, 4951 tokens; accept=55.2% acc/step=2.76; tool turns 12 emitted=4 per-req 104.1 tok/s; text turns 12 per-req 126.2 tok/s
+2026-09-14 19:33:07 CDT B v13 replay n=4
+[R4-B-v13] REPLAY n=4: agg 207.0 tok/s over 40s, 8257 tokens; accept=84.7% acc/step=0.87; tool turns 24 emitted=8 per-req 52.8 tok/s; text turns 24 per-req 52.7 tok/s
+2026-09-14 19:33:47 CDT LEDGER | B v13 | n1 agg=116.5 acc=0.55 tool_req=104.1 text_req=126.2 emitted=4/12 | n4 agg=207.0 acc=0.85 tool_req=52.8 text_req=52.7 emitted=8/24 |
+2026-09-14 19:33:47 CDT C v13 knee6
+[R4-C-v13] conc= 1:    91.0 agg tok/s   90.97 per-stream  (runs 91.0/91.0)
+[R4-C-v13] conc= 2:   128.0 agg tok/s   63.98 per-stream  (runs 130.5/125.4)
+[R4-C-v13] conc= 3:   192.6 agg tok/s   64.19 per-stream  (runs 194.5/190.6)
+[R4-C-v13] conc= 4:   224.5 agg tok/s   56.14 per-stream  (runs 224.8/224.3)
+[R4-C-v13] conc= 6:   272.9 agg tok/s   45.48 per-stream  (runs 276.5/269.3)
+[R4-C-v13] conc= 8:   320.1 agg tok/s   40.01 per-stream  (runs 318.6/321.5)
+[R4-C-v13] conc=12:   378.4 agg tok/s   31.53 per-stream  (runs 376.3/380.4)
+[R4-C-v13] conc=16:   434.9 agg tok/s   27.18 per-stream  (runs 439.0/430.7)
+2026-09-14 19:34:55 CDT LEDGER | C v13 | C1=91.0 C2=128.0 C3=192.6 C4=224.5 C6=272.9 C8=320.1 C12=378.4 C16=434.9 |
+2026-09-14 19:35:03 CDT dropped page cache; avail=466GiB
+2026-09-14 19:35:03 CDT starting dsv41-vllm-v12-1M-k5-off60-util97-RETIRED-REF
+2026-09-14 19:35:05 CDT waiting bind for dsv41-vllm-v12-1M-k5-off60-util97-RETIRED-REF
+2026-09-14 19:39:38 CDT BOUND dsv41-vllm-v12-1M-k5-off60-util97-RETIRED-REF after 273s
+SMOKE_PASS
+2026-09-14 19:39:39 CDT A1 v12 fixture tool_json-first
+[R4-A1-v12-tjfirst] tool_json     95.3 tok/s  accept=87.8%  acc/step=4.39  tokens=318
+      (99, 2.01, 'tool_calls', True, "I'll run both checks in parallel.  ")
+      (60, 0.43, 'tool_calls', True, "I'll read the file first.  ")
+[R4-A1-v12-tjfirst] code         157.2 tok/s  accept=63.8%  acc/step=3.19  tokens=654
+      (243, 1.5, 'stop', False, '```python def knee(rows):     """Return the concurrency where marginal gain per ')
+      (84, 0.57, 'stop', False, '```bash #!/usr/bin/env bash set -euo pipefail  : "${SRC:?SRC is not set}"  for i')
+[R4-A1-v12-tjfirst] shell_ops    163.5 tok/s  accept=90.8%  acc/step=4.54  tokens=144
+      (72, 0.44, 'stop', False, 'docker stop dsv41-vllm-v7 docker rename dsv41-vllm-v7 dsv41-vllm-v7-old sudo sh ')
+[R4-A1-v12-tjfirst] structured   125.4 tok/s  accept=49.5%  acc/step=2.48  tokens=424
+      (102, 0.66, 'stop', False, "I'll research both approaches to give you accurate numbers.  ")
+      (110, 1.03, 'stop', False, '- weights load: complete — 14.2 GB sharded across 2 GPUs in 38.4 s - KV cache: a')
+[R4-A1-v12-tjfirst] prose         99.8 tok/s  accept=29.8%  acc/step=1.49  tokens=400
+      (200, 2.0, 'length', False, 'Speculative decoding speeds up generation by having a small, cheap "draft" model')
+[R4-A1-v12-tjfirst] weighted accept=59.6%
+2026-09-14 19:39:55 CDT A2 v12 fixture tool_json alone
+[R4-A2-v12-tjalone] tool_json    183.6 tok/s  accept=89.7%  acc/step=4.48  tokens=318
+      (99, 0.52, 'tool_calls', True, "I'll run both checks in parallel.  ")
+      (60, 0.34, 'tool_calls', True, "I'll read the file first.  ")
+[R4-A2-v12-tjalone] weighted accept=89.7%
+2026-09-14 19:39:57 CDT A3 v12 fixture default order
+[R4-A3-v12-default] tool_json    183.7 tok/s  accept=89.7%  acc/step=4.48  tokens=318
+      (99, 0.52, 'tool_calls', True, "I'll run both checks in parallel.  ")
+      (60, 0.34, 'tool_calls', True, "I'll read the file first.  ")
+[R4-A3-v12-default] code         157.1 tok/s  accept=63.8%  acc/step=3.19  tokens=654
+      (243, 1.5, 'stop', False, '```python def knee(rows):     """Return the concurrency where marginal gain per ')
+      (84, 0.57, 'stop', False, '```bash #!/usr/bin/env bash set -euo pipefail  : "${SRC:?SRC is not set}"  for i')
+[R4-A3-v12-default] shell_ops    163.6 tok/s  accept=90.8%  acc/step=4.54  tokens=144
+      (72, 0.44, 'stop', False, 'docker stop dsv41-vllm-v7 docker rename dsv41-vllm-v7 dsv41-vllm-v7-old sudo sh ')
+[R4-A3-v12-default] structured   125.4 tok/s  accept=49.5%  acc/step=2.48  tokens=424
+      (102, 0.66, 'stop', False, "I'll research both approaches to give you accurate numbers.  ")
+      (110, 1.03, 'stop', False, '- weights load: complete — 14.2 GB sharded across 2 GPUs in 38.4 s - KV cache: a')
+[R4-A3-v12-default] prose         99.8 tok/s  accept=29.8%  acc/step=1.49  tokens=400
+      (200, 2.0, 'length', False, 'Speculative decoding speeds up generation by having a small, cheap "draft" model')
+[R4-A3-v12-default] weighted accept=59.9%
+2026-09-14 19:40:11 CDT LEDGER | A v12 | tjfirst tool_json=95.3(0.88) code=157.2(0.64) shell_ops=163.5(0.91) structured=125.4(0.49) prose=99.8(0.30) wacc=0.596 | tjalone tool_json=183.6(0.90) wacc=0.897 | default tool_json=183.7(0.90) code=157.1(0.64) shell_ops=163.6(0.91) structured=125.4(0.49) prose=99.8(0.30) wacc=0.599 |
+2026-09-14 19:40:11 CDT B v12 replay n=1
+[R4-B-v12] REPLAY n=1: agg 111.3 tok/s over 42s, 4681 tokens; accept=52.2% acc/step=2.61; tool turns 12 emitted=3 per-req 112.4 tok/s; text turns 12 per-req 110.1 tok/s
+2026-09-14 19:40:54 CDT B v12 replay n=4
+[R4-B-v12] REPLAY n=4: agg 235.9 tok/s over 38s, 8868 tokens; accept=54.0% acc/step=2.70; tool turns 24 emitted=8 per-req 59.8 tok/s; text turns 24 per-req 59.7 tok/s
+2026-09-14 19:41:32 CDT LEDGER | B v12 | n1 agg=111.3 acc=0.52 tool_req=112.4 text_req=110.1 emitted=3/12 | n4 agg=235.9 acc=0.54 tool_req=59.8 text_req=59.7 emitted=8/24 |
+2026-09-14 19:41:32 CDT C v12 knee6
+[R4-C-v12] conc= 1:    91.1 agg tok/s   91.07 per-stream  (runs 91.0/91.2)
+[R4-C-v12] conc= 2:   128.1 agg tok/s   64.06 per-stream  (runs 130.7/125.6)
+[R4-C-v12] conc= 3:   155.2 agg tok/s   51.73 per-stream  (runs 156.1/154.3)
+[R4-C-v12] conc= 4:   178.9 agg tok/s   44.72 per-stream  (runs 178.6/179.2)
+[R4-C-v12] conc= 6:   219.1 agg tok/s   36.52 per-stream  (runs 219.2/219.1)
+[R4-C-v12] conc= 8:   261.2 agg tok/s   32.64 per-stream  (runs 261.2/261.1)
+[R4-C-v12] conc=12:   278.9 agg tok/s   23.25 per-stream  (runs 278.4/279.4)
+[R4-C-v12] conc=16:   321.1 agg tok/s   20.07 per-stream  (runs 325.7/316.5)
+2026-09-14 19:42:56 CDT LEDGER | C v12 | C1=91.1 C2=128.1 C3=155.2 C4=178.9 C6=219.1 C8=261.2 C12=278.9 C16=321.1 |
+2026-09-14 19:43:05 CDT dropped page cache; avail=466GiB
+2026-09-14 19:43:05 CDT starting dsv41-vllm-v13-1M-ksched-BOUND-REF
+2026-09-14 19:43:06 CDT waiting bind for dsv41-vllm-v13-1M-ksched-BOUND-REF
+2026-09-14 19:47:55 CDT BOUND dsv41-vllm-v13-1M-ksched-BOUND-REF after 289s
+SMOKE_PASS
+2026-09-14 19:47:55 CDT D control knee6 for R4-S1-b3
+[R4-D-ctrl-R4-S1-b3] conc= 1:    89.7 agg tok/s   89.67 per-stream  (runs 89.5/89.8)
+[R4-D-ctrl-R4-S1-b3] conc= 2:   125.5 agg tok/s   62.74 per-stream  (runs 128.0/122.9)
+[R4-D-ctrl-R4-S1-b3] conc= 3:   189.4 agg tok/s   63.12 per-stream  (runs 187.5/191.3)
+[R4-D-ctrl-R4-S1-b3] conc= 4:   220.3 agg tok/s   55.08 per-stream  (runs 220.3/220.3)
+[R4-D-ctrl-R4-S1-b3] conc= 6:   267.4 agg tok/s   44.57 per-stream  (runs 270.6/264.2)
+[R4-D-ctrl-R4-S1-b3] conc= 8:   313.0 agg tok/s   39.13 per-stream  (runs 311.5/314.6)
+[R4-D-ctrl-R4-S1-b3] conc=12:   335.9 agg tok/s   27.99 per-stream  (runs 365.5/306.2)
+[R4-D-ctrl-R4-S1-b3] conc=16:   422.4 agg tok/s   26.40 per-stream  (runs 426.9/417.9)
+2026-09-14 19:49:15 CDT dropped page cache; avail=466GiB
+f6f2f20ea7dbf84ce097a24694b8dd2448632cc4afeab280abbafd6ae9756f91
+launched dsv41-vllm-R4-S1-b3 offload=60GB util=0.97 seqs=16 ctx=1048576 spec=[] extra=[--long-prefill-token-threshold 6144 --speculative-config {"method":"dspark","num_speculative_tokens":5,"num_speculative_tokens_per_batch_size":[[1,3,5],[4,16,1]]}] env=[]
+log: /home/milo/dsv41/dsv41-vllm-R4-S1-b3.log
+2026-09-14 19:49:17 CDT waiting bind for dsv41-vllm-R4-S1-b3
+2026-09-14 21:09:11 CDT BOUND dsv41-vllm-R4-S1-b3 after 4794s
+SMOKE_PASS
+2026-09-14 21:09:12 CDT WARN R4-S1-b3: autotune did not hit
+[R4-S1-b3] conc= 1:    89.3 agg tok/s   89.30 per-stream  (runs 89.2/89.4)
+[R4-S1-b3] conc= 2:   125.0 agg tok/s   62.50 per-stream  (runs 127.1/122.9)
+[R4-S1-b3] conc= 3:   151.4 agg tok/s   50.45 per-stream  (runs 152.8/149.9)
+[R4-S1-b3] conc= 4:   215.0 agg tok/s   53.75 per-stream  (runs 214.9/215.1)
+[R4-S1-b3] conc= 6:   264.6 agg tok/s   44.09 per-stream  (runs 264.6/264.5)
+[R4-S1-b3] conc= 8:   310.9 agg tok/s   38.86 per-stream  (runs 310.8/310.9)
+[R4-S1-b3] conc=12:   363.2 agg tok/s   30.27 per-stream  (runs 360.1/366.3)
+[R4-S1-b3] conc=16:   420.0 agg tok/s   26.25 per-stream  (runs 424.2/415.7)
+[R4-S1-b3] tool_json    135.5 tok/s  accept=87.8%  acc/step=4.39  tokens=318
+      (99, 0.84, 'tool_calls', True, "I'll run both checks in parallel.  ")
+      (60, 0.44, 'tool_calls', True, "I'll read the file first.  ")
+[R4-S1-b3] code         153.9 tok/s  accept=63.8%  acc/step=3.19  tokens=654
+      (243, 1.54, 'stop', False, '```python def knee(rows):     """Return the concurrency where marginal gain per ')
+      (84, 0.58, 'stop', False, '```bash #!/usr/bin/env bash set -euo pipefail  : "${SRC:?SRC is not set}"  for i')
+[R4-S1-b3] shell_ops    160.3 tok/s  accept=90.8%  acc/step=4.54  tokens=144
+      (72, 0.45, 'stop', False, 'docker stop dsv41-vllm-v7 docker rename dsv41-vllm-v7 dsv41-vllm-v7-old sudo sh ')
+[R4-S1-b3] structured   122.6 tok/s  accept=49.5%  acc/step=2.48  tokens=424
+      (102, 0.67, 'stop', False, "I'll research both approaches to give you accurate numbers.  ")
+      (110, 1.05, 'stop', False, '- weights load: complete — 14.2 GB sharded across 2 GPUs in 38.4 s - KV cache: a')
+[R4-S1-b3] prose         97.6 tok/s  accept=29.8%  acc/step=1.49  tokens=400
+      (200, 2.04, 'length', False, 'Speculative decoding speeds up generation by having a small, cheap "draft" model')
+[R4-S1-b3] weighted accept=59.6%
+2026-09-14 21:10:39 CDT LEDGER | D R4-S1-b3 [[1,3,5],[4,16,1]] | 19:49 → 21:10 | ctrl C1=89.7 C2=125.5 C3=189.4 C4=220.3 C6=267.4 C8=313.0 C12=335.9 C16=422.4 | cand C1=89.3 C2=125.0 C3=151.4 C4=215.0 C6=264.6 C8=310.9 C12=363.2 C16=420.0 | tool_json=135.5(0.88) code=153.9(0.64) shell_ops=160.3(0.91) structured=122.6(0.49) prose=97.6(0.30) wacc=0.596 |
+2026-09-14 21:10:48 CDT dropped page cache; avail=464GiB
+2026-09-14 21:10:48 CDT starting dsv41-vllm-v13-1M-ksched-BOUND-REF
+2026-09-14 21:10:50 CDT waiting bind for dsv41-vllm-v13-1M-ksched-BOUND-REF
+2026-09-14 21:15:38 CDT BOUND dsv41-vllm-v13-1M-ksched-BOUND-REF after 288s
+SMOKE_PASS
+2026-09-14 21:15:39 CDT D control knee6 for R4-S2-mid3
+[R4-D-ctrl-R4-S2-mid3] conc= 1:    90.3 agg tok/s   90.28 per-stream  (runs 90.1/90.4)
+[R4-D-ctrl-R4-S2-mid3] conc= 2:   126.6 agg tok/s   63.30 per-stream  (runs 129.2/124.0)
+[R4-D-ctrl-R4-S2-mid3] conc= 3:   192.4 agg tok/s   64.14 per-stream  (runs 192.4/192.5)
+[R4-D-ctrl-R4-S2-mid3] conc= 4:   222.2 agg tok/s   55.54 per-stream  (runs 222.0/222.3)
+[R4-D-ctrl-R4-S2-mid3] conc= 6:   269.9 agg tok/s   44.98 per-stream  (runs 273.2/266.6)
+[R4-D-ctrl-R4-S2-mid3] conc= 8:   315.7 agg tok/s   39.46 per-stream  (runs 314.4/317.0)
+[R4-D-ctrl-R4-S2-mid3] conc=12:   338.0 agg tok/s   28.17 per-stream  (runs 368.9/307.1)
+[R4-D-ctrl-R4-S2-mid3] conc=16:   426.8 agg tok/s   26.67 per-stream  (runs 430.4/423.2)
+2026-09-14 21:16:58 CDT dropped page cache; avail=466GiB
+9e6c5abc1aefa6d1aa4be3c43632d3560e215a1ebda9d022494526d38974e21d
+launched dsv41-vllm-R4-S2-mid3 offload=60GB util=0.97 seqs=16 ctx=1048576 spec=[] extra=[--long-prefill-token-threshold 6144 --speculative-config {"method":"dspark","num_speculative_tokens":5,"num_speculative_tokens_per_batch_size":[[1,2,5],[3,4,3],[5,16,1]]}] env=[]
+log: /home/milo/dsv41/dsv41-vllm-R4-S2-mid3.log
+2026-09-14 21:17:01 CDT waiting bind for dsv41-vllm-R4-S2-mid3
+2026-09-14 21:24:34 CDT BOUND dsv41-vllm-R4-S2-mid3 after 453s
+SMOKE_PASS
+[R4-S2-mid3] conc= 1:    90.5 agg tok/s   90.48 per-stream  (runs 90.3/90.6)
+[R4-S2-mid3] conc= 2:   126.3 agg tok/s   63.16 per-stream  (runs 128.6/124.1)
+[R4-S2-mid3] conc= 3:   175.7 agg tok/s   58.55 per-stream  (runs 178.0/173.3)
+[R4-S2-mid3] conc= 4:   212.5 agg tok/s   53.13 per-stream  (runs 213.1/212.0)
+[R4-S2-mid3] conc= 6:   270.9 agg tok/s   45.15 per-stream  (runs 273.4/268.4)
+[R4-S2-mid3] conc= 8:   315.4 agg tok/s   39.42 per-stream  (runs 315.0/315.8)
+[R4-S2-mid3] conc=12:   335.5 agg tok/s   27.96 per-stream  (runs 366.5/304.5)
+[R4-S2-mid3] conc=16:   420.5 agg tok/s   26.28 per-stream  (runs 418.9/422.1)
+[R4-S2-mid3] tool_json    140.8 tok/s  accept=87.8%  acc/step=4.39  tokens=318
+      (99, 0.81, 'tool_calls', True, "I'll run both checks in parallel.  ")
+      (60, 0.44, 'tool_calls', True, "I'll read the file first.  ")
+[R4-S2-mid3] code         155.7 tok/s  accept=63.8%  acc/step=3.19  tokens=654
+      (243, 1.52, 'stop', False, '```python def knee(rows):     """Return the concurrency where marginal gain per ')
+      (84, 0.58, 'stop', False, '```bash #!/usr/bin/env bash set -euo pipefail  : "${SRC:?SRC is not set}"  for i')
+[R4-S2-mid3] shell_ops    162.4 tok/s  accept=90.8%  acc/step=4.54  tokens=144
+      (72, 0.44, 'stop', False, 'docker stop dsv41-vllm-v7 docker rename dsv41-vllm-v7 dsv41-vllm-v7-old sudo sh ')
+[R4-S2-mid3] structured   124.4 tok/s  accept=49.5%  acc/step=2.48  tokens=424
+      (102, 0.66, 'stop', False, "I'll research both approaches to give you accurate numbers.  ")
+      (110, 1.04, 'stop', False, '- weights load: complete — 14.2 GB sharded across 2 GPUs in 38.4 s - KV cache: a')
+[R4-S2-mid3] prose         98.9 tok/s  accept=29.8%  acc/step=1.49  tokens=400
+      (200, 2.02, 'length', False, 'Speculative decoding speeds up generation by having a small, cheap "draft" model')
+[R4-S2-mid3] weighted accept=59.6%
+2026-09-14 21:26:01 CDT LEDGER | D R4-S2-mid3 [[1,2,5],[3,4,3],[5,16,1]] | 21:16 → 21:26 | ctrl C1=90.3 C2=126.6 C3=192.4 C4=222.2 C6=269.9 C8=315.7 C12=338.0 C16=426.8 | cand C1=90.5 C2=126.3 C3=175.7 C4=212.5 C6=270.9 C8=315.4 C12=335.5 C16=420.5 | tool_json=140.8(0.88) code=155.7(0.64) shell_ops=162.4(0.91) structured=124.4(0.49) prose=98.9(0.30) wacc=0.596 |
+2026-09-14 21:26:09 CDT FINISH
+2026-09-14 21:26:09 CDT lane dark
+2026-09-14 21:26:09 CDT ROUND4 done
