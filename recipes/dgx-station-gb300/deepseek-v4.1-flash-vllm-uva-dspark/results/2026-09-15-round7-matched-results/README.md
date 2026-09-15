@@ -29,7 +29,7 @@ The suite wall-time reduction is **20.3%**, calculated from the two profile mean
 - Six boots: v14/v13, v13/v14, v14/v13. Per boot: 30 non-scored warmup requests, 300-turn initial replay, the same 300 requests again, then the twelve-task closed-loop suite. Both references stopped after each boot.
 - Replay: 20 context sequences × 15 serial turns, four workers, temperature 0, seed 42, reasoning `low`, 400 output tokens maximum. An initial namespace still allows within-sequence prefix reuse; it is not a zero-cache run. Token cache-hit ratios were 72.5% initially and 92.3% on repeats, identical across profiles.
 - Suite: four file chains, four code repairs, four structured-answer tasks, four workers, maximum 12 model turns / 1,500 output tokens per turn / 180 seconds per task. Tools execute and their results feed subsequent model turns.
-- Source: [frozen instruments](../2026-09-15-round7-instruments/), reviewed head `974a299bbf3fb5cc9560f5bcd67da55061341faf`, source-manifest SHA256 `1a52c4270cb41063736a7e22e0369ab9e9d25886388c823ea5e16d093b20bb26`. Merged source commit `d92a433`.
+- Source: [frozen instruments](../2026-09-15-round7-instruments/), reviewed head `974a299bbf3fb5cc9560f5bcd67da55061341faf`, source-manifest SHA256 `1a52c4270cb41063736a7e22e0369ab9e9d25886388c823ea5e16d093b20bb26`. Merged source commit `63ec3d330b8caf033dec120d85f3603abd1631cb` (PR #21).
 - Image: `vllm/vllm-openai:deepseekv41-flash-0909`, immutable digest `sha256:00d577a6a63281e15336029d5bcee4e9a2cf182214a4f20ba6111b1c8e79893d`.
 
 ## Audit and limitations
