@@ -1,0 +1,16 @@
+[2026-09-15 22:05:41] DFLASH fa4 draft: overriding KV cache dtype torch.float8_e4m3fn -> torch.bfloat16 (fa4 needs K.dtype == Q.dtype; cannot read the target's quantized KV).
+[2026-09-15 22:05:45] Load weight begin. avail mem=248.90 GB
+[2026-09-15 22:06:37] Load weight end. elapsed=52.25 s, type=Glm5NextForConditionalGeneration, quant=modelopt_fp4, quant_algo=NVFP4, avail mem=71.93 GB, mem usage=176.97 GB.
+[2026-09-15 22:06:43] Load weight begin. avail mem=71.81 GB
+[2026-09-15 22:06:43] Load weight end. elapsed=0.26 s, type=DFlash2DraftModel, avail mem=69.12 GB, mem usage=2.68 GB.
+[2026-09-15 22:06:43] DFLASH fa4 draft: overriding KV cache dtype torch.float8_e4m3fn -> torch.bfloat16 (fa4 needs K.dtype == Q.dtype; cannot read the target's quantized KV).
+[2026-09-15 22:06:43] DFLASH block size mismatch: using speculative_num_draft_tokens=5 but draft config block_size=8.
+[2026-09-15 22:06:43] Initialized DFLASH draft runner. attention_backend=fa4, model=DFlash2DraftModel, block_size=5, draft_window_size=None, compact_cache=False
+[2026-09-15 22:06:43] DFLASH draft runner ready. mask_token=<|MASK|>, mask_token_id=154856, mask_token_id_override=154856, noise_embed_scale=1.0
+[2026-09-15 22:06:43] DFLASH fused KV materialization enabled. n_layers=5, num_kv_heads=8, head_dim=128
+[2026-09-15 22:06:44] max_running_requests is capped to 9 by the mamba state cache (max_mamba_cache_size=48, 5 state slots per request). To raise it: increase --mamba-full-memory-ratio or --max-mamba-cache-size, or halve the state size with --mamba-ssm-dtype bfloat16.
+[2026-09-15 22:06:44] Mamba Cache is allocated. max_mamba_cache_size: 48, conv_state size: 0.24GB, ssm_state size: 6.70GB intermediate_ssm_state_cache size: 6.84GB intermediate_conv_window_cache size: 0.24GB 
+[2026-09-15 22:06:44] KV Cache is allocated. dtype: torch.float8_e4m3fn, #tokens: 684096, KV size: 4.51 GB
+[2026-09-15 22:06:45] KV Cache is allocated. dtype: torch.bfloat16, #tokens: 684096, K size: 6.52 GB, V size: 6.52 GB
+[2026-09-15 22:10:16] DFLASH selector decode folded into the draft cuda graph (sampling_enabled=True).
+[2026-09-15 22:10:37] DFLASH sampling pre-warm: borrowing=False bs=9 peak=86142976 B headroom=114021376 B

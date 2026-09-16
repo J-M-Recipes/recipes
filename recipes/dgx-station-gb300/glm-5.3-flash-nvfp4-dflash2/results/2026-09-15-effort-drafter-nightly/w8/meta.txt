@@ -1,0 +1,95 @@
+WIN w8-moe-trtllm start 2026-09-16T03:12:13Z spec=dflash extra=[--max-mamba-cache-size 48 --speculative-dflash-block-size 7 --moe-runner-backend flashinfer_trtllm] env=[-e TORCHINDUCTOR_COMPILE_THREADS=1]
+launched glmf-w8-moe-trtllm image=lmsysorg/sglang:nightly-dev-cu13-20260915-8874c51a spec=dflash kv=fp8_e4m3 mem=0.85 ctx=1048576 bs=16 extra=[--max-mamba-cache-size 48 --speculative-dflash-block-size 7 --moe-runner-backend flashinfer_trtllm] env=[-e TORCHINDUCTOR_COMPILE_THREADS=1]
+log: <box>/glmf/glmf-w8-moe-trtllm.log
+ready 2026-09-16T03:17:57Z i=68
+/sgl-workspace/sglang/python/sglang/launch_server.py:71: UserWarning: 'python -m sglang.launch_server' is still supported, but 'sglang serve' is the recommended entrypoint.
+[2026-09-16 03:12:40] Use dsa attention backend for DeepSeek with DSA.
+[2026-09-16 03:12:40] Setting page size to 64 for DeepSeek DSA.
+[2026-09-16 03:12:40] Set dense attention kv len threshold to model index_topk=2048 for DeepSeek with DSA.
+[2026-09-16 03:12:40] Set DSA backends for fp8_e4m3 KV Cache: prefill=trtllm, decode=trtllm.
+[2026-09-16 03:12:40] FlashInfer TRTLLM MoE is enabled. --disable-shared-experts-fusion is automatically set.
+[2026-09-16 03:12:58] DFLASH fa4 draft: overriding KV cache dtype torch.float8_e4m3fn -> torch.bfloat16 (fa4 needs K.dtype == Q.dtype; cannot read the target's quantized KV).
+[2026-09-16 03:13:02] Load weight begin. avail mem=248.90 GB
+[2026-09-16 03:13:55] Load weight end. elapsed=52.70 s, type=Glm5NextForConditionalGeneration, quant=modelopt_fp4, quant_algo=NVFP4, avail mem=71.93 GB, mem usage=176.97 GB.
+[2026-09-16 03:14:01] Load weight begin. avail mem=71.81 GB
+[2026-09-16 03:14:01] Load weight end. elapsed=0.25 s, type=DFlash2DraftModel, avail mem=69.12 GB, mem usage=2.68 GB.
+[2026-09-16 03:14:01] DFLASH fa4 draft: overriding KV cache dtype torch.float8_e4m3fn -> torch.bfloat16 (fa4 needs K.dtype == Q.dtype; cannot read the target's quantized KV).
+[2026-09-16 03:14:01] DFLASH block size mismatch: using speculative_num_draft_tokens=7 but draft config block_size=8.
+[2026-09-16 03:14:01] Initialized DFLASH draft runner. attention_backend=fa4, model=DFlash2DraftModel, block_size=7, draft_window_size=None, compact_cache=False
+[2026-09-16 03:14:01] DFLASH draft runner ready. mask_token=<|MASK|>, mask_token_id=154856, mask_token_id_override=154856, noise_embed_scale=1.0
+[2026-09-16 03:14:01] DFLASH fused KV materialization enabled. n_layers=5, num_kv_heads=8, head_dim=128
+[2026-09-16 03:14:01] max_running_requests is capped to 9 by the mamba state cache (max_mamba_cache_size=48, 5 state slots per request). To raise it: increase --mamba-full-memory-ratio or --max-mamba-cache-size, or halve the state size with --mamba-ssm-dtype bfloat16.
+[2026-09-16 03:14:01] Mamba Cache is allocated. max_mamba_cache_size: 48, conv_state size: 0.24GB, ssm_state size: 6.70GB intermediate_ssm_state_cache size: 9.57GB intermediate_conv_window_cache size: 0.34GB 
+[2026-09-16 03:14:01] KV Cache is allocated. dtype: torch.float8_e4m3fn, #tokens: 577024, KV size: 3.81 GB
+[2026-09-16 03:14:03] KV Cache is allocated. dtype: torch.bfloat16, #tokens: 577024, K size: 5.50 GB, V size: 5.50 GB
+[2026-09-16 03:14:12] DSA KPool metadata fusion enabled (pool=4)
+[2026-09-16 03:14:12] Overriding draft attention backend to fa4.
+/opt/sglang/lib/python3.12/site-packages/triton/language/core.py:2284: UserWarning: tl.make_block_ptr is deprecated. Use TensorDescriptor or tl.make_tensor_descriptor instead.
+/opt/sglang/lib/python3.12/site-packages/torch/_inductor/compile_fx.py:321: UserWarning: TensorFloat32 tensor cores for float32 matrix multiplication available but not enabled. Consider setting `torch.set_float32_matmul_precision('high')` for better performance.
+[AutoTuner]: Tuning trtllm_batch_decode_mla:   0%|          | 0/21 [00:00<?, ?profile/s]
+[AutoTuner]: Tuning trtllm_batch_decode_mla:  57%|█████▋    | 12/21 [00:00<00:00, 119.93profile/s]
+[AutoTuner]: Tuning trtllm_batch_decode_mla: 100%|██████████| 21/21 [00:00<00:00, 110.24profile/s]
+[AutoTuner]: Tuning flashinfer::trtllm_fp4_block_scale_moe:   0%|          | 0/7 [00:00<?, ?profile/s]
+[AutoTuner]: Tuning flashinfer::trtllm_fp4_block_scale_moe:  14%|█▍        | 1/7 [00:03<00:23,  3.94s/profile]
+[AutoTuner]: Tuning flashinfer::trtllm_fp4_block_scale_moe:  29%|██▊       | 2/7 [00:07<00:19,  3.96s/profile]
+[AutoTuner]: Tuning flashinfer::trtllm_fp4_block_scale_moe:  43%|████▎     | 3/7 [00:11<00:14,  3.72s/profile]
+[AutoTuner]: Tuning flashinfer::trtllm_fp4_block_scale_moe:  57%|█████▋    | 4/7 [00:15<00:11,  3.97s/profile]
+[AutoTuner]: Tuning flashinfer::trtllm_fp4_block_scale_moe:  71%|███████▏  | 5/7 [00:21<00:09,  4.52s/profile]
+[AutoTuner]: Tuning flashinfer::trtllm_fp4_block_scale_moe:  86%|████████▌ | 6/7 [00:28<00:05,  5.52s/profile]
+[AutoTuner]: Tuning flashinfer::trtllm_fp4_block_scale_moe: 100%|██████████| 7/7 [00:37<00:00,  6.66s/profile]
+[AutoTuner]: Tuning flashinfer::trtllm_fp4_block_scale_moe: 100%|██████████| 7/7 [00:37<00:00,  5.38s/profile]
+[2026-09-16 03:17:34] DFLASH selector decode folded into the draft cuda graph (sampling_enabled=True).
+[2026-09-16 03:17:34] Capture draft verify CUDA graph begin. backend=full, num_tokens_per_req=7, bs=[1, 2, 3, 4, 5, 6, 7, 8, 9], avail mem=35.79 GB
+/opt/sglang/lib/python3.12/site-packages/nvidia_cutlass_dsl/dsl_packages/cutlass/base_dsl/dsl.py:2309: UserWarning: Argument aux_data (position 18) cannot be converted to a JitArgument for function 'cutlass___call___sglangkernelsopsattentionflash_attncuteflash_fwd_sm100FlashAttentionForwardSm100_object_at__Tensorgmemoi64i641_Tensorgmemoi64i64i641_Tensorgmemoi64i64i641_Tensorgm'. Its type `<class 'sglang.kernels.ops.attention.flash_attn.cute.utils.AuxData'>` is not supported. If the value is known at compile time, annotate it: `aux_data: Constexpr`. Otherwise, implement the `JitArgument` or `DynamicExpression` protocol for type `<class 'sglang.kernels.ops.attention.flash_attn.cute.utils.AuxData'>`, or register a custom argument adapter.
+[2026-09-16 03:17:54] Capture draft verify CUDA graph end. elapsed=20.04 s, mem usage=0.04 GB, avail mem=35.76 GB.
+[2026-09-16 03:17:55] DFLASH sampling pre-warm: borrowing=False bs=9 peak=123047936 B headroom=162077696 B
+[2026-09-16 03:17:56] Engine startup timings (s): load_weight=52.95, kv_cache_allocation=1.79, scheduler_e2e=303.96, cuda_graph={prefill=0.00, decode=0.00, target_verify=26.51, draft_prefill=0.00, draft_decode=20.04, draft_extend=0.00}, tokenizer_e2e=312.65
+/sgl-workspace/sglang/python/sglang/srt/entrypoints/http_server.py:454: FastAPIDeprecationWarning: ORJSONResponse is deprecated, FastAPI now serializes data directly to JSON bytes via Pydantic when a return type or response model is set, which is faster and doesn't need a custom response class. Read more in the FastAPI docs: https://fastapi.tiangolo.com/advanced/custom-response/#orjson-or-response-model and https://fastapi.tiangolo.com/tutorial/response-model/
+C8 spread >10%, rewarm + rerun
+GREEDY_EQUIV identical=20/20
+prompt 19: 202 scored tokens
+SCORED 2857 tokens on w8-moe-trtllm; instrument repeat-identical: True
+{
+ "tokens": 2857,
+ "mean": 0.0,
+ "p50": 0.0,
+ "p95": 0.0,
+ "p99": 0.0,
+ "max": 0.0,
+ "frac_gt_0.01": 0.0,
+ "frac_gt_0.1": 0.0,
+ "frac_gt_1.0": 0.0,
+ "per_prompt_max": {
+  "0": 0.0,
+  "1": 0.0,
+  "2": 0.0,
+  "3": 0.0,
+  "4": 0.0,
+  "5": 0.0,
+  "6": 0.0,
+  "7": 0.0,
+  "8": 0.0,
+  "9": 0.0,
+  "10": 0.0,
+  "11": 0.0,
+  "12": 0.0,
+  "13": 0.0,
+  "14": 0.0,
+  "15": 0.0,
+  "16": 0.0,
+  "17": 0.0,
+  "18": 0.0,
+  "19": 0.0
+ },
+ "bar": {
+  "p99_le_0.05": true,
+  "max_le_0.5": true,
+  "tokens_ge_3000": false
+ },
+ "NONINFERIOR": false
+}
+score[38] 144 tokens
+score[39] 150 tokens
+wrote <box>/glmf/w8-moe-trtllm/kl-cand-w8-moe-trtllm.json
+SUMMARY prompts=40 skipped_tokmismatch=0 gen_tokens=5120 mean|dlogp|=0.1360 median=0.0223 p95=0.649 max=2.92 cand_top1_agrees_with_ref_greedy=0.8439
+WIN w8-moe-trtllm end 2026-09-16T03:22:17Z

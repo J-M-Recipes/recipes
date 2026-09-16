@@ -1,0 +1,52 @@
+W3 start 2026-09-15T19:56:25Z image=lmsysorg/sglang:nightly-dev-cu13-20260915-8874c51a
+noise floor on glmf-w2-nightly0915 19:56:25Z
+GREEDY saved 20 outputs to <box>/glmf/w3/greedy-w2-a.json
+GREEDY saved 20 outputs to <box>/glmf/w3/greedy-w2-b.json
+GREEDY_EQUIV identical=20/20
+W3 stop w2 2026-09-15T19:56:52Z
+launched glmf-w3-fusedverify image=lmsysorg/sglang:nightly-dev-cu13-20260915-8874c51a spec=dflash kv=fp8_e4m3 mem=0.85 ctx=1048576 bs=16 extra=[--max-mamba-cache-size 48 --speculative-dflash-block-size 7] env=[-e TORCHINDUCTOR_COMPILE_THREADS=1 -e SGLANG_OPT_FUSED_KDA_VERIFY=1]
+log: <box>/glmf/glmf-w3-fusedverify.log
+ready 2026-09-15T20:02:34Z i=68
+[2026-09-15 19:57:19] Breakable CUDA graph is incompatible with KDA hybrid linear attention; disabling prefill CUDA graph.
+[2026-09-15 19:57:37] DFLASH fa4 draft: overriding KV cache dtype torch.float8_e4m3fn -> torch.bfloat16 (fa4 needs K.dtype == Q.dtype; cannot read the target's quantized KV).
+[2026-09-15 19:57:41] Load weight begin. avail mem=248.90 GB
+[2026-09-15 19:58:33] Load weight end. elapsed=51.66 s, type=Glm5NextForConditionalGeneration, quant=modelopt_fp4, quant_algo=NVFP4, avail mem=71.93 GB, mem usage=176.97 GB.
+[2026-09-15 19:58:39] Load weight begin. avail mem=71.81 GB
+[2026-09-15 19:58:39] Load weight end. elapsed=0.25 s, type=DFlash2DraftModel, avail mem=69.12 GB, mem usage=2.68 GB.
+[2026-09-15 19:58:39] DFLASH fa4 draft: overriding KV cache dtype torch.float8_e4m3fn -> torch.bfloat16 (fa4 needs K.dtype == Q.dtype; cannot read the target's quantized KV).
+[2026-09-15 19:58:39] DFLASH block size mismatch: using speculative_num_draft_tokens=7 but draft config block_size=8.
+[2026-09-15 19:58:39] Initialized DFLASH draft runner. attention_backend=fa4, model=DFlash2DraftModel, block_size=7, draft_window_size=None, compact_cache=False
+[2026-09-15 19:58:39] DFLASH draft runner ready. mask_token=<|MASK|>, mask_token_id=154856, mask_token_id_override=154856, noise_embed_scale=1.0
+[2026-09-15 19:58:39] DFLASH fused KV materialization enabled. n_layers=5, num_kv_heads=8, head_dim=128
+[2026-09-15 19:58:39] max_running_requests is capped to 9 by the mamba state cache (max_mamba_cache_size=48, 5 state slots per request). To raise it: increase --mamba-full-memory-ratio or --max-mamba-cache-size, or halve the state size with --mamba-ssm-dtype bfloat16.
+[2026-09-15 19:58:39] Mamba Cache is allocated. max_mamba_cache_size: 48, conv_state size: 0.24GB, ssm_state size: 6.70GB intermediate_ssm_state_cache size: 9.57GB intermediate_conv_window_cache size: 0.34GB 
+[2026-09-15 19:58:39] KV Cache is allocated. dtype: torch.float8_e4m3fn, #tokens: 577024, KV size: 3.81 GB
+[2026-09-15 19:58:41] KV Cache is allocated. dtype: torch.bfloat16, #tokens: 577024, K size: 5.50 GB, V size: 5.50 GB
+[2026-09-15 19:58:50] KDA kernel dispatcher: decode=TritonKDAKernel, verify=TritonKDAKernel, extend=TritonKDAKernel packed_decode=True
+[2026-09-15 19:58:50] KDA fused chain-verify kernel enabled (topk==1 path).
+[2026-09-15 20:02:11] DFLASH selector decode folded into the draft cuda graph (sampling_enabled=True).
+[2026-09-15 20:02:33] DFLASH sampling pre-warm: borrowing=False bs=9 peak=123047936 B headroom=162077696 B
+axis engaged
+GREEDY saved 20 outputs to <box>/glmf/w3/greedy-w3.json
+GREEDY_EQUIV identical=1/20
+  prompt 0: first divergence at char 44 (len 628 vs 663)
+  prompt 1: first divergence at char 250 (len 463 vs 503)
+  prompt 2: first divergence at char 85 (len 964 vs 889)
+  prompt 3: first divergence at char 95 (len 683 vs 903)
+  prompt 4: first divergence at char 25 (len 308 vs 437)
+  prompt 5: first divergence at char 147 (len 907 vs 913)
+  prompt 7: first divergence at char 4 (len 285 vs 588)
+  prompt 8: first divergence at char 304 (len 767 vs 732)
+  prompt 9: first divergence at char 127 (len 350 vs 293)
+  prompt 10: first divergence at char 126 (len 844 vs 845)
+  prompt 11: first divergence at char 8 (len 297 vs 274)
+  prompt 12: first divergence at char 70 (len 90 vs 100)
+  prompt 13: first divergence at char 241 (len 699 vs 676)
+  prompt 14: first divergence at char 47 (len 648 vs 805)
+  prompt 15: first divergence at char 56 (len 1012 vs 1036)
+  prompt 16: first divergence at char 168 (len 471 vs 436)
+  prompt 17: first divergence at char 121 (len 869 vs 875)
+  prompt 18: first divergence at char 52 (len 256 vs 197)
+  prompt 19: first divergence at char 62 (len 830 vs 875)
+W3 probes end 2026-09-15T20:07:03Z
+VERDICT INPUTS: C1 low bar 212.8 | accept low bar 0.40-0.44 | greedy identical count W2vsW3 must be >= W2vsW2 identical count | tools 10/10

@@ -3,12 +3,12 @@ id: dgx-station-gb300/glm-5.3-flash-nvfp4-dflash2
 title: GLM-5.3-Flash NVFP4 + DFlash2 speculative decoding on one DGX Station GB300
 summary: >
   GLM-5.3-Flash (320B MoE, 18B active) in NVIDIA's first-party NVFP4 served by released-track SGLang with the
-  DFlash2 block-diffusion draft (block 7), 1M context. Interactive: 252 tok/s single-stream, ~740 agg at C8.
+  DFlash2 block-diffusion draft (block 7), 1M context. Interactive: ~202 tok/s single-stream answer-only (~265 with max-effort thinking counted), ~730 agg at C8.
   Same weights in plain autoregressive mode serve 48 users at 50 tok/s each and 128 users at 34 tok/s each
   (4,025 agg) on one GPU. Quality gate is teacher-forced logprob divergence vs the FP8 original, not eyeballing.
 status: verified
 owners: [jmeadlock, milo]
-updated: "2026-09-11"
+updated: "2026-09-16"
 tags: [glm-5.3-flash, nvfp4, sglang, dflash2, speculative-decoding, single-gpu, interactive, high-concurrency, 1m-context]
 
 model:
@@ -56,7 +56,7 @@ launch:
   health: "curl -fs http://localhost:30001/health; then warm every batch shape you will serve (python3 -c 'import flash_bench as fb; fb.knee(reps=0)' from scripts/). First hit of each new batch shape after boot is kernel autotune, not serving."
   warmup: "python3 -c 'import flash_bench as fb; fb.knee(reps=0)' from scripts/ — warms C1..C32 once each; exact launch line in results/2026-09-11-nvidia-nvfp4-b7-1M/launch-command.txt"
   notable_flags:
-    - "VARIANT interactive_daily: as above: DFlash2 block 7, 48 mamba slots (9 running), 1M ctx, 576K-token KV pool. C1 252, C8 ~740."
+    - "VARIANT interactive_daily: as above: DFlash2 block 7, 48 mamba slots (9 running), 1M ctx, 576K-token KV pool. C1 ~202 answer-only, C8 ~730."
     - "VARIANT interactive_more_kv: drop --max-mamba-cache-size (default 38 slots, 7 running): 682K KV pool, C8 drops to ~490."
     - "VARIANT batch_48_users: SPEC=none KV=fp8_e4m3 MEM=0.90 CTX=131072 MAXBS=128 EXTRA='--max-mamba-cache-size 640 --mamba-ssm-dtype bfloat16 --linear-attn-decode-backend triton' : 128 running, 201K KV pool, C48 2,214 agg / 50 per user, C128 4,025 / 34. bf16 SSM state is an accuracy-affecting change per SGLang docs; not KL-gated here."
     - "VARIANT batch_fp32_state: SPEC=none MEM=0.90 MAXBS=128 EXTRA='--mamba-full-memory-ratio 3.0' : 254 slots / 50 running, 1.79M KV pool, C32 1,648 / 55 per user, C48 1,681 / 48."
@@ -70,13 +70,19 @@ launch:
 
 metrics:
   - name: single-stream decode (recipe method)
-    value: 252.5
+    value: 202.7
     unit: tok/s
-    workload: C1, history essay, 512 output tokens, thinking default, DFlash2 block 7, 1M ctx
-    aggregation: median of 3 (spread <1%)
-    provenance: { run_id: 2026-09-11-nvidia-nvfp4-b7-1M, method: scripts/c1_methods.py, raw: throughput.csv }
-  - name: single-stream decode, code
-    value: 253.4
+    workload: C1, history essay, 512 output tokens, answer-only (reasoning_effort low), DFlash2 block 7, 1M ctx, nightly 8874c51a
+    aggregation: median of 3 (spread 0.6%)
+    provenance: { run_id: 2026-09-15-effort-drafter-nightly, method: scripts/c1_methods.py EFFORT=low, raw: throughput.csv }
+  - name: single-stream decode (recipe method), max-effort thinking counted
+    value: 265.3
+    unit: tok/s
+    workload: C1, history essay, 512 output tokens, reasoning_effort max with thinking tokens counted as output — this is what the round-2 "252.5" measured
+    aggregation: median of 3 (spread 0.5%)
+    provenance: { run_id: 2026-09-15-effort-drafter-nightly, method: scripts/c1_methods.py EFFORT=max, raw: throughput.csv }
+  - name: single-stream decode, code (answer-only, effort low)
+    value: 289.3
     unit: tok/s
     workload: C1, Python module prompt, 400 tokens
     aggregation: median of 3
@@ -128,7 +134,7 @@ verification:
     digest:      { how: "docker image inspect reports the digest above; model dir is the pinned revision, 204,475,659,764 bytes / 42 files byte-verified against the Hub listing", last_pass_utc: "2026-09-11T13:00:00Z", run_id: 2026-09-11-nvidia-nvfp4-b7-1M }
     health:      { how: "/health 200 after boot; all shapes warmed", last_pass_utc: "2026-09-11T16:47:00Z", run_id: 2026-09-11-nvidia-nvfp4-b7-1M }
     quality:     { how: "teacher-forced |dlogp| vs zai-org FP8 original on 40 prompts x 128 greedy tokens: nvidia 0.136 (argmax differs 15.6%) vs LibertAI 0.147 (15.9%); instrument self-consistency 0.00000. Plus 10/10 parsed tool calls (scripts/tool_harness.py) and a real Hermes agent harness 10/10 tool turns.", last_pass_utc: "2026-09-11T15:45:00Z", run_id: 2026-09-11-nvidia-nvfp4-b7-1M, notes: "replaces the output-judged gate of run 2026-09-01" }
-    performance: { how: "C1 recipe-method median-of-3 within 3% of 252.5 after warmup; C48 AR within 5% of 2,214", last_pass_utc: "2026-09-11T16:45:00Z", run_id: 2026-09-11-nvidia-nvfp4-b7-1M }
+    performance: { how: "C1 recipe-method (EFFORT=low) median-of-3 within 3% of 202.7 after warmup; C48 AR within 5% of 2,214", last_pass_utc: "2026-09-16T02:06:00Z", run_id: 2026-09-15-effort-drafter-nightly }
 
 limits:
   - "CORRECTION to run 2026-09-01: 'DFlash2 loses to AR at C16+' was wrong. The cause was SGLang's default KDA state budget capping max_running_requests at 7; verification cost was not the issue. With slots raised, DFlash2 beats AR per running request through at least C24 (1,482 vs ~1,350 agg). What DFlash2 actually loses is memory: each slot carries 7 draft-token intermediate states in fp32 (bf16 SSM crashes the DFlash2 verify kernel on this image), so 120 slots cost 41 GB and leave a 134K KV pool. AR with bf16 state fits 640 slots in 43 GB. Pick DFlash2 for <=24 users, AR for more."
@@ -138,7 +144,7 @@ limits:
   - "Do not enable HiCache on this model for agent traffic: host-tier load-back corrupts generation and drops tool calls (sgl-project/sglang#38031)."
   - "The MLA KV cache is bf16 even with --kv-cache-dtype fp8_e4m3 (sgl-project/sglang#36830). Only the DSA indexer pool is fp8."
   - "Native MTP drafter is in the checkpoint but SGLang's GLM-5.3 NextN path is broken (#37548, #36829). SGLang's cookbook MTP numbers for this model are measured with SGLANG_SIMULATE_ACC_LEN=3."
-  - "Draft acceptance is 0.29 on prose and 0.61 on math; a prose-heavy workload sees ~175 tok/s C1, not 252. Report the prompt with every C1 number."
+  - "Draft acceptance is 0.17 on prose and 0.62 on math (answer-only); a prose-heavy workload sees ~150 tok/s C1, not 202. Report the prompt AND reasoning_effort with every C1 number — enable_thinking is not a template variable for this model."
 
 rollback:
   script: scripts/swap-model.sh

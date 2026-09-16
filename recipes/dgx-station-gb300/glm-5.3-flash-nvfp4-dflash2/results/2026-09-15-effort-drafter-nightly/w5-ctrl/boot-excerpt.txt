@@ -1,0 +1,48 @@
+[2026-09-16 01:38:39] DFLASH fa4 draft: overriding KV cache dtype torch.float8_e4m3fn -> torch.bfloat16 (fa4 needs K.dtype == Q.dtype; cannot read the target's quantized KV).
+[2026-09-16 01:38:44] Load weight begin. avail mem=248.90 GB
+[2026-09-16 01:39:52] Load weight end. elapsed=68.72 s, type=Glm5NextForConditionalGeneration, quant=modelopt_fp4, quant_algo=NVFP4, avail mem=71.93 GB, mem usage=176.97 GB.
+[2026-09-16 01:39:58] Load weight begin. avail mem=71.81 GB
+[2026-09-16 01:39:58] Load weight end. elapsed=0.28 s, type=DFlash2DraftModel, avail mem=69.12 GB, mem usage=2.68 GB.
+[2026-09-16 01:39:58] DFLASH fa4 draft: overriding KV cache dtype torch.float8_e4m3fn -> torch.bfloat16 (fa4 needs K.dtype == Q.dtype; cannot read the target's quantized KV).
+[2026-09-16 01:39:58] DFLASH block size mismatch: using speculative_num_draft_tokens=7 but draft config block_size=8.
+[2026-09-16 01:39:58] Initialized DFLASH draft runner. attention_backend=fa4, model=DFlash2DraftModel, block_size=7, draft_window_size=None, compact_cache=False
+[2026-09-16 01:39:58] DFLASH draft runner ready. mask_token=<|MASK|>, mask_token_id=154856, mask_token_id_override=154856, noise_embed_scale=1.0
+[2026-09-16 01:39:58] DFLASH fused KV materialization enabled. n_layers=5, num_kv_heads=8, head_dim=128
+[2026-09-16 01:39:59] max_running_requests is capped to 9 by the mamba state cache (max_mamba_cache_size=48, 5 state slots per request). To raise it: increase --mamba-full-memory-ratio or --max-mamba-cache-size, or halve the state size with --mamba-ssm-dtype bfloat16.
+[2026-09-16 01:39:59] Mamba Cache is allocated. max_mamba_cache_size: 48, conv_state size: 0.24GB, ssm_state size: 6.70GB intermediate_ssm_state_cache size: 9.57GB intermediate_conv_window_cache size: 0.34GB 
+[2026-09-16 01:39:59] KV Cache is allocated. dtype: torch.float8_e4m3fn, #tokens: 577024, KV size: 3.81 GB
+[2026-09-16 01:40:01] KV Cache is allocated. dtype: torch.bfloat16, #tokens: 577024, K size: 5.50 GB, V size: 5.50 GB
+Capturing batches (bs=9 avail_mem=36.45 GB):   0%|          | 0/9 [00:00<?, ?it/s]
+Capturing batches (bs=9 avail_mem=36.45 GB):  11%|█         | 1/9 [00:05<00:46,  5.77s/it]
+Capturing batches (bs=8 avail_mem=35.90 GB):  11%|█         | 1/9 [00:05<00:46,  5.77s/it]
+Capturing batches (bs=8 avail_mem=35.90 GB):  22%|██▏       | 2/9 [00:06<00:18,  2.67s/it]
+Capturing batches (bs=7 avail_mem=35.89 GB):  22%|██▏       | 2/9 [00:06<00:18,  2.67s/it]
+Capturing batches (bs=7 avail_mem=35.89 GB):  33%|███▎      | 3/9 [00:06<00:09,  1.66s/it]
+Capturing batches (bs=6 avail_mem=35.88 GB):  33%|███▎      | 3/9 [00:06<00:09,  1.66s/it]
+Capturing batches (bs=6 avail_mem=35.88 GB):  44%|████▍     | 4/9 [00:07<00:05,  1.19s/it]
+Capturing batches (bs=5 avail_mem=35.87 GB):  44%|████▍     | 4/9 [00:07<00:05,  1.19s/it]
+Capturing batches (bs=5 avail_mem=35.87 GB):  56%|█████▌    | 5/9 [00:07<00:03,  1.08it/s]
+Capturing batches (bs=4 avail_mem=35.86 GB):  56%|█████▌    | 5/9 [00:07<00:03,  1.08it/s]
+Capturing batches (bs=4 avail_mem=35.86 GB):  67%|██████▋   | 6/9 [00:08<00:03,  1.00s/it]
+Capturing batches (bs=3 avail_mem=35.83 GB):  67%|██████▋   | 6/9 [00:08<00:03,  1.00s/it]
+Capturing batches (bs=3 avail_mem=35.83 GB):  78%|███████▊  | 7/9 [00:09<00:01,  1.21it/s]
+Capturing batches (bs=2 avail_mem=35.82 GB):  78%|███████▊  | 7/9 [00:09<00:01,  1.21it/s]
+Capturing batches (bs=2 avail_mem=35.82 GB):  89%|████████▉ | 8/9 [00:24<00:05,  5.50s/it]
+Capturing batches (bs=1 avail_mem=35.80 GB):  89%|████████▉ | 8/9 [00:24<00:05,  5.50s/it]
+Capturing batches (bs=1 avail_mem=35.80 GB): 100%|██████████| 9/9 [00:26<00:00,  4.21s/it]
+Capturing batches (bs=1 avail_mem=35.80 GB): 100%|██████████| 9/9 [00:26<00:00,  2.90s/it]
+[2026-09-16 01:43:38] DFLASH selector decode folded into the draft cuda graph (sampling_enabled=True).
+Capturing batches (bs=9 avail_mem=35.79 GB):   0%|          | 0/9 [00:00<?, ?it/s][2026-09-16 01:43:38] Running FlashInfer autotune with cache: /root/.cache/sglang/flashinfer/autotune/0.6.18/sm103/a56a1c60a41e8c20/rank_tp0_pp0_dp0.json
+Capturing batches (bs=9 avail_mem=35.79 GB):  11%|█         | 1/9 [00:18<02:27, 18.46s/it]
+Capturing batches (bs=8 avail_mem=35.76 GB):  11%|█         | 1/9 [00:18<02:27, 18.46s/it]
+Capturing batches (bs=7 avail_mem=35.76 GB):  11%|█         | 1/9 [00:18<02:27, 18.46s/it]
+Capturing batches (bs=6 avail_mem=35.76 GB):  11%|█         | 1/9 [00:18<02:27, 18.46s/it]
+Capturing batches (bs=5 avail_mem=35.76 GB):  11%|█         | 1/9 [00:18<02:27, 18.46s/it]
+Capturing batches (bs=5 avail_mem=35.76 GB):  56%|█████▌    | 5/9 [00:18<00:11,  2.78s/it]
+Capturing batches (bs=4 avail_mem=35.76 GB):  56%|█████▌    | 5/9 [00:18<00:11,  2.78s/it]
+Capturing batches (bs=3 avail_mem=35.76 GB):  56%|█████▌    | 5/9 [00:18<00:11,  2.78s/it]
+Capturing batches (bs=2 avail_mem=35.76 GB):  56%|█████▌    | 5/9 [00:18<00:11,  2.78s/it]
+Capturing batches (bs=1 avail_mem=35.76 GB):  56%|█████▌    | 5/9 [00:18<00:11,  2.78s/it]
+Capturing batches (bs=1 avail_mem=35.76 GB): 100%|██████████| 9/9 [00:19<00:00,  1.37s/it]
+Capturing batches (bs=1 avail_mem=35.76 GB): 100%|██████████| 9/9 [00:19<00:00,  2.16s/it]
+[2026-09-16 01:43:59] DFLASH sampling pre-warm: borrowing=False bs=9 peak=123047936 B headroom=162077696 B

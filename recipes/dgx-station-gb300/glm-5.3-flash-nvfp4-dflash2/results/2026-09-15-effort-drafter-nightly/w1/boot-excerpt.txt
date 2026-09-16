@@ -1,0 +1,19 @@
+[2026-09-15 19:15:18] DFLASH fa4 draft: overriding KV cache dtype torch.float8_e4m3fn -> torch.bfloat16 (fa4 needs K.dtype == Q.dtype; cannot read the target's quantized KV).
+[2026-09-15 19:15:22] Load weight begin. avail mem=248.87 GB
+[2026-09-15 19:16:16] Load weight end. elapsed=53.73 s, type=Glm5NextForConditionalGeneration, quant=modelopt_fp4, quant_algo=NVFP4, avail mem=71.90 GB, mem usage=176.97 GB.
+[2026-09-15 19:16:23] Load weight begin. avail mem=71.77 GB
+[2026-09-15 19:16:23] Load weight end. elapsed=0.24 s, type=DFlash2DraftModel, avail mem=69.09 GB, mem usage=2.68 GB.
+[2026-09-15 19:16:23] DFLASH fa4 draft: overriding KV cache dtype torch.float8_e4m3fn -> torch.bfloat16 (fa4 needs K.dtype == Q.dtype; cannot read the target's quantized KV).
+[2026-09-15 19:16:23] DFLASH block size mismatch: using speculative_num_draft_tokens=7 but draft config block_size=8.
+[2026-09-15 19:16:23] Initialized DFLASH draft runner. attention_backend=fa4, model=DFlash2DraftModel, block_size=7, draft_window_size=None, compact_cache=False
+[2026-09-15 19:16:23] DFLASH draft runner ready. mask_token=<|MASK|>, mask_token_id=154856, mask_token_id_override=154856, noise_embed_scale=1.0
+[2026-09-15 19:16:23] DFLASH fused KV materialization enabled. n_layers=5, num_kv_heads=8, head_dim=128
+[2026-09-15 19:16:23] Mamba Cache is allocated. max_mamba_cache_size: 48, conv_state size: 0.24GB, ssm_state size: 6.70GB intermediate_ssm_state_cache size: 9.57GB intermediate_conv_window_cache size: 0.34GB 
+[2026-09-15 19:16:23] KV Cache is allocated. dtype: torch.float8_e4m3fn, #tokens: 575808, KV size: 3.80 GB
+[2026-09-15 19:16:25] KV Cache is allocated. dtype: torch.bfloat16, #tokens: 575808, K size: 5.49 GB, V size: 5.49 GB
+[2026-09-15 19:16:34] Overriding draft attention backend to fa4.
+[2026-09-15 19:19:59] DFLASH selector decode folded into the draft cuda graph (sampling_enabled=True).
+[2026-09-15 19:19:59] Capture draft verify CUDA graph begin. backend=full, num_tokens_per_req=7, bs=[1, 2, 3, 4, 5, 6, 7, 8, 9], avail mem=35.78 GB
+[2026-09-15 19:20:20] Capture draft verify CUDA graph end. elapsed=20.51 s, mem usage=0.04 GB, avail mem=35.75 GB.
+[2026-09-15 19:20:21] DFLASH sampling pre-warm: borrowing=False bs=9 peak=123047936 B headroom=162077696 B
+[2026-09-15 19:20:21] Engine startup timings (s): load_weight=53.97, kv_cache_allocation=1.88, scheduler_e2e=310.49, cuda_graph={prefill=0.00, decode=0.00, target_verify=26.99, draft_prefill=0.00, draft_decode=20.51, draft_extend=0.00}, tokenizer_e2e=319.29
