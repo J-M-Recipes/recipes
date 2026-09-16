@@ -20,7 +20,7 @@ PROMPTS=[
 ]
 def chat(prompt):
     p={"model":MODEL,"messages":[{"role":"user","content":prompt}],"max_tokens":256,"temperature":0,
-       "tools":TOOLS,"chat_template_kwargs":{"enable_thinking":False}}
+       "tools":TOOLS,"chat_template_kwargs":{"reasoning_effort":os.getenv("EFFORT","low")}}
     req=urllib.request.Request(BASE+"/chat/completions",data=json.dumps(p).encode(),headers=H)
     return json.load(urllib.request.urlopen(req,timeout=120))
 ok=0

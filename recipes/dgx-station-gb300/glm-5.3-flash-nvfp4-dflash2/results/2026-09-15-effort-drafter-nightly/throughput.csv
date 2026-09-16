@@ -1,0 +1,62 @@
+run_id,config,metric,concurrency,value,unit,spread_pct,method,source
+2026-09-15,W0 (09-11 image 00143e9c + DFlash2 7d74 b7 mamba48 1M),C1 recipe-method effort=low,1,197.1,tok/s,,history essay 512 answer-only median of 3,w0/c1-low.txt
+2026-09-15,W0,C1 recipe-method effort=max,1,257.7,tok/s,,history essay 512 thinking counted median of 3; reproduces 09-11 published 252.5,w0/c1-max.txt
+2026-09-15,W0,C1 code 400 effort=low,1,282.0,tok/s,,median of 3,w0/c1-low.txt
+2026-09-15,W0,C1 prose 300 effort=low,1,147.4,tok/s,,median of 3,w0/c1-low.txt
+2026-09-15,W0,C1 shell 200 effort=low,1,160.7,tok/s,,median of 3,w0/c1-low.txt
+2026-09-15,W0,DFlash2 accept rate effort=low,1,0.41,rate,,7-class mean; accept len 3.48; prose 0.17 code 0.48 json 0.67 math 0.61 agentic 0.41,w0/accept-low.txt
+2026-09-15,W0,DFlash2 accept rate effort=max,1,0.40,rate,,7-class mean; accept len 3.42; prose 0.29 code 0.41 math 0.66 — matches 09-11 published rows (which were effort max),w0/accept-max.txt
+2026-09-15,W1 (W0 + drafter bf582e4e),C1 recipe-method effort=low,1,197.5,tok/s,,median of 3,w1/c1-low.txt
+2026-09-15,W1,C1 recipe-method effort=max,1,245.4,tok/s,,median of 3,w1/c1-max.txt
+2026-09-15,W1,DFlash2 accept rate effort=low,1,0.39,rate,,7-class mean; accept len 3.36; FAIL win bar (need 0.46 or C1 207); drafter kept at 7d74cdd8,w1/accept-low.txt
+2026-09-15,W1,DFlash2 accept rate effort=max,1,0.39,rate,,7-class mean,w1/accept-max.txt
+2026-09-15,W2 (nightly 20260915-8874c51a + DFlash2 7d74 b7 mamba48 1M),C1 recipe-method effort=low,1,202.7,tok/s,0.6,history essay 512 answer-only median of 3,w2/c1-low.txt
+2026-09-15,W2,C1 recipe-method effort=max,1,265.3,tok/s,0.5,thinking counted median of 3,w2/c1-max.txt
+2026-09-15,W2,C1 code 400 effort=low,1,289.3,tok/s,0.1,median of 3,w2/c1-low.txt
+2026-09-15,W2,C1 prose 300 effort=low,1,151.4,tok/s,0.4,median of 3,w2/c1-low.txt
+2026-09-15,W2,C1 shell 200 effort=low,1,162.4,tok/s,1.1,median of 3,w2/c1-low.txt
+2026-09-15,W2,DFlash2 accept rate effort=low,1,0.42,rate,,7-class mean; accept len 3.50; prose 0.17 code 0.49 json 0.67 math 0.62 agentic 0.41,w2/accept-low.txt
+2026-09-15,W2,DFlash2 accept rate effort=max,1,0.40,rate,,7-class mean; accept len 3.40,w2/accept-max.txt
+2026-09-15,W2,tool gate,,10/10,parsed tool_calls,,tool_harness.py x2 effort low,w2/tool-1.txt
+2026-09-15,W2,Hermes harness,,10/10,tool turns,,custom[glm53] repointed to glm-5.3-flash reasoning_effort low,w2/hermes-10.txt
+2026-09-15,W2,mamba pool,,9.57,GB,,intermediate_ssm_state_cache for 48 slots (ssm_state 6.70 GB; conv 0.24; conv window 0.34); max_running_requests 9,w2/boot-excerpt.txt
+2026-09-15,W2,KV pool,,577024,tokens,,fp8 indexer 3.81 GB + bf16 MLA K 5.50 / V 5.50 GB,w2/boot-excerpt.txt
+2026-09-15,W3 (W2 + SGLANG_OPT_FUSED_KDA_VERIFY=1),C1 recipe-method effort=low,1,200.5,tok/s,4.4,median of 3; FAIL bar 212.8; axis engaged per boot log,w3/c1-low.txt
+2026-09-15,W3,DFlash2 accept rate effort=low,1,0.42,rate,,accept len 3.52; unchanged,w3/accept-low.txt
+2026-09-15,W3,greedy equivalence vs W2,1,1/20,prompts identical,,W2-vs-W2 20/20; fused verify diverges from char 4 on 19/20 — CLOSED,w3/greedy-w2-vs-w3.txt
+2026-09-15,W3,C8 aggregate,8,635.1,tok/s,5,after rewarm (first pass 107% void),w3/knee-c8-rerun.txt
+2026-09-15,W6c-b7 (W2 knobs; same-session control),C1 recipe-method effort=low,1,202.6,tok/s,2.6,median of 3; reproduces W2 202.7,w6c-b7/c1-low.txt
+2026-09-15,W6c-b7,C1 prose 300 effort=low,1,151.3,tok/s,0.3,median of 3,w6c-b7/c1-low.txt
+2026-09-15,W6c-b7,C1 code 400 effort=low,1,289.0,tok/s,0.1,median of 3,w6c-b7/c1-low.txt
+2026-09-15,W6c-b7,DFlash2 accept rate effort=low,1,0.41,rate,,accept len 3.46,w6c-b7/accept-low.txt
+2026-09-15,W6c-b6 (block 6),C1 recipe-method effort=low,1,207.0,tok/s,2.4,+2.2% vs b7; FAIL bar 208.8,w6c-b6/c1-low.txt
+2026-09-15,W6c-b6,C1 prose 300 effort=low,1,158.0,tok/s,0.1,+4.4% vs b7,w6c-b6/c1-low.txt
+2026-09-15,W6c-b6,C1 code 400 effort=low,1,286.7,tok/s,0.2,-0.8% vs b7,w6c-b6/c1-low.txt
+2026-09-15,W6c-b6,DFlash2 accept rate effort=low,1,0.45,rate,,accept len 3.26; greedy 20/20 vs W2; tools 10/10 x2,w6c-b6/accept-low.txt
+2026-09-15,W6c-b5 (block 5),C1 recipe-method effort=low,1,212.3,tok/s,0.9,+4.8% vs b7; passes 208.8,w6c-b5/c1-low.txt
+2026-09-15,W6c-b5,C1 prose 300 effort=low,1,156.7,tok/s,0.3,+3.6% vs b7,w6c-b5/c1-low.txt
+2026-09-15,W6c-b5,C1 code 400 effort=low,1,271.1,tok/s,0.0,-6.2% vs b7 — outside -6% tolerance; block 7 kept,w6c-b5/c1-low.txt
+2026-09-15,W6c-b5,DFlash2 accept rate effort=low,1,0.51,rate,,accept len 3.03; greedy 20/20; tools 10/10 x2,w6c-b5/accept-low.txt
+2026-09-15,W6c-b5,C8 aggregate,8,775.9,tok/s,3,only valid C8 in W6c (b6/b7 rows void: leaked rep 113-116%),w6c-b5/knee-c8.txt
+2026-09-16,W5-ctrl (W2 knobs; control for W4/W5/W7/W8),C1 recipe-method effort=low,1,201.0,tok/s,0.9,median of 3,w5-ctrl/c1-low.txt
+2026-09-16,W5-ctrl,C1 prose 300 effort=low,1,150.5,tok/s,,median of 3,w5-ctrl/c1-low.txt
+2026-09-16,W5-ctrl,C1 code 400 effort=low,1,287.0,tok/s,,median of 3,w5-ctrl/c1-low.txt
+2026-09-16,W5-ctrl,C1 shell 200 effort=low,1,158.6,tok/s,,median of 3,w5-ctrl/c1-low.txt
+2026-09-16,W5-ctrl,DFlash2 accept rate effort=low,1,0.41,rate,,accept len 3.48,w5-ctrl/accept-low.txt
+2026-09-16,W5-ctrl,C8 aggregate,8,732.3,tok/s,6,clean block-7 C8 after rewarm (first pass 112% void); replaces void W6c-b7 row,w5-ctrl/knee-c8-rerun.txt
+2026-09-16,W5-ctrl,mamba pool,,9.57,GB,,intermediate_ssm_state_cache @48 slots; the buffer W5 targeted,w5-ctrl/boot-excerpt.txt
+2026-09-16,W5 (--enable-linear-replayssm-spec),boot,,REJECTED,,,ValueError: replayssm-spec with DFLASH requires a KDA (kimi_linear) model; got non-KDA — kv_cache_configurator.py:1118; CLOSED no retry path,w5-replayssm-boot-reject.txt
+2026-09-16,W4 (W5-ctrl + --dsa-prefill-backend trtllm --dsa-decode-backend trtllm),KV pool,,577024,tokens,,IDENTICAL to control: fp8 indexer 3.81 + bf16 MLA K 5.50 / V 5.50 GB — flags are no-op on glm5_next; CLOSED,w4/boot-excerpt.txt
+2026-09-16,W4,C1 recipe-method effort=low,1,202.1,tok/s,3.1,median of 3,w4/c1-low.txt
+2026-09-16,W4,C8 aggregate,8,720.7,tok/s,7,after rewarm,w4/knee-c8-rerun.txt
+2026-09-16,W4,KL vs FP8 oracle,,0.1360,mean |dlogp|,,top-1 0.8439; identical to 09-11 baseline 0.136; greedy 20/20; tf p99 0.0,w4/kl-cmp.txt
+2026-09-16,W7 (native MTP NextN layers.45; EAGLE steps5 topk1 draft6 no adaptive; no DFlash2),C1 recipe-method effort=low,1,186.4,tok/s,2.7,-7.3% vs control; FAIL bar (>= 201 and accept >= 4.0),w7/c1-low.txt
+2026-09-16,W7,C1 prose 300 effort=low,1,144.7,tok/s,,-3.9%,w7/c1-low.txt
+2026-09-16,W7,C1 code 400 effort=low,1,228.5,tok/s,,-20.4%,w7/c1-low.txt
+2026-09-16,W7,C1 shell 200 effort=low,1,143.0,tok/s,,-9.8%,w7/c1-low.txt
+2026-09-16,W7,NextN accept rate effort=low,1,0.43,rate,,accept len 3.16 natural (NOT ~1.0: #36829 not live on this NVFP4 path); prose 0.20 code 0.45 json 0.73 math 0.58 agentic 0.43; tools 10/10 x2; greedy 20/20; tf p99 0.0,w7/accept-low.txt
+2026-09-16,W7,C8 aggregate,8,712.0,tok/s,6,after rewarm; -2.8% vs control,w7/knee-c8-rerun.txt
+2026-09-16,W7,NextN weights,,15.38,GB,,vs DFlash2 drafter 2.68 GB; KV pool 554432 tokens (-3.9%); intermediate ssm 8.20 GB; no memory win — CLOSED,w7/boot-excerpt.txt
+2026-09-16,W8 (W5-ctrl + --moe-runner-backend flashinfer_trtllm),C1 recipe-method effort=low,1,201.6,tok/s,4.6,median of 3; flat,w8/c1-low.txt
+2026-09-16,W8,C8 aggregate,8,755.8,tok/s,8,+3.2% vs control — inside rep spread; not a finding,w8/knee-c8-rerun.txt
+2026-09-16,W8,KL vs FP8 oracle,,0.1360,mean |dlogp|,,identical to W4 to 4 digits; greedy 20/20; tf p99 0.0 — backend either did not engage or is numerically identical; CLOSED one attempt,w8/kl-cmp.txt

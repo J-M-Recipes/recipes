@@ -4,7 +4,8 @@
 Uses docker logs --since to window each run. Run on the box."""
 import json, os, subprocess, time, urllib.request, statistics, sys
 BASE=os.getenv("BASE_URL","http://127.0.0.1:30001/v1"); MODEL=os.getenv("MODEL","glm-5.3-flash")
-CONT=os.getenv("CONT","glmf-g2-new-new-dflash"); TAG=os.getenv("TAG","x")
+CONT=os.getenv("CONT","glmf-daily"); TAG=os.getenv("TAG","x")
+EFFORT=os.getenv("EFFORT","low")
 H={"Content-Type":"application/json"}
 CLASSES={
  "prose":   ("Write a 350-word essay on why engineers should keep failure ledgers. No headings, no lists.",320),
@@ -16,13 +17,18 @@ CLASSES={
  "agentic": ("You are an SRE. A pod is CrashLoopBackOff. Walk through, as a numbered runbook with exact kubectl commands, how you would diagnose it. Be concrete.",400),
 }
 def run(prompt,mt):
-    p={"model":MODEL,"messages":[{"role":"user","content":prompt}],"max_tokens":mt,"temperature":0,"chat_template_kwargs":{"enable_thinking":False}}
+    p={"model":MODEL,"messages":[{"role":"user","content":prompt}],"max_tokens":mt,"temperature":0,"chat_template_kwargs":{"reasoning_effort":EFFORT}}
     t0=time.time(); r=json.load(urllib.request.urlopen(urllib.request.Request(BASE+"/chat/completions",data=json.dumps(p).encode(),headers=H),timeout=300))
     return r["usage"]["completion_tokens"], time.time()-t0
+def cont_clock():
+    p=subprocess.run(["docker","exec",CONT,"date","-u","+%Y-%m-%dT%H:%M:%SZ"],capture_output=True,text=True)
+    s=(p.stdout or "").strip()
+    return s if p.returncode==0 and s else None
 def scrape(since_iso):
-    out=subprocess.run(["docker","logs","--since",since_iso,CONT],capture_output=True,text=True).stdout+subprocess.run(["docker","logs","--since",since_iso,CONT],capture_output=True,text=True).stderr
+    out=subprocess.run(["docker","logs","--since",since_iso,CONT],capture_output=True,text=True)
+    blob=(out.stdout or "")+(out.stderr or "")
     lens=[];rates=[]
-    for line in out.replace("\r","\n").splitlines():
+    for line in blob.replace("\r","\n").splitlines():
         if "Decode batch" in line and "accept len:" in line:
             try:
                 lens.append(float(line.split("accept len:")[1].split(",")[0])); rates.append(float(line.split("accept rate:")[1].split(",")[0]))
@@ -32,9 +38,9 @@ rows=[]
 for name,(prompt,mt) in CLASSES.items():
     run(prompt,64)  # warm the prefix/kernels lightly, ignore
     time.sleep(1.5)
-    t_start=time.time()
+    since=cont_clock() or f"{2}s"
     n,dt=run(prompt,mt); time.sleep(1.0)
-    lens,rates=scrape(f"{int(time.time()-t_start)+2}s")
+    lens,rates=scrape(since)
     al=statistics.mean(lens) if lens else float("nan"); ar=statistics.mean(rates) if rates else float("nan")
     rows.append((name,n,dt,n/dt,al,ar,len(lens)))
     print(f"[{TAG}] {name:8s} {n:4d} tok {dt:5.2f}s -> {n/dt:6.1f} tok/s | accept len {al:.2f} rate {ar:.2f} (n_lines={len(lens)})",flush=True)

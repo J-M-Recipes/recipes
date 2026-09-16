@@ -1,0 +1,56 @@
+/sgl-workspace/sglang/python/sglang/launch_server.py:71: UserWarning: 'python -m sglang.launch_server' is still supported, but 'sglang serve' is the recommended entrypoint.
+[2026-09-16 03:02:11] Use dsa attention backend for DeepSeek with DSA.
+[2026-09-16 03:02:11] Setting page size to 64 for DeepSeek DSA.
+[2026-09-16 03:02:11] Set dense attention kv len threshold to model index_topk=2048 for DeepSeek with DSA.
+[2026-09-16 03:02:11] Set DSA backends for fp8_e4m3 KV Cache: prefill=trtllm, decode=trtllm.
+[2026-09-16 03:02:11] Use flashinfer_trtllm as MoE runner backend on sm100 for DeepseekV3ForCausalLM
+[2026-09-16 03:02:11] FlashInfer TRTLLM MoE is enabled. --disable-shared-experts-fusion is automatically set.
+[2026-09-16 03:02:33] Load weight begin. avail mem=248.90 GB
+[2026-09-16 03:03:25] Load weight end. elapsed=52.44 s, type=Glm5NextForConditionalGeneration, quant=modelopt_fp4, quant_algo=NVFP4, avail mem=71.93 GB, mem usage=176.97 GB.
+[2026-09-16 03:03:32] Load weight begin. avail mem=71.81 GB
+[2026-09-16 03:03:42] Load weight end. elapsed=10.47 s, type=Glm5NextForConditionalGenerationNextN, quant=modelopt_fp4, quant_algo=NVFP4, avail mem=56.42 GB, mem usage=15.38 GB.
+[2026-09-16 03:03:43] max_running_requests is capped to 9 by the mamba state cache (max_mamba_cache_size=48, 5 state slots per request). To raise it: increase --mamba-full-memory-ratio or --max-mamba-cache-size, or halve the state size with --mamba-ssm-dtype bfloat16.
+[2026-09-16 03:03:43] Mamba Cache is allocated. max_mamba_cache_size: 48, conv_state size: 0.24GB, ssm_state size: 6.70GB intermediate_ssm_state_cache size: 8.20GB intermediate_conv_window_cache size: 0.29GB 
+[2026-09-16 03:03:43] KV Cache is allocated. dtype: torch.float8_e4m3fn, #tokens: 554432, KV size: 3.66 GB
+[2026-09-16 03:03:43] KV Cache is allocated. dtype: torch.float8_e4m3fn, #tokens: 554432, KV size: 0.33 GB
+[2026-09-16 03:03:52] DSA KPool metadata fusion enabled (pool=4)
+[2026-09-16 03:03:52] DSA KPool metadata fusion enabled (pool=4)
+[2026-09-16 03:03:52] DSA KPool metadata fusion enabled (pool=4)
+[2026-09-16 03:03:52] DSA KPool metadata fusion enabled (pool=4)
+[2026-09-16 03:03:52] DSA KPool metadata fusion enabled (pool=4)
+[2026-09-16 03:03:52] DSA KPool metadata fusion enabled (pool=4)
+[2026-09-16 03:03:52] DSA KPool metadata fusion enabled (pool=4)
+/opt/sglang/lib/python3.12/site-packages/triton/language/core.py:2284: UserWarning: tl.make_block_ptr is deprecated. Use TensorDescriptor or tl.make_tensor_descriptor instead.
+/opt/sglang/lib/python3.12/site-packages/torch/_inductor/compile_fx.py:321: UserWarning: TensorFloat32 tensor cores for float32 matrix multiplication available but not enabled. Consider setting `torch.set_float32_matmul_precision('high')` for better performance.
+[AutoTuner]: Tuning trtllm_batch_decode_mla:   0%|          | 0/21 [00:00<?, ?profile/s]
+[AutoTuner]: Tuning trtllm_batch_decode_mla:  57%|█████▋    | 12/21 [00:00<00:00, 118.16profile/s]
+[AutoTuner]: Tuning trtllm_batch_decode_mla: 100%|██████████| 21/21 [00:00<00:00, 108.66profile/s]
+[AutoTuner]: Tuning flashinfer::trtllm_fp4_block_scale_moe:   0%|          | 0/7 [00:00<?, ?profile/s]
+[AutoTuner]: Tuning flashinfer::trtllm_fp4_block_scale_moe:  14%|█▍        | 1/7 [00:03<00:21,  3.62s/profile]
+[AutoTuner]: Tuning flashinfer::trtllm_fp4_block_scale_moe:  29%|██▊       | 2/7 [00:07<00:18,  3.64s/profile]
+[AutoTuner]: Tuning flashinfer::trtllm_fp4_block_scale_moe:  43%|████▎     | 3/7 [00:10<00:13,  3.43s/profile]
+[AutoTuner]: Tuning flashinfer::trtllm_fp4_block_scale_moe:  57%|█████▋    | 4/7 [00:14<00:10,  3.66s/profile]
+[AutoTuner]: Tuning flashinfer::trtllm_fp4_block_scale_moe:  71%|███████▏  | 5/7 [00:19<00:08,  4.32s/profile]
+[AutoTuner]: Tuning flashinfer::trtllm_fp4_block_scale_moe:  86%|████████▌ | 6/7 [00:27<00:05,  5.35s/profile]
+[AutoTuner]: Tuning flashinfer::trtllm_fp4_block_scale_moe: 100%|██████████| 7/7 [00:36<00:00,  6.47s/profile]
+[AutoTuner]: Tuning flashinfer::trtllm_fp4_block_scale_moe: 100%|██████████| 7/7 [00:36<00:00,  5.16s/profile]
+[2026-09-16 03:07:13] Capture draft decode CUDA graph begin. backend=full, num_tokens_per_req=1, bs=[1, 2, 3, 4, 5, 6, 7, 8, 9], avail mem=36.96 GB
+[AutoTuner]: Tuning trtllm_batch_decode_mla:   0%|          | 0/21 [00:00<?, ?profile/s][A
+[AutoTuner]: Tuning trtllm_batch_decode_mla:  86%|████████▌ | 18/21 [00:00<00:00, 171.40profile/s][A
+[AutoTuner]: Tuning trtllm_batch_decode_mla: 100%|██████████| 21/21 [00:00<00:00, 137.54profile/s]
+[AutoTuner]: Tuning flashinfer::trtllm_bf16_moe:   0%|          | 0/5 [00:00<?, ?profile/s][A
+[AutoTuner]: Tuning flashinfer::trtllm_bf16_moe:  20%|██        | 1/5 [00:01<00:05,  1.41s/profile][A
+[AutoTuner]: Tuning flashinfer::trtllm_bf16_moe:  40%|████      | 2/5 [00:02<00:03,  1.31s/profile][A
+[AutoTuner]: Tuning flashinfer::trtllm_bf16_moe:  60%|██████    | 3/5 [00:04<00:02,  1.48s/profile][A
+[AutoTuner]: Tuning flashinfer::trtllm_bf16_moe:  80%|████████  | 4/5 [00:06<00:01,  1.80s/profile][A
+[AutoTuner]: Tuning flashinfer::trtllm_bf16_moe: 100%|██████████| 5/5 [00:09<00:00,  2.21s/profile][A
+[AutoTuner]: Tuning flashinfer::trtllm_bf16_moe: 100%|██████████| 5/5 [00:09<00:00,  1.91s/profile]
+[2026-09-16 03:07:30] Capture draft decode CUDA graph end. elapsed=16.76 s, mem usage=0.23 GB, avail mem=36.73 GB.
+[2026-09-16 03:07:30] Capture draft extend CUDA graph begin. backend=full, num_tokens_per_req=6, bs=[1, 2, 3, 4, 5, 6, 7, 8, 9], avail mem=36.73 GB
+[AutoTuner]: Tuning flashinfer::trtllm_bf16_moe:  71%|███████▏  | 5/7 [00:00<?, ?profile/s][A
+[AutoTuner]: Tuning flashinfer::trtllm_bf16_moe:  86%|████████▌ | 6/7 [00:03<00:03,  3.77s/profile][A
+[AutoTuner]: Tuning flashinfer::trtllm_bf16_moe: 100%|██████████| 7/7 [00:07<00:00,  3.86s/profile][A
+[AutoTuner]: Tuning flashinfer::trtllm_bf16_moe: 100%|██████████| 7/7 [00:07<00:00,  3.85s/profile]
+[2026-09-16 03:07:39] Capture draft extend CUDA graph end. elapsed=9.36 s, mem usage=0.35 GB, avail mem=36.38 GB.
+[2026-09-16 03:07:40] Engine startup timings (s): load_weight=62.91, kv_cache_allocation=0.33, scheduler_e2e=317.16, cuda_graph={prefill=0.00, decode=0.00, target_verify=26.56, draft_prefill=0.00, draft_decode=16.76, draft_extend=9.36}, tokenizer_e2e=325.69
+/sgl-workspace/sglang/python/sglang/srt/entrypoints/http_server.py:454: FastAPIDeprecationWarning: ORJSONResponse is deprecated, FastAPI now serializes data directly to JSON bytes via Pydantic when a return type or response model is set, which is faster and doesn't need a custom response class. Read more in the FastAPI docs: https://fastapi.tiangolo.com/advanced/custom-response/#orjson-or-response-model and https://fastapi.tiangolo.com/tutorial/response-model/

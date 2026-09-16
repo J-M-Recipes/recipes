@@ -1,0 +1,65 @@
+W1 stop g7 2026-09-15T19:14:27Z
+glmf-g7-dflash-b7-m48-1M
+launched glmf-w1-draft-bf58 image=lmsysorg/sglang:nightly-dev-cu13-20260911-00143e9c spec=dflash kv=fp8_e4m3 mem=0.85 ctx=1048576 bs=16 extra=[--max-mamba-cache-size 48 --speculative-dflash-block-size 7] env=[-e TORCHINDUCTOR_COMPILE_THREADS=1]
+log: <box>/glmf/glmf-w1-draft-bf58.log
+ready 2026-09-15T19:20:26Z i=71
+=== boot excerpt ===
+[2026-09-15 19:15:18] DFLASH fa4 draft: overriding KV cache dtype torch.float8_e4m3fn -> torch.bfloat16 (fa4 needs K.dtype == Q.dtype; cannot read the target's quantized KV).
+[2026-09-15 19:15:22] Load weight begin. avail mem=248.87 GB
+[2026-09-15 19:16:16] Load weight end. elapsed=53.73 s, type=Glm5NextForConditionalGeneration, quant=modelopt_fp4, quant_algo=NVFP4, avail mem=71.90 GB, mem usage=176.97 GB.
+[2026-09-15 19:16:23] Load weight begin. avail mem=71.77 GB
+[2026-09-15 19:16:23] Load weight end. elapsed=0.24 s, type=DFlash2DraftModel, avail mem=69.09 GB, mem usage=2.68 GB.
+[2026-09-15 19:16:23] DFLASH fa4 draft: overriding KV cache dtype torch.float8_e4m3fn -> torch.bfloat16 (fa4 needs K.dtype == Q.dtype; cannot read the target's quantized KV).
+[2026-09-15 19:16:23] DFLASH block size mismatch: using speculative_num_draft_tokens=7 but draft config block_size=8.
+[2026-09-15 19:16:23] Initialized DFLASH draft runner. attention_backend=fa4, model=DFlash2DraftModel, block_size=7, draft_window_size=None, compact_cache=False
+[2026-09-15 19:16:23] DFLASH draft runner ready. mask_token=<|MASK|>, mask_token_id=154856, mask_token_id_override=154856, noise_embed_scale=1.0
+[2026-09-15 19:16:23] DFLASH fused KV materialization enabled. n_layers=5, num_kv_heads=8, head_dim=128
+[2026-09-15 19:16:23] Mamba Cache is allocated. max_mamba_cache_size: 48, conv_state size: 0.24GB, ssm_state size: 6.70GB intermediate_ssm_state_cache size: 9.57GB intermediate_conv_window_cache size: 0.34GB 
+[2026-09-15 19:16:23] KV Cache is allocated. dtype: torch.float8_e4m3fn, #tokens: 575808, KV size: 3.80 GB
+[2026-09-15 19:16:25] KV Cache is allocated. dtype: torch.bfloat16, #tokens: 575808, K size: 5.49 GB, V size: 5.49 GB
+[2026-09-15 19:16:34] Overriding draft attention backend to fa4.
+[2026-09-15 19:19:59] DFLASH selector decode folded into the draft cuda graph (sampling_enabled=True).
+[2026-09-15 19:19:59] Capture draft verify CUDA graph begin. backend=full, num_tokens_per_req=7, bs=[1, 2, 3, 4, 5, 6, 7, 8, 9], avail mem=35.78 GB
+[2026-09-15 19:20:20] Capture draft verify CUDA graph end. elapsed=20.51 s, mem usage=0.04 GB, avail mem=35.75 GB.
+[2026-09-15 19:20:21] DFLASH sampling pre-warm: borrowing=False bs=9 peak=123047936 B headroom=162077696 B
+[2026-09-15 19:20:21] Engine startup timings (s): load_weight=53.97, kv_cache_allocation=1.88, scheduler_e2e=310.49, cuda_graph={prefill=0.00, decode=0.00, target_verify=26.99, draft_prefill=0.00, draft_decode=20.51, draft_extend=0.00}, tokenizer_e2e=319.29
+[x] warm conc= 1: 5 agg
+[x] warm conc= 2: 272 agg
+[x] warm conc= 4: 60 agg
+[x] warm conc= 8: 68 agg
+{
+  "effort": "low",
+  "finish": "stop",
+  "reasoning_len": 15,
+  "content_len": 2,
+  "reasoning_tokens": null,
+  "completion_tokens": 11,
+  "reasoning_head": "15% of 240 = 36",
+  "content": "36",
+  "split_ok": true
+}
+[w1-low] recipe-method history-essay 512 effort=low: runs [196.5, 197.5, 197.5] median 197.5 (reasoning_tokens=None reasoning_len=0 content_len=2656)
+[w1-low] failure-ledger prose 300 effort=low: runs [138.5, 138.9, 137.8] median 138.5 (reasoning_tokens=None reasoning_len=0 content_len=1688)
+[w1-low] code 400 effort=low: runs [277.7, 278.4, 278.3] median 278.3 (reasoning_tokens=None reasoning_len=93 content_len=1317)
+[w1-low] shell-ops 200 effort=low: runs [157.8, 159.9, 159.9] median 159.9 (reasoning_tokens=None reasoning_len=0 content_len=139)
+[w1-low] prose     320 tok  2.26s ->  141.3 tok/s | accept len 1.89 rate 0.15 (n_lines=4)
+[w1-low] history   512 tok  3.43s ->  149.4 tok/s | accept len 2.12 rate 0.19 (n_lines=7)
+[w1-low] code      450 tok  1.65s ->  272.5 tok/s | accept len 3.39 rate 0.40 (n_lines=3)
+[w1-low] shell     300 tok  1.34s ->  224.4 tok/s | accept len 3.63 rate 0.44 (n_lines=2)
+[w1-low] json      400 tok  1.21s ->  330.5 tok/s | accept len 4.53 rate 0.58 (n_lines=2)
+[w1-low] math      340 tok  1.07s ->  317.5 tok/s | accept len 4.70 rate 0.61 (n_lines=2)
+[w1-low] agentic   400 tok  1.81s ->  221.5 tok/s | accept len 3.23 rate 0.37 (n_lines=3)
+[w1-low] MEAN accept len 3.36 rate 0.39  mean C1 236.7
+[w1-max] recipe-method history-essay 512 effort=max: runs [244.1, 245.4, 245.9] median 245.4 (reasoning_tokens=None reasoning_len=1793 content_len=0)
+[w1-max] failure-ledger prose 300 effort=max: runs [172.4, 172.2, 172.4] median 172.4 (reasoning_tokens=None reasoning_len=1530 content_len=0)
+[w1-max] code 400 effort=max: runs [248.7, 248.8, 248.8] median 248.8 (reasoning_tokens=None reasoning_len=1290 content_len=0)
+[w1-max] shell-ops 200 effort=max: runs [238.0, 238.2, 238.9] median 238.2 (reasoning_tokens=None reasoning_len=768 content_len=0)
+[w1-max] prose     320 tok  1.82s ->  175.5 tok/s | accept len 2.50 rate 0.25 (n_lines=3)
+[w1-max] history   512 tok  2.71s ->  189.2 tok/s | accept len 2.63 rate 0.27 (n_lines=6)
+[w1-max] code      450 tok  1.84s ->  244.5 tok/s | accept len 3.72 rate 0.45 (n_lines=3)
+[w1-max] shell     300 tok  1.55s ->  194.1 tok/s | accept len 3.29 rate 0.38 (n_lines=3)
+[w1-max] json      400 tok  1.66s ->  241.2 tok/s | accept len 3.56 rate 0.43 (n_lines=2)
+[w1-max] math      350 tok  1.23s ->  284.1 tok/s | accept len 4.58 rate 0.60 (n_lines=2)
+[w1-max] agentic   400 tok  1.96s ->  203.6 tok/s | accept len 3.10 rate 0.35 (n_lines=4)
+[w1-max] MEAN accept len 3.34 rate 0.39  mean C1 218.9
+W1 end 2026-09-15T19:23:53Z
