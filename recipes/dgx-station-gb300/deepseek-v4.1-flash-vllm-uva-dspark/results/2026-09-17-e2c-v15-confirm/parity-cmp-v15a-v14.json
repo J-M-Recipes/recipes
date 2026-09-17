@@ -1,0 +1,39 @@
+{
+ "label": "v15a vs v14",
+ "n": 50,
+ "exact": 49,
+ "miss": 1,
+ "misses": [
+  {
+   "id": "agent-tool-1",
+   "group": "agent",
+   "content_equal": false,
+   "tools_equal": true,
+   "first_div_char": 77,
+   "a_head": "I'll check both. Let me start with the Docker containers and disk space on the h",
+   "b_head": "I'll check both. Let me start with the Docker containers and disk space on that ",
+   "a_tools": [
+    {
+     "name": "terminal",
+     "arguments": "{\"command\": \"ssh 192.0.2.9 \\\"docker ps -a\\\" 2>&1\"}"
+    },
+    {
+     "name": "terminal",
+     "arguments": "{\"command\": \"ssh 192.0.2.9 \\\"df -h /\\\" 2>&1\"}"
+    }
+   ],
+   "b_tools": [
+    {
+     "name": "terminal",
+     "arguments": "{\"command\": \"ssh 192.0.2.9 \\\"docker ps -a\\\" 2>&1\"}"
+    },
+    {
+     "name": "terminal",
+     "arguments": "{\"command\": \"ssh 192.0.2.9 \\\"df -h /\\\" 2>&1\"}"
+    }
+   ],
+   "a_finish": "tool_calls",
+   "b_finish": "tool_calls"
+  }
+ ]
+}

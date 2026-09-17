@@ -4,9 +4,9 @@
 
 ## Release notes — Pin Hot Experts, v15 (2026-09-17)
 
-v14 launch plus a bind-mounted hook that re-homes each MoE layer's experts by measured usage (295 hot rows in HBM, 89 cold rows pinned in Grace) and runs the MoE as two `do_finalize=False` routed-kernel calls plus one fp32-FMA finalize. Bit-identical to v14 (8/8 greedy prompts; acceptance rates identical on prose/structured/code/shell). Same-window pair vs v14: C1 89.3→153.1 (+71%), C8 308→701, C16 414→809, prose fixture 91→153. KV 4.75 GiB, pinned 62.3 GiB, 21 new autotune profiles (12 min). Design note: [vllm-pin-hot-experts](https://al-engr.com/vllm-pin-hot-experts.html). Bundle: [`results/2026-09-17-e2b-pin-hot-experts-v15/`](results/2026-09-17-e2b-pin-hot-experts-v15/).
+v14 launch plus a bind-mounted hook that re-homes each MoE layer's experts by measured usage (295 hot rows in HBM, 89 cold rows pinned in Grace) and runs the MoE as two `do_finalize=False` routed-kernel calls plus one fp32-FMA finalize. Bit-identical to v14 (8/8 greedy prompts; acceptance rates identical on prose/structured/code/shell). **Confirmed** on two same-window pairs (2026-09-17): C1 88.7→153.3 (+72.7%, four runs within 0.4), C8 305→705, C16 386–417→~955 (six of seven reps; one 667). First pair (E2b): C1 89.3→153.1 (+71%), C8 308→701, C16 414→809, prose fixture 91→153. KV 4.75 GiB, pinned 62.3 GiB, 21 new autotune profiles (12 min). Design note: [vllm-pin-hot-experts](https://al-engr.com/vllm-pin-hot-experts.html). Confirm bundle: [`results/2026-09-17-e2c-v15-confirm/`](results/2026-09-17-e2c-v15-confirm/). First-pair bundle: [`results/2026-09-17-e2b-pin-hot-experts-v15/`](results/2026-09-17-e2b-pin-hot-experts-v15/).
 
-**Not yet done:** second same-window pair; ≥50-prompt parity + round-7 gauntlet; true cross-domain (the prose fixture was in the profile). **Corrections:** C16 moved ~2×, contrary to the "C1–C4 lever" expectation; autotune was 12 min, not 150.
+**Confirmed (E2c):** second same-window pair; 50-prompt parity (44/44 non-tool exact on every pair; tool-prompt jitter present v15-vs-v15 too); round-7 gauntlet 36/36; held-out math +41.4%, JP/DE −1.55% (wash). **Corrections:** C16 moved ~2×, contrary to the "C1–C4 lever" expectation; autotune was 12 min, not 150.
 
 ## Round 7 — three matched boot pairs (September 15, 2026)
 
@@ -137,7 +137,23 @@ FlashInfer autotunes the MXFP4 MoE kernels and caches the result under a hash of
 
 ### v15 — Pin Hot Experts (current)
 
-Same-window pair 2026-09-17 14:51–14:58 CDT, **one pair**. Knee prompt class: **prose**, temperature 0, 192 tokens (`knee.sh`: "Write a detailed paragraph about the number N"). C16 is slot-capped by `--max-num-seqs 16`; `max_running_requests` was not set. Bundle: [`results/2026-09-17-e2b-pin-hot-experts-v15/`](results/2026-09-17-e2b-pin-hot-experts-v15/). Design: [vllm-pin-hot-experts](https://al-engr.com/vllm-pin-hot-experts.html).
+#### Confirmed (E2c)
+
+Two same-window pairs 2026-09-17, v15a → v14 → v15b, knee ×2 each. Knee prompt class: **prose**, temperature 0, 192 tokens (`knee.sh`: "Write a detailed paragraph about the number N"). C16 is slot-capped by `--max-num-seqs 16`; `max_running_requests` was not set. Bundle: [`results/2026-09-17-e2c-v15-confirm/`](results/2026-09-17-e2c-v15-confirm/). Design: [vllm-pin-hot-experts](https://al-engr.com/vllm-pin-hot-experts.html).
+
+| | C1 | C8 | C16 |
+|---|--:|--:|--:|
+| v15a | 153.5 / 153.3 | 704.6 / 701.6 | 952.6 / 956.7 |
+| v14  | 88.7 / 88.8 | 304.7 / 305.8 | 385.5 / 417.3 |
+| v15b | 153.1 / 153.2 | 703.0 / 706.5 | 812.1 / 957.8 |
+
+C1 two-window v15 mean **153.28** vs v14 **88.74** = **+72.7%** (four runs within 0.4). C16 four v15 means 952.6 / 956.7 / 812.1 / 957.8; the 812 is one mixed pair (internal 667.4 / 956.8). Other six internal C16 reps 952–958.
+
+Held-out (streaming first→last token, 5×400 tok, not in the E2a profile): math/proof English **+41.4%** (129.78 → 183.5); non-English JP+DE essays **−1.55%** (93.02 → 91.58) — a wash vs the −1.5% bar (0.05 tok/s). Parity 50 greedy: non-tool **44/44** exact on every pair; tool-prompt jitter present v15-vs-v15 too. Gauntlet **36/36**.
+
+#### First pair (E2b) — one pair, kept
+
+Same-window pair 2026-09-17 14:51–14:58 CDT, **one pair**. Bundle: [`results/2026-09-17-e2b-pin-hot-experts-v15/`](results/2026-09-17-e2b-pin-hot-experts-v15/).
 
 | | C1 | C8 | C16 |
 |---|--:|--:|--:|
