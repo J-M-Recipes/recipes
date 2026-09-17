@@ -1,0 +1,33 @@
+config,concurrency_or_tokens,metric,value,unit,notes
+v15-pin-hot-experts,1,decode_agg,153.08783911506964,tok/s,"knee.sh prose prompts (Write a detailed paragraph about the number N), temperature 0, ignore_eos, 192 tokens; mean of 2 warm runs; same-window pair 2026-09-17 14:51-14:58 CDT vs v14 control 89.33485467404822 (+71.4%); max-num-seqs 16 so C16 is slot-capped; max_running_requests unset; raw e2b/knee-e2b-cand.json"
+v14-same-window-control,1,decode_agg,89.33485467404822,tok/s,"same pair; e2b/knee-e2b-ctrl.json; prose temperature 0"
+v15-pin-hot-experts,2,decode_agg,261.042397104089,tok/s,knee.sh prose; cand vs ctrl 124.95802892627546
+v14-same-window-control,2,decode_agg,124.95802892627546,tok/s,knee.sh prose
+v15-pin-hot-experts,4,decode_agg,411.1989920468509,tok/s,knee.sh prose; cand vs ctrl 173.3209046069768
+v14-same-window-control,4,decode_agg,173.3209046069768,tok/s,knee.sh prose
+v15-pin-hot-experts,8,decode_agg,701.433801792849,tok/s,knee.sh prose; cand vs ctrl 307.710037064556
+v14-same-window-control,8,decode_agg,307.710037064556,tok/s,knee.sh prose
+v15-pin-hot-experts,12,decode_agg,784.644020647112,tok/s,knee.sh prose; cand vs ctrl 362.936816176785
+v14-same-window-control,12,decode_agg,362.936816176785,tok/s,knee.sh prose
+v15-pin-hot-experts,16,decode_agg,809.0296784589829,tok/s,"knee.sh prose; cand vs ctrl 414.2770458053377; C16 cand runs 666.8/951.2 (spread real; both >> control 413/415); slot-capped by --max-num-seqs 16"
+v14-same-window-control,16,decode_agg,414.2770458053377,tok/s,knee.sh prose; slot-capped by --max-num-seqs 16
+v15-pin-hot-experts,1,agent_prose,169.0,tok/s,agent_fixture.sh; accept 29.7% bit-identical vs control 98.3
+v14-same-window-control,1,agent_prose,98.3,tok/s,agent_fixture.sh; accept 29.7%
+v15-pin-hot-experts,1,agent_structured,207.6,tok/s,agent_fixture.sh; accept 49.5% bit-identical vs control 123.0
+v14-same-window-control,1,agent_structured,123.0,tok/s,agent_fixture.sh; accept 49.5%
+v15-pin-hot-experts,1,agent_code,213.6,tok/s,agent_fixture.sh; accept 63.8% bit-identical vs control 153.9
+v14-same-window-control,1,agent_code,153.9,tok/s,agent_fixture.sh; accept 63.8%
+v15-pin-hot-experts,1,agent_shell_ops,250.3,tok/s,agent_fixture.sh; accept 90.8% bit-identical vs control 160.2
+v14-same-window-control,1,agent_shell_ops,160.2,tok/s,agent_fixture.sh; accept 90.8%
+v15-pin-hot-experts,1,agent_tool_json,182.1,tok/s,agent_fixture.sh; accept 87.8% vs control 180.4 / 89.7% (not -3%)
+v14-same-window-control,1,agent_tool_json,180.4,tok/s,agent_fixture.sh; accept 89.7%
+v15-pin-hot-experts,1,dspark_accept_weighted,59.6,percent,agent_fixture.sh five-category weighted; control 59.9
+v14-same-window-control,1,dspark_accept_weighted,59.9,percent,agent_fixture.sh
+v15-pin-hot-experts,1,prose_fixture,152.5,tok/s,"T5 prose fixture n=8; control 91.4; THIS FIXTURE WAS IN THE E2a PROFILE — in-domain, not a held-out cross-domain check"
+v14-same-window-control,1,prose_fixture,91.4,tok/s,T5 prose fixture n=8
+v15-pin-hot-experts,4,replay_c_mean,339.4,tok/s,"replay_c.py n=4 workers, mean of two runs 247.5/431.3; known instrument swing; direction matches knee"
+v14-same-window-control,4,replay_c_mean,196.65,tok/s,replay_c.py n=4; two runs 170.6/222.7
+v15-pin-hot-experts,-,kv_cache_available,4.75,GiB,v14 same-window 4.89; within 0.5 GiB bar
+v15-pin-hot-experts,-,pinned_expert,62.33,GiB,HBM_expert 206.61 GiB; expect 206.6/62.4
+v15-pin-hot-experts,-,autotune_new_profiles,21,count,hash 9ac7b387 Loaded 210 then Saved 231; ~12 min (not 150)
+v15-pin-hot-experts,-,parity_greedy_exact,8,prompts,cand vs ctrl 8/8 content+tool-args exact at T=0 agent-fixture C1; control vs itself also 8/8 (tool_call ids differ on both)

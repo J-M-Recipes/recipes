@@ -1,6 +1,12 @@
 # DeepSeek-V4.1-Flash at 1M context on one DGX Station GB300
 
-**Reference release: Sixty-K Agent, v14** (2026-09-15; configuration unchanged by the evidence correction below) · Historical **v13: 90 tok/s single-stream prose · 140–160 tok/s on agent/code text · 429 agg tok/s at C16** (v12: 89 / 140–160 / 311 · v11: 82 / 130–150 / 287) · 972K-token prompt prefilled in 85 s · Hermes tool-calling 10/10
+**Reference release: Pin Hot Experts, v15** (2026-09-17) · previous **v14 Sixty-K Agent** (retired 2026-09-17) · Historical **v13: 90 tok/s single-stream prose · 140–160 tok/s on agent/code text · 429 agg tok/s at C16** (v12: 89 / 140–160 / 311 · v11: 82 / 130–150 / 287) · 972K-token prompt prefilled in 85 s · Hermes tool-calling 10/10
+
+## Release notes — Pin Hot Experts, v15 (2026-09-17)
+
+v14 launch plus a bind-mounted hook that re-homes each MoE layer's experts by measured usage (295 hot rows in HBM, 89 cold rows pinned in Grace) and runs the MoE as two `do_finalize=False` routed-kernel calls plus one fp32-FMA finalize. Bit-identical to v14 (8/8 greedy prompts; acceptance rates identical on prose/structured/code/shell). Same-window pair vs v14: C1 89.3→153.1 (+71%), C8 308→701, C16 414→809, prose fixture 91→153. KV 4.75 GiB, pinned 62.3 GiB, 21 new autotune profiles (12 min). Design note: [vllm-pin-hot-experts](https://al-engr.com/vllm-pin-hot-experts.html). Bundle: [`results/2026-09-17-e2b-pin-hot-experts-v15/`](results/2026-09-17-e2b-pin-hot-experts-v15/).
+
+**Not yet done:** second same-window pair; ≥50-prompt parity + round-7 gauntlet; true cross-domain (the prose fixture was in the profile). **Corrections:** C16 moved ~2×, contrary to the "C1–C4 lever" expectation; autotune was 12 min, not 150.
 
 ## Round 7 — three matched boot pairs (September 15, 2026)
 
@@ -129,7 +135,31 @@ FlashInfer autotunes the MXFP4 MoE kernels and caches the result under a hash of
 
 ## Results
 
-### v14 — v13 with the k=5 band extended to C4: `[[1,4,5],[5,16,1]]` (current, agent lane)
+### v15 — Pin Hot Experts (current)
+
+Same-window pair 2026-09-17 14:51–14:58 CDT, **one pair**. Knee prompt class: **prose**, temperature 0, 192 tokens (`knee.sh`: "Write a detailed paragraph about the number N"). C16 is slot-capped by `--max-num-seqs 16`; `max_running_requests` was not set. Bundle: [`results/2026-09-17-e2b-pin-hot-experts-v15/`](results/2026-09-17-e2b-pin-hot-experts-v15/). Design: [vllm-pin-hot-experts](https://al-engr.com/vllm-pin-hot-experts.html).
+
+| | C1 | C8 | C16 |
+|---|--:|--:|--:|
+| v14 control | 89.3 | 307.7 | 414.3 |
+| v15 candidate | 153.1 | 701.4 | 809.0 |
+
+C1 **+71.4%**. C16 candidate runs 666.8 / 951.2 — spread is real; both still ≫ control 413 / 415.
+
+| | v14 control | v15 |
+|---|--:|--:|
+| agent prose tok/s | 98.3 | 169.0 |
+| structured | 123.0 | 207.6 |
+| code | 153.9 | 213.6 |
+| shell_ops | 160.2 | 250.3 |
+| tool_json | 180.4 | 182.1 |
+| weighted accept | 59.9% | 59.6% |
+| T5 prose fixture | 91.4 | 152.5 |
+| replay n=4 r1 / r2 | 170.6 / 222.7 | 247.5 / 431.3 |
+
+Parity: greedy 8/8 vs v14. Accept rates bit-identical on prose/structured/code/shell. KV 4.75 GiB; pinned 62.33 GiB; autotune 12 min (21 new).
+
+### v14 — v13 with the k=5 band extended to C4: `[[1,4,5],[5,16,1]]` — v14 (retired 2026-09-17)
 
 | | v14 | v13 | v12 |
 |---|---|---|---|

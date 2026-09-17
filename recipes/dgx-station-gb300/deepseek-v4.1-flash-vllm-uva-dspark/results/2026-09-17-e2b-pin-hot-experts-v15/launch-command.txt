@@ -1,0 +1,7 @@
+# v15 = v14 serve command + two bind-mounts + three env vars.
+# bind: sitecustomize.py -> /usr/lib/python3.12/sitecustomize.py
+# bind: hook dir -> /w  (pin_hot_experts_hook.py, rowmap-static-v1.json)
+# env: PIN_MODE=split PIN_HOOK=/w/pin_hot_experts_hook.py PIN_ROWMAP=/w/rowmap-static-v1.json
+# image: vllm/vllm-openai:deepseekv41-flash-0909 @ sha256:00d577a6a63281e15336029d5bcee4e9a2cf182214a4f20ba6111b1c8e79893d
+# model revision: df42c109f1defefcbfcedbe7d905718a12266e40
+serve --model /model --served-model-name dsv41-flash-uva --trust-remote-code --tensor-parallel-size 1 --offload-backend uva --cpu-offload-gb 60 --cpu-offload-params routed_experts.w13_weight routed_experts.w2_weight --engram-config '{"cpu_offload": true}' --max-model-len 1048576 --max-num-seqs 16 --max-num-batched-tokens 8192 --gpu-memory-utilization 0.97 --tool-call-parser deepseek_v41 --reasoning-parser deepseek_v41 --enable-auto-tool-choice --long-prefill-token-threshold 6144 --speculative-config '{"method":"dspark","num_speculative_tokens":5,"num_speculative_tokens_per_batch_size":[[1,4,5],[5,16,1]]}' --host 0.0.0.0 --port 30006
