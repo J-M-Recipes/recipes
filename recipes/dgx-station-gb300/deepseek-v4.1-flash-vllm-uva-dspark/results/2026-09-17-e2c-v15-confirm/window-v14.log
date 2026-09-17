@@ -1,0 +1,18 @@
+[17:27:59] WINDOW v14 container=dsv41-vllm-v14-1M-ksched-agent-RETIRED-REF start
+[17:27:59] RUN /usr/bin/python3 /home/user/pin-hot-experts/scripts/e2c_hostwatch.py v14 start dsv41-vllm-v14-1M-ksched-agent-RETIRED-REF /home/user/pin-hot-experts/e2c
+[17:28:00] RUN bash /home/user/dsv41/knee.sh v14-r1
+[17:28:59] copied /home/user/dsv41/knee-v14-r1.json -> /home/user/pin-hot-experts/e2c/v14-knee-r1.json
+[17:28:59] RUN bash /home/user/dsv41/knee.sh v14-r2
+[17:29:56] copied /home/user/dsv41/knee-v14-r2.json -> /home/user/pin-hot-experts/e2c/v14-knee-r2.json
+[17:29:56] RUN bash /home/user/dsv41/agent_fixture_o.sh v14
+[17:30:11] copied /home/user/dsv41/agentfix-v14.json -> /home/user/pin-hot-experts/e2c/v14-agent.json
+[17:30:11] RUN /usr/bin/python3 /home/user/pin-hot-experts/e2a_prose.py v14
+[17:30:32] copied /home/user/dsv41/prose-v14.json -> /home/user/pin-hot-experts/e2c/v14-prose.json
+[17:30:32] RUN /usr/bin/python3 /home/user/dsv41/replay_c.py
+[17:30:58] copied /home/user/dsv41/replayc-v14-r1-n4.json -> /home/user/pin-hot-experts/e2c/v14-replay-r1.json
+[17:30:58] RUN /usr/bin/python3 /home/user/dsv41/replay_c.py
+[17:31:17] copied /home/user/dsv41/replayc-v14-r2-n4.json -> /home/user/pin-hot-experts/e2c/v14-replay-r2.json
+[17:31:17] RUN /usr/bin/python3 /home/user/pin-hot-experts/scripts/e2c_parity.py v14 /home/user/pin-hot-experts/e2c/parity-prompts.json /home/user/pin-hot-experts/e2c
+[17:32:33] RUN /usr/bin/python3 /home/user/pin-hot-experts/scripts/e2c_heldout.py v14 /home/user/pin-hot-experts/e2c
+[17:33:11] RUN /usr/bin/python3 /home/user/pin-hot-experts/scripts/e2c_hostwatch.py v14 end dsv41-vllm-v14-1M-ksched-agent-RETIRED-REF /home/user/pin-hot-experts/e2c
+[17:33:12] WINDOW v14 done in 313s

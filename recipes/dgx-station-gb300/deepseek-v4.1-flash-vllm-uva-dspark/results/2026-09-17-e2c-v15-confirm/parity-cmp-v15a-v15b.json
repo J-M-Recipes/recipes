@@ -1,0 +1,93 @@
+{
+ "label": "v15a vs v15b",
+ "n": 50,
+ "exact": 47,
+ "miss": 3,
+ "misses": [
+  {
+   "id": "agent-tool-1",
+   "group": "agent",
+   "content_equal": false,
+   "tools_equal": true,
+   "first_div_char": 77,
+   "a_head": "I'll check both. Let me start with the Docker containers and disk space on the h",
+   "b_head": "I'll check both. Let me start with the Docker containers and disk space on that ",
+   "a_tools": [
+    {
+     "name": "terminal",
+     "arguments": "{\"command\": \"ssh 192.0.2.9 \\\"docker ps -a\\\" 2>&1\"}"
+    },
+    {
+     "name": "terminal",
+     "arguments": "{\"command\": \"ssh 192.0.2.9 \\\"df -h /\\\" 2>&1\"}"
+    }
+   ],
+   "b_tools": [
+    {
+     "name": "terminal",
+     "arguments": "{\"command\": \"ssh 192.0.2.9 \\\"docker ps -a\\\" 2>&1\"}"
+    },
+    {
+     "name": "terminal",
+     "arguments": "{\"command\": \"ssh 192.0.2.9 \\\"df -h /\\\" 2>&1\"}"
+    }
+   ],
+   "a_finish": "tool_calls",
+   "b_finish": "tool_calls"
+  },
+  {
+   "id": "tool-json-status",
+   "group": "structured_tool",
+   "content_equal": true,
+   "tools_equal": false,
+   "first_div_char": null,
+   "a_head": "I'll inspect the machine.  ",
+   "b_head": "I'll inspect the machine.  ",
+   "a_tools": [
+    {
+     "name": "terminal",
+     "arguments": "{\"command\": \"hostname; echo \\\"---\\\"; nvidia-smi --query-gpu=memory.free --format=csv,noheader,nounits 2>/dev/null || echo \\\"no nvidia-smi\\\"; echo \\\"---\\\"; (docker ps -q 2>/dev/null | wc -l) || echo \\\"no docker\\\"\"}"
+    }
+   ],
+   "b_tools": [
+    {
+     "name": "terminal",
+     "arguments": "{\"command\": \"hostname; echo \\\"---\\\"; nvidia-smi --query-gpu=memory.free --format=csv,noheader 2>/dev/null || echo \\\"no nvidia-smi\\\"; echo \\\"---\\\"; (docker ps -q 2>/dev/null | wc -l) || echo \\\"no docker\\\"\"}"
+    }
+   ],
+   "a_finish": "tool_calls",
+   "b_finish": "tool_calls"
+  },
+  {
+   "id": "tool-weather-time",
+   "group": "structured_tool",
+   "content_equal": true,
+   "tools_equal": false,
+   "first_div_char": null,
+   "a_head": "I'll gather both pieces of information.  ",
+   "b_head": "I'll gather both pieces of information.  ",
+   "a_tools": [
+    {
+     "name": "terminal",
+     "arguments": "{\"command\": \"date -u && date\"}"
+    },
+    {
+     "name": "web_search",
+     "arguments": "{\"query\": \"Telluride Colorado weather forecast\"}"
+    }
+   ],
+   "b_tools": [
+    {
+     "name": "terminal",
+     "arguments": "{\"command\": \"date -u\"}"
+    },
+    {
+     "name": "web_search",
+     "arguments": "{\"query\": \"Telluride Colorado weather forecast\"}"
+    }
+   ],
+   "a_finish": "tool_calls",
+   "b_finish": "tool_calls"
+  }
+ ]
+}

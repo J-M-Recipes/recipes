@@ -1,0 +1,450 @@
+=== E2c master start Thu Sep 17 05:20:17 PM CDT 2026 ===
+=== Part A window v15a ===
+[17:20:17] WINDOW v15a container=dsv41-vllm-v15-1M-pin-static-v1-BOUND-REF start
+[17:20:17] RUN /usr/bin/python3 /home/user/pin-hot-experts/scripts/e2c_hostwatch.py v15a start dsv41-vllm-v15-1M-pin-static-v1-BOUND-REF /home/user/pin-hot-experts/e2c
+[hostwatch] v15a start avail=125 GiB  cgroup=351.491 GiB  dsv41-vllm-v15-1M-pin-static-v1-BOUND-REF mem=339GiB / 494.5GiB cpu=0.27%
+/home/user/pin-hot-experts/e2c/hostwatch-v15a-start.json
+[17:20:18] RUN bash /home/user/dsv41/knee.sh v15a-r1
+[v15a-r1] conc= 1:   153.5 agg tok/s  153.50 per-stream  (runs 153.4/153.6)
+[v15a-r1] conc= 2:   269.3 agg tok/s  134.66 per-stream  (runs 275.9/262.7)
+[v15a-r1] conc= 4:   405.6 agg tok/s  101.40 per-stream  (runs 400.0/411.2)
+[v15a-r1] conc= 8:   704.6 agg tok/s   88.07 per-stream  (runs 704.5/704.6)
+[v15a-r1] conc=12:   803.8 agg tok/s   66.98 per-stream  (runs 806.8/800.7)
+[v15a-r1] conc=16:   952.6 agg tok/s   59.54 per-stream  (runs 951.8/953.4)
+[17:20:44] copied /home/user/dsv41/knee-v15a-r1.json -> /home/user/pin-hot-experts/e2c/v15a-knee-r1.json
+[17:20:44] RUN bash /home/user/dsv41/knee.sh v15a-r2
+[v15a-r2] conc= 1:   153.3 agg tok/s  153.29 per-stream  (runs 153.2/153.3)
+[v15a-r2] conc= 2:   270.3 agg tok/s  135.14 per-stream  (runs 275.4/265.2)
+[v15a-r2] conc= 4:   413.1 agg tok/s  103.27 per-stream  (runs 411.5/414.7)
+[v15a-r2] conc= 8:   701.6 agg tok/s   87.70 per-stream  (runs 701.6/701.6)
+[v15a-r2] conc=12:   809.5 agg tok/s   67.46 per-stream  (runs 804.3/814.7)
+[v15a-r2] conc=16:   956.7 agg tok/s   59.79 per-stream  (runs 957.2/956.2)
+[17:21:10] copied /home/user/dsv41/knee-v15a-r2.json -> /home/user/pin-hot-experts/e2c/v15a-knee-r2.json
+[17:21:10] RUN bash /home/user/dsv41/agent_fixture_o.sh v15a
+[v15a] prose        168.8 tok/s  accept=29.8%  acc/step=1.49  tokens=400
+      (200, 1.18, 'length', False, 'Speculative decoding speeds up generation by having a small, cheap "draft" model')
+[v15a] structured   207.6 tok/s  accept=49.5%  acc/step=2.48  tokens=424
+      (102, 0.4, 'stop', False, "I'll research both approaches to give you accurate numbers.  ")
+      (110, 0.61, 'stop', False, '- weights load: complete — 14.2 GB sharded across 2 GPUs in 38.4 s - KV cache: a')
+[v15a] code         213.7 tok/s  accept=63.8%  acc/step=3.19  tokens=654
+      (243, 1.1, 'stop', False, '```python def knee(rows):     """Return the concurrency where marginal gain per ')
+      (84, 0.43, 'stop', False, '```bash #!/usr/bin/env bash set -euo pipefail  : "${SRC:?SRC is not set}"  for i')
+[v15a] shell_ops    250.4 tok/s  accept=90.8%  acc/step=4.54  tokens=144
+      (72, 0.28, 'stop', False, 'docker stop dsv41-vllm-v7 docker rename dsv41-vllm-v7 dsv41-vllm-v7-old sudo sh ')
+[v15a] tool_json    282.0 tok/s  accept=89.7%  acc/step=4.48  tokens=318
+      (99, 0.34, 'tool_calls', True, "I'll run both checks in parallel.  ")
+      (60, 0.22, 'tool_calls', True, "I'll read the file first.  ")
+[v15a] weighted accept=59.9%
+[17:21:19] copied /home/user/dsv41/agentfix-v15a.json -> /home/user/pin-hot-experts/e2c/v15a-agent.json
+[17:21:19] RUN /usr/bin/python3 /home/user/pin-hot-experts/e2a_prose.py v15a
+[v15a]  192 tok    1.11s   173.6 tok/s  length  Write a detailed paragraph about the number 7, its
+[v15a]  192 tok    1.10s   175.2 tok/s  length  Write a detailed paragraph about the number 12, it
+[v15a]  192 tok    1.19s   161.1 tok/s  length  Write a detailed paragraph about the number 42, it
+[v15a]  192 tok    1.31s   146.1 tok/s  length  Write a detailed paragraph about the number 101, i
+[v15a]  192 tok    1.11s   172.3 tok/s  length  Write a detailed paragraph about the number 256, i
+[v15a]  192 tok    1.25s   153.3 tok/s  length  Write a detailed paragraph about the number 1024, 
+[v15a]  389 tok    2.73s   142.6 tok/s  stop  Write a 300-word reflective essay on why small stu
+[v15a]  300 tok    2.26s   132.8 tok/s  length  Describe, in flowing prose, a morning walk through
+[v15a] PROSE agg 152.6 tok/s  tokens=1841
+[17:21:31] copied /home/user/dsv41/prose-v15a.json -> /home/user/pin-hot-experts/e2c/v15a-prose.json
+[17:21:31] RUN /usr/bin/python3 /home/user/dsv41/replay_c.py
+[v15a-r1] REPLAY n=4: agg 476.1 tok/s over 10s, 4809 tokens; accept=55.1% acc/step=2.76; tool turns 12 emitted=3 per-req 114.5 tok/s; text turns 12 per-req 133.2 tok/s
+[17:21:41] copied /home/user/dsv41/replayc-v15a-r1-n4.json -> /home/user/pin-hot-experts/e2c/v15a-replay-r1.json
+[17:21:41] RUN /usr/bin/python3 /home/user/dsv41/replay_c.py
+[v15a-r2] REPLAY n=4: agg 461.8 tok/s over 10s, 4421 tokens; accept=52.4% acc/step=2.62; tool turns 12 emitted=4 per-req 109.1 tok/s; text turns 12 per-req 128.5 tok/s
+[17:21:51] copied /home/user/dsv41/replayc-v15a-r2-n4.json -> /home/user/pin-hot-experts/e2c/v15a-replay-r2.json
+[17:21:51] RUN /usr/bin/python3 /home/user/pin-hot-experts/scripts/e2c_parity.py v15a /home/user/pin-hot-experts/e2c/parity-prompts.json /home/user/pin-hot-experts/e2c
+[v15a] agent-prose-1          tok= 230   1.39s stop Speculative decoding speeds up generation by having a small, cheap "draft" model
+[v15a] agent-structured-1     tok= 102   0.41s stop I'll research both approaches to give you accurate numbers.  
+[v15a] agent-structured-2     tok= 110   0.61s stop - weights load: complete — 14.2 GB sharded across 2 GPUs in 38.4 s - KV cache: a
+[v15a] agent-code-1           tok= 243   1.10s stop ```python def knee(rows):     """Return the concurrency where marginal gain per 
+[v15a] agent-code-2           tok=  84   0.43s stop ```bash #!/usr/bin/env bash set -euo pipefail  : "${SRC:?SRC is not set}"  for i
+[v15a] agent-shell-1          tok=  72   0.29s stop docker stop dsv41-vllm-v7 docker rename dsv41-vllm-v7 dsv41-vllm-v7-old sudo sh 
+[v15a] agent-tool-1           tok= 118   0.56s tool_calls I'll check both. Let me start with the Docker containers and disk space on the h
+[v15a] agent-tool-2           tok=  60   0.41s tool_calls I'll read the file first.  
+[v15a] t5-prose-7             tok= 256   1.56s length The number 7 has held a remarkable place in human culture, religion, and thought
+[v15a] t5-prose-12            tok= 254   1.57s stop The number 12 has held a privileged place in human thought for millennia, likely
+[v15a] t5-prose-42            tok= 256   1.58s length The number 42 occupies a peculiar place in human culture, functioning simultaneo
+[v15a] t5-prose-101           tok= 256   1.50s length The number 101 occupies a curious place in mathematics, culture, and everyday li
+[v15a] t5-prose-256           tok= 256   1.64s length The number 256 occupies a distinctive place at the intersection of mathematics, 
+[v15a] t5-prose-1024          tok= 256   1.64s length The number 1024 occupies a distinctive place at the intersection of mathematics,
+[v15a] t5-prose-essay         tok= 256   1.74s length # The Machine in the Room  There is a particular kind of silence that falls over
+[v15a] t5-prose-walk          tok= 256   2.00s length The air has teeth at first, sharp and thin, and you are glad for the wool at you
+[v15a] code-py-bsearch        tok= 146   0.64s stop ```python from typing import Sequence  def binary_search(xs: Sequence[int], targ
+[v15a] code-py-lru            tok= 244   1.22s stop ```python from collections import OrderedDict  class LRUCache:     def __init__(
+[v15a] code-rs-csv            tok= 217   1.07s stop ```rust fn parse_csv_line(line: &str) -> Result<Vec<String>, &'static str> {    
+[v15a] code-rs-result         tok= 124   0.65s stop ```rust use std::num::ParseIntError;  fn triple(s: &str) -> Result<u64, ParseInt
+[v15a] code-swift-url         tok= 192   1.05s stop ```swift func fetchTitle(url: URL) async throws -> String {     let (data, _) = 
+[v15a] code-swift-codable     tok=  76   0.47s stop ```swift struct Recipe: Codable {     let name: String     let tokPerSec: Double
+[v15a] code-sql-window        tok=  61   0.32s stop ```sql SELECT dept, name, salary, rnk FROM (   SELECT dept, name, salary,       
+[v15a] code-sql-cte           tok=  90   0.45s stop ```sql WITH RECURSIVE org_tree AS (     SELECT id, name, 0 AS depth     FROM org
+[v15a] code-py-cli            tok= 204   0.96s stop ```python import argparse from dataclasses import dataclass from pathlib import 
+[v15a] code-rs-http           tok= 173   0.84s stop ```rust use axum::{routing::get, Json, Router}; use serde_json::{json, Value}; u
+[v15a] math-trains            tok= 120   0.60s stop The freight train has a 1.5-hour head start, so by 07:30 it has traveled 48 × 1.
+[v15a] math-sqrt2             tok= 256   1.26s length Assume for the sake of argument that the square root of two is rational. Then th
+[v15a] math-committee         tok=  52   0.36s stop Total committees: C(12,4)=495.   Committees with neither Alice nor Bob: choose a
+[v15a] math-bayes             tok= 256   1.37s stop I'll compute this using Bayes' theorem.  **Setting up the numbers:** - Sensitivi
+[v15a] math-quadratic         tok= 256   1.14s length I'll solve this by completing the square.  **Step 1: Divide by the leading coeff
+[v15a] math-tangent           tok= 256   1.29s length I'll solve this step by step.  **Setup:** Circle: $x^2+y^2=25$, center $O=(0,0)$
+[v15a] math-gcd               tok= 228   0.75s stop I'll compute gcd(12378, 3054) using the Euclidean algorithm.  **Step 1:** Divide
+[v15a] math-knights           tok= 210   0.88s stop Let me reason through this.  Let A's statement be: "B is a knave."  Let B's stat
+[v15a] math-related           tok= 240   1.22s stop Let \(x\) be the distance from the wall to the base, and \(y\) the height of the
+[v15a] math-eigen             tok= 256   1.06s length I'll compute this step by step.  **Characteristic polynomial:** For a 2×2 matrix
+[v15a] lang-es-essay          tok= 256   1.87s length El silencio de una biblioteca no es un vacío, sino una presencia densa que se im
+[v15a] lang-de-essay          tok= 256   2.27s length # Der Takt in den Händen  In einem kleinen Atelier, irgendwo zwischen einer Bäck
+[v15a] lang-ja-essay          tok= 256   3.13s length 冬の海辺で過ごす一日は、夏のそれとはまるで違う時間の流れを持っている。朝、宿の窓を開けると、冷たい空気が頬を刺すように流れ込んでくる。海は灰色に近い青をして、遠
+[v15a] lang-zh-essay          tok= 206   2.74s stop 深夜的台灯把桌面照成一小片暖黄的孤岛，我拧开旧收音机的后盖，一股积年的灰尘味便混着焊锡的松香、老电容微微发酸的潮气，从机壳深处缓缓漫出来，像掀开一只封存多年的木
+[v15a] lang-pt-essay          tok= 256   2.42s length # Travessia ao amanhecer  Ainda não havia sol, apenas uma claridade indecisa que
+[v15a] lang-ar-essay          tok= 256   2.37s length في سوقٍ قديمٍ، حين تميل الشمسُ نحو الغروب وتتوارى خلف أسطُح البيوت الطينية، يبدأ
+[v15a] lang-es-tech           tok= 256   1.94s length Copiar una capa MoE completa por token implica materializar en memoria (o mover 
+[v15a] lang-de-tech           tok= 256   1.79s length Ein Autotune-Hash trifft nur bei identischer Kernel-Shape, weil der Hash über ge
+[v15a] tool-json-status       tok= 110   0.43s tool_calls I'll inspect the machine.  
+[v15a] tool-search-sum        tok=  54   0.26s tool_calls I'll search for the current vLLM GitHub stars.  
+[v15a] tool-read-patch        tok=  48   0.22s tool_calls I'll read the file first.  
+[v15a] tool-yaml-cfg          tok=  88   0.38s stop model: DSV4.1-Flash port: 8000 offload_gb: 24 util: 0.92 speculative:   schedule
+[v15a] tool-weather-time      tok=  81   0.38s tool_calls I'll gather both pieces of information.  
+[v15a] tool-steps-json        tok= 130   0.52s stop {"steps":[{"n":1,"cmd":"docker stop vllm","why":"Stop the running vLLM container
+[v15a] wrote /home/user/pin-hot-experts/e2c/parity-v15a.json n=50
+[17:22:49] RUN /usr/bin/python3 /home/user/pin-hot-experts/scripts/e2c_heldout.py v15a /home/user/pin-hot-experts/e2c
+[v15a] math_proof   tok= 400 inst=181.47  Let it be supposed, for the sake of contradiction,
+[v15a] math_proof   tok= 400 inst=194.46  The harmonic series is the infinite sum of the rec
+[v15a] math_proof   tok= 400 inst=185.03  To derive the quadratic formula, we begin with the
+[v15a] math_proof   tok= 358 inst=172.9  Let us suppose, for the sake of argument, that the
+[v15a] math_proof   tok= 400 inst=180.74  The technique of mathematical induction is a power
+[v15a] math_proof AGG 182.87 tok/s
+[v15a] non_english  tok= 400 inst=84.32  冬の海辺で一人過ごす一日は、時間というものが普段とは違う密度で流れているような感覚を伴って始まる。朝
+[v15a] non_english  tok= 400 inst=84.29  子供のころ、町の図書館で過ごした午後の記憶は、今も私の心の奥に、柔らかな陽だまりのように残っています
+[v15a] non_english  tok= 400 inst=110.34  Es gibt Orte auf dieser Welt, an denen die Zeit ni
+[v15a] non_english  tok= 400 inst=107.14  Der Regionalexpress nach Dortmund hatte Verspätung
+[v15a] non_english  tok= 400 inst=77.14  茶の湯の季節の移ろいは、ただ暦の上で春夏秋冬を辿るというだけのものではなく、釜の湯の音や炭の匂い、あ
+[v15a] non_english AGG 90.77 tok/s
+[v15a] wrote /home/user/pin-hot-experts/e2c/heldout-v15a.json
+[17:23:22] RUN /usr/bin/python3 /home/user/pin-hot-experts/scripts/e2c_hostwatch.py v15a end dsv41-vllm-v15-1M-pin-static-v1-BOUND-REF /home/user/pin-hot-experts/e2c
+[hostwatch] v15a end avail=125 GiB  cgroup=351.543 GiB  dsv41-vllm-v15-1M-pin-static-v1-BOUND-REF mem=339.1GiB / 494.5GiB cpu=0.24%
+/home/user/pin-hot-experts/e2c/hostwatch-v15a-end.json
+[17:23:23] WINDOW v15a done in 186s
+=== swap v15 → v14 ===
+Flag --time has been deprecated, use --timeout instead
+dsv41-vllm-v15-1M-pin-static-v1-BOUND-REF
+dsv41-vllm-v14-1M-ksched-agent-RETIRED-REF
+[wait] dsv41-vllm-v14-1M-ksched-agent-RETIRED-REF limit=900s
+[wait] autotune START at +238s  hinfer_autotune_cache/0.6.18/103a/9ac7b387cce0338c2fa9e4efbaafefd559bcce80ce9771b5fd037d8abf2ae986/autotune_configs.json
+[wait] autotune END after 5.0s  hinfer_autotune_cache/0.6.18/103a/9ac7b387cce0338c2fa9e4efbaafefd559bcce80ce9771b5fd037d8abf2ae986/autotune_configs.json
+[wait] autotune START at +248s  hinfer_autotune_cache/0.6.18/103a/9ac7b387cce0338c2fa9e4efbaafefd559bcce80ce9771b5fd037d8abf2ae986/autotune_configs.json
+[wait] autotune END after 0.0s  hinfer_autotune_cache/0.6.18/103a/9ac7b387cce0338c2fa9e4efbaafefd559bcce80ce9771b5fd037d8abf2ae986/autotune_configs.json
+[wait] autotune START at +253s  hinfer_autotune_cache/0.6.18/103a/9ac7b387cce0338c2fa9e4efbaafefd559bcce80ce9771b5fd037d8abf2ae986/autotune_configs.json
+[wait] autotune END after 0.0s  hinfer_autotune_cache/0.6.18/103a/9ac7b387cce0338c2fa9e4efbaafefd559bcce80ce9771b5fd037d8abf2ae986/autotune_configs.json
+[wait] autotune START at +258s  hinfer_autotune_cache/0.6.18/103a/9ac7b387cce0338c2fa9e4efbaafefd559bcce80ce9771b5fd037d8abf2ae986/autotune_configs.json
+[wait] autotune END after 0.0s  hinfer_autotune_cache/0.6.18/103a/9ac7b387cce0338c2fa9e4efbaafefd559bcce80ce9771b5fd037d8abf2ae986/autotune_configs.json
+[wait] autotune START at +263s  hinfer_autotune_cache/0.6.18/103a/9ac7b387cce0338c2fa9e4efbaafefd559bcce80ce9771b5fd037d8abf2ae986/autotune_configs.json
+[wait] autotune END after 0.0s  hinfer_autotune_cache/0.6.18/103a/9ac7b387cce0338c2fa9e4efbaafefd559bcce80ce9771b5fd037d8abf2ae986/autotune_configs.json
+[wait] API up at +268s  loaded=hinfer_autotune_cache/0.6.18/103a/9ac7b387cce0338c2fa9e4efbaafefd559bcce80ce9771b5fd037d8abf2ae986/autotune_configs.json
+=== Part A window v14 ===
+[17:27:59] WINDOW v14 container=dsv41-vllm-v14-1M-ksched-agent-RETIRED-REF start
+[17:27:59] RUN /usr/bin/python3 /home/user/pin-hot-experts/scripts/e2c_hostwatch.py v14 start dsv41-vllm-v14-1M-ksched-agent-RETIRED-REF /home/user/pin-hot-experts/e2c
+[hostwatch] v14 start avail=69 GiB  cgroup=464.206 GiB  dsv41-vllm-v14-1M-ksched-agent-RETIRED-REF mem=420.3GiB / 494.5GiB cpu=0.24%
+/home/user/pin-hot-experts/e2c/hostwatch-v14-start.json
+[17:28:00] RUN bash /home/user/dsv41/knee.sh v14-r1
+[v14-r1] conc= 1:    88.7 agg tok/s   88.66 per-stream  (runs 88.5/88.8)
+[v14-r1] conc= 2:   123.8 agg tok/s   61.90 per-stream  (runs 126.2/121.4)
+[v14-r1] conc= 4:   171.6 agg tok/s   42.91 per-stream  (runs 171.7/171.6)
+[v14-r1] conc= 8:   304.7 agg tok/s   38.08 per-stream  (runs 304.8/304.6)
+[v14-r1] conc=12:   365.2 agg tok/s   30.43 per-stream  (runs 364.5/365.9)
+[v14-r1] conc=16:   385.5 agg tok/s   24.09 per-stream  (runs 351.7/419.2)
+[17:28:59] copied /home/user/dsv41/knee-v14-r1.json -> /home/user/pin-hot-experts/e2c/v14-knee-r1.json
+[17:28:59] RUN bash /home/user/dsv41/knee.sh v14-r2
+[v14-r2] conc= 1:    88.8 agg tok/s   88.83 per-stream  (runs 88.8/88.8)
+[v14-r2] conc= 2:   123.8 agg tok/s   61.92 per-stream  (runs 126.4/121.3)
+[v14-r2] conc= 4:   172.0 agg tok/s   43.01 per-stream  (runs 172.3/171.7)
+[v14-r2] conc= 8:   305.8 agg tok/s   38.22 per-stream  (runs 306.9/304.7)
+[v14-r2] conc=12:   359.8 agg tok/s   29.98 per-stream  (runs 358.2/361.3)
+[v14-r2] conc=16:   417.3 agg tok/s   26.08 per-stream  (runs 414.8/419.7)
+[17:29:56] copied /home/user/dsv41/knee-v14-r2.json -> /home/user/pin-hot-experts/e2c/v14-knee-r2.json
+[17:29:56] RUN bash /home/user/dsv41/agent_fixture_o.sh v14
+[v14] prose         97.3 tok/s  accept=29.8%  acc/step=1.49  tokens=400
+      (200, 2.05, 'length', False, 'Speculative decoding speeds up generation by having a small, cheap "draft" model')
+[v14] structured   121.8 tok/s  accept=49.5%  acc/step=2.48  tokens=424
+      (102, 0.68, 'stop', False, "I'll research both approaches to give you accurate numbers.  ")
+      (110, 1.06, 'stop', False, '- weights load: complete — 14.2 GB sharded across 2 GPUs in 38.4 s - KV cache: a')
+[v14] code         152.7 tok/s  accept=63.8%  acc/step=3.19  tokens=654
+      (243, 1.55, 'stop', False, '```python def knee(rows):     """Return the concurrency where marginal gain per ')
+      (84, 0.59, 'stop', False, '```bash #!/usr/bin/env bash set -euo pipefail  : "${SRC:?SRC is not set}"  for i')
+[v14] shell_ops    159.2 tok/s  accept=90.8%  acc/step=4.54  tokens=144
+      (72, 0.45, 'stop', False, 'docker stop dsv41-vllm-v7 docker rename dsv41-vllm-v7 dsv41-vllm-v7-old sudo sh ')
+[v14] tool_json    152.3 tok/s  accept=87.8%  acc/step=4.39  tokens=318
+      (99, 0.74, 'tool_calls', True, "I'll run both checks in parallel.  ")
+      (60, 0.45, 'tool_calls', True, "I'll read the file first.  ")
+[v14] weighted accept=59.6%
+[17:30:11] copied /home/user/dsv41/agentfix-v14.json -> /home/user/pin-hot-experts/e2c/v14-agent.json
+[17:30:11] RUN /usr/bin/python3 /home/user/pin-hot-experts/e2a_prose.py v14
+[v14]  192 tok    1.90s   101.1 tok/s  length  Write a detailed paragraph about the number 7, its
+[v14]  192 tok    1.89s   101.7 tok/s  length  Write a detailed paragraph about the number 12, it
+[v14]  192 tok    2.04s    94.0 tok/s  length  Write a detailed paragraph about the number 42, it
+[v14]  192 tok    2.20s    87.2 tok/s  length  Write a detailed paragraph about the number 101, i
+[v14]  192 tok    1.92s   100.1 tok/s  length  Write a detailed paragraph about the number 256, i
+[v14]  192 tok    2.18s    88.2 tok/s  length  Write a detailed paragraph about the number 1024, 
+[v14]  389 tok    4.66s    83.5 tok/s  stop  Write a 300-word reflective essay on why small stu
+[v14]  300 tok    3.52s    85.3 tok/s  length  Describe, in flowing prose, a morning walk through
+[v14] PROSE agg 90.7 tok/s  tokens=1841
+[17:30:32] copied /home/user/dsv41/prose-v14.json -> /home/user/pin-hot-experts/e2c/v14-prose.json
+[17:30:32] RUN /usr/bin/python3 /home/user/dsv41/replay_c.py
+[v14-r1] REPLAY n=4: agg 160.3 tok/s over 26s, 4148 tokens; accept=55.0% acc/step=2.75; tool turns 12 emitted=3 per-req 41.5 tok/s; text turns 12 per-req 41.9 tok/s
+[17:30:58] copied /home/user/dsv41/replayc-v14-r1-n4.json -> /home/user/pin-hot-experts/e2c/v14-replay-r1.json
+[17:30:58] RUN /usr/bin/python3 /home/user/dsv41/replay_c.py
+[v14-r2] REPLAY n=4: agg 223.8 tok/s over 19s, 4247 tokens; accept=55.8% acc/step=2.79; tool turns 12 emitted=2 per-req 57.7 tok/s; text turns 12 per-req 64.7 tok/s
+[17:31:17] copied /home/user/dsv41/replayc-v14-r2-n4.json -> /home/user/pin-hot-experts/e2c/v14-replay-r2.json
+[17:31:17] RUN /usr/bin/python3 /home/user/pin-hot-experts/scripts/e2c_parity.py v14 /home/user/pin-hot-experts/e2c/parity-prompts.json /home/user/pin-hot-experts/e2c
+[v14] agent-prose-1          tok= 230   2.42s stop Speculative decoding speeds up generation by having a small, cheap "draft" model
+[v14] agent-structured-1     tok= 102   0.68s stop I'll research both approaches to give you accurate numbers.  
+[v14] agent-structured-2     tok= 110   1.06s stop - weights load: complete — 14.2 GB sharded across 2 GPUs in 38.4 s - KV cache: a
+[v14] agent-code-1           tok= 243   1.56s stop ```python def knee(rows):     """Return the concurrency where marginal gain per 
+[v14] agent-code-2           tok=  84   0.59s stop ```bash #!/usr/bin/env bash set -euo pipefail  : "${SRC:?SRC is not set}"  for i
+[v14] agent-shell-1          tok=  72   0.46s stop docker stop dsv41-vllm-v7 docker rename dsv41-vllm-v7 dsv41-vllm-v7-old sudo sh 
+[v14] agent-tool-1           tok= 118   0.79s tool_calls I'll check both. Let me start with the Docker containers and disk space on that 
+[v14] agent-tool-2           tok=  60   0.41s tool_calls I'll read the file first.  
+[v14] t5-prose-7             tok= 256   2.67s length The number 7 has held a remarkable place in human culture, religion, and thought
+[v14] t5-prose-12            tok= 254   2.71s stop The number 12 has held a privileged place in human thought for millennia, likely
+[v14] t5-prose-42            tok= 256   2.62s length The number 42 occupies a peculiar place in human culture, functioning simultaneo
+[v14] t5-prose-101           tok= 256   2.52s length The number 101 occupies a curious place in mathematics, culture, and everyday li
+[v14] t5-prose-256           tok= 256   2.79s length The number 256 occupies a distinctive place at the intersection of mathematics, 
+[v14] t5-prose-1024          tok= 256   2.81s length The number 1024 occupies a distinctive place at the intersection of mathematics,
+[v14] t5-prose-essay         tok= 256   2.90s length # The Machine in the Room  There is a particular kind of silence that falls over
+[v14] t5-prose-walk          tok= 256   3.11s length The air has teeth at first, sharp and thin, and you are glad for the wool at you
+[v14] code-py-bsearch        tok= 146   0.75s stop ```python from typing import Sequence  def binary_search(xs: Sequence[int], targ
+[v14] code-py-lru            tok= 244   1.32s stop ```python from collections import OrderedDict  class LRUCache:     def __init__(
+[v14] code-rs-csv            tok= 217   1.06s stop ```rust fn parse_csv_line(line: &str) -> Result<Vec<String>, &'static str> {    
+[v14] code-rs-result         tok= 124   0.71s stop ```rust use std::num::ParseIntError;  fn triple(s: &str) -> Result<u64, ParseInt
+[v14] code-swift-url         tok= 192   1.09s stop ```swift func fetchTitle(url: URL) async throws -> String {     let (data, _) = 
+[v14] code-swift-codable     tok=  76   0.47s stop ```swift struct Recipe: Codable {     let name: String     let tokPerSec: Double
+[v14] code-sql-window        tok=  61   0.41s stop ```sql SELECT dept, name, salary, rnk FROM (   SELECT dept, name, salary,       
+[v14] code-sql-cte           tok=  90   0.52s stop ```sql WITH RECURSIVE org_tree AS (     SELECT id, name, 0 AS depth     FROM org
+[v14] code-py-cli            tok= 204   1.06s stop ```python import argparse from dataclasses import dataclass from pathlib import 
+[v14] code-rs-http           tok= 173   0.87s stop ```rust use axum::{routing::get, Json, Router}; use serde_json::{json, Value}; u
+[v14] math-trains            tok= 120   0.88s stop The freight train has a 1.5-hour head start, so by 07:30 it has traveled 48 × 1.
+[v14] math-sqrt2             tok= 256   1.60s length Assume for the sake of argument that the square root of two is rational. Then th
+[v14] math-committee         tok=  52   0.51s stop Total committees: C(12,4)=495.   Committees with neither Alice nor Bob: choose a
+[v14] math-bayes             tok= 256   1.82s stop I'll compute this using Bayes' theorem.  **Setting up the numbers:** - Sensitivi
+[v14] math-quadratic         tok= 256   1.49s length I'll solve this by completing the square.  **Step 1: Divide by the leading coeff
+[v14] math-tangent           tok= 256   1.53s length I'll solve this step by step.  **Setup:** Circle: $x^2+y^2=25$, center $O=(0,0)$
+[v14] math-gcd               tok= 228   1.05s stop I'll compute gcd(12378, 3054) using the Euclidean algorithm.  **Step 1:** Divide
+[v14] math-knights           tok= 210   1.28s stop Let me reason through this.  Let A's statement be: "B is a knave."  Let B's stat
+[v14] math-related           tok= 240   1.56s stop Let \(x\) be the distance from the wall to the base, and \(y\) the height of the
+[v14] math-eigen             tok= 256   1.32s length I'll compute this step by step.  **Characteristic polynomial:** For a 2×2 matrix
+[v14] lang-es-essay          tok= 256   2.29s length El silencio de una biblioteca no es un vacío, sino una presencia densa que se im
+[v14] lang-de-essay          tok= 256   2.66s length # Der Takt in den Händen  In einem kleinen Atelier, irgendwo zwischen einer Bäck
+[v14] lang-ja-essay          tok= 256   2.75s length 冬の海辺で過ごす一日は、夏のそれとはまるで違う時間の流れを持っている。朝、宿の窓を開けると、冷たい空気が頬を刺すように流れ込んでくる。海は灰色に近い青をして、遠
+[v14] lang-zh-essay          tok= 206   2.32s stop 深夜的台灯把桌面照成一小片暖黄的孤岛，我拧开旧收音机的后盖，一股积年的灰尘味便混着焊锡的松香、老电容微微发酸的潮气，从机壳深处缓缓漫出来，像掀开一只封存多年的木
+[v14] lang-pt-essay          tok= 256   2.90s length # Travessia ao amanhecer  Ainda não havia sol, apenas uma claridade indecisa que
+[v14] lang-ar-essay          tok= 256   3.00s length في سوقٍ قديمٍ، حين تميل الشمسُ نحو الغروب وتتوارى خلف أسطُح البيوت الطينية، يبدأ
+[v14] lang-es-tech           tok= 256   2.52s length Copiar una capa MoE completa por token implica materializar en memoria (o mover 
+[v14] lang-de-tech           tok= 256   2.35s length Ein Autotune-Hash trifft nur bei identischer Kernel-Shape, weil der Hash über ge
+[v14] tool-json-status       tok= 110   0.66s tool_calls I'll inspect the machine.  
+[v14] tool-search-sum        tok=  54   0.39s tool_calls I'll search for the current vLLM GitHub stars.  
+[v14] tool-read-patch        tok=  48   0.34s tool_calls I'll read the file first.  
+[v14] tool-yaml-cfg          tok=  88   0.59s stop model: DSV4.1-Flash port: 8000 offload_gb: 24 util: 0.92 speculative:   schedule
+[v14] tool-weather-time      tok=  81   0.55s tool_calls I'll gather both pieces of information.  
+[v14] tool-steps-json        tok= 130   0.83s stop {"steps":[{"n":1,"cmd":"docker stop vllm","why":"Stop the running vLLM container
+[v14] wrote /home/user/pin-hot-experts/e2c/parity-v14.json n=50
+[17:32:33] RUN /usr/bin/python3 /home/user/pin-hot-experts/scripts/e2c_heldout.py v14 /home/user/pin-hot-experts/e2c
+[v14] math_proof   tok= 400 inst=130.08  Let it be supposed, for the sake of contradiction,
+[v14] math_proof   tok= 400 inst=131.77  The harmonic series is the infinite sum of the rec
+[v14] math_proof   tok= 400 inst=145.61  To derive the quadratic formula, we begin with the
+[v14] math_proof   tok= 358 inst=121.69  Let us suppose, for the sake of argument, that the
+[v14] math_proof   tok= 400 inst=121.67  The technique of mathematical induction is a power
+[v14] math_proof AGG 129.78 tok/s
+[v14] non_english  tok= 400 inst=95.48  冬の海辺で一人過ごす一日は、時間というものが普段とは違う密度で流れているような感覚を伴って始まる。朝
+[v14] non_english  tok= 400 inst=97.32  子供のころ、町の図書館で過ごした午後の記憶は、今も私の心の奥に、柔らかな陽だまりのように残っています
+[v14] non_english  tok= 400 inst=93.34  Es gibt Orte auf dieser Welt, an denen die Zeit ni
+[v14] non_english  tok= 400 inst=88.64  Der Regionalexpress nach Dortmund hatte Verspätung
+[v14] non_english  tok= 400 inst=90.83  茶の湯の季節の移ろいは、ただ暦の上で春夏秋冬を辿るというだけのものではなく、釜の湯の音や炭の匂い、あ
+[v14] non_english AGG 93.02 tok/s
+[v14] wrote /home/user/pin-hot-experts/e2c/heldout-v14.json
+[17:33:11] RUN /usr/bin/python3 /home/user/pin-hot-experts/scripts/e2c_hostwatch.py v14 end dsv41-vllm-v14-1M-ksched-agent-RETIRED-REF /home/user/pin-hot-experts/e2c
+[hostwatch] v14 end avail=69 GiB  cgroup=464.232 GiB  dsv41-vllm-v14-1M-ksched-agent-RETIRED-REF mem=420.3GiB / 494.5GiB cpu=0.24%
+/home/user/pin-hot-experts/e2c/hostwatch-v14-end.json
+[17:33:12] WINDOW v14 done in 313s
+=== swap v14 → v15 ===
+Flag --time has been deprecated, use --timeout instead
+dsv41-vllm-v14-1M-ksched-agent-RETIRED-REF
+dsv41-vllm-v15-1M-pin-static-v1-BOUND-REF
+[wait] dsv41-vllm-v15-1M-pin-static-v1-BOUND-REF limit=900s
+[wait] autotune START at +222s  hinfer_autotune_cache/0.6.18/103a/9ac7b387cce0338c2fa9e4efbaafefd559bcce80ce9771b5fd037d8abf2ae986/autotune_configs.json
+[wait] autotune END after 5.0s  hinfer_autotune_cache/0.6.18/103a/9ac7b387cce0338c2fa9e4efbaafefd559bcce80ce9771b5fd037d8abf2ae986/autotune_configs.json
+[wait] autotune START at +232s  hinfer_autotune_cache/0.6.18/103a/9ac7b387cce0338c2fa9e4efbaafefd559bcce80ce9771b5fd037d8abf2ae986/autotune_configs.json
+[wait] autotune END after 0.0s  hinfer_autotune_cache/0.6.18/103a/9ac7b387cce0338c2fa9e4efbaafefd559bcce80ce9771b5fd037d8abf2ae986/autotune_configs.json
+[wait] autotune START at +237s  hinfer_autotune_cache/0.6.18/103a/9ac7b387cce0338c2fa9e4efbaafefd559bcce80ce9771b5fd037d8abf2ae986/autotune_configs.json
+[wait] autotune END after 0.0s  hinfer_autotune_cache/0.6.18/103a/9ac7b387cce0338c2fa9e4efbaafefd559bcce80ce9771b5fd037d8abf2ae986/autotune_configs.json
+[wait] autotune START at +242s  hinfer_autotune_cache/0.6.18/103a/9ac7b387cce0338c2fa9e4efbaafefd559bcce80ce9771b5fd037d8abf2ae986/autotune_configs.json
+[wait] autotune END after 0.0s  hinfer_autotune_cache/0.6.18/103a/9ac7b387cce0338c2fa9e4efbaafefd559bcce80ce9771b5fd037d8abf2ae986/autotune_configs.json
+[wait] autotune START at +247s  hinfer_autotune_cache/0.6.18/103a/9ac7b387cce0338c2fa9e4efbaafefd559bcce80ce9771b5fd037d8abf2ae986/autotune_configs.json
+[wait] autotune END after 0.0s  hinfer_autotune_cache/0.6.18/103a/9ac7b387cce0338c2fa9e4efbaafefd559bcce80ce9771b5fd037d8abf2ae986/autotune_configs.json
+[wait] API up at +257s  loaded=hinfer_autotune_cache/0.6.18/103a/9ac7b387cce0338c2fa9e4efbaafefd559bcce80ce9771b5fd037d8abf2ae986/autotune_configs.json
+=== Part A window v15b ===
+[17:37:36] WINDOW v15b container=dsv41-vllm-v15-1M-pin-static-v1-BOUND-REF start
+[17:37:36] RUN /usr/bin/python3 /home/user/pin-hot-experts/scripts/e2c_hostwatch.py v15b start dsv41-vllm-v15-1M-pin-static-v1-BOUND-REF /home/user/pin-hot-experts/e2c
+[hostwatch] v15b start avail=126 GiB  cgroup=350.931 GiB  dsv41-vllm-v15-1M-pin-static-v1-BOUND-REF mem=334.5GiB / 494.5GiB cpu=0.26%
+/home/user/pin-hot-experts/e2c/hostwatch-v15b-start.json
+[17:37:37] RUN bash /home/user/dsv41/knee.sh v15b-r1
+[v15b-r1] conc= 1:   153.1 agg tok/s  153.09 per-stream  (runs 152.8/153.4)
+[v15b-r1] conc= 2:   261.2 agg tok/s  130.60 per-stream  (runs 259.2/263.2)
+[v15b-r1] conc= 4:   413.6 agg tok/s  103.39 per-stream  (runs 410.4/416.8)
+[v15b-r1] conc= 8:   703.0 agg tok/s   87.87 per-stream  (runs 702.7/703.2)
+[v15b-r1] conc=12:   802.1 agg tok/s   66.85 per-stream  (runs 793.2/811.1)
+[v15b-r1] conc=16:   812.1 agg tok/s   50.76 per-stream  (runs 667.4/956.8)
+[17:38:05] copied /home/user/dsv41/knee-v15b-r1.json -> /home/user/pin-hot-experts/e2c/v15b-knee-r1.json
+[17:38:05] RUN bash /home/user/dsv41/knee.sh v15b-r2
+[v15b-r2] conc= 1:   153.2 agg tok/s  153.25 per-stream  (runs 153.2/153.3)
+[v15b-r2] conc= 2:   271.0 agg tok/s  135.52 per-stream  (runs 276.3/265.8)
+[v15b-r2] conc= 4:   408.1 agg tok/s  102.02 per-stream  (runs 403.0/413.2)
+[v15b-r2] conc= 8:   706.5 agg tok/s   88.31 per-stream  (runs 706.2/706.7)
+[v15b-r2] conc=12:   808.9 agg tok/s   67.41 per-stream  (runs 806.8/811.0)
+[v15b-r2] conc=16:   957.8 agg tok/s   59.86 per-stream  (runs 957.6/958.0)
+[17:38:31] copied /home/user/dsv41/knee-v15b-r2.json -> /home/user/pin-hot-experts/e2c/v15b-knee-r2.json
+[17:38:31] RUN bash /home/user/dsv41/agent_fixture_o.sh v15b
+[v15b] prose        169.0 tok/s  accept=29.8%  acc/step=1.49  tokens=400
+      (200, 1.18, 'length', False, 'Speculative decoding speeds up generation by having a small, cheap "draft" model')
+[v15b] structured   205.0 tok/s  accept=49.5%  acc/step=2.48  tokens=424
+      (102, 0.44, 'stop', False, "I'll research both approaches to give you accurate numbers.  ")
+      (110, 0.6, 'stop', False, '- weights load: complete — 14.2 GB sharded across 2 GPUs in 38.4 s - KV cache: a')
+[v15b] code         215.4 tok/s  accept=63.8%  acc/step=3.19  tokens=654
+      (243, 1.09, 'stop', False, '```python def knee(rows):     """Return the concurrency where marginal gain per ')
+      (84, 0.43, 'stop', False, '```bash #!/usr/bin/env bash set -euo pipefail  : "${SRC:?SRC is not set}"  for i')
+[v15b] shell_ops    251.7 tok/s  accept=90.8%  acc/step=4.54  tokens=144
+      (72, 0.28, 'stop', False, 'docker stop dsv41-vllm-v7 docker rename dsv41-vllm-v7 dsv41-vllm-v7-old sudo sh ')
+[v15b] tool_json    222.4 tok/s  accept=87.8%  acc/step=4.39  tokens=318
+      (99, 0.51, 'tool_calls', True, "I'll run both checks in parallel.  ")
+      (60, 0.35, 'tool_calls', True, "I'll read the file first.  ")
+[v15b] weighted accept=59.6%
+[17:38:40] copied /home/user/dsv41/agentfix-v15b.json -> /home/user/pin-hot-experts/e2c/v15b-agent.json
+[17:38:40] RUN /usr/bin/python3 /home/user/pin-hot-experts/e2a_prose.py v15b
+[v15b]  192 tok    1.11s   173.5 tok/s  length  Write a detailed paragraph about the number 7, its
+[v15b]  192 tok    1.10s   175.1 tok/s  length  Write a detailed paragraph about the number 12, it
+[v15b]  192 tok    1.20s   160.0 tok/s  length  Write a detailed paragraph about the number 42, it
+[v15b]  192 tok    1.31s   146.3 tok/s  length  Write a detailed paragraph about the number 101, i
+[v15b]  192 tok    1.11s   172.2 tok/s  length  Write a detailed paragraph about the number 256, i
+[v15b]  192 tok    1.25s   153.3 tok/s  length  Write a detailed paragraph about the number 1024, 
+[v15b]  389 tok    2.72s   142.8 tok/s  stop  Write a 300-word reflective essay on why small stu
+[v15b]  300 tok    2.25s   133.2 tok/s  length  Describe, in flowing prose, a morning walk through
+[v15b] PROSE agg 152.7 tok/s  tokens=1841
+[17:38:53] copied /home/user/dsv41/prose-v15b.json -> /home/user/pin-hot-experts/e2c/v15b-prose.json
+[17:38:53] RUN /usr/bin/python3 /home/user/dsv41/replay_c.py
+[v15b-r1] REPLAY n=4: agg 259.2 tok/s over 18s, 4567 tokens; accept=53.6% acc/step=2.68; tool turns 12 emitted=5 per-req 58.1 tok/s; text turns 12 per-req 76.4 tok/s
+[17:39:10] copied /home/user/dsv41/replayc-v15b-r1-n4.json -> /home/user/pin-hot-experts/e2c/v15b-replay-r1.json
+[17:39:10] RUN /usr/bin/python3 /home/user/dsv41/replay_c.py
+[v15b-r2] REPLAY n=4: agg 434.6 tok/s over 9s, 3901 tokens; accept=54.6% acc/step=2.73; tool turns 12 emitted=3 per-req 112.3 tok/s; text turns 12 per-req 128.4 tok/s
+[17:39:20] copied /home/user/dsv41/replayc-v15b-r2-n4.json -> /home/user/pin-hot-experts/e2c/v15b-replay-r2.json
+[17:39:20] RUN /usr/bin/python3 /home/user/pin-hot-experts/scripts/e2c_parity.py v15b /home/user/pin-hot-experts/e2c/parity-prompts.json /home/user/pin-hot-experts/e2c
+[v15b] agent-prose-1          tok= 230   1.39s stop Speculative decoding speeds up generation by having a small, cheap "draft" model
+[v15b] agent-structured-1     tok= 102   0.41s stop I'll research both approaches to give you accurate numbers.  
+[v15b] agent-structured-2     tok= 110   0.61s stop - weights load: complete — 14.2 GB sharded across 2 GPUs in 38.4 s - KV cache: a
+[v15b] agent-code-1           tok= 243   1.10s stop ```python def knee(rows):     """Return the concurrency where marginal gain per 
+[v15b] agent-code-2           tok=  84   0.43s stop ```bash #!/usr/bin/env bash set -euo pipefail  : "${SRC:?SRC is not set}"  for i
+[v15b] agent-shell-1          tok=  72   0.28s stop docker stop dsv41-vllm-v7 docker rename dsv41-vllm-v7 dsv41-vllm-v7-old sudo sh 
+[v15b] agent-tool-1           tok= 118   0.56s tool_calls I'll check both. Let me start with the Docker containers and disk space on that 
+[v15b] agent-tool-2           tok=  60   0.36s tool_calls I'll read the file first.  
+[v15b] t5-prose-7             tok= 256   1.56s length The number 7 has held a remarkable place in human culture, religion, and thought
+[v15b] t5-prose-12            tok= 254   1.58s stop The number 12 has held a privileged place in human thought for millennia, likely
+[v15b] t5-prose-42            tok= 256   1.57s length The number 42 occupies a peculiar place in human culture, functioning simultaneo
+[v15b] t5-prose-101           tok= 256   1.50s length The number 101 occupies a curious place in mathematics, culture, and everyday li
+[v15b] t5-prose-256           tok= 256   1.63s length The number 256 occupies a distinctive place at the intersection of mathematics, 
+[v15b] t5-prose-1024          tok= 256   1.64s length The number 1024 occupies a distinctive place at the intersection of mathematics,
+[v15b] t5-prose-essay         tok= 256   1.74s length # The Machine in the Room  There is a particular kind of silence that falls over
+[v15b] t5-prose-walk          tok= 256   1.99s length The air has teeth at first, sharp and thin, and you are glad for the wool at you
+[v15b] code-py-bsearch        tok= 146   0.63s stop ```python from typing import Sequence  def binary_search(xs: Sequence[int], targ
+[v15b] code-py-lru            tok= 244   1.21s stop ```python from collections import OrderedDict  class LRUCache:     def __init__(
+[v15b] code-rs-csv            tok= 217   1.05s stop ```rust fn parse_csv_line(line: &str) -> Result<Vec<String>, &'static str> {    
+[v15b] code-rs-result         tok= 124   0.64s stop ```rust use std::num::ParseIntError;  fn triple(s: &str) -> Result<u64, ParseInt
+[v15b] code-swift-url         tok= 192   1.02s stop ```swift func fetchTitle(url: URL) async throws -> String {     let (data, _) = 
+[v15b] code-swift-codable     tok=  76   0.47s stop ```swift struct Recipe: Codable {     let name: String     let tokPerSec: Double
+[v15b] code-sql-window        tok=  61   0.32s stop ```sql SELECT dept, name, salary, rnk FROM (   SELECT dept, name, salary,       
+[v15b] code-sql-cte           tok=  90   0.45s stop ```sql WITH RECURSIVE org_tree AS (     SELECT id, name, 0 AS depth     FROM org
+[v15b] code-py-cli            tok= 204   0.95s stop ```python import argparse from dataclasses import dataclass from pathlib import 
+[v15b] code-rs-http           tok= 173   0.83s stop ```rust use axum::{routing::get, Json, Router}; use serde_json::{json, Value}; u
+[v15b] math-trains            tok= 120   0.60s stop The freight train has a 1.5-hour head start, so by 07:30 it has traveled 48 × 1.
+[v15b] math-sqrt2             tok= 256   1.26s length Assume for the sake of argument that the square root of two is rational. Then th
+[v15b] math-committee         tok=  52   0.36s stop Total committees: C(12,4)=495.   Committees with neither Alice nor Bob: choose a
+[v15b] math-bayes             tok= 256   1.35s stop I'll compute this using Bayes' theorem.  **Setting up the numbers:** - Sensitivi
+[v15b] math-quadratic         tok= 256   1.13s length I'll solve this by completing the square.  **Step 1: Divide by the leading coeff
+[v15b] math-tangent           tok= 256   1.28s length I'll solve this step by step.  **Setup:** Circle: $x^2+y^2=25$, center $O=(0,0)$
+[v15b] math-gcd               tok= 228   0.75s stop I'll compute gcd(12378, 3054) using the Euclidean algorithm.  **Step 1:** Divide
+[v15b] math-knights           tok= 210   0.87s stop Let me reason through this.  Let A's statement be: "B is a knave."  Let B's stat
+[v15b] math-related           tok= 240   1.20s stop Let \(x\) be the distance from the wall to the base, and \(y\) the height of the
+[v15b] math-eigen             tok= 256   1.04s length I'll compute this step by step.  **Characteristic polynomial:** For a 2×2 matrix
+[v15b] lang-es-essay          tok= 256   1.85s length El silencio de una biblioteca no es un vacío, sino una presencia densa que se im
+[v15b] lang-de-essay          tok= 256   2.24s length # Der Takt in den Händen  In einem kleinen Atelier, irgendwo zwischen einer Bäck
+[v15b] lang-ja-essay          tok= 256   3.06s length 冬の海辺で過ごす一日は、夏のそれとはまるで違う時間の流れを持っている。朝、宿の窓を開けると、冷たい空気が頬を刺すように流れ込んでくる。海は灰色に近い青をして、遠
+[v15b] lang-zh-essay          tok= 206   2.69s stop 深夜的台灯把桌面照成一小片暖黄的孤岛，我拧开旧收音机的后盖，一股积年的灰尘味便混着焊锡的松香、老电容微微发酸的潮气，从机壳深处缓缓漫出来，像掀开一只封存多年的木
+[v15b] lang-pt-essay          tok= 256   2.39s length # Travessia ao amanhecer  Ainda não havia sol, apenas uma claridade indecisa que
+[v15b] lang-ar-essay          tok= 256   2.35s length في سوقٍ قديمٍ، حين تميل الشمسُ نحو الغروب وتتوارى خلف أسطُح البيوت الطينية، يبدأ
+[v15b] lang-es-tech           tok= 256   1.92s length Copiar una capa MoE completa por token implica materializar en memoria (o mover 
+[v15b] lang-de-tech           tok= 256   1.78s length Ein Autotune-Hash trifft nur bei identischer Kernel-Shape, weil der Hash über ge
+[v15b] tool-json-status       tok= 107   0.39s tool_calls I'll inspect the machine.  
+[v15b] tool-search-sum        tok=  54   0.26s tool_calls I'll search for the current vLLM GitHub stars.  
+[v15b] tool-read-patch        tok=  48   0.22s tool_calls I'll read the file first.  
+[v15b] tool-yaml-cfg          tok=  88   0.38s stop model: DSV4.1-Flash port: 8000 offload_gb: 24 util: 0.92 speculative:   schedule
+[v15b] tool-weather-time      tok=  79   0.38s tool_calls I'll gather both pieces of information.  
+[v15b] tool-steps-json        tok= 130   0.52s stop {"steps":[{"n":1,"cmd":"docker stop vllm","why":"Stop the running vLLM container
+[v15b] wrote /home/user/pin-hot-experts/e2c/parity-v15b.json n=50
+[17:40:16] RUN /usr/bin/python3 /home/user/pin-hot-experts/scripts/e2c_heldout.py v15b /home/user/pin-hot-experts/e2c
+[v15b] math_proof   tok= 400 inst=182.53  Let it be supposed, for the sake of contradiction,
+[v15b] math_proof   tok= 400 inst=195.54  The harmonic series is the infinite sum of the rec
+[v15b] math_proof   tok= 400 inst=187.15  To derive the quadratic formula, we begin with the
+[v15b] math_proof   tok= 358 inst=174.26  Let us suppose, for the sake of argument, that the
+[v15b] math_proof   tok= 400 inst=181.68  The technique of mathematical induction is a power
+[v15b] math_proof AGG 184.2 tok/s
+[v15b] non_english  tok= 400 inst=86.12  冬の海辺で一人過ごす一日は、時間というものが普段とは違う密度で流れているような感覚を伴って始まる。朝
+[v15b] non_english  tok= 400 inst=86.13  子供のころ、町の図書館で過ごした午後の記憶は、今も私の心の奥に、柔らかな陽だまりのように残っています
+[v15b] non_english  tok= 400 inst=111.54  Es gibt Orte auf dieser Welt, an denen die Zeit ni
+[v15b] non_english  tok= 400 inst=108.16  Der Regionalexpress nach Dortmund hatte Verspätung
+[v15b] non_english  tok= 400 inst=78.84  茶の湯の季節の移ろいは、ただ暦の上で春夏秋冬を辿るというだけのものではなく、釜の湯の音や炭の匂い、あ
+[v15b] non_english AGG 92.39 tok/s
+[v15b] wrote /home/user/pin-hot-experts/e2c/heldout-v15b.json
+[17:40:49] RUN /usr/bin/python3 /home/user/pin-hot-experts/scripts/e2c_hostwatch.py v15b end dsv41-vllm-v15-1M-pin-static-v1-BOUND-REF /home/user/pin-hot-experts/e2c
+[hostwatch] v15b end avail=125 GiB  cgroup=351.02 GiB  dsv41-vllm-v15-1M-pin-static-v1-BOUND-REF mem=334.6GiB / 494.5GiB cpu=0.24%
+/home/user/pin-hot-experts/e2c/hostwatch-v15b-end.json
+[17:40:50] WINDOW v15b done in 194s
+=== Part B extra: second v14 parity skipped unless time; gauntlet on v15 ===
+gauntlet rep 1 -> /home/user/pin-hot-experts/e2c/gauntlet-rep1
+{"tag": "e2c-v15-rep1", "task": "chain-amber", "success": true, "done": 1, "expected": 12}
+{"tag": "e2c-v15-rep1", "task": "chain-basil", "success": true, "done": 2, "expected": 12}
+{"tag": "e2c-v15-rep1", "task": "chain-cinder", "success": true, "done": 3, "expected": 12}
+{"tag": "e2c-v15-rep1", "task": "chain-delta", "success": true, "done": 4, "expected": 12}
+{"tag": "e2c-v15-rep1", "task": "code-brackets", "success": true, "done": 5, "expected": 12}
+{"tag": "e2c-v15-rep1", "task": "code-intervals", "success": true, "done": 6, "expected": 12}
+{"tag": "e2c-v15-rep1", "task": "code-slugify", "success": true, "done": 7, "expected": 12}
+{"tag": "e2c-v15-rep1", "task": "struct-incidents", "success": true, "done": 8, "expected": 12}
+{"tag": "e2c-v15-rep1", "task": "struct-inventory", "success": true, "done": 9, "expected": 12}
+{"tag": "e2c-v15-rep1", "task": "struct-shipments", "success": true, "done": 10, "expected": 12}
+{"tag": "e2c-v15-rep1", "task": "struct-readings", "success": true, "done": 11, "expected": 12}
+{"tag": "e2c-v15-rep1", "task": "code-totals", "success": true, "done": 12, "expected": 12}
+gauntlet rep 2 -> /home/user/pin-hot-experts/e2c/gauntlet-rep2
+{"tag": "e2c-v15-rep2", "task": "chain-basil", "success": true, "done": 1, "expected": 12}
+{"tag": "e2c-v15-rep2", "task": "chain-amber", "success": true, "done": 2, "expected": 12}
+{"tag": "e2c-v15-rep2", "task": "chain-cinder", "success": true, "done": 3, "expected": 12}
+{"tag": "e2c-v15-rep2", "task": "chain-delta", "success": true, "done": 4, "expected": 12}
+{"tag": "e2c-v15-rep2", "task": "code-brackets", "success": true, "done": 5, "expected": 12}
+{"tag": "e2c-v15-rep2", "task": "code-slugify", "success": true, "done": 6, "expected": 12}
+{"tag": "e2c-v15-rep2", "task": "code-intervals", "success": true, "done": 7, "expected": 12}
+{"tag": "e2c-v15-rep2", "task": "struct-inventory", "success": true, "done": 8, "expected": 12}
+{"tag": "e2c-v15-rep2", "task": "struct-shipments", "success": true, "done": 9, "expected": 12}
+{"tag": "e2c-v15-rep2", "task": "struct-incidents", "success": true, "done": 10, "expected": 12}
+{"tag": "e2c-v15-rep2", "task": "struct-readings", "success": true, "done": 11, "expected": 12}
+{"tag": "e2c-v15-rep2", "task": "code-totals", "success": true, "done": 12, "expected": 12}
+gauntlet rep 3 -> /home/user/pin-hot-experts/e2c/gauntlet-rep3
+{"tag": "e2c-v15-rep3", "task": "chain-amber", "success": true, "done": 1, "expected": 12}
+{"tag": "e2c-v15-rep3", "task": "chain-delta", "success": true, "done": 2, "expected": 12}
+{"tag": "e2c-v15-rep3", "task": "chain-basil", "success": true, "done": 3, "expected": 12}
+{"tag": "e2c-v15-rep3", "task": "chain-cinder", "success": true, "done": 4, "expected": 12}
+{"tag": "e2c-v15-rep3", "task": "code-intervals", "success": true, "done": 5, "expected": 12}
+{"tag": "e2c-v15-rep3", "task": "code-brackets", "success": true, "done": 6, "expected": 12}
+{"tag": "e2c-v15-rep3", "task": "code-slugify", "success": true, "done": 7, "expected": 12}
+{"tag": "e2c-v15-rep3", "task": "struct-shipments", "success": true, "done": 8, "expected": 12}
+{"tag": "e2c-v15-rep3", "task": "struct-incidents", "success": true, "done": 9, "expected": 12}
+{"tag": "e2c-v15-rep3", "task": "struct-inventory", "success": true, "done": 10, "expected": 12}
+{"tag": "e2c-v15-rep3", "task": "struct-readings", "success": true, "done": 11, "expected": 12}
+{"tag": "e2c-v15-rep3", "task": "code-totals", "success": true, "done": 12, "expected": 12}
+=== final safety: leave v15 up ===
+[wait] dsv41-vllm-v15-1M-pin-static-v1-BOUND-REF limit=900s
+[wait] API up at +0s  loaded=None
+{"object":"list","data":[{"id":"dsv41-flash-uva","object":"model","created":1789684884,"owned_by":"vllm","root":"/model","parent":null,"max_model_len":1048576,"permission":[{"id":"modelperm-9e5231baf1a00504","object":"model_permission","created":1789684884,"allow_create_engine":false,"allow_sampling":true,"allow_logprobs":true,"allow_search_indices":false,"allow_view":true,"allow_fine_tuning":false,"organization":"*","group":null,"is_blocking":false}]}]}dsv41-vllm-v15-1M-pin-static-v1-BOUND-REF Up 8 minutes
+=== E2c master done Thu Sep 17 05:41:24 PM CDT 2026 ===

@@ -1,0 +1,18 @@
+[17:20:17] WINDOW v15a container=dsv41-vllm-v15-1M-pin-static-v1-BOUND-REF start
+[17:20:17] RUN /usr/bin/python3 /home/user/pin-hot-experts/scripts/e2c_hostwatch.py v15a start dsv41-vllm-v15-1M-pin-static-v1-BOUND-REF /home/user/pin-hot-experts/e2c
+[17:20:18] RUN bash /home/user/dsv41/knee.sh v15a-r1
+[17:20:44] copied /home/user/dsv41/knee-v15a-r1.json -> /home/user/pin-hot-experts/e2c/v15a-knee-r1.json
+[17:20:44] RUN bash /home/user/dsv41/knee.sh v15a-r2
+[17:21:10] copied /home/user/dsv41/knee-v15a-r2.json -> /home/user/pin-hot-experts/e2c/v15a-knee-r2.json
+[17:21:10] RUN bash /home/user/dsv41/agent_fixture_o.sh v15a
+[17:21:19] copied /home/user/dsv41/agentfix-v15a.json -> /home/user/pin-hot-experts/e2c/v15a-agent.json
+[17:21:19] RUN /usr/bin/python3 /home/user/pin-hot-experts/e2a_prose.py v15a
+[17:21:31] copied /home/user/dsv41/prose-v15a.json -> /home/user/pin-hot-experts/e2c/v15a-prose.json
+[17:21:31] RUN /usr/bin/python3 /home/user/dsv41/replay_c.py
+[17:21:41] copied /home/user/dsv41/replayc-v15a-r1-n4.json -> /home/user/pin-hot-experts/e2c/v15a-replay-r1.json
+[17:21:41] RUN /usr/bin/python3 /home/user/dsv41/replay_c.py
+[17:21:51] copied /home/user/dsv41/replayc-v15a-r2-n4.json -> /home/user/pin-hot-experts/e2c/v15a-replay-r2.json
+[17:21:51] RUN /usr/bin/python3 /home/user/pin-hot-experts/scripts/e2c_parity.py v15a /home/user/pin-hot-experts/e2c/parity-prompts.json /home/user/pin-hot-experts/e2c
+[17:22:49] RUN /usr/bin/python3 /home/user/pin-hot-experts/scripts/e2c_heldout.py v15a /home/user/pin-hot-experts/e2c
+[17:23:22] RUN /usr/bin/python3 /home/user/pin-hot-experts/scripts/e2c_hostwatch.py v15a end dsv41-vllm-v15-1M-pin-static-v1-BOUND-REF /home/user/pin-hot-experts/e2c
+[17:23:23] WINDOW v15a done in 186s

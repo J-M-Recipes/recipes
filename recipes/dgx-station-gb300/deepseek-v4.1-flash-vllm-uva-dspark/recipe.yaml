@@ -7,7 +7,7 @@ summary: >
   NVLink-C2C with vLLM's UVA backend, keeps the full 1,048,576-token context, and runs the in-checkpoint
   DSpark drafter on the v14 batch-size schedule (k=5 at 1-4 streams, k=1 at 5-16). ~90 tok/s single-stream prose,
   140-160 tok/s on agent/code/tool text, 429 agg at C16, a 972K-token prompt prefills in 85 s, and Hermes
-  tool-calling passes 10/10 under the real agent harness. Release "Pin Hot Experts" v15 (2026-09-17): v14 launch + a bind-mounted hook that re-homes each MoE layer's experts by measured usage (295 hot rows in HBM, 89 cold rows pinned in Grace) and runs the MoE as two do_finalize=False routed-kernel calls plus one fp32-FMA finalize — bit-identical to v14 (8/8 greedy prompts; acceptance rates identical). Same-window pair: C1 89.3→153.1 (+71%), C8 308→701, C16 414→809, prose fixture 91→153, KV 4.75 GiB, pinned 62.3 GiB, 21 new autotune profiles (12 min). Release "Sixty-K Agent" v14 (2026-09-15): the v13 schedule with k=5 held to C4 for agent lanes, [[1,4,5],[5,16,1]]; same hash, agent replay at C4 recovered to v12 (207 vs v13 188), C6+ knee identical to v13. Release "Sixty-K" v13 (2026-09-14): one config line over
+  tool-calling passes 10/10 under the real agent harness. Release "Pin Hot Experts" v15 (2026-09-17): v14 launch + a bind-mounted hook that re-homes each MoE layer's experts by measured usage (295 hot rows in HBM, 89 cold rows pinned in Grace) and runs the MoE as two do_finalize=False routed-kernel calls plus one fp32-FMA finalize — bit-identical to v14 (8/8 greedy prompts; acceptance rates identical). Confirmed on two same-window pairs (2026-09-17): C1 88.7→153.3 (+72.7%, four runs within 0.4), C8 305→705, C16 386–417→~955 (six of seven reps; one 667), prose fixture 91→153, KV 4.75 GiB, pinned 62.3 GiB, 21 new autotune profiles (12 min). Release "Sixty-K Agent" v14 (2026-09-15): the v13 schedule with k=5 held to C4 for agent lanes, [[1,4,5],[5,16,1]]; same hash, agent replay at C4 recovered to v12 (207 vs v13 188), C6+ knee identical to v13. Release "Sixty-K" v13 (2026-09-14): one config line over
   "Sixty" (v12), +26-35% at 4-16 streams on the prose knee, C1 unchanged, same weights/verifier, two same-window
   pairs. Earlier rounds closed the residency axis (no faster GPU→Grace path on GB300) and static k (no single k
   fits); a decode-vs-depth map shows decode flat to 425K tokens, so attention is not the lever on this box either.
@@ -78,6 +78,48 @@ launch:
     - "--gpu-memory-utilization 0.97 --max-num-seqs 16 --max-num-batched-tokens 8192  (util alone moves nothing: at 70 it only grew KV 10→17.5 GiB with identical tok/s. util is the headroom that lets OFFGB drop; OFFGB is the lever)"
 
 metrics:
+  - name: single-stream decode (prose) — v15 e2c confirm
+    value: 153.28
+    unit: tok/s
+    workload: "C1, warm, prose prompt (knee.sh: Write a detailed paragraph about the number N), temperature 0, ignore_eos, 192 tokens; max-num-seqs 16 so C16 is slot-capped; max_running_requests unset"
+    aggregation: "two same-window pairs 2026-09-17 (v15a then v14 then v15b, knee x2 each); v15 four-run mean 153.28 (153.5/153.3/153.1/153.2, within 0.4) vs v14 two-run mean 88.74 (88.7/88.8) = +72.7%"
+    provenance: { run_id: 2026-09-17-e2c-v15-confirm, method: "knee.sh", raw: throughput.csv }
+  - name: aggregate decode C8 — v15 e2c confirm
+    value: 703.89
+    unit: tok/s
+    workload: "C8, warm, prose prompts, temperature 0; max-num-seqs 16"
+    aggregation: "v15 four-run mean 703.89 (704.6/701.6/703.0/706.5) vs v14 305.23 (304.7/305.8)"
+    provenance: { run_id: 2026-09-17-e2c-v15-confirm, method: "knee.sh", raw: throughput.csv }
+  - name: aggregate decode C16 — v15 e2c confirm
+    value: 919.79
+    unit: tok/s
+    workload: "C16, warm, prose prompts, temperature 0; slot-capped by --max-num-seqs 16; max_running_requests unset"
+    aggregation: "v15 four-run mean 919.79 vs v14 401.36 (385.5/417.3). Four v15 knee-run means 952.6/956.7/812.1/957.8; the 812 is one mixed pair (internal 667.4/956.8). Other six internal C16 reps 952-958. Typical ~955 (~2.3x v14)."
+    provenance: { run_id: 2026-09-17-e2c-v15-confirm, method: "knee.sh", raw: throughput.csv }
+  - name: held-out math/proof English — v15 e2c
+    value: 183.54
+    unit: tok/s
+    workload: "C1, streaming first-to-last token, 5 x 400 tok English math/proof; not in the E2a profile"
+    aggregation: "v15 mean 183.54 (v15a 182.87 / v15b 184.20) vs v14 129.78 = +41.4%; never-worse holds"
+    provenance: { run_id: 2026-09-17-e2c-v15-confirm, method: "e2c_heldout.py", raw: throughput.csv }
+  - name: held-out non-English JP+DE essays — v15 e2c
+    value: 91.58
+    unit: tok/s
+    workload: "C1, streaming first-to-last token, 5 x 400 tok Japanese + German essays; not in the E2a profile"
+    aggregation: "v15 mean 91.58 (v15a 90.77 / v15b 92.39) vs v14 93.02 = -1.55%; bar was >= -1.5%; wash (0.05 tok/s outside the floor). Static profile has least to offer on non-English long-form."
+    provenance: { run_id: 2026-09-17-e2c-v15-confirm, method: "e2c_heldout.py", raw: throughput.csv }
+  - name: greedy 50-prompt parity non-tool exact — v15 e2c
+    value: 44
+    unit: prompts
+    workload: "greedy T=0, seed 42, max_tokens 256, 50 prompts (8 agent-fixture + 8 T5 prose + 10 code + 10 math + 8 non-English + 6 structured/tool), C1; compare content + tool name/args (ids ignored)"
+    aggregation: "44/44 non-tool prompts exact on every pair (v15a vs v14, v15a vs v15b, v14 vs v15b). Content+tools exact 49/50 (v15a vs v14), 47/50 (v15a vs v15b), 48/50 (v14 vs v15b). Misses are all tool_calls preambles/args; same class present v15-vs-v15."
+    provenance: { run_id: 2026-09-17-e2c-v15-confirm, method: "e2c_parity.py", raw: throughput.csv }
+  - name: round-7 gauntlet — v15 e2c
+    value: 36
+    unit: tasks
+    workload: "round-7 twelve-task suite on v15, frozen run_suite.py, 3 repeats x 12, workers=4, temp 0, seed 42, reasoning low, sandbox sha256:00d577a6 with NVIDIA_VISIBLE_DEVICES=void"
+    aggregation: "36/36 matching recorded v14 36/36; walls 10.48/10.53/10.38 s; isolation gate passed"
+    provenance: { run_id: 2026-09-17-e2c-v15-confirm, method: "run_suite.py", raw: throughput.csv }
   - name: single-stream decode (prose) — v15 Pin Hot Experts
     value: 153.1
     unit: tok/s
@@ -284,13 +326,13 @@ verification:
     schema:      { how: "scripts/check_recipe.py passes", last_pass_utc: "2026-09-12T08:10:00Z", run_id: 2026-09-12-v12-1M-k5-off60-util97 }
     digest:      { how: "docker image inspect reports sha256:00d577a6…; /model mount is the df42c109 revision, 510,313,343,553 bytes byte-verified against the archive", last_pass_utc: "2026-09-11T11:07:00Z", run_id: 2026-09-10-v11-1M-k5-lpt6144 }
     health:      { how: "/v1/models 200; log shows offloaded 61.17 GiB, KV 4.89 GiB, 2,326,569 tokens, 2.22x at 1M, 'Loaded' configs for hash 9ac7b387 (10-min boot); smoke pass", last_pass_utc: "2026-09-12T08:02:00Z", run_id: 2026-09-12-v12-1M-k5-off60-util97 }
-    quality:     { how: "v15 vs v14 greedy token-exact 8/8 on agent-fixture prompts (C1, T=0) plus acceptance-rate identity on prose/structured/code/shell. Larger parity set (>=50 prompts) and round-7 gauntlet 36/36 pending. Prior: Hermes harness 10/10 (v11). No teacher-forced divergence gate (weights as-shipped).", last_pass_utc: "2026-09-17T19:58:00Z", run_id: 2026-09-17-e2b-pin-hot-experts-v15 }
-    performance: { how: "v15 Pin Hot Experts 2026-09-17 one same-window pair vs v14: knee prose C1 89.3→153.1 (+71%), C8 308→701, C16 414→809 (cand runs 667/951); prose fixture 91.4→152.5 (in-domain); replay n=4 mean 197→339. Round 6 CORRECTED 2026-09-15: recorded-history shuffled proxy v14 171.1/174.1 vs v13 150.0/151.7; ordered proxy v14 232.6 first pass / 275.2 identical-request repeat, prefix-cache 71.3%/94.3%, TTFT p90 0.77/0.47 s. Different workloads; no causal cache-speedup, transferred ranking or production-capacity claim. Original bootstrap does not quantify wall-rate uncertainty. OFFGB=55 failed the 1M minimum-KV check (2.2 GiB needed, 0.65 available); 60 is lowest verified here, not a proven exact floor. v14 2026-09-15: [[1,4,5],[5,16,1]] same-window vs v13 and v12 controls, agent replay n=4 ×2 each, knee6, fixture; hash hit 9ac7b387. v13 2026-09-14: two same-window pairs, C16 430.8/427.1 vs v12 317.6/320.0, C1 91.2/90.2 vs 90.3/90.9; fixture wacc 0.596 both. Round 4 same night: C3/C6 +24/+25%; tool_json −7% was fixture ordering (identical on v12/v13 in every position); real-agent replay n=4 −12% (caveat in limits). v12: knee.sh C1 within 5% of 89.2 tok/s warm vs a same-window v11 control; confirm pair 2026-09-12: control 78.1 → v12 89.6 (+14.7%), C16 269.6 → 312.4. starve.py on v12: 4 shorts during a 480K prefill 0.81–1.09 s TTFT (unchanged from v11); cold prefill on v12 207K tokens 11.37 s / 18.2k tok/s (v11: 11.3 s)", last_pass_utc: "2026-09-17T19:58:00Z", run_id: 2026-09-17-e2b-pin-hot-experts-v15 }
+    quality:     { how: "v15 vs v14 greedy 50-prompt parity (C1, T=0, seed 42): 44/44 non-tool prompts exact on every pair (v15a vs v14, v15a vs v15b, v14 vs v15b). Tool-call preamble/arg jitter is present v15-vs-v15 (47/50) as well as v15-vs-v14 (49/50) — serving-level nondeterminism, not a pin/split numeric break. Gauntlet 36/36. Acceptance rates identical on fixture categories. Prior: greedy 8/8 agent-fixture (e2b); Hermes harness 10/10 (v11). No teacher-forced divergence gate (weights as-shipped).", last_pass_utc: "2026-09-17T22:41:00Z", run_id: 2026-09-17-e2c-v15-confirm }
+    performance: { how: "v15 Pin Hot Experts confirmed 2026-09-17 two same-window pairs (e2c v15a/v14/v15b, knee x2 each): knee prose C1 88.7→153.3 (+72.7%, four runs within 0.4), C8 305→704, C16 386-417→~955 (six of seven reps; one 667; four-run mean 920). Held-out math +41.4%; held-out JP/DE -1.55% (wash). E2b first pair: C1 89.3→153.1 (+71%), C8 308→701, C16 414→809 (cand runs 667/951); prose fixture 91.4→152.5 (in-domain); replay n=4 mean 197→339. Round 6 CORRECTED 2026-09-15: recorded-history shuffled proxy v14 171.1/174.1 vs v13 150.0/151.7; ordered proxy v14 232.6 first pass / 275.2 identical-request repeat, prefix-cache 71.3%/94.3%, TTFT p90 0.77/0.47 s. Different workloads; no causal cache-speedup, transferred ranking or production-capacity claim. Original bootstrap does not quantify wall-rate uncertainty. OFFGB=55 failed the 1M minimum-KV check (2.2 GiB needed, 0.65 available); 60 is lowest verified here, not a proven exact floor. v14 2026-09-15: [[1,4,5],[5,16,1]] same-window vs v13 and v12 controls, agent replay n=4 ×2 each, knee6, fixture; hash hit 9ac7b387. v13 2026-09-14: two same-window pairs, C16 430.8/427.1 vs v12 317.6/320.0, C1 91.2/90.2 vs 90.3/90.9; fixture wacc 0.596 both. Round 4 same night: C3/C6 +24/+25%; tool_json −7% was fixture ordering (identical on v12/v13 in every position); real-agent replay n=4 −12% (caveat in limits). v12: knee.sh C1 within 5% of 89.2 tok/s warm vs a same-window v11 control; confirm pair 2026-09-12: control 78.1 → v12 89.6 (+14.7%), C16 269.6 → 312.4. starve.py on v12: 4 shorts during a 480K prefill 0.81–1.09 s TTFT (unchanged from v11); cold prefill on v12 207K tokens 11.37 s / 18.2k tok/s (v11: 11.3 s)", last_pass_utc: "2026-09-17T22:41:00Z", run_id: 2026-09-17-e2c-v15-confirm }
 
 limits:
   - "Decode is C2C-bandwidth + kernel bound, not HBM bound. CORRECTED 2026-09-12: the v11 claim that offload 60 does not fit at 1M was measured at util 0.94; at util 0.97 it fits (KV 4.89 GiB) and gives +12% C1 in a same-window comparison. Measured fetch tax: k=0 step 11.1 ms vs 7.1 ms all-HBM (catid 2×Station PP2, rev dba1be0a) ≈ 4 ms ≈ 36% of the step. Slope ≈ 0.76 tok/s per GiB of experts moved Grace→HBM."
   - "Trade in v12: KV pool is 4.89 GiB = 2.33M tokens = 2.2 concurrent full-1M requests (v11: 4.5). For an agent lane that is fine; if you need >2 concurrent 1M contexts, run v11 flags (OFFGB=70 UTIL=0.94) and accept 82 tok/s."
-  - "Expert selection is highly skewed (decode top-73% of experts take 98.7% of selections) but DOMAIN-specific (agent vs prose expert ranks correlate at 0.15). A usage-chosen cold set for the offloaded 24% of experts would take ~2.7% of traffic instead of 24% — but only for the workload it was profiled on. CORRECTED 2026-09-17: usage-aware placement is now v15 (static rowmap-static-v1 from 34.4M decode selections; own-cold 1.55% on the profiled mix). Still domain-specific; cross-domain unmeasured. Positional offload remains the workload-neutral fallback (v14)."
+  - "Expert selection is highly skewed (decode top-73% of experts take 98.7% of selections) but DOMAIN-specific (agent vs prose expert ranks correlate at 0.15). A usage-chosen cold set for the offloaded 24% of experts would take ~2.7% of traffic instead of 24% — but only for the workload it was profiled on. CORRECTED 2026-09-17: usage-aware placement is now v15 (static rowmap-static-v1 from 34.4M decode selections; own-cold 1.55% on the profiled mix). Still domain-specific. CORRECTED 2026-09-17: held-out math +41%; held-out JP/DE −1.5% (wash). Positional offload remains the workload-neutral fallback (v14)."
   - "The 82 tok/s number is prose. Agent text (shell, code, tool JSON) runs 130-150 tok/s because DSpark accepts 64-91% there vs 30% on prose. Quote the number for YOUR workload; do not quote 150 as 'the' speed."
   - "Every new engine-config hash starts an empty FlashInfer autotune dir → 74-min MoE retune. Seed autotune_configs.json into the new hash dir BEFORE the tuner reads it (~60 s after 'Graph capturing finished') or pass a kernel-config that disables autotune. v12 hash: 9ac7b387 (v11: 08c89d94). Seeding a different-shape config does not skip the tune; only an exact hash hit does."
   - "Hermes/OpenAI clients: the V4.1 chat template rejects reasoning_effort=medium (HTTP 400). Use low|high|xhigh|max or an int 1-100."
@@ -304,7 +346,7 @@ limits:
   - "CORRECTED 2026-09-15: the former exact offload-floor-60 / context-cannot-help claim is withdrawn. At util 0.97, OFFGB=55 failed the 1M minimum-KV check: 2.2 GiB needed, 0.65 GiB available; OFFGB=60 works with about 4.87 GiB KV. Intermediate settings remain untested. Shorter context may permit a lower-offload bind but does not automatically move experts; verify actual placement and stability. Full terminal cause: results/2026-09-15-round6-instrument-v2/campaign-round6-2026-09-15.log."
   - "CORRECTED 2026-09-15: the former 35%-understatement / session-replay-is-capacity claim is withdrawn. Round 6 proxies differ in tool mix (150 vs 277 recorded tool-call turns), context cap, and ordering. Only v14 ran ordered sessions. Their throughput/cache-counter difference is descriptive, not an isolated cache effect or proof of invariant configuration ranking. Neither proxy executes tools or feeds generated outputs forward; the repeated warm pass is not newly continuing sessions. Per-request bootstrap intervals must not be attached to wall-clock aggregate throughput."
   - "v13 is tuned on the PROSE knee. On real Hermes agent transcripts at 4 concurrent workers it measures −12% vs v12 (207 vs 236 tok/s): agent text accepts ~85% of drafts, so k=1 (0.87 accepted/step) leaves tokens on the table that k=5 (2.70/step) collects even at C4. Single-stream and C1–C2 are unaffected. Round 5 second pass confirms (v13 188 vs v12 207 mean of two). v14 [[1,4,5],[5,16,1]] is the agent-lane answer: recovers v12 on replay (207), keeps v13 at C6+, gives back the C3/C4 prose gain. Pick by traffic: agents at 3–4 streams → v14; prose/batch throughput → v13. Round 4: results/2026-09-14-round4-v13-validation/; Round 5: results/2026-09-15-round5-v14-agent-schedule/."
-  - "one same-window pair; cross-domain (held-out workload) unmeasured; profile is static (rowmap-static-v1 from 34.4M decode selections on agent+prose+replay fixtures)."
+  - "CORRECTED 2026-09-17: confirmed on a second pair (e2c); CORRECTED 2026-09-17: held-out math +41%; held-out JP/DE −1.5% (wash) — static profile has least to offer on non-English long-form; adaptive remap is the planned phase 2; profile is static (rowmap-static-v1 from 34.4M decode selections on agent+prose+replay fixtures)."
 
 rollback:
   script: scripts/launch-dsv41-vllm.sh
