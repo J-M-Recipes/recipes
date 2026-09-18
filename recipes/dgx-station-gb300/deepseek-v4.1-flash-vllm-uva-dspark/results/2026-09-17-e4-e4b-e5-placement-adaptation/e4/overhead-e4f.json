@@ -1,0 +1,33 @@
+{
+  "tag": "e4f",
+  "mode": "adaptive",
+  "freeze": true,
+  "ring": true,
+  "hash": "9ac7b387",
+  "loaded_configs": 231,
+  "new_configs": 0,
+  "autotune_s": 4.4,
+  "worker": "grok-4.6",
+  "provider": "xai-oauth",
+  "container": "dsv41-vllm-E4-adaptive-EXP-FREEZE-OVERHEAD-FAIL",
+  "control_container": "dsv41-vllm-v15-1M-pin-static-v1-BOUND-REF",
+  "knee": {
+    "e4f": {
+      "r1": {"C1": 140.81, "C8": 646.41, "C16": 757.43},
+      "r2": {"C1": 135.76, "C8": 640.55, "C16": 884.17},
+      "mean": {"C1": 138.29, "C8": 643.48, "C16": 820.80}
+    },
+    "v15": {
+      "r1": {"C1": 152.79, "C8": 699.99, "C16": 807.87},
+      "r2": {"C1": 153.27, "C8": 700.56, "C16": 948.14},
+      "mean": {"C1": 153.03, "C8": 700.28, "C16": 878.01}
+    }
+  },
+  "overhead_pct": {"C1": 9.63, "C8": 8.11, "C16": 6.52},
+  "bar_pct": 1.0,
+  "bar_pass": false,
+  "agent_prose_tok_s": {"e4f": 145.5, "v15": 168.5},
+  "weighted_accept": {"e4f": 0.5958, "v15": 0.5958},
+  "host_cgroup_gib": {"e4f_start": 350.565, "e4f_end": 350.592, "v15_start": 352.326, "v15_end": 352.373},
+  "note": "Ring path is index_copy + cursor math per layer inside the captured graph. Accept rates identical; cost is the counter, not routing. Did not unfreeze or run swaps. Sampled 1-in-8 fallback not booted this window (bar failed; stop-and-report)."
+}

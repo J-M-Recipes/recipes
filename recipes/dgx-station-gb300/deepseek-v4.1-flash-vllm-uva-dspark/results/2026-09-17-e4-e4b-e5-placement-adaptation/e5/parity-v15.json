@@ -1,0 +1,283 @@
+{
+ "tag": "v15",
+ "ts": "2026-09-17T20:34:33",
+ "n": 18,
+ "seed": 42,
+ "max_tokens": 256,
+ "rows": [
+  {
+   "completion_tokens": 118,
+   "s": 1.422,
+   "finish": "tool_calls",
+   "content": "I'll check both. Let me start with the Docker containers and disk space on that host.\n\n",
+   "tool_calls": [
+    {
+     "id": "chatcmpl-tool-9df0c0594e63b6c2",
+     "type": "function",
+     "function": {
+      "name": "terminal",
+      "arguments": "{\"command\": \"ssh <station-ip> \\\"docker ps -a\\\" 2>&1\"}"
+     }
+    },
+    {
+     "id": "chatcmpl-tool-93613e88955c029c",
+     "type": "function",
+     "function": {
+      "name": "terminal",
+      "arguments": "{\"command\": \"ssh <station-ip> \\\"df -h /\\\" 2>&1\"}"
+     }
+    }
+   ],
+   "tool_norm": [
+    {
+     "name": "terminal",
+     "arguments": "{\"command\": \"ssh <station-ip> \\\"docker ps -a\\\" 2>&1\"}"
+    },
+    {
+     "name": "terminal",
+     "arguments": "{\"command\": \"ssh <station-ip> \\\"df -h /\\\" 2>&1\"}"
+    }
+   ],
+   "id": "agent-tool-1",
+   "group": "agent",
+   "prompt": "List the docker containers on host <station-ip> and check free disk on /. Use tools.",
+   "max_tokens": 256,
+   "seed": 42
+  },
+  {
+   "completion_tokens": 60,
+   "s": 0.776,
+   "finish": "tool_calls",
+   "content": "I'll read the file first.\n\n",
+   "tool_calls": [
+    {
+     "id": "chatcmpl-tool-8e185cae84c08a74",
+     "type": "function",
+     "function": {
+      "name": "read_file",
+      "arguments": "{\"path\": \"<box-home>/dsv41/launch-dsv41-vllm.sh\"}"
+     }
+    }
+   ],
+   "tool_norm": [
+    {
+     "name": "read_file",
+     "arguments": "{\"path\": \"<box-home>/dsv41/launch-dsv41-vllm.sh\"}"
+    }
+   ],
+   "id": "agent-tool-2",
+   "group": "agent",
+   "prompt": "Read <box-home>/dsv41/launch-dsv41-vllm.sh then write a copy to /tmp/l2.sh with port 30007. Use tools; call read_file first.",
+   "max_tokens": 256,
+   "seed": 42
+  },
+  {
+   "completion_tokens": 243,
+   "s": 1.116,
+   "finish": "stop",
+   "content": "```python\ndef knee(rows):\n    \"\"\"Return the concurrency where marginal gain per added stream first drops below 5 tok/s.\n\n    rows: list of (conc, agg_tps) sorted by conc ascending.\n    Returns the conc at which (delta agg_tps / delta conc) < 5, or None if never.\n    \"\"\"\n    for (c0, t0), (c1, t1) in zip(rows, rows[1:]):\n        if c1 > c0 and (t1 - t0) / (c1 - c0) < 5:\n            return c1\n    return None\n\n# Example:\n# rows = [(1, 40), (2, 78), (4, 150), (8, 200)]\n# knee(rows) -> 8   # (200-150)/(8-4) = 12.5 ... adjust data as needed\n# knee([(1, 40), (2, 78), (4, 150), (8, 160)]) -> 8  # (160-150)/4 = 2.5 < 5\n```",
+   "tool_calls": [],
+   "tool_norm": [],
+   "id": "agent-code-1",
+   "group": "agent",
+   "prompt": "Write a Python function `knee(rows)` that takes [(conc, agg_tps)] and returns the concurrency where marginal gain per added stream first drops below 5 tok/s. Include a docstring and a 3-line example. Code only.",
+   "max_tokens": 256,
+   "seed": 42
+  },
+  {
+   "completion_tokens": 84,
+   "s": 0.436,
+   "finish": "stop",
+   "content": "```bash\n#!/usr/bin/env bash\nset -euo pipefail\n\n: \"${SRC:?SRC is not set}\"\n\nfor i in $(seq -w 1 48); do\n  f=\"model-000${i}-of-00048.safetensors\"\n  [[ -e \"$SRC/$f\" ]] || echo \"missing: $f\"\ndone\n```",
+   "tool_calls": [],
+   "tool_norm": [],
+   "id": "agent-code-2",
+   "group": "agent",
+   "prompt": "Write a bash script that loops over shards model-00001..00048-of-00048.safetensors, checks each exists in $SRC, and prints missing ones. Code only.",
+   "max_tokens": 256,
+   "seed": 42
+  },
+  {
+   "completion_tokens": 72,
+   "s": 0.296,
+   "finish": "stop",
+   "content": "docker stop dsv41-vllm-v7\ndocker rename dsv41-vllm-v7 dsv41-vllm-v7-old\nsudo sh -c 'sync; echo 3 > /proc/sys/vm/drop_caches'\nOFFGB=70 SEQS=16 ./launch-dsv41-vllm.sh",
+   "tool_calls": [],
+   "tool_norm": [],
+   "id": "agent-shell-1",
+   "group": "agent",
+   "prompt": "Give the exact sequence of shell commands to: stop docker container dsv41-vllm-v7, rename it with suffix -old, drop page caches with sudo, and relaunch via launch-dsv41-vllm.sh with OFFGB=70 SEQS=16. Commands only, one per line.",
+   "max_tokens": 256,
+   "seed": 42
+  },
+  {
+   "completion_tokens": 102,
+   "s": 0.418,
+   "finish": "stop",
+   "content": "I'll research both approaches to give you accurate numbers.\n\n",
+   "tool_calls": [],
+   "tool_norm": [],
+   "id": "agent-structured-1",
+   "group": "agent",
+   "prompt": "Compare vLLM UVA expert offload vs SGLang OffloaderV2 whole-layer copy for a 384-expert top-6 MoE. Output a markdown table with columns: approach, bytes moved per token, bottleneck, expected tok/s on a ~330 GB/s link. Then one sentence of verdict.",
+   "max_tokens": 256,
+   "seed": 42
+  },
+  {
+   "completion_tokens": 110,
+   "s": 0.614,
+   "finish": "stop",
+   "content": "- weights load: complete \u2014 14.2 GB sharded across 2 GPUs in 38.4 s\n- KV cache: allocated \u2014 21.7 GiB reserved, 1,024 blocks/seq max\n- autotune: finished \u2014 47 kernel configs tuned in 6.1 s\n- graph capture: captured \u2014 12 CUDA graphs for batch sizes 1\u2013256\n- API bind: listening \u2014 0.0.0.0:8000, 3 models registered",
+   "tool_calls": [],
+   "tool_norm": [],
+   "id": "agent-structured-2",
+   "group": "agent",
+   "prompt": "Status report format: 5 bullet points, each '<component>: <state> \u2014 <one metric>'. Components: weights load, KV cache, autotune, graph capture, API bind. Invent plausible values for a vLLM boot.",
+   "max_tokens": 256,
+   "seed": 42
+  },
+  {
+   "completion_tokens": 230,
+   "s": 1.38,
+   "finish": "stop",
+   "content": "Speculative decoding speeds up generation by having a small, cheap \"draft\" model guess several tokens ahead, then letting the big model verify all of them in a single pass \u2014 accepting the guesses it agrees with and correcting the first one it doesn't. This works beautifully when the next token is highly predictable, which is exactly the case in counting or other rigid, repetitive patterns: the draft model nails \"1, 2, 3, 4...\" and the big model rubber-stamps long runs at once, so you get many tokens per expensive step. Prose is the opposite. At almost every word there are many equally reasonable continuations, so the draft model's guesses diverge from what the big model would have chosen, and the big model rejects them early \u2014 often after just one or two tokens. You then pay the full cost of a big-model pass to gain almost nothing, and the drafting overhead is pure added latency. In short, speculative decoding only pays off when the small model can predict the big model's choices; counting is predictable, writing is not, so the same machinery that makes counting fly makes prose crawl.",
+   "tool_calls": [],
+   "tool_norm": [],
+   "id": "agent-prose-1",
+   "group": "agent",
+   "prompt": "In one paragraph, explain to a smart non-engineer why a model that is fast at counting can be slow at writing prose when speculative decoding is on.",
+   "max_tokens": 256,
+   "seed": 42
+  },
+  {
+   "completion_tokens": 256,
+   "s": 1.598,
+   "finish": "length",
+   "content": "It is required to prove that the multitude of primes is without end.\n\nLet us suppose, to the contrary, that the primes are finite in multitude, and let them all be gathered together and named: let them be A, B, C, and so many others as there may be, so that no prime lies beyond this collection. From these let there be formed the number which is the product of them all, and to this product let a unit be added. Let the resulting number be called D, so that D exceeds by one the product of all the primes.\n\nNow D is either prime or composite. If D is prime, then D is a prime not among A, B, C, and the rest, since it exceeds their product by one and therefore is greater than each of them; for each of the primes is at least two, so their product is at least as great as any one of them, and D is greater still. Thus a prime has been found beyond the supposed complete collection, which is contrary to the supposition.\n\nIf, however, D is composite, then it must be measured by some prime; for every composite number is measured by some prime, since if we divide it by its least measuring number, that least measuring number cannot be composite,",
+   "tool_calls": [],
+   "tool_norm": [],
+   "id": "heldout-math-1",
+   "group": "math",
+   "prompt": "Write a careful continuous prose proof, in the style of Euclid, that there are infinitely many primes. No bullet lists, no numbered steps.",
+   "max_tokens": 256,
+   "seed": 42
+  },
+  {
+   "completion_tokens": 256,
+   "s": 1.189,
+   "finish": "length",
+   "content": "The harmonic series is the sum of the reciprocals of the positive integers, written as 1 + 1/2 + 1/3 + 1/4 + 1/5 + ... and continuing without end. At first glance it seems that the terms shrink so quickly that the total must settle down to some finite value, but this intuition is wrong, and the series actually diverges, meaning its partial sums grow without bound.\n\nThe classic way to see this is the grouping-of-halves argument. Begin by bracketing the terms into blocks whose sizes double each time. The first block is just 1. The next block is 1/2, which is at least 1/2. The next block contains 1/3 + 1/4, and since 1/3 is greater than 1/4, this sum is greater than 1/4 + 1/4, which equals 1/2. The following block contains 1/5 + 1/6 + 1/7 + 1/8, and each of these four terms is at least 1/8, so the block exceeds 4 times 1/8, again equal to 1/2. Continuing in this way",
+   "tool_calls": [],
+   "tool_norm": [],
+   "id": "heldout-math-2",
+   "group": "math",
+   "prompt": "In flowing English prose with no lists, explain why the harmonic series diverges, including the grouping-of-halves argument, and state the conclusion.",
+   "max_tokens": 256,
+   "seed": 42
+  },
+  {
+   "completion_tokens": 256,
+   "s": 1.317,
+   "finish": "length",
+   "content": "We begin with the general quadratic equation in its standard form, \\(ax^2 + bx + c = 0\\), and we assume that \\(a\\) is not zero, since otherwise the equation would not be quadratic at all. Our goal is to isolate \\(x\\) by transforming this equation into a perfect square, a technique known as completing the square. The first step is to move the constant term to the right side, which gives us \\(ax^2 + bx = -c\\). Next, we divide every term by the leading coefficient \\(a\\), yielding \\(x^2 + \\frac{b}{a}x = -\\frac{c}{a}\\). Now we focus on the left side, which currently consists of a squared term and a linear term. To complete the square, we take half of the coefficient of \\(x\\), which is \\(\\frac{b}{2a}\\), and then square that value to obtain \\(\\frac{b^2}{4a^2}\\). We add this quantity to both sides of the equation, so that the left side becomes a perfect square trinomial while the right side adjusts accordingly: \\(x^2 + \\frac{b}{a}x + \\frac{b^2}{4a^2} = -\\frac{c}{a} + \\frac{b^",
+   "tool_calls": [],
+   "tool_norm": [],
+   "id": "heldout-math-3",
+   "group": "math",
+   "prompt": "Write an essay-style derivation of the quadratic formula by completing the square, keeping every algebraic manipulation inside sentences. No lists.",
+   "max_tokens": 256,
+   "seed": 42
+  },
+  {
+   "completion_tokens": 256,
+   "s": 1.528,
+   "finish": "length",
+   "content": "Let us suppose, for the sake of argument, that the square root of three is not irrational but rational\u2014that is, that it can be written as a fraction of two integers. Call that fraction a over b, and insist that it be in lowest terms, so that a and b share no common factor greater than one. If the square root of three equals a over b, then squaring both sides gives three equals a squared over b squared, and multiplying through by b squared yields the equation a squared equals three times b squared. Now the left side, a squared, is equal to three times an integer, so a squared is divisible by three. But if a squared is divisible by three, then a itself must be divisible by three, since three is prime; for if a were not divisible by three, its square could not be either. So write a as three times some integer k. Substituting, we get nine times k squared equals three times b squared, and dividing both sides by three gives three times k squared equals b squared. This says b squared is divisible by three, and by the same reasoning as before, b itself must be divisible by three. But then both a and b are divisible by three, which contradicts our assumption that a over b was",
+   "tool_calls": [],
+   "tool_norm": [],
+   "id": "heldout-math-4",
+   "group": "math",
+   "prompt": "In narrative prose, prove that the square root of 3 is irrational. Name the contradiction explicitly. No bullets.",
+   "max_tokens": 256,
+   "seed": 42
+  },
+  {
+   "completion_tokens": 256,
+   "s": 1.464,
+   "finish": "length",
+   "content": "Mathematical induction is a method of proof used to establish that a statement holds for every natural number, and it is particularly well suited to claims about sums defined recursively. The claim we wish to prove is that the sum of the first n odd numbers equals n squared. In symbols, if we let S(n) denote the sum 1 + 3 + 5 + ... + (2n \u2212 1), then we want to show that S(n) = n\u00b2 for every positive integer n. The structure of the proof has two essential parts: a base case, which verifies the statement for the smallest value of n, and an inductive step, which shows that if the statement is true for some arbitrary value k, then it must also be true for the next value k + 1. Together these two parts guarantee the statement for all natural numbers, because the base case anchors the chain and the inductive step propagates truth along it indefinitely.\n\nFor the base case, take n = 1. The sum of the first one odd number is simply 1, and 1\u00b2 is also 1, so the statement holds. This is a trivial verification, but it is indispensable, since without it the inductive step would prove nothing about any actual number.\n\nNow assume",
+   "tool_calls": [],
+   "tool_norm": [],
+   "id": "heldout-math-5",
+   "group": "math",
+   "prompt": "Write a discursive explanation of mathematical induction proving that the sum of the first n odd numbers equals n squared. Continuous prose only.",
+   "max_tokens": 256,
+   "seed": 42
+  },
+  {
+   "completion_tokens": 256,
+   "s": 3.013,
+   "finish": "length",
+   "content": "\u51ac\u306e\u6d77\u8fba\u3067\u4e00\u4eba\u904e\u3054\u3059\u4e00\u65e5\u3068\u3044\u3046\u306e\u306f\u3001\u5b9f\u969b\u306b\u3084\u3063\u3066\u307f\u308b\u3068\u3001\u590f\u306e\u305d\u308c\u3068\u306f\u307e\u308b\u3067\u5225\u306e\u6642\u9593\u306e\u6d41\u308c\u65b9\u3092\u3059\u308b\u3002\u671d\u3001\u307e\u3060\u8584\u6697\u3044\u3046\u3061\u306b\u5bbf\u3092\u51fa\u3066\u3001\u9632\u6ce2\u5824\u306e\u307b\u3046\u3078\u6b69\u3044\u3066\u3044\u304f\u3002\u7802\u6d5c\u306b\u964d\u308a\u308b\u624b\u524d\u3067\u3001\u3059\u3067\u306b\u97f3\u304c\u805e\u3053\u3048\u3066\u304f\u308b\u3002\u590f\u306a\u3089\u3070\u9060\u304f\u3067\u304b\u3059\u304b\u306b\u97ff\u304f\u7a0b\u5ea6\u306e\u305d\u308c\u304c\u3001\u51ac\u306e\u671d\u306f\u3084\u3051\u306b\u6f84\u3093\u3067\u3001\u307e\u308b\u3067\u8ab0\u304b\u304c\u8033\u306e\u3059\u3050\u6a2a\u3067\u56c1\u3044\u3066\u3044\u308b\u304b\u306e\u3088\u3046\u306b\u5c4a\u304f\u3002\u6ce2\u306f\u9ad8\u304f\u306f\u306a\u3044\u3002\u3080\u3057\u308d\u4f4e\u304f\u3001\u5e73\u305f\u3044\u3002\u3060\u304c\u305d\u306e\u4f4e\u3055\u304c\u3001\u304b\u3048\u3063\u3066\u91cd\u305f\u304f\u97ff\u304f\u3002\u5bc4\u305b\u3066\u306f\u8fd4\u3059\u3068\u3044\u3046\u3088\u308a\u3001\u5bc4\u305b\u3066\u306f\u6c88\u3080\u3001\u3068\u3044\u3046\u611f\u3058\u3060\u3002\u767d\u3044\u6ce1\u304c\u7802\u306e\u4e0a\u306b\u5e83\u304c\u3063\u3066\u3001\u3057\u3070\u3089\u304f\u3059\u308b\u3068\u7802\u304c\u305d\u308c\u3092\u5438\u3044\u8fbc\u3080\u3088\u3046\u306b\u6d88\u3048\u3066\u3044\u304f\u3002\u305d\u306e\u7e70\u308a\u8fd4\u3057\u3092\u3001\u3057\u3070\u3089\u304f\u307c\u3093\u3084\u308a\u3068\u898b\u3066\u3044\u308b\u3002\n\n\u98a8\u306f\u3001\u307e\u305a\u982c\u306e\u5de6\u5074\u304b\u3089\u6765\u305f\u3002\u51b7\u305f\u3044\u3068\u3044\u3046\u3088\u308a\u3001\u75db\u3044\u3002\u91dd\u306e\u3088\u3046\u306a\u7d30\u3055\u3067\u3001\u76ae\u819a\u306e\u8868\u9762\u3092\u64ab\u3067\u3066\u3044\u304f\u306e\u3067\u306f\u306a\u304f\u3001\u523a\u3057\u3066\u3044\u304f",
+   "tool_calls": [],
+   "tool_norm": [],
+   "id": "heldout-jpde-1",
+   "group": "non_english",
+   "prompt": "\u7b87\u6761\u66f8\u304d\u3092\u4f7f\u308f\u305a\u3001\u51ac\u306e\u6d77\u8fba\u3067\u4e00\u4eba\u3067\u904e\u3054\u3059\u4e00\u65e5\u306b\u3064\u3044\u3066\u3001\u65e5\u672c\u8a9e\u306e\u9577\u3044\u968f\u7b46\u3092\u66f8\u3044\u3066\u304f\u3060\u3055\u3044\u3002\u6ce2\u3001\u98a8\u3001\u5149\u3092\u5177\u4f53\u7684\u306b\u3002",
+   "max_tokens": 256,
+   "seed": 42
+  },
+  {
+   "completion_tokens": 256,
+   "s": 3.165,
+   "finish": "length",
+   "content": "\u5b50\u4f9b\u306e\u3053\u308d\u3001\u5b66\u6821\u304c\u7d42\u308f\u308b\u3068\u3088\u304f\u753a\u306e\u56f3\u66f8\u9928\u3078\u5411\u304b\u3063\u305f\u3002\u5bb6\u304b\u3089\u6b69\u3044\u3066\u5341\u4e94\u5206\u307b\u3069\u306e\u3001\u53e4\u3044\u7149\u74e6\u9020\u308a\u306e\u5efa\u7269\u3067\u3001\u5165\u53e3\u306e\u91cd\u3044\u6249\u3092\u62bc\u3059\u3068\u3001\u3072\u3093\u3084\u308a\u3068\u3057\u305f\u7a7a\u6c17\u3068\u3001\u7d19\u3068\u57c3\u3068\u3001\u5c11\u3057\u3060\u3051\u6728\u306e\u5e8a\u304c\u5302\u3046\u3088\u3046\u306a\u72ec\u7279\u306e\u9999\u308a\u304c\u8fce\u3048\u3066\u304f\u308c\u305f\u3002\u53d7\u4ed8\u306e\u5973\u6027\u306f\u3044\u3064\u3082\u9759\u304b\u306b\u5fae\u7b11\u3093\u3067\u3001\u79c1\u304c\u8fd4\u3059\u672c\u3092\u53d7\u3051\u53d6\u308a\u3001\u307e\u305f\u65b0\u3057\u3044\u672c\u3092\u8cb8\u3057\u3066\u304f\u308c\u305f\u3002\u3042\u306e\u9803\u306e\u79c1\u306f\u3001\u672c\u3092\u8aad\u3080\u3068\u3044\u3046\u3088\u308a\u3001\u56f3\u66f8\u9928\u3068\u3044\u3046\u5834\u6240\u305d\u306e\u3082\u306e\u306b\u60f9\u304b\u308c\u3066\u3044\u305f\u306e\u304b\u3082\u3057\u308c\u306a\u3044\u3002\u5150\u7ae5\u66f8\u306e\u68da\u306f\u7a93\u969b\u306b\u3042\u3063\u3066\u3001\u5348\u5f8c\u306e\u65e5\u5dee\u3057\u304c\u80cc\u8868\u7d19\u3092\u659c\u3081\u306b\u7167\u3089\u3057\u3001\u91d1\u8272\u3084\u8d64\u3084\u9752\u306e\u6587\u5b57\u304c\u3086\u3063\u304f\u308a\u3068\u8f1d\u3044\u3066\u3044\u305f\u3002\u79c1\u306f\u6c7a\u307e\u3063\u305f\u5e2d\u306b\u5ea7\u308a\u3001\u8098\u639b\u3051\u306e\u3059\u308a\u6e1b\u3063\u305f\u6905\u5b50\u306b\u4f53\u3092\u6c88\u3081\u3066\u3001\u30da\u30fc\u30b8\u3092\u3081\u304f\u308b\u97f3\u3060\u3051\u304c\u5c0f\u3055\u304f\u97ff\u304f\u6642\u9593\u3092\u904e\u3054\u3057\u305f\u3002\u5916\u3067\u306f\u81ea\u8ee2\u8eca\u306e\u30d9\u30eb\u3084\u5b50\u4f9b\u306e\u58f0\u304c\u9060\u304f\u805e\u3053\u3048\u3066\u3044\u305f\u3051\u308c\u3069\u3001\u305d\u308c\u306f\u307e\u308b\u3067\u5225\u306e\u4e16\u754c\u306e\u51fa\u6765\u4e8b\u306e\u3088\u3046\u306b\u601d\u3048\u305f\u3002",
+   "tool_calls": [],
+   "tool_norm": [],
+   "id": "heldout-jpde-2",
+   "group": "non_english",
+   "prompt": "\u7b87\u6761\u66f8\u304d\u306a\u3057\u3067\u3001\u5b50\u4f9b\u306e\u3053\u308d\u753a\u306e\u56f3\u66f8\u9928\u3067\u904e\u3054\u3057\u305f\u5348\u5f8c\u306e\u8a18\u61b6\u3092\u3001\u4e01\u5be7\u306a\u65e5\u672c\u8a9e\u306e\u9577\u3044\u6587\u7ae0\u3067\u66f8\u3044\u3066\u304f\u3060\u3055\u3044\u3002",
+   "max_tokens": 256,
+   "seed": 42
+  },
+  {
+   "completion_tokens": 256,
+   "s": 2.368,
+   "finish": "length",
+   "content": "# Werkbank, Licht, Geduld\n\nEs gibt Orte, an denen die Zeit nicht einfach vergeht, sondern gemacht wird. Glash\u00fctte ist ein solcher Ort, ein kleines Tal im Osterzgebirge, in dem seit dem neunzehnten Jahrhundert Uhren entstehen, und wer durch die Werkst\u00e4tten geht, in denen heute noch gearbeitet wird, der sp\u00fcrt sofort, dass hier eine andere Ordnung herrscht als drau\u00dfen auf den Stra\u00dfen. Die Werkbank eines Uhrmachers ist kein gew\u00f6hnlicher Tisch. Sie ist ein Instrument, ein Gegenstand, der \u00fcber Jahrzehnte gewachsen ist, an dem Generationen von H\u00e4nden gearbeitet haben, und der doch immer wieder neu eingerichtet wird, sobald ein neuer Meister seinen Platz einnimmt. Man erkennt sie an den kleinen Mulden, in denen Schrauben liegen, an den Halterungen f\u00fcr Pinzetten und Feilen, an der drehbaren Auflage, auf der das Werk ruht, w\u00e4hrend es zerlegt und wieder zusammengesetzt wird. Alles hat seinen Platz, und dieser Platz ist nicht beliebig. Wer eine Pinzette verlegt, ver",
+   "tool_calls": [],
+   "tool_norm": [],
+   "id": "heldout-jpde-3",
+   "group": "non_english",
+   "prompt": "Schreibe einen langen flie\u00dfenden Essay auf Deutsch ohne Aufz\u00e4hlungen \u00fcber das Handwerk eines Uhrmachers in Glash\u00fctte: Werkbank, Licht, Geduld.",
+   "max_tokens": 256,
+   "seed": 42
+  },
+  {
+   "completion_tokens": 256,
+   "s": 2.735,
+   "finish": "length",
+   "content": "Die Scheibe war ein einziges Flie\u00dfen, als der Regionalzug aus dem Hauptbahnhof glitt, und drau\u00dfen l\u00f6ste sich die Stadt in eine Folge verschwommener Lichter auf, die an der Glasfl\u00e4che hingen wie \u00d6l auf Wasser. Der Regen kam schr\u00e4g und fein, kein Gewitter, nur diese beharrliche N\u00e4sse, die das Ruhrgebiet im November \u00fcberzieht und alles in denselben matten Glanz taucht, die Gleise, die D\u00e4cher, die Hoch\u00f6fen, die l\u00e4ngst erloschen sind und trotzdem noch gegen den Himmel stehen wie vergessene Wegweiser einer anderen Zeit.\n\nIm Wagen sa\u00dfen wenige Menschen, jeder f\u00fcr sich, und das Licht der Deckenlampen war so kalt, dass es die Gesichter zu Masken machte. Eine Frau schlief mit dem Kopf gegen die Scheibe, ein junger Mann starrte auf sein Telefon, dessen blauer Schein sich in der Fensterscheibe verdoppelte, und irgendwo weiter vorn lachte jemand kurz und verstummte dann, als h\u00e4tte er sich selbst dabei ertapp",
+   "tool_calls": [],
+   "tool_norm": [],
+   "id": "heldout-jpde-4",
+   "group": "non_english",
+   "prompt": "Schreibe flie\u00dfende deutsche Prosa ohne Listen \u00fcber eine Nachtfahrt mit dem Regionalzug durch das Ruhrgebiet im Regen.",
+   "max_tokens": 256,
+   "seed": 42
+  },
+  {
+   "completion_tokens": 256,
+   "s": 3.562,
+   "finish": "length",
+   "content": "\u8336\u306e\u6e6f\u306e\u5e2d\u306b\u8eab\u3092\u7f6e\u304f\u3068\u3001\u3044\u3064\u3082\u601d\u3046\u306e\u306f\u3001\u3053\u306e\u7a7a\u9593\u304c\u6c7a\u3057\u3066\u9759\u6b62\u3057\u3066\u3044\u306a\u3044\u3068\u3044\u3046\u3053\u3068\u3067\u3042\u308b\u3002\u58c1\u3082\u3001\u7573\u3082\u3001\u7089\u3082\u3001\u91dc\u3082\u3001\u52d5\u304b\u306a\u3044\u3088\u3046\u306b\u898b\u3048\u3066\u3001\u305d\u306e\u5b9f\u3001\u523b\u3005\u3068\u79fb\u308a\u5909\u308f\u3063\u3066\u3086\u304f\u4f55\u304b\u3092\u6620\u3057\u3066\u3044\u308b\u3002\u305d\u308c\u306f\u5b63\u7bc0\u3067\u3042\u308a\u3001\u5149\u3067\u3042\u308a\u3001\u3042\u308b\u3044\u306f\u3082\u3063\u3068\u6349\u3048\u304c\u305f\u3044\u6642\u9593\u305d\u306e\u3082\u306e\u306a\u306e\u304b\u3082\u3057\u308c\u306a\u3044\u3002\u9732\u5730\u3092\u629c\u3051\u3066\u8e72\u8e1e\u3067\u624b\u3092\u6e05\u3081\u3001\u306b\u3058\u308a\u53e3\u304b\u3089\u8eab\u3092\u304b\u304c\u3081\u3066\u5165\u308b\u3002\u305d\u306e\u4e00\u9023\u306e\u6240\u4f5c\u306e\u3042\u3044\u3060\u306b\u3082\u3001\u7a7a\u306e\u8272\u306f\u5c11\u3057\u305a\u3064\u9055\u3063\u3066\u3044\u308b\u3002\u671d\u306e\u5149\u304c\u969c\u5b50\u3092\u9752\u304f\u900f\u304b\u3057\u3066\u3044\u305f\u304b\u3068\u601d\u3048\u3070\u3001\u663c\u306b\u306f\u305d\u308c\u304c\u767d\u304f\u5f37\u304f\u306a\u308a\u3001\u5915\u66ae\u308c\u306b\u306f\u6a59\u306b\u67d3\u307e\u3063\u3066\u3001\u7573\u306e\u7e01\u3092\u7d30\u304f\u7167\u3089\u3059\u3002\u540c\u3058\u90e8\u5c4b\u306b\u3044\u306a\u304c\u3089\u3001\u79c1\u305f\u3061\u306f\u4e00\u65e5\u306e\u3046\u3061\u306b\u3044\u304f\u3064\u3082\u306e\u5b63\u7bc0\u306e\u65ad\u9762\u3092\u304f\u3050\u308a\u629c\u3051\u3066\u3044\u308b\u306e\u3067\u3042\u308b\u3002\n\n\u6625\u306e\u8a2a\u308c\u306f\u3001\u307e\u305a\u6c34\u306e\u97f3\u306b\u73fe\u308c\u308b\u3002\u96ea\u89e3\u3051\u306e\u9803\u3001\u91dc\u306e\u6e6f\u304c\u305f\u304e\u308b\u97f3\u304c\u3069\u3053\u304b\u67d4\u3089\u304b\u304f\u3001\u6e6f\u6c17\u306e\u7acb\u3061\u306e\u307c\u308a\u65b9\u3082\u3086",
+   "tool_calls": [],
+   "tool_norm": [],
+   "id": "heldout-jpde-5",
+   "group": "non_english",
+   "prompt": "\u7b87\u6761\u66f8\u304d\u3092\u4f7f\u308f\u305a\u3001\u8336\u306e\u6e6f\u306b\u304a\u3051\u308b\u5b63\u7bc0\u306e\u79fb\u308d\u3044\u306b\u3064\u3044\u3066\u3001\u65e5\u672c\u8a9e\u306e\u9577\u3044\u968f\u7b46\u3092\u66f8\u3044\u3066\u304f\u3060\u3055\u3044\u3002\u9053\u5177\u3068\u5149\u306e\u5909\u5316\u306b\u89e6\u308c\u308b\u3053\u3068\u3002",
+   "max_tokens": 256,
+   "seed": 42
+  }
+ ]
+}

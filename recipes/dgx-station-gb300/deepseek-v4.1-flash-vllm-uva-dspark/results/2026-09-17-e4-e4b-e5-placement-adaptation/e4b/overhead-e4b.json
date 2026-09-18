@@ -1,0 +1,43 @@
+{
+  "tag": "e4b-d1",
+  "mode": "adaptive",
+  "freeze": true,
+  "counter": "d1",
+  "ring": false,
+  "hash": "9ac7b387",
+  "loaded_configs": 231,
+  "new_configs": 0,
+  "autotune_s": 4.5,
+  "worker": "grok-4.6",
+  "provider": "xai-oauth",
+  "container": "dsv41-vllm-E4B-adaptive-EXP-D1-OVERHEAD-FAIL",
+  "control_container": "dsv41-vllm-v15-1M-pin-static-v1-BOUND-REF",
+  "d0": {
+    "viable": false,
+    "reason": "topk_indices_buffer is Indexer attention scratch, not MoE routed ids"
+  },
+  "knee": {
+    "e4b": {
+      "r1": {"C1": 149.86, "C8": 689.25, "C16": 798.42},
+      "r2": {"C1": 150.75, "C8": 687.87, "C16": 938.77},
+      "mean": {"C1": 150.31, "C8": 688.56, "C16": 868.60}
+    },
+    "v15": {
+      "r1": {"C1": 152.79, "C8": 697.31, "C16": 809.97},
+      "r2": {"C1": 152.97, "C8": 697.38, "C16": 943.66},
+      "mean": {"C1": 152.88, "C8": 697.34, "C16": 876.81}
+    }
+  },
+  "overhead_pct": {"C1": 1.68, "C8": 1.26, "C16": 0.94},
+  "bar_pct": 1.0,
+  "bar_pass": false,
+  "agent_prose_tok_s": {"e4b": 160.3, "v15": 168.5},
+  "weighted_accept": {"e4b": 0.5958, "v15": 0.5958},
+  "host_cgroup_gib": {
+    "e4b_start": 348.965,
+    "e4b_end": 348.983,
+    "v15_start": 349.098,
+    "v15_end": 349.127
+  },
+  "note": "D0 dead (indexer scratch). D1 is one contiguous snap copy + last_t per layer, no index_copy_/cursor. 1.68% C1 is graph-node count, not copy bandwidth. D2 has the same node count — not booted. D3: adaptive needs an engine-side hook. Did not unfreeze or run swaps/parity."
+}
