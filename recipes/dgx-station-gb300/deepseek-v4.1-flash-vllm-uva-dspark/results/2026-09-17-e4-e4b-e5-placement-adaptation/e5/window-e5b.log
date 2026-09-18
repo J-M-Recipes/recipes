@@ -1,0 +1,12 @@
+[20:40:53] WINDOW e5b container=dsv41-vllm-E5-pin-mixed-v2-EXP start
+[20:40:53] RUN /usr/bin/python3 <box-home>/pin-hot-experts/scripts/e2c_hostwatch.py e5b start dsv41-vllm-E5-pin-mixed-v2-EXP <box-home>/pin-hot-experts/e5
+[20:40:54] RUN bash <box-home>/dsv41/knee.sh e5b-r1
+[20:41:27] copied <box-home>/dsv41/knee-e5b-r1.json -> <box-home>/pin-hot-experts/e5/knee-e5b-r1.json
+[20:41:27] RUN bash <box-home>/dsv41/knee.sh e5b-r2
+[20:41:58] copied <box-home>/dsv41/knee-e5b-r2.json -> <box-home>/pin-hot-experts/e5/knee-e5b-r2.json
+[20:41:58] RUN bash <box-home>/dsv41/agent_fixture_o.sh e5b
+[20:42:08] copied <box-home>/dsv41/agentfix-e5b.json -> <box-home>/pin-hot-experts/e5/agentfix-e5b.json
+[20:42:08] RUN /usr/bin/python3 <box-home>/pin-hot-experts/scripts/e2c_heldout.py e5b <box-home>/pin-hot-experts/e5
+[20:42:32] RUN /usr/bin/python3 <box-home>/pin-hot-experts/scripts/e2c_parity.py e5b <box-home>/pin-hot-experts/scripts/e5_parity_prompts.json <box-home>/pin-hot-experts/e5
+[20:42:55] RUN /usr/bin/python3 <box-home>/pin-hot-experts/scripts/e2c_hostwatch.py e5b end dsv41-vllm-E5-pin-mixed-v2-EXP <box-home>/pin-hot-experts/e5
+[20:42:56] WINDOW e5b done in 123s

@@ -1,0 +1,15 @@
+{
+  "worker": "grok-4.6",
+  "provider": "xai-oauth",
+  "design": "D0",
+  "viable": false,
+  "reason": "DeepseekV4Model.topk_indices_buffer is Indexer attention scratch, not MoE routed-expert ids.",
+  "source": "/usr/local/lib/python3.12/dist-packages/vllm/models/deepseek_v4_1/nvidia/model.py",
+  "alloc_line": 424,
+  "comment": "Reserved topk indices buffer for all Indexer layers to reuse.",
+  "shape": "[scheduler.max_num_batched_tokens, config.index_topk] int32",
+  "passed_to": "DeepseekV4DecoderLayer -> attn (_select_dsv4_attn_cls), NOT ffn/DeepseekV4MoE",
+  "lifetime": "single shared scratch overwritten by every indexer layer; after a step only the last indexer write is visible",
+  "moe_topk": 6,
+  "fallback": "D1 fixed-slice snap[40, T_max, 6] copy_ of _invoke_kernel topk_ids"
+}
