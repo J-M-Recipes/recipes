@@ -53,3 +53,39 @@ but not excluded by the failure above.
 - SGLang `/v1/completions` rejects `max_tokens=0`; teacher-forced scoring uses `max_tokens=1, echo=true` and drops the last token.
 - First `x_search`-style checks of community claims: ebfio's 54–67% acceptance is on a vLLM stack with block 7; ours is 0.39 mean on SGLang. Block 7 matched his C1 gain but not his acceptance. Unresolved.
 - Staging to a root-owned `/models` with `mkdir -p` silently no-ops and the size-verify reports every file as `MISMATCH … 0`. Use `sudo mkdir && chown` first.
+
+## Round 3 (2026-09-16) — external corroboration: tonyd2wild/GLM-5.3-Flash-NVFP4-DFlash2-2x-DGX-Spark
+
+Independent 2x DGX Spark (GB10, SM121) vLLM TP2 recipe; tweet 2100290762155970877.
+Portable takeaways for our stack:
+
+- **ModelOpt NVFP4 quants emit intermittent corrupted token IDs** (vLLM #54150) —
+  nearly invisible in English, but a corrupted token inside a tool-call block desyncs
+  the parser and can spiral into repetition lock. Their fix: prefer
+  **compressed-tensors** quants (RedHatAI/GLM-5.3-Flash-NVFP4) over ModelOpt builds
+  (LibertAIDAI, keys-ablit). Probe method ports directly: Korean-Hangul probe,
+  temperature 0, non-streaming, 3 passes, count U+FFFD (their data: ModelOpt 4/9/8,
+  compressed-tensors 0/0/0). **TODO: run this probe against our FP4 checkpoints on .9 —
+  cheap canary for the tool-call desync history.**
+- **Never pin `--kv-cache-memory`** (vLLM): profiler still runs but never subtracts
+  the measured activation peak (gpu_worker.py:475-495) — boots fine, dies on first
+  long prompt. Let the profiler size the pool. (Station: less acute with 250 GiB HBM,
+  but same rule.)
+- **Headline "KV cache size" inflates with --max-model-len** — it is
+  `int(max_concurrency * max_model_len)`, not bytes. Compare configs only by
+  blocks x block_size / bytes-per-token.
+- **Pool = min across ranks; rank 0's "Available KV" line can lie** (logged 6.25 GiB,
+  bound 2.29 GiB). Read on every rank. (Moot for single-rank Station; matters on TP.)
+- **Poll `/health`, never `/v1/models`** — the latter returns 200 with a dead engine.
+- **Draft acceptance tracks output type**: structured/list/tool-args ~0.9, freeform
+  prose ~0.33; agentic traffic lives in the high-acceptance zone. Also temp 0 = free
+  throughput (+13-21%, exact top-1 sampler) and thinking-off drafts better (+8%).
+  Matches our own acceptance observation (ebfio discrepancy note, round 2).
+- **DFlash2 economics: +91% decode for -40% KV pool** (drafter costs ~4.8 GiB KV
+  headroom vs 2.2 GiB weights). K=7 optimal, don't sweep.
+- Their SM121 top-k kernel crash, NCCL NIC env, drop_caches/swap UVM livelock, and
+  InstantTensor direct-IO loader instability are GB10/unified-memory-only — no
+  transfer to the Station (HBM-only, Grace staging).
+
+Cross-check vs round 2: their vLLM acceptance (0.40-0.53 at C1-C6, block 7) sits
+between ebfio's claim and our SGLang 0.39 mean; direction consistent.

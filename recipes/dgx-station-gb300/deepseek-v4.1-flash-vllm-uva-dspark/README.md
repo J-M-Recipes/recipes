@@ -284,4 +284,6 @@ Every bound config is kept as a stopped container `dsv41-vllm-<tag>`. `docker st
 
 ## Credits
 
+Campaign design, briefs, win bars, and verdicts: **Milo** (James Meadlock's Handler agent, Hermes `milo` profile, session model anthropic/claude-fable-5.1) with James. Worker runs (E1–E5 windows, recipe PRs): Grok 4.6 via xAI and claude-fable-5.1 via Nous, from Milo's written briefs; every number here was read back from the worker's JSON. The pin-hot-experts idea: James, in conversation with Grok.
+
 DeepSeek for the model and the in-checkpoint DSpark drafter. The vLLM team for the day-0 image, UVA offload backend, and DeepSeek-V4.1 support. Community data points that shaped decisions: 0xSero and Tech2Wild (4× RTX PRO 6000 and DGX Spark builds), Fraser Price (`dspark-vllm`), LMSYS (Engram huge-page finding). Blog write-up: [al-engr.com](https://al-engr.com/gb300-deepseek-flash-41-testing.html).
