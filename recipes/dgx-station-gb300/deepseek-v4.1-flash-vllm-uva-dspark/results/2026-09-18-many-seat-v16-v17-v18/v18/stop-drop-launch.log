@@ -1,0 +1,30 @@
+=== START 2026-09-18T12:44:07-05:00 ===
+=== PRE docker ps ===
+dsv41-vllm-v17-seqs24-BOUND-REF Up 34 minutes
+=== PRE nvidia-smi GPU ===
+0, NVIDIA RTX PRO 4000 Blackwell SFF Edition, 35 MiB, 24467 MiB
+1, NVIDIA GB300, 245538 MiB, 256703 MiB
+=== PRE meminfo ===
+MemTotal:       518524160 kB
+MemAvailable:   131386368 kB
+SwapTotal:             0 kB
+SwapFree:              0 kB
+=== PRE iwbench ===
+no iwbench
+=== STOP v17 BOUND-REF ===
+dsv41-vllm-v17-seqs24-BOUND-REF
+=== STOPPED 2026-09-18T12:44:13-05:00 ===
+=== docker ps after stop ===
+=== DROP CACHES ===
+MemTotal:       518524160 kB
+MemAvailable:   488685376 kB
+=== LAUNCH v18 ===
+73796e03dc6c199ebb6c2fe343709060a1888c147ea9af929703ea99c6a13540
+launched dsv41-vllm-v18-cgsizes-EXP  seqs=24 lpt=6144 ksched=[[1,4,5],[5,24,1]] cgsizes=1 2 4 6 8 12 16 18 24 32 40 48 64 96 128
+log: $BOX_HOME/dsv41/dsv41-vllm-v18-cgsizes-EXP.log
+=== LAUNCHED 2026-09-18T12:44:16-05:00 ===
+=== docker inspect Args ===
+["serve","--model","/model","--served-model-name","dsv41-flash-uva","--trust-remote-code","--tensor-parallel-size","1","--offload-backend","uva","--cpu-offload-gb","60","--cpu-offload-params","routed_experts.w13_weight","routed_experts.w2_weight","--engram-config","{\"cpu_offload\": true}","--max-model-len","1048576","--max-num-seqs","24","--max-num-batched-tokens","8192","--gpu-memory-utilization","0.97","--tool-call-parser","deepseek_v41","--reasoning-parser","deepseek_v41","--enable-auto-tool-choice","--long-prefill-token-threshold","6144","--speculative-config","{\"method\":\"dspark\",\"num_speculative_tokens\":5,\"num_speculative_tokens_per_batch_size\":[[1,4,5],[5,24,1]]}","--cudagraph-capture-sizes","1","2","4","6","8","12","16","18","24","32","40","48","64","96","128","--host","0.0.0.0","--port","30006"]
+=== docker ps ===
+dsv41-vllm-v18-cgsizes-EXP Up 1 second
+=== DONE_LAUNCH 2026-09-18T12:44:16-05:00 ===

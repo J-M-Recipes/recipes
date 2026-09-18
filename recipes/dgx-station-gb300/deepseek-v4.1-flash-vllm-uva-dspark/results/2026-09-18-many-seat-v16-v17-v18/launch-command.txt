@@ -1,0 +1,4 @@
+NAME=dsv41-vllm-v18-cgsizes-EXP SEQS=24 LPT=6144 KSCHED='[[1,4,5],[5,24,1]]' CGSIZES='1 2 4 6 8 12 16 18 24 32 40 48 64 96 128' bash launch-many-seat.sh
+# = v15 serve command (pin-hot-experts hook bind-mounted, PIN_MODE=split PIN_ROWMAP=/w/rowmap-static-v1.json) with
+#   --max-num-seqs 24  and  num_speculative_tokens_per_batch_size [[1,4,5],[5,24,1]]  and
+#   --cudagraph-capture-sizes 1 2 4 6 8 12 16 18 24 32 40 48 64 96 128   (token counts)
