@@ -1,6 +1,10 @@
 # DeepSeek-V4.1-Flash at 1M context on one DGX Station GB300
 
-**Reference release: Pin Hot Experts, v15** (2026-09-17) · previous **v14 Sixty-K Agent** (retired 2026-09-17) · Historical **v13: 90 tok/s single-stream prose · 140–160 tok/s on agent/code text · 429 agg tok/s at C16** (v12: 89 / 140–160 / 311 · v11: 82 / 130–150 / 287) · 972K-token prompt prefilled in 85 s · Hermes tool-calling 10/10
+**Reference release: Many Seat, v18** (2026-09-18: v15 hook + `--max-num-seqs 24` + token-sized `--cudagraph-capture-sizes`; 172 tok/s C1 prose, KV 2.50M tokens, C24 warm agent turn 0.55 s p50) · previous **v15 Pin Hot Experts** (retired 2026-09-18) · **v14 Sixty-K Agent** (retired 2026-09-17) · Historical **v13: 90 tok/s single-stream prose · 140–160 tok/s on agent/code text · 429 agg tok/s at C16** (v12: 89 / 140–160 / 311 · v11: 82 / 130–150 / 287) · 972K-token prompt prefilled in 85 s · Hermes tool-calling 10/10
+
+## Release notes — Many Seat, v18 (2026-09-18)
+
+v15 unchanged (hook, off60, util 0.97, 1M ctx, k-schedule shape) plus a scheduler that can hold a 24-seat workload: `--max-num-seqs 24`, `num_speculative_tokens_per_batch_size [[1,4,5],[5,24,1]]`, and `--cudagraph-capture-sizes 1 2 4 6 8 12 16 18 24 32 40 48 64 96 128` (token counts). Trigger was the [35-seat fund workload post](https://al-engr.com/gb300-35-seat-fund-workload.html): this lane read warm agent-turn p95 8.5 s at 16 streams and p50 27 s at 24. **That was a slot queue at 16 seqs (KV usage peaked at 16 %), not prefill** — idle cold prefill is 22–23K tok/s from 26K to 207K tokens on every profile. Same-window on the fund harness: C24 warm p50 **27 → 0.55 s**, cold 120K under 16 streams p95 **19 → 9.2 s**, C16 warm p95 1.86 s, tools 64/64. Knee prose C1 **172** (v15 153, +12.6 %), C8 655 (v15 698, −6.2 %, unexplained), C16 945 (flat). KV **2,502,950 tokens** (2.4× at 1M) against 1.79M with default 24-seq graphs (v17) and ~2.26M on v15. Per-seat prose p10 at 16 streams is still ~16 tok/s: a long-context and tool lane, not a 16-seat decode lane. Four boots, one axis each; v16 (32 seqs + `long-prefill-token-threshold 2048`) and v17b (capture list in sequences, not tokens) failed and are kept as negatives. Bundle: [`results/2026-09-18-many-seat-v16-v17-v18/`](results/2026-09-18-many-seat-v16-v17-v18/).
 
 ## Release notes — Pin Hot Experts, v15 (2026-09-17)
 
@@ -89,10 +93,11 @@ Full lock: [`results/…/software-lock.txt`](results/2026-09-10-v11-1M-k5-lpt614
 
 ```bash
 MODEL=/models/DeepSeek-V4.1-Flash-df42c109f1defefcbfcedbe7d905718a12266e40 \
-TAG=v13-1M-ksched OFFGB=60 UTIL=0.97 SEQS=16 SPEC=dspark:5 KSCHED='[[1,2,5],[3,16,1]]' CTX=1048576 \
-EXTRA='--long-prefill-token-threshold 6144' \
+TAG=v18-many-seat OFFGB=60 UTIL=0.97 SEQS=24 SPEC=dspark:5 KSCHED='[[1,4,5],[5,24,1]]' CTX=1048576 \
+EXTRA='--long-prefill-token-threshold 6144 --cudagraph-capture-sizes 1 2 4 6 8 12 16 18 24 32 40 48 64 96 128' \
 bash scripts/launch-dsv41-vllm.sh
-# ~8 min cold with a seeded autotune cache, ~4 min hot restart. Then:
+# plus the v15 pin-hot-experts hook: bind-mount sitecustomize.py + hook dir, PIN_MODE=split PIN_ROWMAP=/w/rowmap-static-v1.json
+# (results/2026-09-18-many-seat-v16-v17-v18/launch-many-seat.sh is the exact launcher). ~6 min hot restart; a seqs change is a new autotune hash, ~16 min. Then:
 bash scripts/smoke_vllm.sh
 ```
 
@@ -103,13 +108,17 @@ vllm serve /model --served-model-name dsv41-flash-uva --trust-remote-code --tens
   --offload-backend uva --cpu-offload-gb 60 \
   --cpu-offload-params routed_experts.w13_weight routed_experts.w2_weight \
   --engram-config '{"cpu_offload": true}' \
-  --max-model-len 1048576 --max-num-seqs 16 --max-num-batched-tokens 8192 --gpu-memory-utilization 0.97 \
-  --speculative-config '{"method":"dspark","num_speculative_tokens":5,"num_speculative_tokens_per_batch_size":[[1,2,5],[3,16,1]]}' \
+  --max-model-len 1048576 --max-num-seqs 24 --max-num-batched-tokens 8192 --gpu-memory-utilization 0.97 \
+  --speculative-config '{"method":"dspark","num_speculative_tokens":5,"num_speculative_tokens_per_batch_size":[[1,4,5],[5,24,1]]}' \
   --tool-call-parser deepseek_v41 --reasoning-parser deepseek_v41 --enable-auto-tool-choice \
-  --long-prefill-token-threshold 6144 --port 30006
+  --long-prefill-token-threshold 6144 \
+  --cudagraph-capture-sizes 1 2 4 6 8 12 16 18 24 32 40 48 64 96 128 --port 30006
 ```
 
 Flags that matter, and why:
+
+- **`--max-num-seqs 24`** (v18). At 16 this lane queued on a 35-seat workload — warm agent-turn p50 27 s at 24 streams — while KV usage peaked at 16%. 24 slots: 0.55 s. Do not fix the same symptom with a lower `--long-prefill-token-threshold`: 2048 cost idle prefill −47% and prose p10 −29% (v16).
+- **`--cudagraph-capture-sizes 1 2 4 6 8 12 16 18 24 32 40 48 64 96 128`** (v18). Token counts, not sequence counts. Default graphs for 24 slots cost 4.1 GiB and KV fell to 1.79M; this list costs 2.4 GiB and KV is 2.50M with decode unchanged. A list that tops out at 24 (v17b) leaves every batch above 12 seqs uncaptured.
 
 - **`--cpu-offload-gb 60` with `--gpu-memory-utilization 0.97`** is v12's notch. ~~60 → −2.61 GiB at 1M+DSpark~~ — that was measured at util 0.94. At 0.97 it fits: KV 4.89 GiB = 2.33M tokens = 2.2 concurrent 1M requests, and the 12.7 GiB of experts that move back into HBM buy +12% single-stream decode in a same-window comparison (89.2 vs 79.5). 40 still does not fit even at 131K. The fetch tax is ~4 ms of an ~11 ms step (~36%), measured against an all-HBM two-Station run; util alone moves nothing (at 70 it only grew KV). If you need more than two concurrent 1M contexts, use the v11 flags (`OFFGB=70 UTIL=0.94`, 82 tok/s, 4.5× at 1M).
 - **`--max-model-len 1048576`** costs 5.5 GiB of KV pool relative to 131K and nothing in decode speed. There is no reason to run this model small.
@@ -135,7 +144,19 @@ FlashInfer autotunes the MXFP4 MoE kernels and caches the result under a hash of
 
 ## Results
 
-### v15 — Pin Hot Experts (current)
+### v18 — Many Seat (current)
+
+Same-window idle knee re-check 2026-09-18 (v17 ×2 then v18 ×2, box otherwise idle) with a same-afternoon v15 control. Knee prompt class **prose**, T=0, 192 tokens. Not slot-capped at C16 (`--max-num-seqs 24`). Bundle: [`results/2026-09-18-many-seat-v16-v17-v18/`](results/2026-09-18-many-seat-v16-v17-v18/).
+
+| | C1 | C8 | C16 |
+|---|--:|--:|--:|
+| v18 | 171.8 / 172.1 | 653.8 / 656.9 | 747.5 / 944.6 |
+| v17 | 164.9 / 165.1 | 640.6 / 658.7 | 878.1 / 949.7 |
+| v15 (control) | 152.7 / 152.9 | 696.8 / 699.3 | 942.9 / 943.7 |
+
+Fund harness (35-seat mix on real 10-K text; means of two v18 windows around a v17 control, v15 control trailing): C24 warm agent-turn p50 **0.55 s** (v17 0.78, v15 27.3); C16 warm p95 1.86 s (v15 1.88; morning v15 run 8.54); cold 120K under 16 streams p95 9.2 s (v15 19.1); C16 prose p10 15.75 (v15 16.5); tools 64/64 everywhere; KV 2,502,950 tokens. Ladder and the two failed boots (v16, v17b) are in the bundle README.
+
+### v15 — Pin Hot Experts (retired 2026-09-18; v18 = v15 + scheduler)
 
 #### Confirmed (E2c)
 
