@@ -1,0 +1,56 @@
+=== WINDOW ASYNC start Sun Sep 20 09:32:10 AM CDT 2026 MemAvailable=130215936kB ===
+--- knee r1 ---
+[ASYNC-r1] conc= 1:   170.8 agg tok/s  170.77 per-stream  (runs 170.2/171.4)
+[ASYNC-r1] conc= 2:   269.1 agg tok/s  134.54 per-stream  (runs 270.5/267.7)
+[ASYNC-r1] conc= 4:   411.2 agg tok/s  102.81 per-stream  (runs 410.6/411.9)
+[ASYNC-r1] conc= 8:   650.7 agg tok/s   81.34 per-stream  (runs 651.2/650.2)
+[ASYNC-r1] conc=12:   802.0 agg tok/s   66.83 per-stream  (runs 800.6/803.3)
+[ASYNC-r1] conc=16:   932.2 agg tok/s   58.26 per-stream  (runs 926.1/938.3)
+--- knee r2 ---
+[ASYNC-r2] conc= 1:   171.1 agg tok/s  171.12 per-stream  (runs 171.0/171.2)
+[ASYNC-r2] conc= 2:   273.2 agg tok/s  136.59 per-stream  (runs 278.6/267.8)
+[ASYNC-r2] conc= 4:   411.3 agg tok/s  102.81 per-stream  (runs 411.1/411.4)
+[ASYNC-r2] conc= 8:   653.3 agg tok/s   81.66 per-stream  (runs 651.2/655.4)
+[ASYNC-r2] conc=12:   807.9 agg tok/s   67.33 per-stream  (runs 800.0/815.8)
+[ASYNC-r2] conc=16:   945.3 agg tok/s   59.08 per-stream  (runs 940.8/949.7)
+--- knee6 ---
+[ASYNC-k6] conc= 1:   171.3 agg tok/s  171.26 per-stream  (runs 171.2/171.3)
+[ASYNC-k6] conc= 2:   272.9 agg tok/s  136.44 per-stream  (runs 277.9/267.9)
+[ASYNC-k6] conc= 3:   338.0 agg tok/s  112.68 per-stream  (runs 337.5/338.6)
+[ASYNC-k6] conc= 4:   411.7 agg tok/s  102.93 per-stream  (runs 411.6/411.9)
+[ASYNC-k6] conc= 6:   573.1 agg tok/s   95.52 per-stream  (runs 574.2/572.1)
+[ASYNC-k6] conc= 8:   657.4 agg tok/s   82.18 per-stream  (runs 653.1/661.8)
+[ASYNC-k6] conc=12:   803.1 agg tok/s   66.92 per-stream  (runs 803.4/802.8)
+[ASYNC-k6] conc=16:   938.9 agg tok/s   58.68 per-stream  (runs 938.6/939.1)
+--- agent_fixture_o ---
+[ASYNC] prose        190.6 tok/s  accept=34.9%  acc/step=1.75  tokens=346
+      (173, 0.95, 'stop', False, 'Speculative decoding speeds up generation by having a small, cheap "draft" model')
+[ASYNC] structured   232.8 tok/s  accept=52.5%  acc/step=2.63  tokens=428
+      (102, 0.38, 'stop', False, "I'll research both approaches to give you accurate numbers.  ")
+      (112, 0.54, 'stop', False, '- weights load: complete — 14.2 GB sharded across 2 GPUs in 38.4s - KV cache: al')
+[ASYNC] code         231.8 tok/s  accept=66.1%  acc/step=3.30  tokens=654
+      (243, 1.01, 'stop', False, '```python def knee(rows):     """Return the concurrency where marginal gain per ')
+      (84, 0.4, 'stop', False, '```bash #!/usr/bin/env bash set -euo pipefail  : "${SRC:?SRC is not set}"  for i')
+[ASYNC] shell_ops    264.3 tok/s  accept=90.8%  acc/step=4.54  tokens=144
+      (72, 0.27, 'stop', False, 'docker stop dsv41-vllm-v7 docker rename dsv41-vllm-v7 dsv41-vllm-v7-old sudo sh ')
+[ASYNC] tool_json    240.9 tok/s  accept=87.8%  acc/step=4.39  tokens=318
+      (99, 0.47, 'tool_calls', True, "I'll run both checks in parallel.  ")
+      (60, 0.34, 'tool_calls', True, "I'll read the file first.  ")
+[ASYNC] weighted accept=62.8%
+--- replay r1 n=4 ---
+[ASYNC-r1] REPLAY n=4: agg 336.8 tok/s over 28s, 9378 tokens; accept=53.0% acc/step=2.65; tool turns 24 emitted=6 per-req 79.0 tok/s; text turns 24 per-req 94.5 tok/s
+--- replay r2 n=4 ---
+[ASYNC-r2] REPLAY n=4: agg 449.5 tok/s over 20s, 9119 tokens; accept=53.7% acc/step=2.68; tool turns 24 emitted=6 per-req 113.5 tok/s; text turns 24 per-req 117.7 tok/s
+--- metrics ---
+32 /home/milo/dsv41/overnight-T1T2/metrics-ASYNC.txt
+=== WINDOW ASYNC end Sun Sep 20 09:34:32 AM CDT 2026 MemAvailable=130180544kB delta=35392kB (0.03 GiB) ===
+-rw-rw-r-- 1 milo milo 2983 Sep 20 09:33 /home/milo/dsv41/overnight-T1T2/agentfix-ASYNC.json
+-rw-rw-r-- 1 milo milo  407 Sep 20 09:33 /home/milo/dsv41/overnight-T1T2/knee6-ASYNC.json
+-rw-rw-r-- 1 milo milo  321 Sep 20 09:32 /home/milo/dsv41/overnight-T1T2/knee-ASYNC-r1.json
+-rw-rw-r-- 1 milo milo  319 Sep 20 09:33 /home/milo/dsv41/overnight-T1T2/knee-ASYNC-r2.json
+-rw-rw-r-- 1 milo milo 2882 Sep 20 09:34 /home/milo/dsv41/overnight-T1T2/metrics-ASYNC.txt
+-rw-rw-r-- 1 milo milo 3476 Sep 20 09:34 /home/milo/dsv41/overnight-T1T2/nohup-ASYNC.log
+-rw-rw-r-- 1 milo milo  393 Sep 20 09:34 /home/milo/dsv41/overnight-T1T2/replayc-ASYNC-r1-n4.json
+-rw-rw-r-- 1 milo milo  395 Sep 20 09:34 /home/milo/dsv41/overnight-T1T2/replayc-ASYNC-r2-n4.json
+-rw-rw-r-- 1 milo milo 3476 Sep 20 09:34 /home/milo/dsv41/overnight-T1T2/window-ASYNC.log
+DONE ASYNC
