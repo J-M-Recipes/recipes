@@ -1,0 +1,48 @@
+# card.yaml — at-a-glance card sidecar. Rendered by scripts/render_card.py; never hand-edit card.html.
+# Every number here must trace to recipe.yaml metrics or a results/<run_id>/ bundle. Unknown = pending (renders amber).
+title: "DeepSeek-V4.1-Flash · 1× DGX Station GB300"
+subtitle: "Full 1,048,576-token context from a single GB300 — routed experts split HBM / Grace over NVLink-C2C, in-checkpoint DSpark drafter"
+version: "v18 “Many Seat”"
+run_id: 2026-09-18-many-seat-v16-v17-v18
+handles: "github.com/J-M-Recipes/recipes · al-engr.com · @jmeadlock"
+
+model:
+  type: MoE
+  type_detail: "384 routed experts + Engram"
+  total_params: 284B
+  active_params: pending          # take from checkpoint config, do not guess
+  checkpoint_gb: 510.3            # 510,313,343,553 B byte-verified (digest gate)
+  weights_short: "as shipped · MXFP4 experts / FP8 attn+Engram · KV fp8_ds_mla"
+  engine_extra: "FlashInfer 0.6.18 · image deepseekv41-flash-0909"
+  memory: "206.6 GiB HBM experts + 62.3 GiB Grace pinned · KV pool 2.50M tok"
+
+hero:
+  c1:      { value: 172, unit: tok/s, class: prose, note: "warm, T=0, 192 tok · agent/code/shell text 180–250 on the v15 fixture (DSpark accepts 64–91% there vs 30% on prose)" }
+  c16:     { value: 945, unit: tok/s, note: "C8 655 · max-num-seqs 24, not slot-capped · 35-seat harness C24 warm turn p50 0.55 s" }
+  prefill: { value: 22.7K, unit: tok/s, note: "104K prompt in 4.6 s · 6.5K @ 15.7K tok/s · 972K prompt in 85 s · 1K / 256K points pending" }
+
+guesser:
+  name: DSpark
+  source: "in-checkpoint MTP (mtp.0–2), same revision"
+  schedule: "k = 5 at 1–4 seqs, 1 at 5–24 (batch-size schedule)"
+  accept: { prose: 30%, code: 64%, shell: 91%, tool-JSON: 88% }   # v15 agent_fixture.sh
+
+secondary:
+  - label: Long-context behaviour
+    items:
+      "decode flat to (tokens in ctx)": 425K
+      "short-request TTFT during a 480K prefill": ~1 s
+      "cold 120K p95 under 16 live streams": 9.2 s
+  - label: Boot
+    items:
+      "local NVMe": "8 min (CIFS: 92 min)"
+      "autotune cache hit restart": ~6 min
+      "new engine hash": +74 min retune
+
+fidelity:
+  - { status: pass,    text: "Weights unchanged: 0 re-quantized bits, 510,313,343,553 B byte-verified vs HF" }
+  - { status: pass,    text: "Speculation is target-verified: every emitted token accepted by the full model (lossless at T=0)" }
+  - { status: pass,    text: "Greedy parity 44/44 non-tool prompts byte-exact across recipe variants · gauntlet 36/36" }
+  - { status: pass,    text: "Tool calling: Hermes harness 10/10 · 35-seat fund harness 64/64" }
+  - { status: pending, text: "Teacher-forced Δlogprob vs no-spec/no-hook reference (51k positions) — PENDING" }
+  - { status: pending, text: "Public sanity anchor (GPQA-Diamond subset, run by us) — PENDING" }

@@ -1,0 +1,77 @@
+<!doctype html>
+<html><head><meta charset="utf-8">
+<style>
+  html,body{margin:0;background:#0b0f14;}
+  .card{width:1200px;box-sizing:border-box;padding:36px 44px;background:linear-gradient(160deg,#0b0f14 0%,#0f1620 100%);color:#e6edf3;font-family:Inter,-apple-system,Segoe UI,Helvetica,Arial,sans-serif;border:1px solid #1e2a38;border-radius:14px;}
+  .mono{font-family:"JetBrains Mono",SFMono-Regular,Menlo,Consolas,monospace;}
+  .top{display:flex;justify-content:space-between;align-items:flex-start;}
+  h1{margin:0;font-size:38px;font-weight:800;letter-spacing:-0.5px;}
+  .sub{margin-top:6px;font-size:15px;color:#9fb0c3;}
+  .brand{text-align:right;font-size:13px;color:#9fb0c3;line-height:1.5;white-space:nowrap}
+  .brand b{color:#6ee7b7;font-size:16px;letter-spacing:1px}
+  .pills{display:flex;flex-wrap:wrap;gap:8px;margin:18px 0 22px}
+  .pill{border:1px solid #2a3a4d;background:#111a25;border-radius:999px;padding:6px 12px;font-size:13px;color:#cfd9e4}
+  .pill b{color:#fff;font-weight:600}
+  .pill.type{border-color:#6ee7b7;color:#6ee7b7}
+  .grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px}
+  .box{background:#111a25;border:1px solid #1e2a38;border-radius:10px;padding:16px 18px}
+  .lbl{font-size:11px;letter-spacing:1.6px;text-transform:uppercase;color:#7f93a8;margin-bottom:6px}
+  .hero{font-size:56px;font-weight:800;line-height:1;color:#fff}
+  .hero small{font-size:18px;font-weight:500;color:#9fb0c3;margin-left:6px}
+  .note{font-size:12px;color:#9fb0c3;margin-top:8px;line-height:1.4}
+  .row2{display:grid;grid-template-columns:1.2fr 1fr 1fr;gap:14px;margin-top:14px}
+  .kv{font-size:14px;line-height:1.75}
+  .kv b{color:#fff;font-weight:600}
+  .acc span{display:inline-block;margin-right:12px}
+  .fid{margin-top:14px;background:#0e1a17;border:1px solid #1f4d3d;border-radius:10px;padding:16px 18px}
+  .fid .lbl{color:#6ee7b7}
+  .fid ul{margin:0;padding-left:0;list-style:none;display:grid;grid-template-columns:1fr 1fr;gap:6px 24px;font-size:14px;line-height:1.5}
+  .ok::before{content:"✓ ";color:#6ee7b7;font-weight:700}
+  .pend::before{content:"◌ ";color:#f59e0b;font-weight:700}
+  .pend{color:#d9c58a}
+  .pend-inline{color:#f59e0b;font-size:0.6em;font-weight:600;letter-spacing:1px}
+  .foot{display:flex;justify-content:space-between;margin-top:18px;font-size:12px;color:#7f93a8}
+  .foot .mono{color:#9fb0c3}
+</style></head><body>
+<div class="card">
+  <div class="top">
+    <div>
+      <h1>DeepSeek-V4.1-Flash · 1× DGX Station GB300</h1>
+      <div class="sub">Full 1,048,576-token context from a single GB300 — routed experts split HBM / Grace over NVLink-C2C, in-checkpoint DSpark drafter</div>
+    </div>
+    <div class="brand"><b>J-M-RECIPES</b><br>v18 “Many Seat” · 2026-09-20<br>status: verified</div>
+  </div>
+  <div class="pills">
+<span class="pill type"><b>MoE</b> · 384 routed experts + Engram</span>
+<span class="pill"><b>284B</b> total · <b><span class="pend-inline">PENDING</span></b> active</span>
+<span class="pill">checkpoint <b>510.3 GB</b> · rev <span class="mono">df42c109</span></span>
+<span class="pill">weights <b>as shipped · MXFP4 experts / FP8 attn+Engram · KV fp8_ds_mla</b></span>
+<span class="pill">engine <b>vLLM <span class="mono">179dd0fa9</span> · FlashInfer 0.6.18 · image deepseekv41-flash-0909</b></span>
+<span class="pill">memory <b>206.6 GiB HBM experts + 62.3 GiB Grace pinned · KV pool 2.50M tok</b></span>
+  </div>
+  <div class="grid">
+<div class="box"><div class="lbl">Decode · C1 (prose)</div><div class="hero">172<small>tok/s</small></div><div class="note">warm, T=0, 192 tok · agent/code/shell text 180–250 on the v15 fixture (DSpark accepts 64–91% there vs 30% on prose)</div></div>
+<div class="box"><div class="lbl">Decode · C16 aggregate</div><div class="hero">945<small>tok/s</small></div><div class="note">C8 655 · max-num-seqs 24, not slot-capped · 35-seat harness C24 warm turn p50 0.55 s</div></div>
+<div class="box"><div class="lbl">Prefill · cold</div><div class="hero">22.7K<small>tok/s</small></div><div class="note">104K prompt in 4.6 s · 6.5K @ 15.7K tok/s · 972K prompt in 85 s · 1K / 256K points pending</div></div>
+  </div>
+  <div class="row2">
+<div class="box"><div class="lbl">Guesser</div><div class="kv"><b>DSpark</b> · in-checkpoint MTP (mtp.0–2), same revision<br>k = 5 at 1–4 seqs, 1 at 5–24 (batch-size schedule)<br><span class="acc">accept: <span>prose <b>30%</b></span> <span>code <b>64%</b></span> <span>shell <b>91%</b></span> <span>tool-JSON <b>88%</b></span></span></div></div>
+<div class="box"><div class="lbl">Long-context behaviour</div><div class="kv">decode flat to (tokens in ctx): <b>425K</b><br>short-request TTFT during a 480K prefill: <b>~1 s</b><br>cold 120K p95 under 16 live streams: <b>9.2 s</b></div></div>
+<div class="box"><div class="lbl">Boot</div><div class="kv">local NVMe: <b>8 min (CIFS: 92 min)</b><br>autotune cache hit restart: <b>~6 min</b><br>new engine hash: <b>+74 min retune</b></div></div>
+  </div>
+  <div class="fid"><div class="lbl">Output fidelity — does the recipe change what the model says?</div>
+    <ul>
+<li class="ok">Weights unchanged: 0 re-quantized bits, 510,313,343,553 B byte-verified vs HF</li>
+<li class="ok">Speculation is target-verified: every emitted token accepted by the full model (lossless at T=0)</li>
+<li class="ok">Greedy parity 44/44 non-tool prompts byte-exact across recipe variants · gauntlet 36/36</li>
+<li class="ok">Tool calling: Hermes harness 10/10 · 35-seat fund harness 64/64</li>
+<li class="pend">Teacher-forced Δlogprob vs no-spec/no-hook reference (51k positions) — PENDING</li>
+<li class="pend">Public sanity anchor (GPQA-Diamond subset, run by us) — PENDING</li>
+    </ul>
+  </div>
+  <div class="foot">
+    <span>recipe <span class="mono">recipes/dgx-station-gb300/deepseek-v4.1-flash-vllm-uva-dspark</span> · run <span class="mono">2026-09-18-many-seat-v16-v17-v18</span></span>
+    <span>github.com/J-M-Recipes/recipes · al-engr.com · @jmeadlock</span>
+  </div>
+</div>
+</body></html>
