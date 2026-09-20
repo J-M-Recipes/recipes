@@ -1,0 +1,55 @@
+=== WINDOW v18ctl3 start Sat Sep 19 06:29:49 AM CDT 2026 MemAvailable=131271296kB ===
+--- knee r1 ---
+[v18ctl3-r1] conc= 1:   170.8 agg tok/s  170.84 per-stream  (runs 170.3/171.4)
+[v18ctl3-r1] conc= 2:   271.1 agg tok/s  135.55 per-stream  (runs 274.4/267.8)
+[v18ctl3-r1] conc= 4:   412.2 agg tok/s  103.04 per-stream  (runs 411.5/412.8)
+[v18ctl3-r1] conc= 8:   654.7 agg tok/s   81.84 per-stream  (runs 653.4/656.1)
+[v18ctl3-r1] conc=12:   812.2 agg tok/s   67.68 per-stream  (runs 817.6/806.9)
+[v18ctl3-r1] conc=16:   751.4 agg tok/s   46.96 per-stream  (runs 561.8/940.9)
+--- knee r2 ---
+[v18ctl3-r2] conc= 1:   171.3 agg tok/s  171.28 per-stream  (runs 171.2/171.4)
+[v18ctl3-r2] conc= 2:   273.5 agg tok/s  136.74 per-stream  (runs 279.1/267.9)
+[v18ctl3-r2] conc= 4:   412.2 agg tok/s  103.04 per-stream  (runs 412.4/411.9)
+[v18ctl3-r2] conc= 8:   653.8 agg tok/s   81.72 per-stream  (runs 652.8/654.8)
+[v18ctl3-r2] conc=12:   811.0 agg tok/s   67.59 per-stream  (runs 818.7/803.4)
+[v18ctl3-r2] conc=16:   947.0 agg tok/s   59.19 per-stream  (runs 946.9/947.2)
+--- knee6 ---
+[v18ctl3-k6] conc= 1:   171.3 agg tok/s  171.27 per-stream  (runs 171.2/171.4)
+[v18ctl3-k6] conc= 2:   273.6 agg tok/s  136.78 per-stream  (runs 279.3/267.8)
+[v18ctl3-k6] conc= 3:   331.6 agg tok/s  110.52 per-stream  (runs 326.6/336.6)
+[v18ctl3-k6] conc= 4:   411.9 agg tok/s  102.98 per-stream  (runs 412.2/411.6)
+[v18ctl3-k6] conc= 6:   572.1 agg tok/s   95.35 per-stream  (runs 572.6/571.6)
+[v18ctl3-k6] conc= 8:   655.8 agg tok/s   81.98 per-stream  (runs 653.4/658.2)
+[v18ctl3-k6] conc=12:   809.1 agg tok/s   67.43 per-stream  (runs 804.0/814.2)
+[v18ctl3-k6] conc=16:   947.5 agg tok/s   59.22 per-stream  (runs 943.4/951.6)
+--- agent_fixture_o ---
+[v18ctl3] prose        201.6 tok/s  accept=34.9%  acc/step=1.75  tokens=346
+      (173, 0.85, 'stop', False, 'Speculative decoding speeds up generation by having a small, cheap "draft" model')
+[v18ctl3] structured   232.8 tok/s  accept=52.5%  acc/step=2.63  tokens=428
+      (102, 0.38, 'stop', False, "I'll research both approaches to give you accurate numbers.  ")
+      (112, 0.54, 'stop', False, '- weights load: complete — 14.2 GB sharded across 2 GPUs in 38.4s - KV cache: al')
+[v18ctl3] code         232.2 tok/s  accept=66.1%  acc/step=3.30  tokens=654
+      (243, 1.01, 'stop', False, '```python def knee(rows):     """Return the concurrency where marginal gain per ')
+      (84, 0.4, 'stop', False, '```bash #!/usr/bin/env bash set -euo pipefail  : "${SRC:?SRC is not set}"  for i')
+[v18ctl3] shell_ops    264.7 tok/s  accept=90.8%  acc/step=4.54  tokens=144
+      (72, 0.27, 'stop', False, 'docker stop dsv41-vllm-v7 docker rename dsv41-vllm-v7 dsv41-vllm-v7-old sudo sh ')
+[v18ctl3] tool_json    236.7 tok/s  accept=87.8%  acc/step=4.39  tokens=318
+      (99, 0.49, 'tool_calls', True, "I'll run both checks in parallel.  ")
+      (60, 0.34, 'tool_calls', True, "I'll read the file first.  ")
+[v18ctl3] weighted accept=62.8%
+--- replay r1 n=4 ---
+[v18ctl3-r1] REPLAY n=4: agg 341.4 tok/s over 27s, 9196 tokens; accept=52.7% acc/step=2.64; tool turns 24 emitted=7 per-req 80.4 tok/s; text turns 24 per-req 92.5 tok/s
+--- replay r2 n=4 ---
+[v18ctl3-r2] REPLAY n=4: agg 438.3 tok/s over 18s, 7967 tokens; accept=53.1% acc/step=2.65; tool turns 24 emitted=7 per-req 111.1 tok/s; text turns 24 per-req 113.8 tok/s
+--- metrics ---
+32 $BOX_HOME/dsv41/overnight-T1T2/metrics-v18ctl3.txt
+=== WINDOW v18ctl3 end Sat Sep 19 06:32:10 AM CDT 2026 MemAvailable=131105472kB delta=165824kB (0.16 GiB) ===
+-rw-rw-r-- 1 milo milo 2986 Sep 19 06:31 $BOX_HOME/dsv41/overnight-T1T2/agentfix-v18ctl3.json
+-rw-rw-r-- 1 milo milo  410 Sep 19 06:31 $BOX_HOME/dsv41/overnight-T1T2/knee6-v18ctl3.json
+-rw-rw-r-- 1 milo milo  323 Sep 19 06:30 $BOX_HOME/dsv41/overnight-T1T2/knee-v18ctl3-r1.json
+-rw-rw-r-- 1 milo milo  323 Sep 19 06:30 $BOX_HOME/dsv41/overnight-T1T2/knee-v18ctl3-r2.json
+-rw-rw-r-- 1 milo milo 2884 Sep 19 06:32 $BOX_HOME/dsv41/overnight-T1T2/metrics-v18ctl3.txt
+-rw-rw-r-- 1 milo milo 3539 Sep 19 06:32 $BOX_HOME/dsv41/overnight-T1T2/nohup-v18ctl3.log
+-rw-rw-r-- 1 milo milo  396 Sep 19 06:31 $BOX_HOME/dsv41/overnight-T1T2/replayc-v18ctl3-r1-n4.json
+-rw-rw-r-- 1 milo milo  394 Sep 19 06:32 $BOX_HOME/dsv41/overnight-T1T2/replayc-v18ctl3-r2-n4.json
+-rw-rw-r-- 1 milo milo 3539 Sep 19 06:32 $BOX_HOME/dsv41/overnight-T1T2/window-v18ctl3.log

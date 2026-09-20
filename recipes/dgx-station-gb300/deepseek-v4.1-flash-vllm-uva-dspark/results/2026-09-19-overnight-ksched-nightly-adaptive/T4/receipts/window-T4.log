@@ -1,0 +1,55 @@
+=== WINDOW T4 start Sat Sep 19 06:41:11 AM CDT 2026 MemAvailable=129638592kB ===
+--- knee r1 ---
+[T4-r1] conc= 1:   163.4 agg tok/s  163.36 per-stream  (runs 158.1/168.7)
+[T4-r1] conc= 2:   262.7 agg tok/s  131.33 per-stream  (runs 264.5/260.8)
+[T4-r1] conc= 4:   407.5 agg tok/s  101.86 per-stream  (runs 408.2/406.7)
+[T4-r1] conc= 8:   637.2 agg tok/s   79.65 per-stream  (runs 646.2/628.1)
+[T4-r1] conc=12:   803.6 agg tok/s   66.96 per-stream  (runs 811.4/795.7)
+[T4-r1] conc=16:   935.9 agg tok/s   58.50 per-stream  (runs 927.2/944.7)
+--- knee r2 ---
+[T4-r2] conc= 1:   166.8 agg tok/s  166.83 per-stream  (runs 169.1/164.6)
+[T4-r2] conc= 2:   265.9 agg tok/s  132.93 per-stream  (runs 271.5/260.2)
+[T4-r2] conc= 4:   406.2 agg tok/s  101.55 per-stream  (runs 407.8/404.6)
+[T4-r2] conc= 8:   634.3 agg tok/s   79.28 per-stream  (runs 644.8/623.7)
+[T4-r2] conc=12:   797.3 agg tok/s   66.44 per-stream  (runs 795.4/799.2)
+[T4-r2] conc=16:   943.7 agg tok/s   58.98 per-stream  (runs 949.0/938.4)
+--- knee6 ---
+[T4-k6] conc= 1:   168.5 agg tok/s  168.52 per-stream  (runs 168.3/168.7)
+[T4-k6] conc= 2:   267.2 agg tok/s  133.58 per-stream  (runs 271.2/263.1)
+[T4-k6] conc= 3:   334.9 agg tok/s  111.62 per-stream  (runs 333.2/336.5)
+[T4-k6] conc= 4:   400.2 agg tok/s  100.05 per-stream  (runs 393.4/406.9)
+[T4-k6] conc= 6:   560.9 agg tok/s   93.48 per-stream  (runs 563.8/558.0)
+[T4-k6] conc= 8:   637.8 agg tok/s   79.72 per-stream  (runs 629.3/646.2)
+[T4-k6] conc=12:   798.1 agg tok/s   66.51 per-stream  (runs 797.7/798.5)
+[T4-k6] conc=16:   933.6 agg tok/s   58.35 per-stream  (runs 945.0/922.2)
+--- agent_fixture_o ---
+[T4] prose        187.7 tok/s  accept=34.9%  acc/step=1.75  tokens=346
+      (173, 0.97, 'stop', False, 'Speculative decoding speeds up generation by having a small, cheap "draft" model')
+[T4] structured   230.7 tok/s  accept=52.5%  acc/step=2.63  tokens=428
+      (102, 0.38, 'stop', False, "I'll research both approaches to give you accurate numbers.  ")
+      (112, 0.54, 'stop', False, '- weights load: complete — 14.2 GB sharded across 2 GPUs in 38.4s - KV cache: al')
+[T4] code         231.7 tok/s  accept=66.1%  acc/step=3.30  tokens=654
+      (243, 1.01, 'stop', False, '```python def knee(rows):     """Return the concurrency where marginal gain per ')
+      (84, 0.4, 'stop', False, '```bash #!/usr/bin/env bash set -euo pipefail  : "${SRC:?SRC is not set}"  for i')
+[T4] shell_ops    267.2 tok/s  accept=90.8%  acc/step=4.54  tokens=144
+      (72, 0.27, 'stop', False, 'docker stop dsv41-vllm-v7 docker rename dsv41-vllm-v7 dsv41-vllm-v7-old sudo sh ')
+[T4] tool_json    239.6 tok/s  accept=87.8%  acc/step=4.39  tokens=318
+      (99, 0.49, 'tool_calls', True, "I'll run both checks in parallel.  ")
+      (60, 0.33, 'tool_calls', True, "I'll read the file first.  ")
+[T4] weighted accept=62.8%
+--- replay r1 n=4 ---
+[T4-r1] REPLAY n=4: agg 430.5 tok/s over 20s, 8637 tokens; accept=51.4% acc/step=2.57; tool turns 24 emitted=5 per-req 108.4 tok/s; text turns 24 per-req 118.8 tok/s
+--- replay r2 n=4 ---
+[T4-r2] REPLAY n=4: agg 440.0 tok/s over 18s, 8103 tokens; accept=52.9% acc/step=2.65; tool turns 24 emitted=8 per-req 105.3 tok/s; text turns 24 per-req 120.2 tok/s
+--- metrics ---
+32 $BOX_HOME/dsv41/overnight-T1T2/metrics-T4.txt
+=== WINDOW T4 end Sat Sep 19 06:43:25 AM CDT 2026 MemAvailable=130091456kB delta=-452864kB (-0.43 GiB) ===
+-rw-rw-r-- 1 milo milo 2980 Sep 19 06:42 $BOX_HOME/dsv41/overnight-T1T2/agentfix-T4.json
+-rw-rw-r-- 1 milo milo  399 Sep 19 06:42 $BOX_HOME/dsv41/overnight-T1T2/knee6-T4.json
+-rw-rw-r-- 1 milo milo  319 Sep 19 06:41 $BOX_HOME/dsv41/overnight-T1T2/knee-T4-r1.json
+-rw-rw-r-- 1 milo milo  319 Sep 19 06:42 $BOX_HOME/dsv41/overnight-T1T2/knee-T4-r2.json
+-rw-rw-r-- 1 milo milo 2883 Sep 19 06:43 $BOX_HOME/dsv41/overnight-T1T2/metrics-T4.txt
+-rw-rw-r-- 1 milo milo 3388 Sep 19 06:43 $BOX_HOME/dsv41/overnight-T1T2/nohup-T4.log
+-rw-rw-r-- 1 milo milo  393 Sep 19 06:43 $BOX_HOME/dsv41/overnight-T1T2/replayc-T4-r1-n4.json
+-rw-rw-r-- 1 milo milo  392 Sep 19 06:43 $BOX_HOME/dsv41/overnight-T1T2/replayc-T4-r2-n4.json
+-rw-rw-r-- 1 milo milo 3388 Sep 19 06:43 $BOX_HOME/dsv41/overnight-T1T2/window-T4.log
