@@ -3,7 +3,7 @@
 title: "DeepSeek-V4.1-Flash · 1× DGX Station GB300"
 subtitle: "Full 1,048,576-token context from a single GB300 — routed experts split HBM / Grace over NVLink-C2C, in-checkpoint DSpark drafter"
 version: "v18 “Many Seat”"
-run_id: 2026-09-18-many-seat-v16-v17-v18
+run_id: 2026-09-18-many-seat-v16-v17-v18 (v18) · 2026-09-20-v19-pair-async (v19 candidate, fund harness)
 handles: "github.com/J-M-Recipes/recipes · al-engr.com · @jmeadlock"
 
 model:
@@ -18,7 +18,7 @@ model:
 
 hero:
   c1:      { value: 172, unit: tok/s, class: prose, note: "warm, T=0, 192 tok · agent/code/shell text 180–250 on the v15 fixture (DSpark accepts 64–91% there vs 30% on prose)" }
-  c16:     { value: 945, unit: tok/s, note: "C8 655 · max-num-seqs 24, not slot-capped · 35-seat harness C24 warm turn p50 0.55 s" }
+  c16:     { value: 945, unit: tok/s, note: "C8 655 · max-num-seqs 24, not slot-capped · 35-seat harness C24 warm turn p50 0.55–0.60 s (v18ctl9, 2026-09-20)" }
   prefill: { value: 22.7K, unit: tok/s, note: "104K prompt in 4.6 s · 6.5K @ 15.7K tok/s · 972K prompt in 85 s · 1K / 256K points pending" }
 
 guesser:
@@ -32,7 +32,12 @@ secondary:
     items:
       "decode flat to (tokens in ctx)": 425K
       "short-request TTFT during a 480K prefill": ~1 s
-      "cold 120K p95 under 16 live streams": 9.2 s
+      "cold 120K p95 under 16 live streams": "8.4 s (2026-09-20 v18ctl9; 9.2 s on 2026-09-18)"
+  - label: Candidate v19 (not promoted, 2026-09-20)
+    items:
+      "nightly + hook + fp8 KV + pinned autotune set, C1": "183.2 / 183.1 tok/s (+6.6%), two loaded boots token-identical 18/18"
+      "fund C24 aggregate vs v18 same-window": "306–310 vs 285 tok/s (+8%)"
+      "open before promotion": "C16 warm p95 (one 2.56 s draw vs 2.28 bar) · replay tool-turn bar (in progress)"
   - label: Boot
     items:
       "local NVMe": "8 min (CIFS: 92 min)"
@@ -43,6 +48,6 @@ fidelity:
   - { status: pass,    text: "Weights unchanged: 0 re-quantized bits, 510,313,343,553 B byte-verified vs HF" }
   - { status: pass,    text: "Speculation is target-verified: every emitted token accepted by the full model (lossless at T=0)" }
   - { status: pass,    text: "Greedy parity 44/44 non-tool prompts byte-exact across recipe variants · gauntlet 36/36" }
-  - { status: pass,    text: "Tool calling: Hermes harness 10/10 · 35-seat fund harness 64/64" }
+  - { status: pass,    text: "Tool calling: Hermes harness 10/10 · 35-seat fund harness 64/64 (v18 and v19 candidate, 2026-09-20)" }
   - { status: pending, text: "Teacher-forced Δlogprob vs no-spec/no-hook reference (51k positions) — PENDING" }
   - { status: pending, text: "Public sanity anchor (GPQA-Diamond subset, run by us) — PENDING" }

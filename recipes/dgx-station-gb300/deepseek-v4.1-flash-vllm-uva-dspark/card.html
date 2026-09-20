@@ -51,26 +51,26 @@
   </div>
   <div class="grid">
 <div class="box"><div class="lbl">Decode · C1 (prose)</div><div class="hero">172<small>tok/s</small></div><div class="note">warm, T=0, 192 tok · agent/code/shell text 180–250 on the v15 fixture (DSpark accepts 64–91% there vs 30% on prose)</div></div>
-<div class="box"><div class="lbl">Decode · C16 aggregate</div><div class="hero">945<small>tok/s</small></div><div class="note">C8 655 · max-num-seqs 24, not slot-capped · 35-seat harness C24 warm turn p50 0.55 s</div></div>
+<div class="box"><div class="lbl">Decode · C16 aggregate</div><div class="hero">945<small>tok/s</small></div><div class="note">C8 655 · max-num-seqs 24, not slot-capped · 35-seat harness C24 warm turn p50 0.55–0.60 s (v18ctl9, 2026-09-20)</div></div>
 <div class="box"><div class="lbl">Prefill · cold</div><div class="hero">22.7K<small>tok/s</small></div><div class="note">104K prompt in 4.6 s · 6.5K @ 15.7K tok/s · 972K prompt in 85 s · 1K / 256K points pending</div></div>
   </div>
   <div class="row2">
 <div class="box"><div class="lbl">Guesser</div><div class="kv"><b>DSpark</b> · in-checkpoint MTP (mtp.0–2), same revision<br>k = 5 at 1–4 seqs, 1 at 5–24 (batch-size schedule)<br><span class="acc">accept: <span>prose <b>30%</b></span> <span>code <b>64%</b></span> <span>shell <b>91%</b></span> <span>tool-JSON <b>88%</b></span></span></div></div>
-<div class="box"><div class="lbl">Long-context behaviour</div><div class="kv">decode flat to (tokens in ctx): <b>425K</b><br>short-request TTFT during a 480K prefill: <b>~1 s</b><br>cold 120K p95 under 16 live streams: <b>9.2 s</b></div></div>
-<div class="box"><div class="lbl">Boot</div><div class="kv">local NVMe: <b>8 min (CIFS: 92 min)</b><br>autotune cache hit restart: <b>~6 min</b><br>new engine hash: <b>+74 min retune</b></div></div>
+<div class="box"><div class="lbl">Long-context behaviour</div><div class="kv">decode flat to (tokens in ctx): <b>425K</b><br>short-request TTFT during a 480K prefill: <b>~1 s</b><br>cold 120K p95 under 16 live streams: <b>8.4 s (2026-09-20 v18ctl9; 9.2 s on 2026-09-18)</b></div></div>
+<div class="box"><div class="lbl">Candidate v19 (not promoted, 2026-09-20)</div><div class="kv">nightly + hook + fp8 KV + pinned autotune set, C1: <b>183.2 / 183.1 tok/s (+6.6%), two loaded boots token-identical 18/18</b><br>fund C24 aggregate vs v18 same-window: <b>306–310 vs 285 tok/s (+8%)</b><br>open before promotion: <b>C16 warm p95 (one 2.56 s draw vs 2.28 bar) · replay tool-turn bar (in progress)</b></div></div>
   </div>
   <div class="fid"><div class="lbl">Output fidelity — does the recipe change what the model says?</div>
     <ul>
 <li class="ok">Weights unchanged: 0 re-quantized bits, 510,313,343,553 B byte-verified vs HF</li>
 <li class="ok">Speculation is target-verified: every emitted token accepted by the full model (lossless at T=0)</li>
 <li class="ok">Greedy parity 44/44 non-tool prompts byte-exact across recipe variants · gauntlet 36/36</li>
-<li class="ok">Tool calling: Hermes harness 10/10 · 35-seat fund harness 64/64</li>
+<li class="ok">Tool calling: Hermes harness 10/10 · 35-seat fund harness 64/64 (v18 and v19 candidate, 2026-09-20)</li>
 <li class="pend">Teacher-forced Δlogprob vs no-spec/no-hook reference (51k positions) — PENDING</li>
 <li class="pend">Public sanity anchor (GPQA-Diamond subset, run by us) — PENDING</li>
     </ul>
   </div>
   <div class="foot">
-    <span>recipe <span class="mono">recipes/dgx-station-gb300/deepseek-v4.1-flash-vllm-uva-dspark</span> · run <span class="mono">2026-09-18-many-seat-v16-v17-v18</span></span>
+    <span>recipe <span class="mono">recipes/dgx-station-gb300/deepseek-v4.1-flash-vllm-uva-dspark</span> · run <span class="mono">2026-09-18-many-seat-v16-v17-v18 (v18) · 2026-09-20-v19-pair-async (v19 candidate, fund harness)</span></span>
     <span>github.com/J-M-Recipes/recipes · al-engr.com · @jmeadlock</span>
   </div>
 </div>
