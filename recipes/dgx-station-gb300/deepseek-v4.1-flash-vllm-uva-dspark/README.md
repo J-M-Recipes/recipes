@@ -2,6 +2,24 @@
 
 **Reference release: Many Seat, v18** (2026-09-18: v15 hook + `--max-num-seqs 24` + token-sized `--cudagraph-capture-sizes`; 172 tok/s C1 prose, KV 2.50M tokens, C24 warm agent turn 0.55 s p50) · previous **v15 Pin Hot Experts** (retired 2026-09-18) · **v14 Sixty-K Agent** (retired 2026-09-17) · Historical **v13: 90 tok/s single-stream prose · 140–160 tok/s on agent/code text · 429 agg tok/s at C16** (v12: 89 / 140–160 / 311 · v11: 82 / 130–150 / 287) · 972K-token prompt prefilled in 85 s · Hermes tool-calling 10/10
 
+## Round 8 — overnight k-schedule / nightly / adaptive, and the open T3b finding (2026-09-19)
+
+Five boots, one axis each, every verdict from a same-window pair against the live v18 (`dsv41-vllm-v18-cgsizes-BOUND-REF`). Bundle: [`results/2026-09-19-overnight-ksched-nightly-adaptive/`](results/2026-09-19-overnight-ksched-nightly-adaptive/) (plan, briefs, runners, every window's JSON, the two FlashInfer autotune files). Nothing promoted; v18 stays the reference.
+
+| test | axis | C1 | C8 | C16 (paired) | replay n=4 | verdict |
+|---|---|--:|--:|--:|--:|---|
+| v18ctl (×5 windows) | — | 171.7–172.5 | 642–666 | 942–954 | 320–341 / 416–475 | reference |
+| T1 `[[1,4,5],[5,12,3],[13,24,1]]` | spec K mid-band k=3 | −0.7% | **−6.2%** | +0.1% | −3.8% | **FAIL** — k=3 is verify tax at C8; replay's 4 workers never leave the k=5 band |
+| T2 `[[1,8,5],[9,24,3]]` | spec K | −0.3% | **−12.9%** | −6.1% | −2.7% | **FAIL** — k-schedule lever closed on this lane |
+| T3 nightly `dee37d89`, hook **off** | image | 97.1 (+9.5% vs v14 positional 88.7) | 312 | 352–426 | 166 / 230 | binds clean; ≈½ of v18 without the hook — not a lane |
+| T4 E4b D1 counter, unfrozen | adaptive placement | −3.0% | **−2.9%** (bar −1.5%) | −1.0% | +10.8% (±20% instrument) | **FAIL** — 12 swaps, all in the first drain, none after; adaptive-on-this-hook closed |
+| **T3b** nightly + hook, off54, **live autotune** (two boots) | image + hook | **183.6 / 195.7** (+6.9% / +13.7%) | 701–733 (+8–10%) | 1014–1031 (**+21%**) | 355–374 / 468–490 (+14%) | **OPEN** |
+| T3b2 / T3b3 same lane, **cache loaded** (docker start / fresh run with cache) | — | 172.1 / 172.3 (0%) | 677 (+4%) | 851–988 | 277–285 / 389–392 (−9%) | = v18, with a **C4 −15% / C12 −17%** hole |
+
+What T3b established: the nightly's merged DSV4.1 kernels plus the v15 hook are worth +7–14% C1 and +21% C16 over v18 — **when FlashInfer tunes live in-process**. Loading a saved autotune cache on `0.6.18.post1` reproduces the tune's greedy tokens exactly (16/16 text prompts) but not its speed. Two live tunes select different configs (27/42 MoE, 58/147 GEMM entries) and different tokens; greedy parity vs the 0909 image is 2/18 by construction (different kernels), so cross-image parity bars do not apply. Not established: why the loaded cache is slow, and whether the 196-tok/s set reproduces when pinned as the cache. That single boot is the next window (T3b5) and decides whether the recipe is "pin a known-good autotune file" or "serve from a live tune".
+
+Also found: the hook's 10 GiB host guard clears by only 1–2 GiB on every 0909 boot and the nightly fell under it at rehome layer 9 — `--cpu-offload-gb 54` (9 UVA layers, identical post-rehome residency) is the workaround; offload GiB does not enter the kernel-shape hash. Three overnight-runner bugs are recorded in the bundle README (heredoc without `-i` silently skipped T3b; `e2c_heldout.py` called without its tag so T4's held-out never ran; `pgrep -f` matching its own shell). No window before this round recorded GPU power/cap/clock; from T3b5 on every runner does (Station power sloshing is a real mechanism — see limits).
+
 ## Release notes — Many Seat, v18 (2026-09-18)
 
 v15 unchanged (hook, off60, util 0.97, 1M ctx, k-schedule shape) plus a scheduler that can hold a 24-seat workload: `--max-num-seqs 24`, `num_speculative_tokens_per_batch_size [[1,4,5],[5,24,1]]`, and `--cudagraph-capture-sizes 1 2 4 6 8 12 16 18 24 32 40 48 64 96 128` (token counts). Trigger was the [35-seat fund workload post](https://al-engr.com/gb300-35-seat-fund-workload.html): this lane read warm agent-turn p95 8.5 s at 16 streams and p50 27 s at 24. **That was a slot queue at 16 seqs (KV usage peaked at 16 %), not prefill** — idle cold prefill is 22–23K tok/s from 26K to 207K tokens on every profile. Same-window on the fund harness: C24 warm p50 **27 → 0.55 s**, cold 120K under 16 streams p95 **19 → 9.2 s**, C16 warm p95 1.86 s, tools 64/64. Knee prose C1 **172** (v15 153, +12.6 %), C8 655 (v15 698, −6.2 %, unexplained), C16 945 (flat). KV **2,502,950 tokens** (2.4× at 1M) against 1.79M with default 24-seq graphs (v17) and ~2.26M on v15. Per-seat prose p10 at 16 streams is still ~16 tok/s: a long-context and tool lane, not a 16-seat decode lane. Four boots, one axis each; v16 (32 seqs + `long-prefill-token-threshold 2048`) and v17b (capture list in sequences, not tokens) failed and are kept as negatives. Bundle: [`results/2026-09-18-many-seat-v16-v17-v18/`](results/2026-09-18-many-seat-v16-v17-v18/).
@@ -297,7 +315,7 @@ See `limits:` in [`recipe.yaml`](recipe.yaml). The short version: decode is C2C 
 
 ## What didn't work
 
-[`research/failure-ledger.md`](research/failure-ledger.md) — SGLang at 3.3 tok/s, four vLLM UVA failures before the first bind, the offload bracket, the autotune misses, a first overnight of decode experiments (THP, unpinned host memory, `--language-model-only`, Rust frontend) that produced one real lesson about instruments and zero adopted flags, and a second night (k-sweep, util-only, off60) that produced v12 — see [`night-two-ledger.md`](results/2026-09-12-v12-1M-k5-off60-util97/night-two-ledger.md).
+[`research/failure-ledger.md`](research/failure-ledger.md) — SGLang at 3.3 tok/s, four vLLM UVA failures before the first bind, the offload bracket, the autotune misses, a first overnight of decode experiments (THP, unpinned host memory, `--language-model-only`, Rust frontend) that produced one real lesson about instruments and zero adopted flags, and a second night (k-sweep, util-only, off60) that produced v12 — see [`night-two-ledger.md`](results/2026-09-12-v12-1M-k5-off60-util97/night-two-ledger.md). A third night (2026-09-18/19) closed the k=3 mid-band schedule and on-line adaptive placement and left the nightly-image cache-load question open — [`2026-09-19-overnight-ksched-nightly-adaptive/`](results/2026-09-19-overnight-ksched-nightly-adaptive/README.md).
 
 ## Rollback
 
