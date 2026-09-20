@@ -1,0 +1,169 @@
+#!/usr/bin/env python3
+"""render_card.py — render the at-a-glance recipe card (HTML, and PNG when Chrome is present).
+
+Usage:
+    python3 scripts/render_card.py recipes/<hw>/<slug>            # writes card.html (+ card.png)
+    python3 scripts/render_card.py recipes/<hw>/<slug> --no-png
+
+Inputs (both required):
+    recipe.yaml   — schema-strict recipe. Supplies title/id/status/updated, model name/params/revision/
+                    quantization, engine/version/commit, KV/draft method.
+    card.yaml     — sidecar with the fields the strict schema does not carry (see templates/card.yaml
+                    in the serving-recipe-publishing skill). Every number must cite a run_id or be
+                    marked pending; the card renders pending items amber, never blank.
+
+Rule: the card is generated, never hand-edited. Regenerate after every measurement round and commit
+card.html/card.png alongside the results bundle.
+"""
+from __future__ import annotations
+
+import argparse
+import html
+import shutil
+import subprocess
+import sys
+from pathlib import Path
+
+import yaml
+
+ROOT = Path(__file__).resolve().parents[1]
+TEMPLATE = ROOT / "scripts" / "card_template.html"
+CHROME_CANDIDATES = [
+    "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
+    "google-chrome", "chromium", "chromium-browser",
+]
+
+PEND = '<span class="pend-inline">PENDING</span>'
+
+
+def e(x) -> str:
+    return html.escape(str(x)) if x is not None else ""
+
+
+def val(x, unit: str = "") -> str:
+    """Render a value or an amber PENDING marker."""
+    if x in (None, "", "pending"):
+        return PEND
+    return f"{e(x)}{unit}"
+
+
+def pills(recipe: dict, card: dict) -> str:
+    m = recipe["model"]
+    rt = recipe["runtime"]
+    c = card.get("model", {})
+    out = []
+    out.append(f'<span class="pill type"><b>{e(c.get("type", "?"))}</b>{(" · " + e(c["type_detail"])) if c.get("type_detail") else ""}</span>')
+    out.append(f'<span class="pill"><b>{e(c.get("total_params", m.get("params", "?")))}</b> total · <b>{val(c.get("active_params"))}</b> active</span>')
+    ck = c.get("checkpoint_gb")
+    out.append(f'<span class="pill">checkpoint <b>{val(ck, " GB")}</b> · rev <span class="mono">{e(str(m.get("revision", ""))[:8])}</span></span>')
+    out.append(f'<span class="pill">weights <b>{e(c.get("weights_short", m.get("quantization", "")))}</b></span>')
+    eng = f'{e(rt.get("engine", ""))} <span class="mono">{e(rt.get("engine_commit", ""))}</span>'
+    if c.get("engine_extra"):
+        eng += f' · {e(c["engine_extra"])}'
+    out.append(f'<span class="pill">engine <b>{eng}</b></span>')
+    if c.get("memory"):
+        out.append(f'<span class="pill">memory <b>{e(c["memory"])}</b></span>')
+    return "\n".join(out)
+
+
+def hero(card: dict) -> str:
+    h = card["hero"]
+    boxes = []
+    for key, label in (("c1", "Decode · C1"), ("c16", "Decode · C16 aggregate"), ("prefill", "Prefill · cold")):
+        b = h.get(key, {})
+        lbl = label + (f" ({e(b['class'])})" if b.get("class") else "")
+        boxes.append(
+            f'<div class="box"><div class="lbl">{lbl}</div>'
+            f'<div class="hero">{val(b.get("value"))}<small>{e(b.get("unit", "tok/s"))}</small></div>'
+            f'<div class="note">{e(b.get("note", ""))}</div></div>'
+        )
+    return "\n".join(boxes)
+
+
+def row2(recipe: dict, card: dict) -> str:
+    g = card.get("guesser", {})
+    d = (recipe.get("model") or {}).get("draft") or {}
+    acc = " ".join(f'<span>{e(k)} <b>{e(v)}</b></span>' for k, v in (g.get("accept") or {}).items()) or PEND
+    guesser = (
+        f'<div class="box"><div class="lbl">Guesser</div><div class="kv">'
+        f'<b>{e(g.get("name", d.get("method", "none")))}</b> · {e(g.get("source", d.get("repo", "")))}<br>'
+        f'{e(g.get("schedule", ""))}<br><span class="acc">accept: {acc}</span></div></div>'
+    )
+    extra = []
+    for sec in card.get("secondary", [])[:2]:
+        lines = "<br>".join(f'{e(k)}: <b>{val(v)}</b>' for k, v in sec.get("items", {}).items())
+        extra.append(f'<div class="box"><div class="lbl">{e(sec["label"])}</div><div class="kv">{lines}</div></div>')
+    return guesser + "\n" + "\n".join(extra)
+
+
+def fidelity(card: dict) -> str:
+    items = []
+    for f in card.get("fidelity", []):
+        cls = "ok" if f.get("status") == "pass" else "pend"
+        items.append(f'<li class="{cls}">{e(f["text"])}</li>')
+    return "\n".join(items) or f'<li class="pend">no fidelity evidence recorded</li>'
+
+
+def render(recipe_dir: Path) -> str:
+    recipe = yaml.safe_load((recipe_dir / "recipe.yaml").read_text())
+    card = yaml.safe_load((recipe_dir / "card.yaml").read_text())
+    tpl = TEMPLATE.read_text()
+    rel = recipe_dir.relative_to(ROOT).as_posix()
+    fields = {
+        "TITLE": e(card.get("title", recipe["title"])),
+        "SUBTITLE": e(card.get("subtitle", "")),
+        "VERSION": e(card.get("version", "")),
+        "UPDATED": e(recipe.get("updated", "")),
+        "STATUS": e(recipe.get("status", "")),
+        "PILLS": pills(recipe, card),
+        "HERO": hero(card),
+        "ROW2": row2(recipe, card),
+        "FIDELITY": fidelity(card),
+        "RECIPE_PATH": e(rel),
+        "RUN_ID": e(card.get("run_id", "")),
+        "HANDLES": e(card.get("handles", "github.com/J-M-Recipes/recipes")),
+    }
+    for k, v in fields.items():
+        tpl = tpl.replace("{{" + k + "}}", v)
+    leftover = [t for t in ("{{",) if t in tpl]
+    if leftover:
+        sys.exit("template placeholder left unfilled")
+    return tpl
+
+
+def to_png(html_path: Path, png_path: Path) -> bool:
+    for c in CHROME_CANDIDATES:
+        exe = c if Path(c).exists() else shutil.which(c)
+        if not exe:
+            continue
+        cmd = [exe, "--headless=new", "--disable-gpu", "--hide-scrollbars",
+               f"--screenshot={png_path}", "--window-size=1200,900", "--force-device-scale-factor=2",
+               html_path.resolve().as_uri()]
+        r = subprocess.run(cmd, capture_output=True, text=True)
+        if r.returncode == 0 and png_path.exists():
+            return True
+    return False
+
+
+def main() -> None:
+    ap = argparse.ArgumentParser()
+    ap.add_argument("recipe_dir")
+    ap.add_argument("--no-png", action="store_true")
+    a = ap.parse_args()
+    d = (ROOT / a.recipe_dir).resolve() if not Path(a.recipe_dir).is_absolute() else Path(a.recipe_dir)
+    for req in ("recipe.yaml", "card.yaml"):
+        if not (d / req).exists():
+            sys.exit(f"missing {d / req}")
+    out = d / "card.html"
+    out.write_text(render(d))
+    print(f"wrote {out.relative_to(ROOT)}")
+    if not a.no_png:
+        png = d / "card.png"
+        if to_png(out, png):
+            print(f"wrote {png.relative_to(ROOT)}")
+        else:
+            print("PNG skipped: no headless Chrome found (card.html is still valid)")
+
+
+if __name__ == "__main__":
+    main()
