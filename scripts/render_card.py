@@ -18,6 +18,7 @@ card.html/card.png alongside the results bundle.
 from __future__ import annotations
 
 import argparse
+import json
 import html
 import shutil
 import subprocess
@@ -45,6 +46,27 @@ def val(x, unit: str = "") -> str:
     if x in (None, "", "pending"):
         return PEND
     return f"{e(x)}{unit}"
+
+
+def params_from_config(recipe_dir: Path) -> tuple[str, str] | None:
+    """Derive total/active routed-expert counts from a sibling config.json (or card.model.config_json path), so the
+    headline parameter count on the card cannot drift from the checkpoint. Returns None when no config is present.
+    Counts routed experts + shared expert + dense-layer MLP + attention-free estimate is NOT attempted: this is the
+    MoE-expert count only, which for DeepSeek-V4.x is >98% of the backbone. The card shows the model-card figure and
+    this check refuses to render if the two disagree by more than 15%."""
+    for cand in (recipe_dir / "config.json", recipe_dir / "model" / "config.json"):
+        if cand.exists():
+            c = json.loads(cand.read_text())
+            c = c.get("text_config", c)
+            try:
+                L = int(c["num_hidden_layers"]); E = int(c["n_routed_experts"]); k = int(c["num_experts_per_tok"])
+                h = int(c["hidden_size"]); m = int(c["moe_intermediate_size"]); sh = int(c.get("n_shared_experts", 0))
+            except KeyError:
+                return None
+            per = 3 * h * m
+            total = L * (E + sh) * per; active = L * (k + sh) * per
+            return f"{total/1e9:.0f}B", f"{active/1e9:.1f}B"
+    return None
 
 
 def pills(recipe: dict, card: dict) -> str:
@@ -99,13 +121,24 @@ def row2(recipe: dict, card: dict) -> str:
 def fidelity(card: dict) -> str:
     items = []
     for f in card.get("fidelity", []):
-        cls = "ok" if f.get("status") == "pass" else "pend"
+        cls = {"pass": "ok", "measured": "meas"}.get(f.get("status"), "pend")  # measured = a number, not a verdict
         items.append(f'<li class="{cls}">{e(f["text"])}</li>')
     return "\n".join(items) or f'<li class="pend">no fidelity evidence recorded</li>'
 
 
 def render(recipe_dir: Path) -> str:
     recipe = yaml.safe_load((recipe_dir / "recipe.yaml").read_text())
+    derived = params_from_config(recipe_dir)
+    if derived:
+        card_probe = yaml.safe_load((recipe_dir / "card.yaml").read_text())
+        claimed = str(card_probe.get("model", {}).get("total_params", ""))
+        num = "".join(ch for ch in claimed if ch.isdigit() or ch == ".")
+        if num:
+            ratio = float(num) / float(derived[0].rstrip("B"))
+            if not 0.85 <= ratio <= 1.15:
+                raise SystemExit(f"card.yaml total_params {claimed} disagrees with config.json expert count {derived[0]} "
+                                 f"(routed+shared experts only; ratio {ratio:.2f}). Fix the card or the config.")
+        print(f"[render_card] config.json expert-count check: total ≈{derived[0]} active ≈{derived[1]}; card says {claimed} — ok")
     card = yaml.safe_load((recipe_dir / "card.yaml").read_text())
     tpl = TEMPLATE.read_text()
     rel = recipe_dir.relative_to(ROOT).as_posix()

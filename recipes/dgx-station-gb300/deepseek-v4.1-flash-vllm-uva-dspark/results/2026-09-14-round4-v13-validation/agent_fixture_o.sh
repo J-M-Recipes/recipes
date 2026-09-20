@@ -22,7 +22,7 @@ TOOLS=[{"type":"function","function":{"name":"terminal","parameters":{"type":"ob
        {"type":"function","function":{"name":"read_file","parameters":{"type":"object","properties":{"path":{"type":"string"}},"required":["path"]}}},
        {"type":"function","function":{"name":"write_file","parameters":{"type":"object","properties":{"path":{"type":"string"},"content":{"type":"string"}},"required":["path","content"]}}}]
 CATS={
- "tool_json":[("List the docker containers on host 192.168.1.9 and check free disk on /. Use tools.",120),
+ "tool_json":[("List the docker containers on host <lan-host> and check free disk on /. Use tools.",120),
               ("Read /home/milo/dsv41/launch-dsv41-vllm.sh then write a copy to /tmp/l2.sh with port 30007. Use tools; call read_file first.",120)],
  "code":[("Write a Python function `knee(rows)` that takes [(conc, agg_tps)] and returns the concurrency where marginal gain per added stream first drops below 5 tok/s. Include a docstring and a 3-line example. Code only.",256),
          ("Write a bash script that loops over shards model-00001..00048-of-00048.safetensors, checks each exists in $SRC, and prints missing ones. Code only.",200)],

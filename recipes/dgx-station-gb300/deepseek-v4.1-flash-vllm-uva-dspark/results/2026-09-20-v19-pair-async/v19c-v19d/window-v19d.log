@@ -1,0 +1,55 @@
+=== WINDOW v19d start Sun Sep 20 11:04:06 AM CDT 2026 MemAvailable=126270464kB ===
+--- knee r1 ---
+[v19d-r1] conc= 1:   183.7 agg tok/s  183.70 per-stream  (runs 183.7/183.7)
+[v19d-r1] conc= 2:   246.0 agg tok/s  123.02 per-stream  (runs 232.8/259.2)
+[v19d-r1] conc= 4:   420.4 agg tok/s  105.10 per-stream  (runs 420.1/420.8)
+[v19d-r1] conc= 8:   633.5 agg tok/s   79.19 per-stream  (runs 633.1/633.9)
+[v19d-r1] conc=12:   830.1 agg tok/s   69.17 per-stream  (runs 808.3/851.8)
+[v19d-r1] conc=16:   989.9 agg tok/s   61.87 per-stream  (runs 985.6/994.2)
+--- knee r2 ---
+[v19d-r2] conc= 1:   183.8 agg tok/s  183.77 per-stream  (runs 183.8/183.8)
+[v19d-r2] conc= 2:   261.5 agg tok/s  130.73 per-stream  (runs 263.1/259.8)
+[v19d-r2] conc= 4:   418.8 agg tok/s  104.70 per-stream  (runs 417.0/420.6)
+[v19d-r2] conc= 8:   644.5 agg tok/s   80.57 per-stream  (runs 654.7/634.4)
+[v19d-r2] conc=12:   853.5 agg tok/s   71.12 per-stream  (runs 853.6/853.3)
+[v19d-r2] conc=16:   991.1 agg tok/s   61.95 per-stream  (runs 991.2/991.1)
+--- knee6 ---
+[v19d-k6] conc= 1:   183.7 agg tok/s  183.68 per-stream  (runs 183.7/183.7)
+[v19d-k6] conc= 2:   261.3 agg tok/s  130.64 per-stream  (runs 263.1/259.5)
+[v19d-k6] conc= 3:   357.2 agg tok/s  119.05 per-stream  (runs 356.0/358.3)
+[v19d-k6] conc= 4:   420.7 agg tok/s  105.17 per-stream  (runs 420.7/420.7)
+[v19d-k6] conc= 6:   548.0 agg tok/s   91.33 per-stream  (runs 547.3/548.6)
+[v19d-k6] conc= 8:   667.6 agg tok/s   83.45 per-stream  (runs 678.4/656.9)
+[v19d-k6] conc=12:   856.0 agg tok/s   71.34 per-stream  (runs 855.1/857.0)
+[v19d-k6] conc=16:   994.5 agg tok/s   62.16 per-stream  (runs 994.0/995.0)
+--- agent_fixture_o ---
+[v19d] prose        190.5 tok/s  accept=33.6%  acc/step=1.68  tokens=370
+      (185, 1.02, 'stop', False, 'Speculative decoding speeds up generation by having a small, cheap "draft" model')
+[v19d] structured   227.4 tok/s  accept=49.2%  acc/step=2.46  tokens=422
+      (101, 0.4, 'stop', False, "I'll research both approaches before building the comparison.  ")
+      (110, 0.53, 'stop', False, '- weights load: complete — 14.2 GB across 2 shards in 38.4 s - KV cache: allocat')
+[v19d] code         235.5 tok/s  accept=65.0%  acc/step=3.25  tokens=680
+      (256, 1.08, 'length', False, '```python def knee(rows):     """Return the concurrency where marginal gain per ')
+      (84, 0.36, 'stop', False, '```bash #!/usr/bin/env bash set -euo pipefail  : "${SRC:?SRC must be set}"  for ')
+[v19d] shell_ops    264.3 tok/s  accept=82.9%  acc/step=4.14  tokens=144
+      (72, 0.27, 'stop', False, 'docker stop dsv41-vllm-v7 docker rename dsv41-vllm-v7 dsv41-vllm-v7-old sudo sh ')
+[v19d] tool_json    230.7 tok/s  accept=83.8%  acc/step=4.19  tokens=328
+      (109, 0.49, 'tool_calls', True, "I'll check both. Note: I only have local tools (terminal, read_file, write_file)")
+      (60, 0.31, 'tool_calls', True, "I'll read the file first.  ")
+[v19d] weighted accept=60.1%
+--- replay r1 n=4 ---
+[v19d-r1] REPLAY n=4: agg 330.0 tok/s over 29s, 9597 tokens; accept=54.8% acc/step=2.74; tool turns 24 emitted=12 per-req 77.1 tok/s; text turns 24 per-req 93.6 tok/s
+--- replay r2 n=4 ---
+[v19d-r2] REPLAY n=4: agg 490.4 tok/s over 18s, 8855 tokens; accept=55.8% acc/step=2.79; tool turns 24 emitted=11 per-req 121.9 tok/s; text turns 24 per-req 131.6 tok/s
+--- metrics ---
+32 /home/milo/dsv41/overnight-T1T2/metrics-v19d.txt
+=== WINDOW v19d end Sun Sep 20 11:06:26 AM CDT 2026 MemAvailable=126146368kB delta=124096kB (0.12 GiB) ===
+-rw-rw-r-- 1 milo milo 3036 Sep 20 11:05 /home/milo/dsv41/overnight-T1T2/agentfix-v19d.json
+-rw-rw-r-- 1 milo milo  408 Sep 20 11:05 /home/milo/dsv41/overnight-T1T2/knee6-v19d.json
+-rw-rw-r-- 1 milo milo  323 Sep 20 11:04 /home/milo/dsv41/overnight-T1T2/knee-v19d-r1.json
+-rw-rw-r-- 1 milo milo  321 Sep 20 11:04 /home/milo/dsv41/overnight-T1T2/knee-v19d-r2.json
+-rw-rw-r-- 1 milo milo 2883 Sep 20 11:06 /home/milo/dsv41/overnight-T1T2/metrics-v19d.txt
+-rw-rw-r-- 1 milo milo 3498 Sep 20 11:06 /home/milo/dsv41/overnight-T1T2/nohup-v19d.log
+-rw-rw-r-- 1 milo milo  394 Sep 20 11:06 /home/milo/dsv41/overnight-T1T2/replayc-v19d-r1-n4.json
+-rw-rw-r-- 1 milo milo  395 Sep 20 11:06 /home/milo/dsv41/overnight-T1T2/replayc-v19d-r2-n4.json
+-rw-rw-r-- 1 milo milo 3498 Sep 20 11:06 /home/milo/dsv41/overnight-T1T2/window-v19d.log
