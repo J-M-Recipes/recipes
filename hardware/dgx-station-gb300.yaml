@@ -22,7 +22,16 @@ observed:                     # 2026-09-06, driver 595.84
   driver: "595.84"
   cuda: "13.2"
   docker: "29.1.3"
+  # 2026-09-19 additions (driver 595.91 at collection; scripts/collect_system_snapshot.sh now records these)
+  coherent_gpu_memory_mode: driver   # CDMM: GB300 HBM is driver-managed, malloc stays in CPU memory, GPU reads of CPU memory are uncached (ATS)
+  power_budget_w: 1600               # fixed Station total shared by the GB300 module and the RTX add-in card (vsloshd "power sloshing")
+  vsloshd: inactive                  # static split on this box
+  compute_gpu_power_cap_w: 1300      # nvidia-smi power.limit = power.max_limit
+  display_gpu_power_cap_w: 70        # RTX PRO 4000 SFF; ≤75 W class → GB300 keeps the full budget per NVIDIA's table
+  idle_draw_w: 206                   # GB300, model loaded, no requests (2026-09-20T02:19Z)
 notes:
   - The 288 GB spec figure is not what you get. Recipes that size a model to HBM must use ~250 GiB visible / ~249.8 GiB CUDA-allocatable.
   - Expert offload to host memory works over NVLink-C2C with vLLM's UVA offload backend; effective bandwidth is the limit for MoE decode.
   - Host time zone on the reference machine is America/Chicago; results bundles record UTC.
+  - Power is a hidden variable in every window before 2026-09-19. DGX Station's vsloshd can move the 1600 W budget between the GB300 and the RTX card at runtime (NVIDIA DGX Station Development Guide, "Dynamic Power Sloshing"); a moved GB300 cap is indistinguishable from reference drift unless power.limit / power.draw / clocks.sm / throttle reasons are in the receipt. Record them before and after each window.
+  - The driver runs in CDMM mode (NVreg_CoherentGPUMemoryMode=driver): system-allocated memory is never migrated to HBM and GB300 reads of CPU memory are uncached — the documented reason managed/VMM host-backed expert placement measured 90–155 GB/s vs ~340 GB/s for pinned ATS reads (see the DSV4.1 recipe's residency-closed limit).
