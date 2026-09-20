@@ -9,6 +9,8 @@
 set -euo pipefail
 set -f
 HOOK_ON=${HOOK:-0}
+OFFGB=${OFFGB:-60}
+KVDTYPE=${KVDTYPE:-}   # T3b6: e.g. fp8_ds_mla to override the nightly default nvfp4_ds_mla; empty = engine default
 IMAGE=vllm/vllm-openai:nightly-dee37d89115db4c94a820a79a78a7828e141c910
 if [ "$HOOK_ON" = "1" ]; then NAME=${NAME:-dsv41-vllm-T3b-nightly-dee37d89-hook-EXP}; else NAME=${NAME:-dsv41-vllm-T3-nightly-dee37d89-nohook-EXP}; fi
 MODEL=/models/DeepSeek-V4.1-Flash-df42c109f1defefcbfcedbe7d905718a12266e40
@@ -51,7 +53,8 @@ docker run -d --name "$NAME" --gpus all --ipc host --network host \
   "$IMAGE" \
   --model /model --served-model-name dsv41-flash-uva --trust-remote-code \
   --tensor-parallel-size 1 \
-  --offload-backend uva --cpu-offload-gb 60 \
+  --offload-backend uva --cpu-offload-gb "$OFFGB" \
+  ${KVDTYPE:+--kv-cache-dtype "$KVDTYPE"} \
   --cpu-offload-params routed_experts.w13_weight routed_experts.w2_weight \
   --engram-config '{"cpu_offload": true}' \
   --max-model-len 1048576 --max-num-seqs "$SEQS" --max-num-batched-tokens 8192 \
@@ -62,7 +65,7 @@ docker run -d --name "$NAME" --gpus all --ipc host --network host \
   --cudagraph-capture-sizes $CGSIZES \
   --host 0.0.0.0 --port 30006
 
-echo "launched $NAME image=$IMAGE hook=$HOOK_ON"
+echo "launched $NAME image=$IMAGE hook=$HOOK_ON offgb=$OFFGB kvdtype=${KVDTYPE:-default}"
 : > "$LOG"
 nohup docker logs -f --since 1s "$NAME" >> "$LOG" 2>&1 &
 disown
