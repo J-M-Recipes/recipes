@@ -1,0 +1,60 @@
+[v19c] parity-agent-tool-1 positions=37 2.1s
+[v19c] parity-agent-tool-2 positions=48 2.1s
+[v19c] parity-agent-code-1 positions=293 2.1s
+[v19c] parity-agent-code-2 positions=123 2.1s
+[v19c] parity-agent-shell-1 positions=135 0.4s
+[v19c] parity-agent-structured-1 positions=76 0.4s
+[v19c] parity-agent-structured-2 positions=160 0.4s
+[v19c] parity-agent-prose-1 positions=202 0.4s
+[v19c] parity-heldout-math-1 positions=284 1.4s
+[v19c] parity-heldout-math-2 positions=285 1.4s
+[v19c] parity-heldout-math-3 positions=279 1.4s
+[v19c] parity-heldout-math-4 positions=278 1.4s
+[v19c] parity-heldout-math-5 positions=280 0.4s
+[v19c] parity-heldout-jpde-1 positions=296 0.4s
+[v19c] parity-heldout-jpde-2 positions=291 0.4s
+[v19c] parity-heldout-jpde-3 positions=295 0.4s
+[v19c] parity-heldout-jpde-4 positions=285 0.6s
+[v19c] parity-heldout-jpde-5 positions=295 0.8s
+[v19c] BA-10k-0 positions=4095 0.8s
+Traceback (most recent call last):
+  File "/home/milo/pin-hot-experts/scripts/tf_logprob.py", line 91, in <module>
+    if sys.argv[1] == "capture": capture(sys.argv[2], sys.argv[3])
+                                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/milo/pin-hot-experts/scripts/tf_logprob.py", line 55, in capture
+    for rec in ex.map(capture_one, docs):
+  File "/usr/lib/python3.12/concurrent/futures/_base.py", line 619, in result_iterator
+    yield _result_or_cancel(fs.pop())
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/concurrent/futures/_base.py", line 317, in _result_or_cancel
+    return fut.result(timeout)
+           ^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/concurrent/futures/_base.py", line 456, in result
+    return self.__get_result()
+           ^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/concurrent/futures/_base.py", line 401, in __get_result
+    raise self._exception
+  File "/usr/lib/python3.12/concurrent/futures/thread.py", line 58, in run
+    result = self.fn(*self.args, **self.kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/milo/pin-hot-experts/scripts/tf_logprob.py", line 31, in capture_one
+    with urllib.request.urlopen(req, timeout=1800) as r:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/urllib/request.py", line 215, in urlopen
+    return opener.open(url, data, timeout)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/urllib/request.py", line 521, in open
+    response = meth(req, response)
+               ^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/urllib/request.py", line 630, in http_response
+    response = self.parent.error(
+               ^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/urllib/request.py", line 559, in error
+    return self._call_chain(*args)
+           ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/urllib/request.py", line 492, in _call_chain
+    result = func(*args)
+             ^^^^^^^^^^^
+  File "/usr/lib/python3.12/urllib/request.py", line 639, in http_error_default
+    raise HTTPError(req.full_url, code, msg, hdrs, fp)
+urllib.error.HTTPError: HTTP Error 400: Bad Request
