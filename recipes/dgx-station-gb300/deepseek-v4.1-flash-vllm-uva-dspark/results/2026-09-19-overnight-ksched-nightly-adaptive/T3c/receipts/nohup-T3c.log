@@ -1,0 +1,56 @@
+=== WINDOW T3c start Sun Sep 20 06:44:48 AM CDT 2026 MemAvailable=66830464kB ===
+--- knee r1 ---
+[T3c-r1] conc= 1:    91.3 agg tok/s   91.27 per-stream  (runs 91.2/91.4)
+[T3c-r1] conc= 2:   125.4 agg tok/s   62.72 per-stream  (runs 124.9/126.0)
+[T3c-r1] conc= 4:   171.4 agg tok/s   42.85 per-stream  (runs 172.4/170.5)
+[T3c-r1] conc= 8:   304.9 agg tok/s   38.12 per-stream  (runs 304.7/305.2)
+[T3c-r1] conc=12:   383.8 agg tok/s   31.99 per-stream  (runs 383.8/383.8)
+[T3c-r1] conc=16:   424.2 agg tok/s   26.51 per-stream  (runs 422.5/425.8)
+--- knee r2 ---
+[T3c-r2] conc= 1:    91.4 agg tok/s   91.38 per-stream  (runs 91.3/91.4)
+[T3c-r2] conc= 2:   125.7 agg tok/s   62.86 per-stream  (runs 125.4/126.0)
+[T3c-r2] conc= 4:   171.4 agg tok/s   42.85 per-stream  (runs 172.4/170.4)
+[T3c-r2] conc= 8:   306.7 agg tok/s   38.33 per-stream  (runs 305.6/307.8)
+[T3c-r2] conc=12:   384.8 agg tok/s   32.06 per-stream  (runs 384.5/385.0)
+[T3c-r2] conc=16:   377.9 agg tok/s   23.62 per-stream  (runs 328.6/427.1)
+--- knee6 ---
+[T3c-k6] conc= 1:    91.2 agg tok/s   91.21 per-stream  (runs 91.1/91.4)
+[T3c-k6] conc= 2:   125.8 agg tok/s   62.90 per-stream  (runs 125.5/126.0)
+[T3c-k6] conc= 3:   149.8 agg tok/s   49.92 per-stream  (runs 149.7/149.8)
+[T3c-k6] conc= 4:   170.0 agg tok/s   42.49 per-stream  (runs 169.5/170.4)
+[T3c-k6] conc= 6:   273.5 agg tok/s   45.59 per-stream  (runs 273.3/273.7)
+[T3c-k6] conc= 8:   306.4 agg tok/s   38.30 per-stream  (runs 306.1/306.6)
+[T3c-k6] conc=12:   384.2 agg tok/s   32.02 per-stream  (runs 384.1/384.4)
+[T3c-k6] conc=16:   431.2 agg tok/s   26.95 per-stream  (runs 434.4/427.9)
+--- agent_fixture_o ---
+[T3c] prose        100.1 tok/s  accept=30.9%  acc/step=1.54  tokens=400
+      (200, 2.03, 'length', False, 'Speculative decoding speeds up generation by having a small, cheap "draft" model')
+[T3c] structured   123.5 tok/s  accept=47.9%  acc/step=2.40  tokens=428
+      (101, 0.69, 'stop', False, "I'll research both approaches before building the comparison.  ")
+      (113, 1.03, 'stop', False, '- weights load: complete — 14.2 GB sharded across 2 GPUs in 38.4s - KV cache: al')
+[T3c] code         148.4 tok/s  accept=60.9%  acc/step=3.04  tokens=558
+      (195, 1.32, 'stop', False, '```python def knee(rows):     """Return the concurrency where marginal gain per ')
+      (84, 0.55, 'stop', False, '```bash #!/usr/bin/env bash set -euo pipefail  : "${SRC:?SRC must be set}"  for ')
+[T3c] shell_ops    166.0 tok/s  accept=90.8%  acc/step=4.54  tokens=144
+      (72, 0.43, 'stop', False, 'docker stop dsv41-vllm-v7 docker rename dsv41-vllm-v7 dsv41-vllm-v7-old sudo sh ')
+[T3c] tool_json    153.9 tok/s  accept=85.5%  acc/step=4.27  tokens=328
+      (109, 0.81, 'tool_calls', True, "I'll check both. Note: I only have local tools (terminal, read_file, write_file)")
+      (60, 0.39, 'tool_calls', True, "I'll read the file first.  ")
+[T3c] weighted accept=58.1%
+--- replay r1 n=4 ---
+[T3c-r1] REPLAY n=4: agg 207.2 tok/s over 43s, 8930 tokens; accept=52.6% acc/step=2.63; tool turns 24 emitted=9 per-req 49.4 tok/s; text turns 24 per-req 55.4 tok/s
+--- replay r2 n=4 ---
+[T3c-r2] REPLAY n=4: agg 235.5 tok/s over 38s, 8893 tokens; accept=52.9% acc/step=2.65; tool turns 24 emitted=7 per-req 60.0 tok/s; text turns 24 per-req 62.6 tok/s
+--- metrics ---
+32 /home/milo/dsv41/overnight-T1T2/metrics-T3c.txt
+=== WINDOW T3c end Sun Sep 20 06:49:31 AM CDT 2026 MemAvailable=66781312kB delta=49152kB (0.05 GiB) ===
+-rw-rw-r-- 1 milo milo 3039 Sep 20 06:48 /home/milo/dsv41/overnight-T1T2/agentfix-T3c.json
+-rw-rw-r-- 1 milo milo  410 Sep 20 06:47 /home/milo/dsv41/overnight-T1T2/knee6-T3c.json
+-rw-rw-r-- 1 milo milo  321 Sep 20 06:45 /home/milo/dsv41/overnight-T1T2/knee-T3c-r1.json
+-rw-rw-r-- 1 milo milo  315 Sep 20 06:46 /home/milo/dsv41/overnight-T1T2/knee-T3c-r2.json
+-rw-rw-r-- 1 milo milo 2882 Sep 20 06:49 /home/milo/dsv41/overnight-T1T2/metrics-T3c.txt
+-rw-rw-r-- 1 milo milo 3455 Sep 20 06:49 /home/milo/dsv41/overnight-T1T2/nohup-T3c.log
+-rw-rw-r-- 1 milo milo  391 Sep 20 06:48 /home/milo/dsv41/overnight-T1T2/replayc-T3c-r1-n4.json
+-rw-rw-r-- 1 milo milo  390 Sep 20 06:49 /home/milo/dsv41/overnight-T1T2/replayc-T3c-r2-n4.json
+-rw-rw-r-- 1 milo milo 3455 Sep 20 06:49 /home/milo/dsv41/overnight-T1T2/window-T3c.log
+DONE T3c
