@@ -24,6 +24,10 @@ Overnight runner: Miloh (default profile), `overnight-runner-2026-09-18.sh`, det
 | T3b2 | same container, `docker start` (cache loaded) | 172.1/172.4/172.4 | 346 | 678/676 | 672 | 851/988 | 285/389 |
 | T3b3 | fresh `docker run`, cache present (loaded) | 172.3/172.4/172.5 | 350 | 677/680 | 669 | 974/986 | 277/392 |
 | **T3b4** | fresh `docker run`, cache moved aside (live autotune) | **195.8/195.6/195.4** | 442 | 700/733 | 891 | 1011/1031 | 374/468 |
+| **T3c** (09-20) | nightly, **hook off**, off60, `fp8_ds_mla`, live tune | 91.3/91.4/91.2 | 171 | 305/307 | 384 | 424/431† | 207/236 |
+| T3rs (09-20) | kept T3 restarted: hook off, nvfp4, loaded | 95.7/95.6/95.6 | 174 | 305/307 | 362 | 414/415 | 189/230 |
+| v18ctl8 (09-20) | control | 171.0/171.3/171.3 | 413 | 656/659 | 807 | 750/947 | 327/451 |
+| **T3cb** (09-20) | nightly, hook off, off60, `fp8_ds_mla`, **T3c cache loaded** | **90.5/90.5/90.6** | 168 | 301/302 | 378 | 417/423 | 194/228 |
 
 C16 r1 is ~25% below r2 on every candidate and control (warm-cache effect inside `knee.sh`); quote C16 only paired r1-vs-r1 / r2-vs-r2.
 
@@ -33,6 +37,7 @@ C16 r1 is ~25% below r2 on every candidate and control (warm-cache effect inside
 - **T2 FAIL** — C8 −12%, C16 −5%, replay −4%. k=3 band is a verify tax on this lane; lever closed. `T1T2/README.md`.
 - **T3 FAIL (hook off)** — C1 97 (+9.5% over v14's 88.7 positional), C8/C16 less than half of v18. Nightly binds clean (`v0.29.1rc1.dev347`, FlashInfer `0.6.18.post1`, 81-min retune, KV 4.4M hook-off). `T3/README.md`.
 - **T4 FAIL** — C1 −3%, C8 −3.4% (bar −1.5%); 12 swaps total, all in the first drain, none during held-out; held-out instrument never ran (runner called `e2c_heldout.py` without its tag argv). Adaptive-on-this-hook closed. `T4/README.md`.
+- **T3c (2026-09-20) — flag-only Station row measured.** Nightly + hook OFF + off60 + `fp8_ds_mla`: **91.3 C1 live / 90.5 loaded**, 302 C8, ~420 C16, KV 3.09M; fp8 restores DSpark acceptance hook-off as it did hook-on (tool_json 0.855 vs nvfp4 0.810, shell 0.908 vs 0.829; code 0.609 vs 0.688 is the exception); C1 −4.6% vs nvfp4 on the prose knee, +2–6% at C12–C16. Live-vs-loaded **−0.9%** (4th pair; hook-on pairs were −4…−6%). Parity T3c/T3cb 17/18. New cache dir `7dbc24b6…`. This is the number for the `vllm-project/recipes` `dgx_station_gb300` row. `T3c/README.md`.
 - **T3b OPEN — real upside, not a recipe yet.** Live-autotuned boots beat v18 by **+7% and +14% C1** (three C1 runs within 0.8 in each); any boot that *loads* the FlashInfer cache lands at exactly v18's 172 with holes at C4/C12. Autotune on `0.6.18.post1` is non-deterministic (86/189 configs differ between two live tunes) and the saved caches reproduce a slow set. Greedy parity vs 0909 is 2–4/18 (image numerics, not the hook). `T3b/README.md`.
 
 ## Bugs found in the overnight runner (Miloh's), fixed or worked around in the daytime series
