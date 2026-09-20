@@ -1,0 +1,283 @@
+{
+ "tag": "v18ctl6",
+ "ts": "2026-09-19T21:35:17",
+ "n": 18,
+ "seed": 42,
+ "max_tokens": 256,
+ "rows": [
+  {
+   "completion_tokens": 118,
+   "s": 1.365,
+   "finish": "tool_calls",
+   "content": "I'll check both. Let me start with the Docker containers and disk space on that host.\n\n",
+   "tool_calls": [
+    {
+     "id": "chatcmpl-tool-a0a9fe7eaaf0576d",
+     "type": "function",
+     "function": {
+      "name": "terminal",
+      "arguments": "{\"command\": \"ssh $BOX_HOST \\\"docker ps -a\\\" 2>&1\"}"
+     }
+    },
+    {
+     "id": "chatcmpl-tool-aba6e3a85ae46aba",
+     "type": "function",
+     "function": {
+      "name": "terminal",
+      "arguments": "{\"command\": \"ssh $BOX_HOST \\\"df -h /\\\" 2>&1\"}"
+     }
+    }
+   ],
+   "tool_norm": [
+    {
+     "name": "terminal",
+     "arguments": "{\"command\": \"ssh $BOX_HOST \\\"docker ps -a\\\" 2>&1\"}"
+    },
+    {
+     "name": "terminal",
+     "arguments": "{\"command\": \"ssh $BOX_HOST \\\"df -h /\\\" 2>&1\"}"
+    }
+   ],
+   "id": "agent-tool-1",
+   "group": "agent",
+   "prompt": "List the docker containers on host $BOX_HOST and check free disk on /. Use tools.",
+   "max_tokens": 256,
+   "seed": 42
+  },
+  {
+   "completion_tokens": 60,
+   "s": 0.344,
+   "finish": "tool_calls",
+   "content": "I'll read the file first.\n\n",
+   "tool_calls": [
+    {
+     "id": "chatcmpl-tool-9b230724df829fd2",
+     "type": "function",
+     "function": {
+      "name": "read_file",
+      "arguments": "{\"path\": \"$BOX_HOME/dsv41/launch-dsv41-vllm.sh\"}"
+     }
+    }
+   ],
+   "tool_norm": [
+    {
+     "name": "read_file",
+     "arguments": "{\"path\": \"$BOX_HOME/dsv41/launch-dsv41-vllm.sh\"}"
+    }
+   ],
+   "id": "agent-tool-2",
+   "group": "agent",
+   "prompt": "Read $BOX_HOME/dsv41/launch-dsv41-vllm.sh then write a copy to /tmp/l2.sh with port 30007. Use tools; call read_file first.",
+   "max_tokens": 256,
+   "seed": 42
+  },
+  {
+   "completion_tokens": 243,
+   "s": 0.996,
+   "finish": "stop",
+   "content": "```python\ndef knee(rows):\n    \"\"\"Return the concurrency where marginal gain per added stream first drops below 5 tok/s.\n\n    rows: list of (conc, agg_tps) sorted by conc ascending.\n    Returns the conc at which (delta agg_tps / delta conc) < 5, or None if never.\n    \"\"\"\n    for (c0, t0), (c1, t1) in zip(rows, rows[1:]):\n        if c1 > c0 and (t1 - t0) / (c1 - c0) < 5:\n            return c1\n    return None\n\n# Example:\n# rows = [(1, 40), (2, 78), (4, 150), (8, 200)]\n# knee(rows) -> 8   # (200-150)/(8-4) = 12.5 ... adjust data as needed\n# knee([(1, 40), (2, 78), (4, 150), (8, 160)]) -> 8  # (160-150)/4 = 2.5 < 5\n```",
+   "tool_calls": [],
+   "tool_norm": [],
+   "id": "agent-code-1",
+   "group": "agent",
+   "prompt": "Write a Python function `knee(rows)` that takes [(conc, agg_tps)] and returns the concurrency where marginal gain per added stream first drops below 5 tok/s. Include a docstring and a 3-line example. Code only.",
+   "max_tokens": 256,
+   "seed": 42
+  },
+  {
+   "completion_tokens": 84,
+   "s": 0.39,
+   "finish": "stop",
+   "content": "```bash\n#!/usr/bin/env bash\nset -euo pipefail\n\n: \"${SRC:?SRC is not set}\"\n\nfor i in $(seq -w 1 48); do\n  f=\"model-000${i}-of-00048.safetensors\"\n  [[ -e \"$SRC/$f\" ]] || echo \"missing: $f\"\ndone\n```",
+   "tool_calls": [],
+   "tool_norm": [],
+   "id": "agent-code-2",
+   "group": "agent",
+   "prompt": "Write a bash script that loops over shards model-00001..00048-of-00048.safetensors, checks each exists in $SRC, and prints missing ones. Code only.",
+   "max_tokens": 256,
+   "seed": 42
+  },
+  {
+   "completion_tokens": 72,
+   "s": 0.273,
+   "finish": "stop",
+   "content": "docker stop dsv41-vllm-v7\ndocker rename dsv41-vllm-v7 dsv41-vllm-v7-old\nsudo sh -c 'sync; echo 3 > /proc/sys/vm/drop_caches'\nOFFGB=70 SEQS=16 ./launch-dsv41-vllm.sh",
+   "tool_calls": [],
+   "tool_norm": [],
+   "id": "agent-shell-1",
+   "group": "agent",
+   "prompt": "Give the exact sequence of shell commands to: stop docker container dsv41-vllm-v7, rename it with suffix -old, drop page caches with sudo, and relaunch via launch-dsv41-vllm.sh with OFFGB=70 SEQS=16. Commands only, one per line.",
+   "max_tokens": 256,
+   "seed": 42
+  },
+  {
+   "completion_tokens": 102,
+   "s": 0.383,
+   "finish": "stop",
+   "content": "I'll research both approaches to give you accurate numbers.\n\n",
+   "tool_calls": [],
+   "tool_norm": [],
+   "id": "agent-structured-1",
+   "group": "agent",
+   "prompt": "Compare vLLM UVA expert offload vs SGLang OffloaderV2 whole-layer copy for a 384-expert top-6 MoE. Output a markdown table with columns: approach, bytes moved per token, bottleneck, expected tok/s on a ~330 GB/s link. Then one sentence of verdict.",
+   "max_tokens": 256,
+   "seed": 42
+  },
+  {
+   "completion_tokens": 112,
+   "s": 0.537,
+   "finish": "stop",
+   "content": "- weights load: complete \u2014 14.2 GB sharded across 2 GPUs in 38.4s\n- KV cache: allocated \u2014 21.7 GiB, 8,192 blocks, 0.94 utilization\n- autotune: finished \u2014 47 kernel configs tuned, 12.1s\n- graph capture: done \u2014 35 CUDA graphs, batch sizes 1\u2013256\n- API bind: listening \u2014 0.0.0.0:8000, 1 worker ready",
+   "tool_calls": [],
+   "tool_norm": [],
+   "id": "agent-structured-2",
+   "group": "agent",
+   "prompt": "Status report format: 5 bullet points, each '<component>: <state> \u2014 <one metric>'. Components: weights load, KV cache, autotune, graph capture, API bind. Invent plausible values for a vLLM boot.",
+   "max_tokens": 256,
+   "seed": 42
+  },
+  {
+   "completion_tokens": 173,
+   "s": 0.855,
+   "finish": "stop",
+   "content": "Speculative decoding speeds up generation by having a small, cheap \"draft\" model guess several tokens ahead, then letting the big model verify all of them in a single pass \u2014 if the guesses are right, you get many tokens for the price of one. Counting is nearly free to guess: after \"1, 2, 3,\" the next token is almost certainly \"4,\" so the draft model nails it and the big model confirms a whole run at once. Prose is the opposite: at any point there are thousands of equally plausible next words, so the draft model's guesses are usually wrong, and the big model has to reject them and fall back to generating one token at a time \u2014 meaning you pay the overhead of drafting and verifying without getting the speedup, and can even end up slower than if you'd never speculated at all.",
+   "tool_calls": [],
+   "tool_norm": [],
+   "id": "agent-prose-1",
+   "group": "agent",
+   "prompt": "In one paragraph, explain to a smart non-engineer why a model that is fast at counting can be slow at writing prose when speculative decoding is on.",
+   "max_tokens": 256,
+   "seed": 42
+  },
+  {
+   "completion_tokens": 256,
+   "s": 1.473,
+   "finish": "length",
+   "content": "It is required to prove that the multitude of primes is without bound.\n\nSuppose, to the contrary, that the multitude of primes were bounded, and let the primes be gathered together and named, being A, B, C, and so many others as there may be, so that no prime lies outside this collection. From these let a number be formed by multiplying them all together, and to the product let a unit be added; let the number so produced be called D. Now D is greater than each of the primes A, B, C, and the rest, since it is their product with a unit besides, and the product of numbers greater than a unit exceeds each of its factors.\n\nConsider now the number D. Either it is prime, or it is composite. If it is prime, then D is a prime, yet D is not any of A, B, C, and the rest, for it exceeds each of them; hence a prime has been found outside the supposed collection, which is contrary to the supposition. If, however, D is composite, then by the nature of composite numbers it is measured by some prime. Let that prime be E. Now E must be one of the primes A, B, C, and the rest, since by",
+   "tool_calls": [],
+   "tool_norm": [],
+   "id": "heldout-math-1",
+   "group": "math",
+   "prompt": "Write a careful continuous prose proof, in the style of Euclid, that there are infinitely many primes. No bullet lists, no numbered steps.",
+   "max_tokens": 256,
+   "seed": 42
+  },
+  {
+   "completion_tokens": 256,
+   "s": 1.039,
+   "finish": "length",
+   "content": "The harmonic series is the sum of 1/n for n from 1 to infinity, and despite its terms shrinking toward zero, it diverges, meaning its partial sums grow without bound. The clearest way to see this is the grouping-of-halves argument. Begin with the first term, 1. Then group the following terms into blocks whose lengths double each time: the next one term (1/2), then the next two terms (1/3 + 1/4), then the next four terms (1/5 + 1/6 + 1/7 + 1/8), then the next eight, and so on. The key observation is that each of these blocks sums to at least one half. The block 1/3 + 1/4 exceeds 1/4 + 1/4, which is 1/2. The block from 1/5 through 1/8 exceeds four copies of 1/8, which is again 1/2. In general, the block containing 2^k terms, each at least as large as the smallest term in that block, sums to at least 2^k times that smallest term, which equals 1/2. So every block contributes at",
+   "tool_calls": [],
+   "tool_norm": [],
+   "id": "heldout-math-2",
+   "group": "math",
+   "prompt": "In flowing English prose with no lists, explain why the harmonic series diverges, including the grouping-of-halves argument, and state the conclusion.",
+   "max_tokens": 256,
+   "seed": 42
+  },
+  {
+   "completion_tokens": 256,
+   "s": 1.128,
+   "finish": "length",
+   "content": "We begin with the general quadratic equation in its standard form, \\(ax^2 + bx + c = 0\\), and we assume that \\(a \\neq 0\\) so that the equation is genuinely quadratic rather than linear. Our goal is to isolate \\(x\\) and express it purely in terms of the coefficients \\(a\\), \\(b\\), and \\(c\\), and the method we use is completing the square, which transforms the left-hand side into a perfect square plus a constant. The first step is to divide every term by \\(a\\), which is permissible because \\(a\\) is nonzero, yielding \\(x^2 + \\frac{b}{a}x + \\frac{c}{a} = 0\\). We then move the constant term to the right side by subtracting \\(\\frac{c}{a}\\) from both sides, giving \\(x^2 + \\frac{b}{a}x = -\\frac{c}{a}\\). Now we focus on the left side, which currently has the form \\(x^2 + px\\) with \\(p = \\frac{b}{a}\\), and we recall that a perfect square \\((x + k)^2\\) expands to \\(x^2 + 2kx + k^2\\). To make the left side a perfect square, we need the coefficient of",
+   "tool_calls": [],
+   "tool_norm": [],
+   "id": "heldout-math-3",
+   "group": "math",
+   "prompt": "Write an essay-style derivation of the quadratic formula by completing the square, keeping every algebraic manipulation inside sentences. No lists.",
+   "max_tokens": 256,
+   "seed": 42
+  },
+  {
+   "completion_tokens": 256,
+   "s": 1.345,
+   "finish": "length",
+   "content": "Assume, for the sake of argument, that the square root of three can be written as a fraction of whole numbers. Let that fraction be in lowest terms, so that the numerator and denominator share no common factor greater than one. Call the numerator a and the denominator b, with b not zero, and suppose that a divided by b equals the square root of three.\n\nSquaring both sides gives a squared divided by b squared equals three, and multiplying through by b squared yields a squared equals three times b squared. This tells us that a squared is divisible by three. Since three is prime, if three divides a squared then three must divide a itself. So write a as three times some whole number k.\n\nSubstituting, we get nine times k squared equals three times b squared, and dividing both sides by three leaves three times k squared equals b squared. Now the same reasoning applies to b: b squared is divisible by three, so b must be divisible by three as well.\n\nBut this is the contradiction, stated explicitly: a and b were assumed to have no common factor greater than one, yet we have just shown that both are divisible by three, meaning they share the common factor three. That contradicts the assumption that the fraction was in lowest terms. Therefore no such",
+   "tool_calls": [],
+   "tool_norm": [],
+   "id": "heldout-math-4",
+   "group": "math",
+   "prompt": "In narrative prose, prove that the square root of 3 is irrational. Name the contradiction explicitly. No bullets.",
+   "max_tokens": 256,
+   "seed": 42
+  },
+  {
+   "completion_tokens": 256,
+   "s": 1.3,
+   "finish": "length",
+   "content": "Mathematical induction is a method of proof used to establish that a statement holds for every natural number, and it is particularly well suited to claims about sums defined recursively. The claim we wish to prove is that the sum of the first n odd numbers equals n squared. In symbols, if we let S(n) denote the sum 1 + 3 + 5 + ... + (2n \u2212 1), then we want to show that S(n) = n\u00b2 for every positive integer n. The structure of the proof has two essential parts: a base case, which verifies the statement for the smallest value of n, and an inductive step, which shows that if the statement is true for some arbitrary value k, then it must also be true for the next value k + 1. Together these two parts guarantee the statement for all natural numbers, because the base case anchors the chain and the inductive step propagates truth along it indefinitely.\n\nFor the base case, take n = 1. The sum of the first one odd number is simply 1, and n\u00b2 is also 1, so the statement holds. This is a trivial verification, but it is indispensable, since without it the inductive step would prove nothing about any actual number.\n\nNow for the",
+   "tool_calls": [],
+   "tool_norm": [],
+   "id": "heldout-math-5",
+   "group": "math",
+   "prompt": "Write a discursive explanation of mathematical induction proving that the sum of the first n odd numbers equals n squared. Continuous prose only.",
+   "max_tokens": 256,
+   "seed": 42
+  },
+  {
+   "completion_tokens": 256,
+   "s": 2.97,
+   "finish": "length",
+   "content": "\u51ac\u306e\u6d77\u8fba\u3067\u4e00\u4eba\u904e\u3054\u3059\u4e00\u65e5\u3068\u3044\u3046\u306e\u306f\u3001\u5b9f\u969b\u306b\u3084\u3063\u3066\u307f\u308b\u3068\u3001\u60f3\u50cf\u3057\u3066\u3044\u305f\u3088\u308a\u305a\u3063\u3068\u9759\u304b\u3067\u3001\u305a\u3063\u3068\u9577\u3044\u3002\u671d\u3001\u307e\u3060\u8584\u6697\u3044\u3046\u3061\u306b\u5bbf\u3092\u51fa\u3066\u3001\u9632\u6ce2\u5824\u306e\u307b\u3046\u3078\u6b69\u3044\u3066\u3044\u304f\u3002\u7802\u6d5c\u306b\u964d\u308a\u308b\u624b\u524d\u3067\u3001\u3059\u3067\u306b\u97f3\u304c\u805e\u3053\u3048\u3066\u304f\u308b\u3002\u590f\u306e\u6ce2\u3068\u306f\u307e\u308b\u3067\u9055\u3046\u3002\u590f\u306f\u3001\u5bc4\u305b\u3066\u306f\u8fd4\u3059\u305f\u3073\u306b\u3001\u3069\u3053\u304b\u967d\u6c17\u3067\u3001\u4eba\u306e\u58f0\u3084\u97f3\u697d\u3092\u6df7\u305c\u8fbc\u3082\u3046\u3068\u3059\u308b\u3002\u51ac\u306e\u6ce2\u306f\u3001\u6df7\u3056\u308a\u6c17\u304c\u306a\u3044\u3002\u4f4e\u3044\u97f3\u3067\u3001\u4e00\u5ea6\u305a\u3093\u3068\u8179\u306b\u843d\u3061\u3066\u304b\u3089\u3001\u3056\u3042\u3063\u3068\u7802\u3092\u524a\u3063\u3066\u3044\u304f\u3002\u305d\u306e\u524a\u308b\u97f3\u304c\u3001\u8033\u306e\u5965\u3067\u3044\u3064\u307e\u3067\u3082\u5c3e\u3092\u5f15\u304f\u3002\u6ce2\u306f\u898f\u5247\u6b63\u3057\u3044\u3088\u3046\u3067\u3044\u3066\u3001\u305d\u3046\u3067\u3082\u306a\u3044\u3002\u4e03\u3064\u6765\u3066\u516b\u3064\u6765\u308b\u3001\u306a\u3069\u3068\u6614\u306e\u4eba\u306f\u8a00\u3063\u305f\u304c\u3001\u6570\u3048\u3066\u307f\u308b\u3068\u3001\u6848\u5916\u305d\u306e\u3068\u304a\u308a\u3067\u3001\u5927\u304d\u306a\u306e\u304c\u6765\u305f\u3042\u3068\u306b\u306f\u3001\u3057\u3070\u3089\u304f\u5c0f\u3055\u306a\u306e\u304c\u7d9a\u304f\u3002\u305d\u306e\u5c0f\u3055\u306a\u6ce2\u306e\u9593\u9694\u304c\u3001\u51ac\u306e\u671d\u306f\u5999\u306b\u9577\u3044\u3002\u9577\u3044\u6c88\u9ed9\u306e\u3042\u3068\u306b",
+   "tool_calls": [],
+   "tool_norm": [],
+   "id": "heldout-jpde-1",
+   "group": "non_english",
+   "prompt": "\u7b87\u6761\u66f8\u304d\u3092\u4f7f\u308f\u305a\u3001\u51ac\u306e\u6d77\u8fba\u3067\u4e00\u4eba\u3067\u904e\u3054\u3059\u4e00\u65e5\u306b\u3064\u3044\u3066\u3001\u65e5\u672c\u8a9e\u306e\u9577\u3044\u968f\u7b46\u3092\u66f8\u3044\u3066\u304f\u3060\u3055\u3044\u3002\u6ce2\u3001\u98a8\u3001\u5149\u3092\u5177\u4f53\u7684\u306b\u3002",
+   "max_tokens": 256,
+   "seed": 42
+  },
+  {
+   "completion_tokens": 256,
+   "s": 2.975,
+   "finish": "length",
+   "content": "\u5b50\u4f9b\u306e\u3053\u308d\u3001\u5b66\u6821\u304c\u7d42\u308f\u308b\u3068\u3088\u304f\u753a\u306e\u56f3\u66f8\u9928\u3078\u5411\u304b\u3063\u305f\u3002\u5bb6\u304b\u3089\u6b69\u3044\u3066\u5341\u4e94\u5206\u307b\u3069\u306e\u3001\u53e4\u3044\u7149\u74e6\u9020\u308a\u306e\u5efa\u7269\u3067\u3001\u5165\u53e3\u306e\u91cd\u3044\u6249\u3092\u62bc\u3059\u3068\u3001\u3072\u3093\u3084\u308a\u3068\u3057\u305f\u7a7a\u6c17\u3068\u3001\u7d19\u3068\u57c3\u3068\u3001\u5c11\u3057\u3060\u3051\u6728\u306e\u5e8a\u304c\u5302\u3046\u3088\u3046\u306a\u72ec\u7279\u306e\u9999\u308a\u304c\u8fce\u3048\u3066\u304f\u308c\u305f\u3002\u53d7\u4ed8\u306e\u5973\u6027\u306f\u3044\u3064\u3082\u9759\u304b\u306b\u5fae\u7b11\u3093\u3067\u3001\u79c1\u304c\u8fd4\u3059\u672c\u3092\u53d7\u3051\u53d6\u308a\u3001\u307e\u305f\u65b0\u3057\u3044\u672c\u3092\u8cb8\u3057\u3066\u304f\u308c\u305f\u3002\u3042\u306e\u9803\u306e\u79c1\u306f\u3001\u672c\u3092\u8aad\u3080\u3068\u3044\u3046\u3088\u308a\u3001\u56f3\u66f8\u9928\u3068\u3044\u3046\u5834\u6240\u305d\u306e\u3082\u306e\u306b\u60f9\u304b\u308c\u3066\u3044\u305f\u306e\u304b\u3082\u3057\u308c\u306a\u3044\u3002\u5150\u7ae5\u66f8\u306e\u68da\u306f\u7a93\u969b\u306b\u3042\u3063\u3066\u3001\u5348\u5f8c\u306e\u65e5\u5dee\u3057\u304c\u80cc\u8868\u7d19\u3092\u659c\u3081\u306b\u7167\u3089\u3057\u3001\u91d1\u8272\u3084\u8d64\u3084\u9752\u306e\u6587\u5b57\u304c\u3086\u3063\u304f\u308a\u3068\u8f1d\u3044\u3066\u3044\u305f\u3002\u79c1\u306f\u6c7a\u307e\u3063\u305f\u5e2d\u306b\u5ea7\u308a\u3001\u8098\u639b\u3051\u306e\u3059\u308a\u6e1b\u3063\u305f\u6905\u5b50\u306b\u4f53\u3092\u6c88\u3081\u3066\u3001\u30da\u30fc\u30b8\u3092\u3081\u304f\u308b\u97f3\u3060\u3051\u304c\u5c0f\u3055\u304f\u97ff\u304f\u6642\u9593\u3092\u904e\u3054\u3057\u305f\u3002\u5916\u3067\u306f\u81ea\u8ee2\u8eca\u306e\u30d9\u30eb\u3084\u5b50\u4f9b\u306e\u58f0\u304c\u9060\u304f\u805e\u3053\u3048\u3066\u3044\u305f\u3051\u308c\u3069\u3001\u305d\u308c\u306f\u307e\u308b\u3067\u5225\u306e\u4e16\u754c\u306e\u51fa\u6765\u4e8b\u306e\u3088\u3046\u306b\u601d\u3048\u305f\u3002",
+   "tool_calls": [],
+   "tool_norm": [],
+   "id": "heldout-jpde-2",
+   "group": "non_english",
+   "prompt": "\u7b87\u6761\u66f8\u304d\u306a\u3057\u3067\u3001\u5b50\u4f9b\u306e\u3053\u308d\u753a\u306e\u56f3\u66f8\u9928\u3067\u904e\u3054\u3057\u305f\u5348\u5f8c\u306e\u8a18\u61b6\u3092\u3001\u4e01\u5be7\u306a\u65e5\u672c\u8a9e\u306e\u9577\u3044\u6587\u7ae0\u3067\u66f8\u3044\u3066\u304f\u3060\u3055\u3044\u3002",
+   "max_tokens": 256,
+   "seed": 42
+  },
+  {
+   "completion_tokens": 256,
+   "s": 2.278,
+   "finish": "length",
+   "content": "# Werkbank, Licht, Geduld\n\nEs gibt Orte, an denen die Zeit nicht vergeht, sondern sich sammelt. Glash\u00fctte ist ein solcher Ort. In diesem kleinen Tal im Osterzgebirge, wo die M\u00fcglitz sich zwischen bewaldeten H\u00e4ngen hindurchwindet und im Winter der Nebel so tief h\u00e4ngt, dass die Kirchturmspitze darin zu verschwimmen scheint, hat sich \u00fcber mehr als ein Jahrhundert eine merkw\u00fcrdige Kultur herausgebildet: eine Kultur der winzigen Dinge. Wer hierherkommt, um das Handwerk des Uhrmachers zu lernen, der lernt zuerst, dass Gr\u00f6\u00dfe nichts mit Ausdehnung zu tun hat. Ein Zahnrad von der Gr\u00f6\u00dfe eines Stecknadelkopfes kann ein ganzes Leben f\u00fcllen. Eine Unruhfeder, d\u00fcnner als ein Haar, kann dar\u00fcber entscheiden, ob ein Werk in f\u00fcnfzig Jahren noch die richtige Stunde schl\u00e4gt oder ob es verstummt ist, ein stummer Zeuge seiner selbst.\n\nAm Anfang steht die Werkbank. Sie ist kein M\u00f6belst\u00fcck, sie ist ein Instrument,",
+   "tool_calls": [],
+   "tool_norm": [],
+   "id": "heldout-jpde-3",
+   "group": "non_english",
+   "prompt": "Schreibe einen langen flie\u00dfenden Essay auf Deutsch ohne Aufz\u00e4hlungen \u00fcber das Handwerk eines Uhrmachers in Glash\u00fctte: Werkbank, Licht, Geduld.",
+   "max_tokens": 256,
+   "seed": 42
+  },
+  {
+   "completion_tokens": 256,
+   "s": 2.509,
+   "finish": "length",
+   "content": "Die Scheiben waren l\u00e4ngst zu Spiegeln geworden, in denen sich das Abteil doppelte, ehe der Zug \u00fcberhaupt das erste Mal richtig Fahrt aufnahm. Drau\u00dfen lag das Ruhrgebiet unter einer Decke aus Regen, die kein Ende nehmen wollte, und die Tropfen zogen schr\u00e4ge Bahnen \u00fcber das Glas, als schrieben sie eine Schrift, die niemand lesen sollte. Der Regionalzug rumpelte durch die Vororte, hielt an Bahnsteigen, die aussahen wie vergessene Versprechen, und nahm ein paar Menschen auf, die ihre nassen Jacken sch\u00fcttelten und sich schweigend in die Sitze fallen lie\u00dfen.\n\nZwischen den Halten wurde die Landschaft zu einem Flie\u00dfband aus Lichtern. Da waren die Hoch\u00f6fen, die nicht mehr rauchten, ihre Silhouetten wie ausgestorbene Tiere gegen den grauen Himmel, und daneben die neuen B\u00fcrot\u00fcrme, deren Glasfassaden den Regen in tausend kleine Rechtecke zerlegten. Ein Kohlenberg, l\u00e4ngst begr\u00fcnt, glitt vorbei, dann eine Siedlung mit Reihen",
+   "tool_calls": [],
+   "tool_norm": [],
+   "id": "heldout-jpde-4",
+   "group": "non_english",
+   "prompt": "Schreibe flie\u00dfende deutsche Prosa ohne Listen \u00fcber eine Nachtfahrt mit dem Regionalzug durch das Ruhrgebiet im Regen.",
+   "max_tokens": 256,
+   "seed": 42
+  },
+  {
+   "completion_tokens": 256,
+   "s": 3.338,
+   "finish": "length",
+   "content": "\u8336\u306e\u6e6f\u306e\u5b63\u7bc0\u306e\u79fb\u308d\u3044\u3068\u3044\u3046\u3082\u306e\u3092\u601d\u3046\u3068\u304d\u3001\u307e\u305a\u5fc3\u306b\u6d6e\u304b\u3076\u306e\u306f\u3001\u9053\u5177\u305d\u306e\u3082\u306e\u3088\u308a\u3082\u3001\u305d\u306e\u9053\u5177\u304c\u7f6e\u304b\u308c\u308b\u90e8\u5c4b\u306b\u5dee\u3057\u8fbc\u3080\u5149\u306e\u52a0\u6e1b\u3067\u3042\u308b\u3002\u540c\u3058\u91dc\u304c\u3042\u308a\u3001\u540c\u3058\u6c34\u6307\u304c\u3042\u308a\u3001\u540c\u3058\u8336\u7897\u304c\u3042\u3063\u3066\u3082\u3001\u7573\u306b\u843d\u3061\u308b\u5f71\u306e\u8272\u306f\u5c11\u3057\u305a\u3064\u9055\u3063\u3066\u3044\u308b\u3002\u6625\u306e\u5149\u306f\u67d4\u3089\u304b\u304f\u3001\u969c\u5b50\u306e\u7d19\u3092\u900f\u304b\u3057\u3066\u90e8\u5c4b\u306e\u5185\u5074\u3092\u8584\u3044\u4e73\u767d\u8272\u306b\u5305\u3080\u3002\u305d\u306e\u5149\u306e\u4e2d\u3067\u3001\u9676\u5668\u306e\u808c\u306f\u3069\u3053\u304b\u7720\u305f\u3052\u306b\u898b\u3048\u3001\u91c9\u85ac\u306e\u7167\u308a\u3082\u63a7\u3048\u3081\u3067\u3042\u308b\u3002\u4e8c\u6708\u304b\u3089\u4e09\u6708\u306b\u304b\u3051\u3066\u306e\u7089\u306e\u5b63\u7bc0\u306b\u306f\u3001\u307e\u3060\u706b\u306e\u6c17\u304c\u604b\u3057\u304f\u3001\u91dc\u306e\u6e6f\u6c17\u304c\u5929\u4e95\u8fd1\u304f\u307e\u3067\u3086\u3089\u3086\u3089\u3068\u7acb\u3061\u306e\u307c\u308b\u3002\u305d\u306e\u6e6f\u6c17\u304c\u969c\u5b50\u306e\u767d\u3092\u3055\u3089\u306b\u67d4\u3089\u304b\u304f\u6ef2\u307e\u305b\u308b\u306e\u3092\u898b\u3066\u3044\u308b\u3068\u3001\u51ac\u306e\u540d\u6b8b\u3068\u6625\u306e\u5146\u3057\u304c\u540c\u3058\u90e8\u5c4b\u306e\u4e2d\u306b\u540c\u5c45\u3057\u3066\u3044\u308b\u3088\u3046\u306a\u5fc3\u6301\u3061\u304c\u3059\u308b\u3002\u82b1\u5165\u308c\u306b\u306f\u693f\u304c\u4e00\u679d\u3001\u3042\u308b\u3044\u306f\u6885\u304c\u4e8c\u8f2a\u3001\u307e\u3060\u56fa\u3044\u857e\u3092\u4f34\u3063\u3066\u6d3b\u3051\u3089\u308c\u308b\u3002\u82b1\u306e\u5411\u304d\u306f\u3001\u5149\u306e\u5165",
+   "tool_calls": [],
+   "tool_norm": [],
+   "id": "heldout-jpde-5",
+   "group": "non_english",
+   "prompt": "\u7b87\u6761\u66f8\u304d\u3092\u4f7f\u308f\u305a\u3001\u8336\u306e\u6e6f\u306b\u304a\u3051\u308b\u5b63\u7bc0\u306e\u79fb\u308d\u3044\u306b\u3064\u3044\u3066\u3001\u65e5\u672c\u8a9e\u306e\u9577\u3044\u968f\u7b46\u3092\u66f8\u3044\u3066\u304f\u3060\u3055\u3044\u3002\u9053\u5177\u3068\u5149\u306e\u5909\u5316\u306b\u89e6\u308c\u308b\u3053\u3068\u3002",
+   "max_tokens": 256,
+   "seed": 42
+  }
+ ]
+}
