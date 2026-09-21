@@ -1,6 +1,25 @@
 # DeepSeek-V4.1-Flash at 1M context on one DGX Station GB300
 
-**Reference release: Many Seat, v18** (2026-09-18: v15 hook + `--max-num-seqs 24` + token-sized `--cudagraph-capture-sizes`; 172 tok/s C1 prose, KV 2.50M tokens, C24 warm agent turn 0.55 s p50) · previous **v15 Pin Hot Experts** (retired 2026-09-18) · **v14 Sixty-K Agent** (retired 2026-09-17) · Historical **v13: 90 tok/s single-stream prose · 140–160 tok/s on agent/code text · 429 agg tok/s at C16** (v12: 89 / 140–160 / 311 · v11: 82 / 130–150 / 287) · 972K-token prompt prefilled in 85 s · Hermes tool-calling 10/10
+**Reference release: Many Seat, v18** (2026-09-18: v15 hook + `--max-num-seqs 24` + token-sized `--cudagraph-capture-sizes`; 172 tok/s C1 prose, KV 2.50M tokens, C24 warm agent turn 0.55 s p50; **BFCL v4 tool-call exact-match 93.3%**) · **v19 "Nightly" was promoted and reverted on 2026-09-20** (see Round 10) · previous **v15 Pin Hot Experts** (retired 2026-09-18) · **v14 Sixty-K Agent** (retired 2026-09-17) · Historical **v13: 90 tok/s single-stream prose · 140–160 tok/s on agent/code text · 429 agg tok/s at C16** (v12: 89 / 140–160 / 311 · v11: 82 / 130–150 / 287) · 972K-token prompt prefilled in 85 s · Hermes tool-calling 10/10
+
+## Round 10 — the tool-call gate, and why v19 came back out (2026-09-20 evening)
+
+v19 (nightly `dee37d89` + hook + off54 + `fp8_ds_mla`) went live at 12:11 on its speed bars. A Grok review that afternoon asked the question the bars did not: *is tool calling still correct?* The per-class teacher-forced split said the logit drift concentrated on tool-shaped text (9.6% top-1 flips vs 0.9% for the v18 hook), and the promotion rule was rewritten the same evening: **BFCL exact-match ≥ v18 − 1 pt AND DSpark tool-JSON/shell acceptance within 2 pt of v18.** Replay tok/s is a speed bar, never a correctness bar. Bundle: [`results/2026-09-21-toolcall-gate-49435/`](results/2026-09-21-toolcall-gate-49435/README.md) (runners, `bfcl_gate.py` grader, `tf_split.py`, every JSON).
+
+| | v18 | v19 | nightly `d05da62e` + #49435 at v19 flags |
+|---|--:|--:|--:|
+| BFCL v4 simple_python + multiple (600, T=0, our AST grader) | **560 = 93.3%** | 559 = 93.2% | 564 = 94.0% |
+| failure kinds | value 36 / name 3 / no-call 1 | value 37 / name 2 / no-call 2 | — |
+| DSpark accept tool_json / shell | **0.878 / 0.908** | 0.838 / 0.829 | 0.806 / 0.829 |
+| agent-doc top-1 flips vs no-hook (TF, 1,074 pos) | **0.56%** | 11.45% | 11.45% |
+| GPQA-Diamond, 64k budget | 172/198 = 86.9% | 173/198 = 87.4% | — |
+| C1 / C8 / C16 prose | 172 / 655 / 950 | 183 / 667 / 995 | 193 / 711 / 1037 |
+
+**Correctness is a wash; acceptance fails; the cause is the image.** BFCL is within 0.2 pt with identical failure kinds (zero JSON-parse, extra-arg or missing-arg failures on either side — the unique misses are value-normalisation and optional-arg choices). But the drafter agrees with the target 4–8 pt less often on exactly the text an agent lane emits, and that is the same fact the TF split was reporting. The cheapest physical candidate — vLLM #49435's `fp8_ds_mla` writer-scale fix, merged after our pin — was tested in the same window: a boot on nightly `d05da62e` (which carries it) at the v19 flags leaves the agent-doc flips at **11.45%, unchanged to two decimals**. The drift is in the DSV4.1 kernels that landed between the 0909 image and `dee37d89` (#56935 mega-attention/NVFP4 KV, #56464 DeepSelect, #56568/#57204 MegaMoE), not in the KV cache path. That boot also selected `FLASHMLA_MEGA_ATTN_DSV41` — the backend #56625's own PR text calls "broken upstream for this checkpoint" — and it live-tuned in **16 min**, not 74, on the same FlashInfer.
+
+**Reverted 21:42 CDT** per James's pre-authorisation: `:30006` is `dsv41-vllm-v18-cgsizes-BOUND-REF` again (`fp8_ds_mla`, hook 206.61/62.33 GiB, KV 2.50M, autotune hit); v19 and the `d05da62e` candidate are stopped-and-kept. The nightly's speed is real and not adopted. The equal-budget GPQA pair (v18 at 64k, the missing half from the fidelity round) is a wash. Next lever, if wanted: bisect the kernel PR set one image per boot — at 16-min tunes it is an evening, not a week.
+
+**Lesson for the recipe:** a speed win on a spec-decode lane that comes with lower acceptance on a text class is not a win on that class — acceptance *is* the argmax-agreement measurement, and it was on the fixture the whole time. The card now carries a BFCL row and the per-class TF split; a corpus-wide fidelity average never goes on it alone again.
 
 ## Round 8 — overnight k-schedule / nightly / adaptive, and the open T3b finding (2026-09-19)
 

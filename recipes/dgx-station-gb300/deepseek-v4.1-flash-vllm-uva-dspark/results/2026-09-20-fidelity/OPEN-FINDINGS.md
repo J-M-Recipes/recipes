@@ -1,3 +1,9 @@
+# OPEN FINDINGS — 2026-09-20 — **CLOSED 21:42 CDT the same day** (see `../2026-09-21-toolcall-gate-49435/README.md`)
+
+**Resolution.** Plan steps 1–3 ran the same evening in an approved 24 h window. (1) BFCL v4 simple+multiple, 600 calls, same window: v18 93.3% vs v19 93.2%, identical failure kinds — correctness PASS. DSpark acceptance tool_json/shell: 0.878/0.908 vs 0.838/0.829 — FAIL against the new rule (within 2 pt). (2) Equal-budget GPQA: v18 at 64k = 86.9% (172/198) vs v19 87.4% — wash; the card now shows a real pair. (3) Isolation: nightly `d05da62e` (with vLLM #49435, the `fp8_ds_mla` writer-scale fix merged after our pin) at the v19 flags leaves agent-doc top-1 flips at 11.45% (v19 11.45%, v18 0.56%) — **the drift is the nightly's kernels, not the KV path.** Per James's pre-authorisation the release reverted to v18 + corrections; `:30006` is v18 Many Seat. Card: BFCL row added, TF split shown per class. Blog/X callout: not deployed; the "fidelity measured, not degradation" line is withdrawn.
+
+*Original text below, unchanged.*
+
 # OPEN FINDINGS — 2026-09-20, end of day (parked; pick up here)
 
 Written by Milo after James's read of a Grok review of the recipe: *"I shouldn't have compromised on JSON tool calling."*
