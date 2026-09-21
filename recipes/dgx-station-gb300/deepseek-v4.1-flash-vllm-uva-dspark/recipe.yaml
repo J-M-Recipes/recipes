@@ -79,6 +79,12 @@ launch:
     - "--gpu-memory-utilization 0.97 --max-num-seqs 24 --max-num-batched-tokens 8192  (v18: 24 seqs. At 16 the lane queued on a 35-seat harness — C24 warm agent-turn p50 27 s, chat p95 28 s — while KV usage peaked at 16%; 24 seqs took C24 warm p50 to 0.55 s and cold 120K under 16 streams from 19 to 9.2 s. 32 seqs (v16) also worked for the queue but default 32-seq graphs took KV to 1.39M. Do NOT lower --long-prefill-token-threshold to fix this: 2048 cost idle prefill -47% and prose p10 -29% (v16); the V1 scheduler serves running FCFS with that value as the per-request chunk cap, and max_num_partial_prefills does not exist in this build. util alone moves nothing: at 70 it only grew KV 10→17.5 GiB with identical tok/s. util is the headroom that lets OFFGB drop; OFFGB is the lever)"
 
 metrics:
+  - name: cost per solved task vs Claude Fable 5.1 — same 100 held-out tasks (v20)
+    value: 58
+    unit: "× cheaper (floor)"
+    workload: "seeded stratified 100 of the 1,311 held-out BFCL live tasks (seed 20260921), same grader and harness/protocol.yaml on both sides; Fable 5.1 via Anthropic API (Max OAuth-metered, list $10/$50 per MTok, no invoice); local = v20 at C8 with Station amortized at $3.80/hr"
+    aggregation: "Fable 84/100 solved, 142,790 in / 14,297 out tokens, $25.5 per 1000 solved (floor on all 1,311 at 100% solved: ≥ $17.5) · v20 86/100 solved, $0.30 per 1000 solved amortized ($0.008 energy-only) → ≥ 58× vs the floor, 85× vs measured. Deviations recorded: Fable rejects temperature; 2/100 BFCL schemas rejected by Anthropic count unsolved"
+    provenance: { run_id: 2026-09-21-v20-promotion, method: "bfcl_cloud_slice.py", raw: cloud-comparison/cloud-fable51-summary.json }
   - name: single-stream decode (prose) — v20 Clean Nightly
     value: 180.6
     unit: tok/s

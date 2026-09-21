@@ -144,6 +144,8 @@ def harness(card: dict) -> str:
             items.append(f'<li class="{"ok" if r.get("status", "pass") == "pass" else "meas"}">{label}: <b>{e(r.get("name", ""))}</b> {e(r["solved"])}/{e(r.get("n", "?"))} solved ({e(r.get("pct", ""))}) · {e(r.get("note", ""))}</li>')
         else:
             items.append(f'<li class="pend">{label}: pending</li>')
+    for r in h.get("comparison") or []:
+        items.append(f'<li class="meas">vs <b>{e(r.get("name", "?"))}</b>: {e(r.get("solved", "?"))} solved on the same {e(r.get("n", "?"))} held-out tasks (ours {e(r.get("ours_solved", "?"))}) · ${e(r.get("usd_per_1000_solved", "?"))} per 1000 solved ({e(r.get("basis", ""))}) vs ours ${e(r.get("ours_usd_per_1000_solved", "?"))} ({e(r.get("ours_basis", ""))}) → <b>{e(r.get("ratio", ""))}</b> · {e(r.get("note", ""))}</li>')
     c = h.get("cost") or {}
     if c.get("usd_per_solved_task") is not None:
         items.append(f'<li class="meas">cost per solved task <b>${e(c["usd_per_solved_task"])}</b> = {e(c.get("mean_w", "?"))} W × {e(c.get("wall_s", "?"))} s ÷ {e(c.get("solved", "?"))} solved @ ${e(c.get("usd_per_kwh", "?"))}/kWh (energy only; hardware amortized: {e(c.get("amortized", "not stated"))})</li>')
