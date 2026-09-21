@@ -46,7 +46,7 @@ Every recipe lives at `recipes/<hardware-slug>/<recipe-slug>/` and contains:
 ## Workflow
 
 ```bash
-uv venv .venv && uv pip install -p .venv/bin/python jsonschema pyyaml pytest numpy
+uv venv .venv && uv pip install -p .venv/bin/python jsonschema pyyaml pytest numpy pillow
 .venv/bin/python -m pytest tests -q
 .venv/bin/python scripts/check_recipe.py --all
 .venv/bin/python scripts/render_index.py
@@ -65,6 +65,6 @@ A tok/s number plus a hardware list is not a claim about agents. When a recipe c
 - **Fixed outer protocol** — `harness/protocol.yaml` in the recipe dir (sampling, tool_choice, retries, concurrency, turns, system prompts, the *solved* definition, suite sizes, cost formula and $/kWh assumption), with its sha256 on the card. Any change = new file, new hash, new run.
 - **Dev suite** — run during development; decides *candidacy* only.
 - **Held-out sibling** — same shape, frozen at creation, never run inside a campaign, run once at promotion; decides *promotion*. A candidate that passes dev and fails held-out is recorded as overfit-to-harness and is not re-run against the sibling.
-- **Cost per solved task** — mean GPU W × wall s ÷ solved at the stated $/kWh (energy only). Amortized hardware, if shown, is a separate line with its $/hr printed.
+- **Cost per solved task, printed as a pair with Pass@1** — `Pass@1 X% · $Y / 1000 solved` on one line, so a cost claim cannot hide a quality drop; denominator = verifier-passed tasks on the frozen held-out split; **price date stamped** (`priced_on`) because $/kWh and $/hr drift; both bases stated (energy; amortized with its $/hr). The unsolved breakdown (no-call / truncated / error / wrong-arg) prints under it so a model that bails early is visible, not just neutralised.
 
 Unmeasured fields render amber `pending`. Same-grader A/B only — never place these numbers beside a public leaderboard.
