@@ -57,3 +57,14 @@ Open a PR; CI runs the same three commands. Reviews focus on provenance, not pro
 ## Attribution
 
 Recipes stand on other people's kernels, engines, and checkpoints. Credit the authors of what you used, by name and link, in the recipe README. Measure before arguing with them.
+
+## Agent claim card (`card.yaml: harness:`)
+
+A tok/s number plus a hardware list is not a claim about agents. When a recipe claims agent/tool-call quality it carries, on the card:
+
+- **Fixed outer protocol** — `harness/protocol.yaml` in the recipe dir (sampling, tool_choice, retries, concurrency, turns, system prompts, the *solved* definition, suite sizes, cost formula and $/kWh assumption), with its sha256 on the card. Any change = new file, new hash, new run.
+- **Dev suite** — run during development; decides *candidacy* only.
+- **Held-out sibling** — same shape, frozen at creation, never run inside a campaign, run once at promotion; decides *promotion*. A candidate that passes dev and fails held-out is recorded as overfit-to-harness and is not re-run against the sibling.
+- **Cost per solved task** — mean GPU W × wall s ÷ solved at the stated $/kWh (energy only). Amortized hardware, if shown, is a separate line with its $/hr printed.
+
+Unmeasured fields render amber `pending`. Same-grader A/B only — never place these numbers beside a public leaderboard.
