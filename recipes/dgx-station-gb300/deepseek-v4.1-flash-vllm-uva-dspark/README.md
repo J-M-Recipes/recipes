@@ -2,6 +2,20 @@
 
 **Reference release: Clean Nightly, v20** (2026-09-21: vLLM nightly `2671fedf` — the last before the #56633 mHC-fold drift — + v15 hook + off54 + fp8_ds_mla + v18's 24-seat/cudagraph flags; **181 tok/s C1 prose (+5.1% pair mean vs v18)**, KV 2.55M tokens, C24 warm agent p95 2.4–2.8 s vs 3.4; **held-out BFCL live sibling 78.8% vs v18 78.9%**, dev 92.7–93.5%; tools 64/64 ×3; $0.008 per 1000 solved tasks; see Round 11b) · rollback **Many Seat, v18** (2026-09-18: v15 hook + `--max-num-seqs 24` + token-sized `--cudagraph-capture-sizes`; 172 tok/s C1 prose, KV 2.50M tokens, C24 warm agent turn 0.55 s p50; **BFCL v4 tool-call exact-match 93.3%**) · **v19 "Nightly" was promoted and reverted on 2026-09-20** (see Round 10) · previous **v15 Pin Hot Experts** (retired 2026-09-18) · **v14 Sixty-K Agent** (retired 2026-09-17) · Historical **v13: 90 tok/s single-stream prose · 140–160 tok/s on agent/code text · 429 agg tok/s at C16** (v12: 89 / 140–160 / 311 · v11: 82 / 130–150 / 287) · 972K-token prompt prefilled in 85 s · Hermes tool-calling 10/10
 
+## Round 11c — the "unexplained" C8 loss was the capture-size list, and it is a trade worth keeping (2026-09-21, 14:04–15:30)
+
+One pair on the v20 image: `--cudagraph-capture-sizes` omitted (engine default) vs the 15-size list, same hook, same window. Receipts: [`receipts/cardG/`](results/2026-09-21-v20-promotion/receipts/cardG/).
+
+| | default capture | 15-size list (v20) |
+|---|---|---|
+| C1 / C4 / C8 / C16 | 173 / **443** / **720** / **1007** | **180** / 400 / 657 / 969 |
+| KV pool | 1.86M | **2.55M** |
+| fund C16 warm agent p95 | 1.73 s | 1.68 s |
+| fund C24 warm agent p95 / mean | 9.5 s / 2.7 s | **2.4 s / 0.98 s** |
+| fund C24 aggregate | 249 | **283** |
+
+So the Sept-18 note ("24-slot profiles cost ~6% at C8, unexplained") is closed: the list costs ~10% on the 4–8 stream knee and buys +4% C1, +0.7M KV tokens and a 24-seat lane that stays warm. That is the right trade for this lane's job (the 35-seat fund harness). A deployment that lives at 4–8 streams and never seats 24 should drop the flag and take the knee. Also this window: the GLM Flash draft `bf582e4e` A/B on `:30001` — see that recipe; no change, pin kept.
+
 ## Round 11b — the bisect finishes on one PR, and v20 is promoted (2026-09-21, 07:38–12:30)
 
 Two more nightlies split the `af1c0149` set, then the v20 window (r1 → v18 → r1, loaded autotune), then the first fill of the agent claim card. Bundle: [`results/2026-09-21-v20-promotion/`](results/2026-09-21-v20-promotion/).
