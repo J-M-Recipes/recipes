@@ -40,19 +40,19 @@
       <h1>DeepSeek-V4.1-Flash · 1× DGX Station GB300</h1>
       <div class="sub">Full 1,048,576-token context from a single GB300 — routed experts split HBM / Grace over NVLink-C2C, in-checkpoint DSpark drafter</div>
     </div>
-    <div class="brand"><b>J-M-RECIPES</b><br>v18 “Many Seat” (release; v19 reverted 2026-09-20 21:42 — failed the tool-call gate, see fidelity) · 2026-09-20<br>status: verified</div>
+    <div class="brand"><b>J-M-RECIPES</b><br>v20 “Clean Nightly” (release 2026-09-21; nightly 2671fedf — last before the #56633 mHC-fold drift; v18 = rollback; v19 reverted 2026-09-20) · 2026-09-20<br>status: verified</div>
   </div>
   <div class="pills">
 <span class="pill type"><b>MoE</b> · 384 routed experts + Engram</span>
 <span class="pill"><b>552B</b> total · <b>8B prefill / 16B decode</b> active</span>
 <span class="pill">checkpoint <b>510.3 GB</b> · rev <span class="mono">df42c109</span></span>
 <span class="pill">weights <b>as shipped · MXFP4 experts / FP8 attn+Engram · KV fp8_ds_mla (image default)</b></span>
-<span class="pill">engine <b>vLLM <span class="mono">dee37d89115db4c94a820a79a78a7828e141c910</span> · vLLM deepseekv41-flash-0909 (day-0 image, dsv41-feat e47aa78) · FlashInfer 0.6.18 · autotune hash 9ac7b387</b></span>
-<span class="pill">memory <b>206.6 GiB HBM experts + 62.3 GiB Grace pinned · KV pool 2.50M tok (fp8_ds_mla)</b></span>
+<span class="pill">engine <b>vLLM <span class="mono">2671fedfc7ae604761990603fc736c0c4f21de57</span> · vLLM nightly 2671fedf (2026-09-13; v18 was day-0 0909) · FlashInfer 0.6.18 · autotune set a34f9ad4 (189 configs)</b></span>
+<span class="pill">memory <b>206.6 GiB HBM experts + 62.3 GiB Grace pinned (off54) · KV pool 2.55M tok (fp8_ds_mla)</b></span>
   </div>
   <div class="grid">
-<div class="box"><div class="lbl">Decode · C1 (prose)</div><div class="hero">172<small>tok/s</small></div><div class="note">warm, T=0, 192 tok · 171.5–172.5 across 7 windows · agent/code/shell text 190–260 on the fixture · the v19 nightly read 183 (+6.6%) and was reverted: acceptance −4/−8 pt on tool/shell text</div></div>
-<div class="box"><div class="lbl">Decode · C16 aggregate</div><div class="hero">950<small>tok/s</small></div><div class="note">942–966 across windows · C8 655 · max-num-seqs 24 · 35-seat fund harness C24 aggregate 285, C24 warm turn p50 0.55 s, C16 warm p95 1.8 s</div></div>
+<div class="box"><div class="lbl">Decode · C1 (prose)</div><div class="hero">181<small>tok/s</small></div><div class="note">warm, T=0, 192 tok · 180.3–180.9 two boots vs v18 171.8 same window (+5.1% pair mean) · agent/code/shell text 190–260 on the fixture · the v19 nightly read 183 (+6.6%) and was reverted: acceptance −4/−8 pt on tool/shell text</div></div>
+<div class="box"><div class="lbl">Decode · C16 aggregate</div><div class="hero">970<small>tok/s</small></div><div class="note">979 / 965 two boots vs v18 952 · C8 670 / 661 vs 660 · max-num-seqs 24 · 35-seat fund harness C24 aggregate 285, C24 warm turn p50 0.55 s, C16 warm p95 1.8 s</div></div>
 <div class="box"><div class="lbl">Prefill · cold</div><div class="hero">22.7K<small>tok/s</small></div><div class="note">104K prompt in 4.6 s · 6.5K @ 15.7K tok/s · 972K prompt in 85 s · 1K / 256K points pending</div></div>
   </div>
   <div class="row2">
@@ -73,13 +73,13 @@
   <div class="fid"><div class="lbl">Agent claim card — fixed protocol, held-out sibling, cost per solved task</div>
     <ul>
 <li class="ok">protocol <span class="mono">harness/protocol.yaml</span> sha256 <span class="mono">61c2d22b6351</span> · T=0, no thinking, tool_choice auto, 1 retry, C8 BFCL / C16 fund tools, 4-turn fund conversations</li>
-<li class="ok">dev suite (decides candidacy): <b>BFCL dev (simple_python 400 + multiple 200)</b> 560/600 solved (93.3%) · v18 (0909 + hook), 2026-09-21 Card C; same grader as candidates (r1 2671fedf: 561/600 = 93.5%)</li>
-<li class="pend">held-out sibling (decides promotion; never run in a campaign): pending</li>
-<li class="pend">cost per solved task: pending (W × s ÷ solved @ $/kWh)</li>
+<li class="ok">dev suite (decides candidacy): <b>BFCL dev (simple_python 400 + multiple 200)</b> 556/600 solved (92.7%) · v20 on the promotion boot; 561/600 (93.5%) the night before — ±1 pt run-to-run on 600. v18 same boots 558/600 (93.0%), 560 (93.3%). Decides candidacy only</li>
+<li class="ok">held-out sibling (decides promotion; never run in a campaign): <b>BFCL live sibling (live_simple 258 + live_multiple 1,053)</b> 1033/1311 solved (78.8%) · frozen 2026-09-21, first and only run at promotion: v20 78.8% vs v18 78.9% (1035/1311), Δ −0.1 pt against the ≥ v18−1 rule. live_simple 82.2 vs 81.0, live_multiple 78.0 vs 78.4</li>
+<li class="meas">cost per solved task <b>$0.0000078</b> = 490 W × 392 s ÷ 1033 solved @ $0.15/kWh (energy only; hardware amortized: not stated — v20 $0.008 per 1000 solved vs v18 ~$0.007 (v18 W estimated 486, not sampled on its rerun); two-sample W mean, labelled)</li>
     </ul>
   </div>
   <div class="foot">
-    <span>recipe <span class="mono">recipes/dgx-station-gb300/deepseek-v4.1-flash-vllm-uva-dspark</span> · run <span class="mono">2026-09-18-many-seat-v16-v17-v18 (v18) · 2026-09-21-toolcall-gate-49435 (gate + revert) · 2026-09-20-fidelity</span></span>
+    <span>recipe <span class="mono">recipes/dgx-station-gb300/deepseek-v4.1-flash-vllm-uva-dspark</span> · run <span class="mono">2026-09-21-v20-promotion (v20) · 2026-09-21-kernel-bisect · 2026-09-21-toolcall-gate-49435 (gate + v19 revert) · 2026-09-20-fidelity</span></span>
     <span>github.com/J-M-Recipes/recipes · al-engr.com · @jmeadlock</span>
   </div>
 </div>

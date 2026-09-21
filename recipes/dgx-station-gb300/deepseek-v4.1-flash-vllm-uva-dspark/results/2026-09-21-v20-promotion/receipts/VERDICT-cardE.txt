@@ -1,0 +1,35 @@
+== bisect rungs (agent_tool flips | heldout | prose | accept tool_json/shell/prose | C1)
+r4 | 1.77% | 0.00% | 1.07% | 0.86/0.908/0.349 | 173.6
+r5 | 12.66% | 9.00% | 1.83% | 0.878/0.829/0.319 | 186.0
+ref: v18 0.56/1.08/1.06 0.878/0.908/0.349 172 · r1(09-13) 1.77/0.00/1.04 0.860/0.908/0.349 189 · r2(09-16) 11.73/8.72/1.82 0.757/0.760/0.260 194
+== v20 window
+v20a: [v20a-r2] conc= 1:   180.9 agg tok/s  180.88 per-stream  (runs 180.8/181.0);[v20a-r2] conc= 8:   669.8 agg tok/s   83.73 per-stream  (runs 668.8/670.9);[v20a-r2] conc=16:   979.3 agg tok/s   61.21 per
+
+[v20a-warm]   WARM agent turn TTFT {'n': 20, 'mean': 0.5268464384513208, 'p10': 0.4260352467885241, 'p50': 0.4901982775190845, 'p95': 0.8981102607533104, 'min':
+[v20a] MIX C16: streams={'chat': 6, 'agent': 6, 'doc': 4, 'diligence': 0} requests=156 agg=299 tok/s wall=453s
+[v20a]   WARM agent turn TTFT {'n': 66, 'mean': 0.6501886241189133, 'p10': 0.48466586097492836, 'p50': 0.5431107035255991, 'p95': 1.6129907709982945, 'min': 0.4
+[v20a] MIX C24: streams={'chat': 9, 'agent': 8, 'doc': 6, 'diligence': 1} requests=163 agg=304 tok/s wall=460s
+[v20a]   WARM agent turn TTFT {'n': 67, 'mean': 1.0443937777621504, 'p10': 0.5163227053824813, 'p50': 0.5625577180180699, 'p95': 2.82613748307922, 'min': 0.5008
+[v20a] COLD 120000 under 16 streams: TTFT {'n': 5, 'mean': 8.312985491007566, 'p10': 7.825608700397424, 'p50': 8.409906065033283, 'p95': 8.693907850980759, 'min
+[v20a] TOOLS C16 x 4 turns: 64/64 ok (100.0%)
+v18ctl13: [v18ctl13-r2] conc= 1:   171.8 agg tok/s  171.76 per-stream  (runs 171.6/171.9);[v18ctl13-r2] conc= 8:   659.9 agg tok/s   82.48 per-stream  (runs 659.8/660.0);[v18ctl13-r2] conc=16:   952.2 agg tok/s
+
+[v18ctl13-warm]   WARM agent turn TTFT {'n': 22, 'mean': 0.598568629738028, 'p10': 0.4325682116963435, 'p50': 0.4834839184768498, 'p95': 1.151130954219843, 'min
+[v18ctl13] MIX C16: streams={'chat': 6, 'agent': 6, 'doc': 4, 'diligence': 0} requests=156 agg=300 tok/s wall=448s
+[v18ctl13]   WARM agent turn TTFT {'n': 66, 'mean': 0.7442081703497521, 'p10': 0.4855268244864419, 'p50': 0.5419114475080278, 'p95': 1.829772233730182, 'min': 0
+[v18ctl13] MIX C24: streams={'chat': 9, 'agent': 8, 'doc': 6, 'diligence': 1} requests=155 agg=281 tok/s wall=460s
+[v18ctl13]   WARM agent turn TTFT {'n': 62, 'mean': 1.133906671436571, 'p10': 0.5124521507066675, 'p50': 0.565731565002352, 'p95': 3.357227990310642, 'min': 0.4
+[v18ctl13] COLD 120000 under 16 streams: TTFT {'n': 5, 'mean': 8.468497616203967, 'p10': 7.83194320697803, 'p50': 8.415713060006965, 'p95': 9.31527425921522, 'm
+[v18ctl13] TOOLS C16 x 4 turns: 64/64 ok (100.0%)
+v20b: [v20b-r2] conc= 1:   180.3 agg tok/s  180.31 per-stream  (runs 180.2/180.4);[v20b-r2] conc= 8:   661.3 agg tok/s   82.66 per-stream  (runs 663.9/658.6);[v20b-r2] conc=16:   964.5 agg tok/s   60.28 per
+
+[v20b-warm]   WARM agent turn TTFT {'n': 20, 'mean': 0.5399618639872642, 'p10': 0.46917868502787313, 'p50': 0.4925947149749845, 'p95': 0.8734298302588286, 'min'
+[v20b] MIX C16: streams={'chat': 6, 'agent': 6, 'doc': 4, 'diligence': 0} requests=152 agg=287 tok/s wall=449s
+[v20b]   WARM agent turn TTFT {'n': 64, 'mean': 0.6835420608113054, 'p10': 0.4974062210822012, 'p50': 0.5547440054651815, 'p95': 1.828806854589493, 'min': 0.449
+[v20b] MIX C24: streams={'chat': 9, 'agent': 8, 'doc': 6, 'diligence': 1} requests=152 agg=278 tok/s wall=468s
+[v20b]   WARM agent turn TTFT {'n': 62, 'mean': 0.8812637862753153, 'p10': 0.512385046237614, 'p50': 0.5867803894798271, 'p95': 2.4161198418412835, 'min': 0.494
+[v20b] COLD 120000 under 16 streams: TTFT {'n': 5, 'mean': 8.35459539379226, 'p10': 7.716592576215044, 'p50': 8.610586060967762, 'p95': 8.845361889188643, 'min'
+[v20b] TOOLS C16 x 4 turns: 64/64 ok (100.0%)
+== parity
+v20a vs v20b: }
+v20a vs v18ctl13: }

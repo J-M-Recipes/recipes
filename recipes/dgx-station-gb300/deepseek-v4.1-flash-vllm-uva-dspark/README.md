@@ -1,6 +1,21 @@
 # DeepSeek-V4.1-Flash at 1M context on one DGX Station GB300
 
-**Reference release: Many Seat, v18** (2026-09-18: v15 hook + `--max-num-seqs 24` + token-sized `--cudagraph-capture-sizes`; 172 tok/s C1 prose, KV 2.50M tokens, C24 warm agent turn 0.55 s p50; **BFCL v4 tool-call exact-match 93.3%**) · **v19 "Nightly" was promoted and reverted on 2026-09-20** (see Round 10) · previous **v15 Pin Hot Experts** (retired 2026-09-18) · **v14 Sixty-K Agent** (retired 2026-09-17) · Historical **v13: 90 tok/s single-stream prose · 140–160 tok/s on agent/code text · 429 agg tok/s at C16** (v12: 89 / 140–160 / 311 · v11: 82 / 130–150 / 287) · 972K-token prompt prefilled in 85 s · Hermes tool-calling 10/10
+**Reference release: Clean Nightly, v20** (2026-09-21: vLLM nightly `2671fedf` — the last before the #56633 mHC-fold drift — + v15 hook + off54 + fp8_ds_mla + v18's 24-seat/cudagraph flags; **181 tok/s C1 prose (+5.1% pair mean vs v18)**, KV 2.55M tokens, C24 warm agent p95 2.4–2.8 s vs 3.4; **held-out BFCL live sibling 78.8% vs v18 78.9%**, dev 92.7–93.5%; tools 64/64 ×3; $0.008 per 1000 solved tasks; see Round 11b) · rollback **Many Seat, v18** (2026-09-18: v15 hook + `--max-num-seqs 24` + token-sized `--cudagraph-capture-sizes`; 172 tok/s C1 prose, KV 2.50M tokens, C24 warm agent turn 0.55 s p50; **BFCL v4 tool-call exact-match 93.3%**) · **v19 "Nightly" was promoted and reverted on 2026-09-20** (see Round 10) · previous **v15 Pin Hot Experts** (retired 2026-09-18) · **v14 Sixty-K Agent** (retired 2026-09-17) · Historical **v13: 90 tok/s single-stream prose · 140–160 tok/s on agent/code text · 429 agg tok/s at C16** (v12: 89 / 140–160 / 311 · v11: 82 / 130–150 / 287) · 972K-token prompt prefilled in 85 s · Hermes tool-calling 10/10
+
+## Round 11b — the bisect finishes on one PR, and v20 is promoted (2026-09-21, 07:38–12:30)
+
+Two more nightlies split the `af1c0149` set, then the v20 window (r1 → v18 → r1, loaded autotune), then the first fill of the agent claim card. Bundle: [`results/2026-09-21-v20-promotion/`](results/2026-09-21-v20-promotion/).
+
+| nightly | adds | agent-tool flips | held-out | accept tool_json / shell / prose |
+|---|---|--:|--:|---|
+| `2671fedf` 09-13 | — | 1.77% | 0.00% | 0.860 / 0.908 / 0.349 |
+| `dc36fcce` 09-14 | #56512 Engram prefetch, #56464 DeepSelect (opt-in) | **1.77%** | **0.00%** | 0.860 / 0.908 / 0.349 |
+| `cd10ed6f` 09-15 | **#56633 fold mHC post into delayed pre projection** | **12.66%** | **9.00%** | 0.878 / **0.829** / 0.319 |
+| `af1c0149` 09-16 | #56962 Mega-mHC | 11.73% | 8.72% | **0.757 / 0.760 / 0.260** |
+
+`dc36fcce` is bit-identical to `2671fedf` on the teacher-forced corpus: Engram prefetch and DeepSelect are exonerated. **The drift enters with #56633**, one PR, same box, same weights, T=0 logprobs; Mega-mHC on top is what costs DSpark acceptance on tool-JSON. Filed upstream as a single-PR finding (see the ledger).
+
+**v20 window**, same morning, loaded autotune set `a34f9ad4`: C1 **180.9 / 171.8 / 180.3** (v20a / v18 / v20b — +5.3% / +4.9%, pair mean +5.1% against the ≥5% bar, met on the mean and stated so), C16 979 / 952 / 965, fund C24 warm agent p95 2.83 / 3.36 / 2.42 s, cold 120K p50 8.4 / 8.4 / 8.6 s, tools 64/64 on all three. **Held-out sibling** (BFCL live_simple + live_multiple, 1,311, frozen this morning, run once): v20 **78.8%** vs v18 **78.9%** — pass against ≥ v18−1. Dev suite on the same boots 92.7% vs 93.0% (v20 was 93.5% the night before; ±1 pt is run-to-run on 600). Cost per 1,000 solved held-out tasks at $0.15/kWh: $0.008 vs ~$0.007 (v18 W estimated — its power sample was lost to a script bug; labelled). **Promoted 12:30 CDT; v18 is the rollback.** The promotion is to an eight-day-old nightly on purpose: every later nightly inherits #56633.
 
 ## Round 11 — where the drift enters, and a v20 candidate (2026-09-21, 05:30–06:55)
 
@@ -14,7 +29,7 @@ Three nightlies between the 0909 image and the reverted v19, hook on, v19 flags,
 | `0bfc7a15` | 09-17 | #56935 mega-attn + NVFP4 KV, #56568/#57204 MegaMoE | 10.99% | 0.838 / 0.829 / 0.336 | 183 |
 | `dee37d89` (v19) | 09-18 | #56266 Mega-Gate | 11.45% | 0.838 / 0.829 / 0.336 | 183 |
 
-**The drift enters with the `af1c0149` PR set** — DeepSelect top-k for the sparse indexer, Mega-mHC, Engram prefetch; this bundle does not separate the three. The MegaMoE/mega-attn rung then recovers part of the acceptance without touching the flips. **`2671fedf` is the v20 candidate**: v18's acceptance on every class, BFCL **93.5%** (v18 93.3), +5–10% C1, and an order of magnitude less drift than v19 — it passes the promotion rule as written. Not promoted: it needs a same-window v18 pair, the fund harness at C16/C24 and a pinned autotune set in a scheduled window. `0bfc7a15` and `dee37d89` share the `ddf01704` autotune hash, so Mega-Gate does not change MoE shapes.
+**The drift enters with the `af1c0149` PR set** — DeepSelect top-k for the sparse indexer, Mega-mHC, Engram prefetch; this bundle does not separate the three (Round 11b does: it is #56633). The MegaMoE/mega-attn rung then recovers part of the acceptance without touching the flips. **`2671fedf` is the v20 candidate**: v18's acceptance on every class, BFCL **93.5%** (v18 93.3), +5–10% C1, and an order of magnitude less drift than v19 — it passes the promotion rule as written. Not promoted: it needs a same-window v18 pair, the fund harness at C16/C24 and a pinned autotune set in a scheduled window. `0bfc7a15` and `dee37d89` share the `ddf01704` autotune hash, so Mega-Gate does not change MoE shapes.
 
 ## Round 10 — the tool-call gate, and why v19 came back out (2026-09-20 evening)
 

@@ -3,8 +3,8 @@
 # status measured = a number without a pass/fail verdict (renders blue ≈).
 title: "DeepSeek-V4.1-Flash · 1× DGX Station GB300"
 subtitle: "Full 1,048,576-token context from a single GB300 — routed experts split HBM / Grace over NVLink-C2C, in-checkpoint DSpark drafter"
-version: "v18 “Many Seat” (release; v19 reverted 2026-09-20 21:42 — failed the tool-call gate, see fidelity)"
-run_id: 2026-09-18-many-seat-v16-v17-v18 (v18) · 2026-09-21-toolcall-gate-49435 (gate + revert) · 2026-09-20-fidelity
+version: "v20 “Clean Nightly” (release 2026-09-21; nightly 2671fedf — last before the #56633 mHC-fold drift; v18 = rollback; v19 reverted 2026-09-20)"
+run_id: 2026-09-21-v20-promotion (v20) · 2026-09-21-kernel-bisect · 2026-09-21-toolcall-gate-49435 (gate + v19 revert) · 2026-09-20-fidelity
 handles: "github.com/J-M-Recipes/recipes · al-engr.com · @jmeadlock"
 
 model:
@@ -14,12 +14,12 @@ model:
   active_params: "8B prefill / 16B decode"   # model card (CED: 20-layer encoder + 20-layer decoder); config: 6 of 384 routed + 1 shared per MoE layer
   checkpoint_gb: 510.3            # 510,313,343,553 B byte-verified (digest gate)
   weights_short: "as shipped · MXFP4 experts / FP8 attn+Engram · KV fp8_ds_mla (image default)"
-  engine_extra: "vLLM deepseekv41-flash-0909 (day-0 image, dsv41-feat e47aa78) · FlashInfer 0.6.18 · autotune hash 9ac7b387"
-  memory: "206.6 GiB HBM experts + 62.3 GiB Grace pinned · KV pool 2.50M tok (fp8_ds_mla)"
+  engine_extra: "vLLM nightly 2671fedf (2026-09-13; v18 was day-0 0909) · FlashInfer 0.6.18 · autotune set a34f9ad4 (189 configs)"
+  memory: "206.6 GiB HBM experts + 62.3 GiB Grace pinned (off54) · KV pool 2.55M tok (fp8_ds_mla)"
 
 hero:
-  c1:      { value: 172, unit: tok/s, class: prose, note: "warm, T=0, 192 tok · 171.5–172.5 across 7 windows · agent/code/shell text 190–260 on the fixture · the v19 nightly read 183 (+6.6%) and was reverted: acceptance −4/−8 pt on tool/shell text" }
-  c16:     { value: 950, unit: tok/s, note: "942–966 across windows · C8 655 · max-num-seqs 24 · 35-seat fund harness C24 aggregate 285, C24 warm turn p50 0.55 s, C16 warm p95 1.8 s" }
+  c1:      { value: 181, unit: tok/s, class: prose, note: "warm, T=0, 192 tok · 180.3–180.9 two boots vs v18 171.8 same window (+5.1% pair mean) · agent/code/shell text 190–260 on the fixture · the v19 nightly read 183 (+6.6%) and was reverted: acceptance −4/−8 pt on tool/shell text" }
+  c16:     { value: 970, unit: tok/s, note: "979 / 965 two boots vs v18 952 · C8 670 / 661 vs 660 · max-num-seqs 24 · 35-seat fund harness C24 aggregate 285, C24 warm turn p50 0.55 s, C16 warm p95 1.8 s" }
   prefill: { value: 22.7K, unit: tok/s, note: "104K prompt in 4.6 s · 6.5K @ 15.7K tok/s · 972K prompt in 85 s · 1K / 256K points pending" }
 
 guesser:
@@ -62,14 +62,23 @@ harness:
     summary: "T=0, no thinking, tool_choice auto, 1 retry, C8 BFCL / C16 fund tools, 4-turn fund conversations"
   dev:
     name: BFCL dev (simple_python 400 + multiple 200)
-    solved: 560
+    solved: 556
     n: 600
-    pct: "93.3%"
+    pct: "92.7%"
     status: pass
-    note: "v18 (0909 + hook), 2026-09-21 Card C; same grader as candidates (r1 2671fedf: 561/600 = 93.5%)"
+    note: "v20 on the promotion boot; 561/600 (93.5%) the night before — ±1 pt run-to-run on 600. v18 same boots 558/600 (93.0%), 560 (93.3%). Decides candidacy only"
   heldout:
     name: BFCL live sibling (live_simple 258 + live_multiple 1,053)
-    # frozen 2026-09-21; first run at the v20 promotion window — pending until then
+    solved: 1033
+    n: 1311
+    pct: "78.8%"
+    status: pass
+    note: "frozen 2026-09-21, first and only run at promotion: v20 78.8% vs v18 78.9% (1035/1311), Δ −0.1 pt against the ≥ v18−1 rule. live_simple 82.2 vs 81.0, live_multiple 78.0 vs 78.4"
   cost:
-    # pending: W × s ÷ solved at $0.15/kWh from the promotion window's power lines
+    usd_per_solved_task: "0.0000078"
+    mean_w: 490
+    wall_s: 392
+    solved: 1033
+    usd_per_kwh: 0.15
+    amortized: "not stated — v20 $0.008 per 1000 solved vs v18 ~$0.007 (v18 W estimated 486, not sampled on its rerun); two-sample W mean, labelled"
 
