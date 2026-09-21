@@ -1,0 +1,22 @@
+[2026-09-21 09:50:41] Breakable CUDA graph is incompatible with KDA hybrid linear attention; disabling prefill CUDA graph.
+[2026-09-21 09:51:01] DFLASH fa4 draft: overriding KV cache dtype torch.float8_e4m3fn -> torch.bfloat16 (fa4 needs K.dtype == Q.dtype; cannot read the target's quantized KV).
+[2026-09-21 09:51:06] Load weight begin. avail mem=248.87 GB
+[2026-09-21 09:51:06] Detected nvfp4 checkpoint.
+[2026-09-21 09:52:14] Load weight end. elapsed=67.80 s, type=Glm5NextForConditionalGeneration, quant=modelopt_fp4, quant_algo=NVFP4, avail mem=71.90 GB, mem usage=176.97 GB.
+[2026-09-21 09:52:19] Load weight begin. avail mem=71.77 GB
+[2026-09-21 09:52:20] Load weight end. elapsed=0.27 s, type=DFlash2DraftModel, avail mem=69.09 GB, mem usage=2.68 GB.
+[2026-09-21 09:52:20] DFLASH fa4 draft: overriding KV cache dtype torch.float8_e4m3fn -> torch.bfloat16 (fa4 needs K.dtype == Q.dtype; cannot read the target's quantized KV).
+[2026-09-21 09:52:20] DFLASH block size mismatch: using speculative_num_draft_tokens=7 but draft config block_size=8.
+[2026-09-21 09:52:20] Initialized DFLASH draft runner. attention_backend=fa4, model=DFlash2DraftModel, block_size=7, draft_window_size=None, compact_cache=False
+[2026-09-21 09:52:20] DFLASH draft runner ready. mask_token=<|MASK|>, mask_token_id=154856, mask_token_id_override=154856, noise_embed_scale=1.0
+[2026-09-21 09:52:20] DFLASH fused KV materialization enabled. n_layers=5, num_kv_heads=8, head_dim=128
+[2026-09-21 09:52:20] max_running_requests is capped to 9 by the mamba state cache (max_mamba_cache_size=48, 5 state slots per request). To raise it: increase --mamba-full-memory-ratio or --max-mamba-
+[2026-09-21 09:52:20] Mamba Cache is allocated. max_mamba_cache_size: 48, conv_state size: 0.24GB, ssm_state size: 6.70GB intermediate_ssm_state_cache size: 9.57GB intermediate_conv_window_cache size:
+[2026-09-21 09:52:20] KV Cache is allocated. dtype: torch.float8_e4m3fn, #tokens: 575808, KV size: 3.80 GB
+[2026-09-21 09:52:22] KV Cache is allocated. dtype: torch.bfloat16, #tokens: 575808, K size: 5.49 GB, V size: 5.49 GB
+[2026-09-21 09:52:31] KDA kernel dispatcher: decode=TritonKDAKernel, verify=TritonKDAKernel, extend=TritonKDAKernel packed_decode=True
+[2026-09-21 09:55:55] DFLASH selector decode folded into the draft cuda graph (sampling_enabled=True).
+[2026-09-21 09:56:17] DFLASH sampling pre-warm: borrowing=False bs=9 peak=123047936 B headroom=162077696 B
+[2026-09-21 09:56:17] max_total_num_tokens=575808, chunked_prefill_size=8192, max_prefill_tokens=8192, max_running_requests=9, context_len=1048576, available_gpu_mem=35.58 GB
+sglang 0.0.0.dev1+g00143e9c2
+215.54 W, 2070 MHz, 39

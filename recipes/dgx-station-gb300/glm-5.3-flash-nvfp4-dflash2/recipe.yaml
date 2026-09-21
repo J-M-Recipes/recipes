@@ -39,12 +39,12 @@ hardware:
 
 runtime:
   engine: SGLang
-  engine_version: main nightly 0.0.0.dev1+g00143e9c2 (includes #36507 GLM-5.3-Flash support and #38621 NVFP4 mixed-precision loading; no source build, no docker commit)
-  engine_commit: 00143e9c
+  engine_version: "0.5.20 (tagged release 2026-09-18; first release listing GLM-5.3-Flash supported — #36507, #38621; carries #37818 DFlash/KDA checkpoint fix. Prior pin: main nightly 0.0.0.dev1+g00143e9c2, 2026-09-11)"
+  engine_commit: 94602c9c
   container:
-    image: lmsysorg/sglang:nightly-dev-cu13-20260911-00143e9c
-    digest: sha256:f159f796afdd2bcfa924f4fa09564c82c7d54fc24b1ecae2e308213b8592cb0b
-    base_image: "released-track nightly, no source build. Replaces the frozen glm53-nvfp4-sglang:gb300-v2 @ sha256:f710fd42cf749cbc6c3e1799244b5bdefd3b8f34d978aa810a9c1f97f86b143a (scripts/build-image.sh) from run 2026-09-01; nightly reproduces its numbers (g0 vs g1 in throughput.csv)"
+    image: lmsysorg/sglang:v0.5.20-cu130
+    digest: sha256:06e4f2ed21afde4ff513cda65070124e727ba23ccaeff7712b8c40e1097d611f
+    base_image: "tagged release image, no source build (rebased 2026-09-21 from nightly-dev-cu13-20260911-00143e9c @ sha256:f159f796afdd2bcfa924f4fa09564c82c7d54fc24b1ecae2e308213b8592cb0b, results/2026-09-21-v0520-rebase). The nightly replaced the frozen glm53-nvfp4-sglang:gb300-v2 @ sha256:f710fd42cf749cbc6c3e1799244b5bdefd3b8f34d978aa810a9c1f97f86b143a (scripts/build-image.sh) from run 2026-09-01; nightly reproduces its numbers (g0 vs g1 in throughput.csv)"
   key_libraries:
     torch: 2.13.0+cu130
     transformers: 5.12.1
@@ -52,7 +52,7 @@ runtime:
 
 launch:
   script: scripts/launch-glmf.sh
-  command: "TAG=daily IMAGE=lmsysorg/sglang:nightly-dev-cu13-20260911-00143e9c MODEL=/path/to/GLM-5.3-Flash-NVFP4 DRAFT=/path/to/GLM-5.3-Flash-DFlash2 SPEC=dflash KV=fp8_e4m3 MEM=0.85 CTX=1048576 MAXBS=16 EXTRA='--max-mamba-cache-size 48 --speculative-dflash-block-size 7' bash scripts/launch-glmf.sh"
+  command: "TAG=daily IMAGE=lmsysorg/sglang:v0.5.20-cu130 MODEL=/path/to/GLM-5.3-Flash-NVFP4 DRAFT=/path/to/GLM-5.3-Flash-DFlash2 SPEC=dflash KV=fp8_e4m3 MEM=0.85 CTX=1048576 MAXBS=16 EXTRA='--max-mamba-cache-size 48 --speculative-dflash-block-size 7' bash scripts/launch-glmf.sh"
   health: "curl -fs http://localhost:30001/health; then warm every batch shape you will serve (python3 -c 'import flash_bench as fb; fb.knee(reps=0)' from scripts/). First hit of each new batch shape after boot is kernel autotune, not serving."
   warmup: "python3 -c 'import flash_bench as fb; fb.knee(reps=0)' from scripts/ — warms C1..C32 once each; exact launch line in results/2026-09-11-nvidia-nvfp4-b7-1M/launch-command.txt"
   notable_flags:
@@ -69,7 +69,13 @@ launch:
     - "--kv-cache-dtype fp8_e4m3 : only the DSA indexer pool is fp8 on this model; the MLA KV stays bf16 (sgl-project/sglang#36830, index_kpool=4). Do not describe this recipe as FP8 KV."
 
 metrics:
-  - name: single-stream decode (recipe method)
+  - name: single-stream decode (recipe method) — v0.5.20
+    value: 201.9
+    unit: tok/s
+    workload: C1, history essay, 512 output tokens, answer-only (reasoning_effort low), DFlash2 block 7, 1M ctx, lmsysorg/sglang:v0.5.20-cu130; same window pinned-nightly control 193.3
+    aggregation: median of 3
+    provenance: { run_id: 2026-09-21-v0520-rebase, method: scripts/c1_methods.py EFFORT=low, raw: receipts/newdf/c1-low.txt }
+  - name: single-stream decode (recipe method) — nightly 00143e9c baseline
     value: 202.7
     unit: tok/s
     workload: C1, history essay, 512 output tokens, answer-only (reasoning_effort low), DFlash2 block 7, 1M ctx, nightly 8874c51a
@@ -145,6 +151,8 @@ limits:
   - "The MLA KV cache is bf16 even with --kv-cache-dtype fp8_e4m3 (sgl-project/sglang#36830). Only the DSA indexer pool is fp8."
   - "Native MTP drafter is in the checkpoint but SGLang's GLM-5.3 NextN path is broken (#37548, #36829). SGLang's cookbook MTP numbers for this model are measured with SGLANG_SIMULATE_ACC_LEN=3."
   - "Draft acceptance is 0.17 on prose and 0.62 on math (answer-only); a prose-heavy workload sees ~150 tok/s C1, not 202. Report the prompt AND reasoning_effort with every C1 number — enable_thinking is not a template variable for this model."
+  - "REBASED 2026-09-21 to v0.5.20-cu130 (results/2026-09-21-v0520-rebase): four boots one window, pinned nightly vs v0.5.20, AR and DFlash2 each. Teacher-forced logprobs on the w2-a text are bit-identical across all four servers (max delta 0.0 over 2,857 tokens); greedy 20x200 vs the DFlash reference 20/20 on both DFlash boots; tools 10/10 x4; C1 history/code/shell 193/276/155 -> 202/288/162 tok/s (+4-5%); C8 ~700 both. The #37818 KDA-checkpoint bug is NOT demonstrable with 8x2500-token greedy runs: DFlash-vs-AR diverges within the first 30-360 characters on BOTH images at identical offsets (verify-path argmax tie-breaking, not a checkpoint miss), and old-vs-new DFlash diverges only where old-vs-new AR also does (~1,500-2,500 tokens in, image numerics). Fix adopted on trust of the upstream regression test plus no-regression here."
+  - "CORRECTED 2026-09-21: DFlash2 is target-verified but NOT byte-identical to autoregressive decoding on this model. Same image, same weights, T=0: DFlash vs AR agree 1/20 on 200-token prompts and 0/8 on 2,500-token prompts, first divergence typically inside the first 100 tokens, while teacher-forced logprobs of either text are identical (delta 0.0). The earlier greedy gate compared DFlash boots against a DFlash reference (w2-a), which is why it read 20/20. Claim to make: every emitted token is accepted by the full model; claim NOT to make: byte-identical to AR."
   - "UPSTREAM 2026-09-20 (research/upstream-watch-2026-09-20.md): the pinned image nightly-dev-cu13-20260911-00143e9c predates sgl-project/sglang#37818 (merged 2026-09-12, fixes #37817): DFlash could miss a KDA/Mamba linear-attention state checkpoint when accepted verify tokens cross a tracking boundary, leaving full-attention KV and linear state at different positions. That is this exact configuration (GLM-5.3-Flash KDA layers + DFlash2). It would present as divergence on long generations only; the teacher-forced gate here was run on the pinned image with short references and would not see it. Fix ships in the tagged release v0.5.20 (2026-09-18, v0.5.20-cu130 digest sha256:b27fce60bc5494c118c4910702812bcfa8cee67abcdd1ff8b0902f21647552f4; 220 commits after the pin). Rebase is a scheduled-window item with the TF gate re-run on >=2K-token generations. The DFlash2 draft repo also moved twice after the pinned 7d74cdd8 ('Checkpoint update' dc77ff1c 2026-08-28, bf582e4e 2026-08-31): a newer draft is a separate acceptance axis with its own gate, not a drop-in."
 
 rollback:
