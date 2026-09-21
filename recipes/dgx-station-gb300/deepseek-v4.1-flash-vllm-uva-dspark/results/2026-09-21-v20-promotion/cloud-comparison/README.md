@@ -1,4 +1,10 @@
-# Cloud comparison — same 100 held-out tasks, Fable 5.1 vs this recipe (2026-09-21)
+# Receipt: the same 100 held-out tasks through a frontier API (2026-09-21) — NOT a recipe claim
+
+> Kept as a receipt because the run happened and the harness findings below are real. **No cross-vendor cost ratio is
+> part of this recipe or its card** (decision 2026-09-21 afternoon): a ratio against another vendor's list price rots
+> the day the price changes, depends on a peer choice that is a judgment call, and turns a measurement ledger into a
+> comparison page. The card carries this recipe's own cost per solved task with its basis stated; that is the claim.
+
 
 The point of the agent claim card is that a cost claim has to name its denominator. This bundle puts a frontier API
 model through the **same** `harness/protocol.yaml` (single turn, `tool_choice auto`, max_tokens 2048, same grader,
@@ -15,9 +21,7 @@ prices both sides on stated bases.
 | DSV4.1-Flash v20, this box, C8 | 86 | | + Station amortized $3.80/hr (≈$100k over 3 yr, 24×7) | **$0.30** |
 | DSV4.1-Flash v20, this box, C1 (estimate) | 86 | | + amortized, single stream (~8× the C8 wall) | ~$2.4 |
 
-Headline, stated conservatively on both sides: **≥ 58× cheaper per solved task at C8, amortized, against the Fable floor**
-(the floor assumes Fable solves every task). Measured point estimate is 85× ($25.5 / $0.30). Energy-only the ratio is
-~2,000×, and that is not a fair basis — it is on the card so nobody has to ask.
+The rows are left as measured. No ratio is drawn from them here.
 
 ## How the Fable side was metered
 
