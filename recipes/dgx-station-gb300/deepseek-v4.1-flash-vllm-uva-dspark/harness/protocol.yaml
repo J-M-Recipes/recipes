@@ -1,0 +1,27 @@
+# Fixed outer protocol for agent claims on this recipe (J-M-Recipes, DSV4.1-Flash on one GB300)
+# Pinned so the harness card travels with the model claim. Any change = new file + new sha256 + new run.
+# Suggested by @getmeosu (x.com/getmeosu/status/2102010258247823804), adopted 2026-09-21.
+version: 1
+endpoint: "OpenAI-compatible /v1/chat/completions on the served lane; API key not part of the claim"
+sampling: { temperature: 0, thinking: false, max_tokens: 2048 }
+tool_choice: auto
+retries: "1 on transport error; a second failure counts as unsolved"
+concurrency: "8 (BFCL suites) · 16 (fund tools battery)"
+turns: "single-turn (BFCL) · 4 sequential turns per conversation (fund tools battery)"
+system_prompt:
+  bfcl: "none (BFCL supplies the user turn and the function list verbatim; parameter types dict->object, tuple->array, float->number)"
+  fund_tools: "You are an analyst assistant at an investment fund. Use the provided tools when a task calls for one; do not answer from memory."
+solved:
+  bfcl: "exactly one tool call whose function name matches a ground-truth key and whose arguments satisfy every required ground-truth parameter (value in the allowed list after JSON normalisation; 5 == 5.0; strings stripped, case-insensitive) with no extra parameters. Grader: results/2026-09-21-toolcall-gate-49435/bfcl_gate.py — a same-grader A/B, not a leaderboard score"
+  fund_tools: "the cycled correct tool is named, required args present, arguments are valid JSON (iwbench.py tools)"
+suites:
+  dev: "BFCL_v4_simple_python (400) + BFCL_v4_multiple (200) = 600 · used during development · decides candidacy"
+  heldout: "BFCL_v4_live_simple (258) + BFCL_v4_live_multiple (1,053) = 1,311 · frozen 2026-09-21 · run only at promotion · decides promotion"
+  data_sha256: "results/2026-09-21-toolcall-gate-49435/BFCL-SHA256SUMS"
+rule: "a candidate that passes dev and fails held-out is recorded as overfit-to-harness and is not re-run against the sibling"
+cost:
+  formula: "usd_per_solved_task = mean_gpu_watts * wall_seconds / 3600 / 1000 * usd_per_kwh / tasks_solved"
+  power_source: "nvidia-smi -i 1 power.draw sampled at suite start and end (runner power-pre/power-post lines); mean of the two, labelled as such"
+  usd_per_kwh: 0.15
+  usd_per_kwh_note: "stated assumption (Telluride residential)"
+  amortized_hardware: "not in the headline; when shown, stated separately as usd_per_hour * wall_hours / solved with the usd_per_hour assumption printed"

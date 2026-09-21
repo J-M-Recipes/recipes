@@ -126,6 +126,32 @@ def fidelity(card: dict) -> str:
     return "\n".join(items) or f'<li class="pend">no fidelity evidence recorded</li>'
 
 
+def harness(card: dict) -> str:
+    """Claim card for agent results (per @getmeosu, 2026-09-20): fixed outer protocol + held-out sibling + cost per solved task.
+    Every field is pending (amber) until measured; nothing here is inferred from tok/s."""
+    h = card.get("harness") or {}
+    if not h:
+        return '<li class="pend">harness card pending — protocol hash, held-out sibling suite, cost per solved task</li>'
+    items = []
+    proto = h.get("protocol") or {}
+    if proto:
+        items.append(f'<li class="ok">protocol <span class="mono">{e(proto.get("file", "?"))}</span> sha256 <span class="mono">{e(str(proto.get("sha256", ""))[:12])}</span> · {e(proto.get("summary", ""))}</li>')
+    else:
+        items.append('<li class="pend">fixed outer protocol: pending</li>')
+    for key, label in (("dev", "dev suite (decides candidacy)"), ("heldout", "held-out sibling (decides promotion; never run in a campaign)")):
+        r = h.get(key) or {}
+        if r.get("solved") is not None:
+            items.append(f'<li class="{"ok" if r.get("status", "pass") == "pass" else "meas"}">{label}: <b>{e(r.get("name", ""))}</b> {e(r["solved"])}/{e(r.get("n", "?"))} solved ({e(r.get("pct", ""))}) · {e(r.get("note", ""))}</li>')
+        else:
+            items.append(f'<li class="pend">{label}: pending</li>')
+    c = h.get("cost") or {}
+    if c.get("usd_per_solved_task") is not None:
+        items.append(f'<li class="meas">cost per solved task <b>${e(c["usd_per_solved_task"])}</b> = {e(c.get("mean_w", "?"))} W × {e(c.get("wall_s", "?"))} s ÷ {e(c.get("solved", "?"))} solved @ ${e(c.get("usd_per_kwh", "?"))}/kWh (energy only; hardware amortized: {e(c.get("amortized", "not stated"))})</li>')
+    else:
+        items.append('<li class="pend">cost per solved task: pending (W × s ÷ solved @ $/kWh)</li>')
+    return "\n".join(items)
+
+
 def render(recipe_dir: Path) -> str:
     recipe = yaml.safe_load((recipe_dir / "recipe.yaml").read_text())
     derived = params_from_config(recipe_dir)
@@ -152,6 +178,7 @@ def render(recipe_dir: Path) -> str:
         "HERO": hero(card),
         "ROW2": row2(recipe, card),
         "FIDELITY": fidelity(card),
+        "HARNESS": harness(card),
         "RECIPE_PATH": e(rel),
         "RUN_ID": e(card.get("run_id", "")),
         "HANDLES": e(card.get("handles", "github.com/J-M-Recipes/recipes")),

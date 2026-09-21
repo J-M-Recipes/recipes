@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
 """bfcl_gate.py — tool-call correctness gate for the :30006 lane (BFCL v4 simple_python + multiple, our grader).
 
-Usage: python3 bfcl_gate.py <tag> <data_dir> [out_dir]
-  data_dir holds BFCL_v4_simple_python.json, BFCL_v4_multiple.json and possible_answer/ copies of both (pre-fetched).
+Usage: SUITE=dev|heldout python3 bfcl_gate.py <tag> <data_dir> [out_dir]
+  dev = simple_python+multiple (600; used during development). heldout = live_simple+live_multiple (1,311; the frozen
+  sibling suite — run ONLY at promotion, never during a campaign). data_dir holds the BFCL_v4_*.json files + possible_answer/.
 Writes <out>/bfcl-<tag>.jsonl (one line per case: model call, verdict, spec-decode metrics if present)
 and <out>/bfcl-<tag>-summary.json.
 
@@ -124,10 +125,14 @@ def load(data_dir, name):
     return cases
 
 
+SUITES = {"dev": ("simple_python", "multiple"), "heldout": ("live_simple", "live_multiple")}
+
+
 def main():
     tag, data_dir = sys.argv[1], sys.argv[2]
     out = sys.argv[3] if len(sys.argv) > 3 else "."
-    cases = load(data_dir, "simple_python") + load(data_dir, "multiple")
+    suite = os.getenv("SUITE", "dev")
+    cases = [c for name in SUITES[suite] for c in load(data_dir, name)]
     if LIMIT: cases = cases[:LIMIT]
     t0 = time.time(); recs = []
     with open(f"{out}/bfcl-{tag}.jsonl", "w") as f, ThreadPoolExecutor(CONC) as ex:
@@ -136,7 +141,8 @@ def main():
             if i % 50 == 0: print(f"[{tag}] {i}/{len(cases)} {time.time()-t0:.0f}s", flush=True)
     summ = {"tag": tag, "model": MODEL, "n": len(recs), "wall_s": round(time.time() - t0),
             "errors": sum(1 for r in recs if r.get("error"))}
-    for cat in ("simple_python", "multiple", "all"):
+    summ["suite"] = suite
+    for cat in SUITES[suite] + ("all",):
         rs = [r for r in recs if not r.get("error") and (cat == "all" or r["cat"] == cat)]
         n = len(rs); ok = sum(1 for r in rs if r["ok"])
         whys = {}
@@ -148,7 +154,8 @@ def main():
     if specs:
         summ["spec_metrics_n"] = len(specs); summ["spec_sample"] = specs[0]
     json.dump(summ, open(f"{out}/bfcl-{tag}-summary.json", "w"), indent=1)
-    print(f"BFCL {tag}: all {summ['all']['ok']}/{summ['all']['n']} = {summ['all']['acc']} | simple {summ['simple_python']['acc']} | multiple {summ['multiple']['acc']} | errors {summ['errors']} | {summ['wall_s']}s")
+    a, b = SUITES[suite]
+    print(f"BFCL {tag} [{suite}]: all {summ['all']['ok']}/{summ['all']['n']} = {summ['all']['acc']} | {a} {summ[a]['acc']} | {b} {summ[b]['acc']} | errors {summ['errors']} | {summ['wall_s']}s")
 
 
 if __name__ == "__main__":

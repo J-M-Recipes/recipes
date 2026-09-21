@@ -53,3 +53,23 @@ fidelity:
   - { status: pass,    text: "Tool calling: BFCL v4 simple_python+multiple 560/600 = 93.3% exact-match (our AST grader, T=0, 2026-09-20) · Hermes harness 10/10 · 35-seat fund harness 64/64" }
   - { status: measured, text: "Teacher-forced Δlogprob vs no-hook reference, 79,544 positions (prefill-only): v18 hook mean |Δ| 0.030, top-1 flips 1.06% corpus-wide and 0.56% on agent/tool-shaped text — uniform noise. The reverted v19 nightly was 0.059 / 2.2% corpus-wide but 0.257 / 11.45% on tool-shaped text; unchanged on nightly d05da62e (+#49435), so it is the nightly’s kernels, not the KV writer. Perplexity unchanged either way." }
   - { status: measured, text: "GPQA-Diamond 198 run by us, T=0, reasoning on, 64k budget: v18 86.9% (172/198, ±4.7, 7 truncated) · v19 nightly 87.4% (173/198) — equal-budget pair, wash · model card 90.9 at max effort, T=1 — anchor, not a reproduction" }
+
+# Agent claim card (per @getmeosu, adopted 2026-09-21): fixed outer protocol + held-out sibling + cost per solved task.
+harness:
+  protocol:
+    file: harness/protocol.yaml
+    sha256: 61c2d22b63516502c57ce876cb4a0884fb6f8e043a5707f5479cef95e99c32da
+    summary: "T=0, no thinking, tool_choice auto, 1 retry, C8 BFCL / C16 fund tools, 4-turn fund conversations"
+  dev:
+    name: BFCL dev (simple_python 400 + multiple 200)
+    solved: 560
+    n: 600
+    pct: "93.3%"
+    status: pass
+    note: "v18 (0909 + hook), 2026-09-21 Card C; same grader as candidates (r1 2671fedf: 561/600 = 93.5%)"
+  heldout:
+    name: BFCL live sibling (live_simple 258 + live_multiple 1,053)
+    # frozen 2026-09-21; first run at the v20 promotion window — pending until then
+  cost:
+    # pending: W × s ÷ solved at $0.15/kWh from the promotion window's power lines
+
