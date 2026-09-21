@@ -54,6 +54,10 @@ v19 changes three things at once vs v18: nightly image `dee37d89` (kernels), `--
 60 → 54. The tool-shaped drift could be the fp8 KV path (attention numerics on short, structured, high-confidence sequences)
 or the nightly's MoE/attention kernels. One boot separates them.
 
+## Addendum 2026-09-20 evening — a physical candidate for Finding 1 appeared upstream
+
+vLLM **#49435 "Fix SM100 fp8_ds_mla cache scales"** merged 2026-09-20 00:15Z (`a7fda4c88`, in nightly `d05da62e`), after our `dee37d89` pin. The generic `concat_and_cache_ds_mla` writer stored an arbitrary fp32 tile scale; the SM100 reader converts it to E8M0, so the two sides could quantize with different scales. The fix forces `2^ceil(log2(max(amax/448, 1e-4)))`. v19 is the first lane here on `fp8_ds_mla`. DSV4.1's compressed-latent writer (`fused_compress_quant_cache.py`) already used power-of-two scales, so this only bites if some v19 KV group goes through the generic kernel on SM103 — unverified from the tree. Short, structured, high-confidence sequences are where a KV-scale mismatch would show first, which matches the per-class split above. See `../../research/upstream-watch-2026-09-20.md`. **Step 3 below is amended**: the isolation boot should be `nightly-d05da62e` (with #49435) at the v19 flags, not the nvfp4-KV fork, and it is now the second step, not the third. Rebase caveat: #56227 (same nightly) makes post-prefix-hit output non-identical to cold by design — run `tf_logprob.py` and parity cold-only.
+
 ## Plan when development resumes (in order; ~2 h box time, all `docker start`s + one live tune)
 
 1. **Tool-call correctness at real n, same window, both containers.** BFCL-v3 `simple` + `multiple` (~400 calls, exact-match
