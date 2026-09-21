@@ -6,6 +6,8 @@
 
 Round 1 (September 1) is preserved below; two of its conclusions were wrong and are corrected here.
 
+> **Upstream watch (2026-09-20).** The pinned image (`nightly-dev-cu13-20260911-00143e9c`) predates **sgl-project/sglang#37818** (merged 2026-09-12): DFlash could miss a KDA/Mamba state checkpoint when accepted verify tokens cross a tracking boundary, leaving full-attention KV and linear-attention state at different positions — this exact configuration. It would show on long generations only; our teacher-forced gate used short references on the pinned image and would not see it. The fix ships in tagged **v0.5.20** (2026-09-18; first release listing GLM-5.3-Flash as supported). Rebase + long-generation TF gate is a scheduled-window item. The DFlash2 draft repo also moved twice after our `7d74cdd8` pin; a newer draft is a separate gated axis. Table: [`research/upstream-watch-2026-09-20.md`](research/upstream-watch-2026-09-20.md).
+
 ![Serving topology](diagrams/topology.svg)
 
 ## What this runs
