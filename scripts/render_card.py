@@ -138,17 +138,28 @@ def harness(card: dict) -> str:
         items.append(f'<li class="ok">protocol <span class="mono">{e(proto.get("file", "?"))}</span> sha256 <span class="mono">{e(str(proto.get("sha256", ""))[:12])}</span> · {e(proto.get("summary", ""))}</li>')
     else:
         items.append('<li class="pend">fixed outer protocol: pending</li>')
-    for key, label in (("dev", "dev suite (decides candidacy)"), ("heldout", "held-out sibling (decides promotion; never run in a campaign)")):
-        r = h.get(key) or {}
-        if r.get("solved") is not None:
-            items.append(f'<li class="{"ok" if r.get("status", "pass") == "pass" else "meas"}">{label}: <b>{e(r.get("name", ""))}</b> {e(r["solved"])}/{e(r.get("n", "?"))} solved ({e(r.get("pct", ""))}) · {e(r.get("note", ""))}</li>')
-        else:
-            items.append(f'<li class="pend">{label}: pending</li>')
-    c = h.get("cost") or {}
-    if c.get("usd_per_solved_task") is not None:
-        items.append(f'<li class="meas">cost per solved task <b>${e(c["usd_per_solved_task"])}</b> = {e(c.get("mean_w", "?"))} W × {e(c.get("wall_s", "?"))} s ÷ {e(c.get("solved", "?"))} solved @ ${e(c.get("usd_per_kwh", "?"))}/kWh (energy only; hardware amortized: {e(c.get("amortized", "not stated"))})</li>')
+    dev = h.get("dev") or {}
+    if dev.get("solved") is not None:
+        items.append(f'<li class="ok">dev suite (decides candidacy): <b>{e(dev.get("name", ""))}</b> {e(dev["solved"])}/{e(dev.get("n", "?"))} solved ({e(dev.get("pct", ""))}) · {e(dev.get("note", ""))}</li>')
     else:
-        items.append('<li class="pend">cost per solved task: pending (W × s ÷ solved @ $/kWh)</li>')
+        items.append('<li class="pend">dev suite (decides candidacy): pending</li>')
+    r = h.get("heldout") or {}; c = h.get("cost") or {}
+    if r.get("solved") is not None and c.get("usd_per_1000_solved") is not None:
+        # THE PAIR: Pass@1 next to $/solved on one line, so a cost claim cannot hide a quality drop (getmeosu, 2026-09-21)
+        u = r.get("unsolved") or {}
+        unsolved = " · ".join(f"{e(v)} {e(k)}" for k, v in u.items()) if u else "breakdown pending"
+        items.append(
+            f'<li class="pair"><span class="big">Pass@1 {e(r.get("pct", ""))}</span> <span class="dim">({e(r["solved"])}/{e(r.get("n", "?"))})</span>'
+            f' <span class="sep">·</span> <span class="big">${e(c["usd_per_1000_solved"])} / 1000 solved</span>'
+            f'<br><span class="dim">{e(r.get("name", "held-out sibling"))} · decides promotion · protocol sha {e(str(proto.get("sha256", ""))[:12])}'
+            f' · priced {e(c.get("priced_on", "date pending"))}: {e(c.get("basis", ""))}</span>'
+            f'<br><span class="dim">unsolved: {unsolved}</span></li>')
+    else:
+        if r.get("solved") is not None:
+            items.append(f'<li class="ok">held-out sibling (decides promotion): <b>{e(r.get("name", ""))}</b> {e(r["solved"])}/{e(r.get("n", "?"))} solved ({e(r.get("pct", ""))})</li>')
+        else:
+            items.append('<li class="pend">held-out sibling (decides promotion; never run in a campaign): pending</li>')
+        items.append('<li class="pend">Pass@1 · $ / solved pair: pending (needs held-out run + priced cost)</li>')
     return "\n".join(items)
 
 
@@ -196,13 +207,36 @@ def to_png(html_path: Path, png_path: Path) -> bool:
         exe = c if Path(c).exists() else shutil.which(c)
         if not exe:
             continue
+        # Chrome's --screenshot captures exactly the viewport; a fixed 900 px silently cropped the fidelity and
+        # agent-claim strips once the card grew. Render tall, then trim background-only rows (Pillow; else stays tall).
         cmd = [exe, "--headless=new", "--disable-gpu", "--hide-scrollbars",
-               f"--screenshot={png_path}", "--window-size=1200,900", "--force-device-scale-factor=2",
+               f"--screenshot={png_path}", "--window-size=1200,2400", "--force-device-scale-factor=2",
                html_path.resolve().as_uri()]
         r = subprocess.run(cmd, capture_output=True, text=True)
         if r.returncode == 0 and png_path.exists():
+            _trim_bottom(png_path)
             return True
     return False
+
+
+def _trim_bottom(png_path: Path) -> None:
+    try:
+        from PIL import Image
+    except ImportError:
+        return
+    im = Image.open(png_path).convert("RGB")
+    w, h = im.size
+    bg = im.getpixel((w - 4, h - 4))  # page background sampled at the bottom-right corner
+    px = im.load()
+    last = h - 1
+    while last > 0:
+        row = [px[x, last] for x in range(0, w, 16)]
+        if any(abs(p[0] - bg[0]) + abs(p[1] - bg[1]) + abs(p[2] - bg[2]) > 24 for p in row):
+            break
+        last -= 1
+    cut = min(h, last + 1 + 48)  # keep 24 css px of bottom padding at 2x
+    if cut < h:
+        im.crop((0, 0, w, cut)).save(png_path)
 
 
 def main() -> None:
