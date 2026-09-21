@@ -1,0 +1,20 @@
+non-default args: {'model_tag': '/model', 'enable_auto_tool_choice': True, 'tool_call_parser': 'deepseek_v41', 'host': '0.0.0.0', 'port': 30006, 'model': '/model', 'trust_remote_co
+Resolved Engram configuration: EngramConfig(cpu_offload=True, embedding_across_dp=False, dp_shared_memory=False)
+Using backend AttentionBackendEnum.FLASH_ATTN for vit attention
+Using AttentionBackendEnum.FLASH_ATTN for MMEncoderAttention.
+Using FlashInferCutedslMxfp8LinearKernel for MXFP8 GEMM
+Using DeepSeek's fp8_ds_mla KV cache format.
+Engram table offloaded to pinned host memory: 384006168 rows x 256, 94.42 GiB per rank
+Engram table offloaded to pinned host memory: 384016682 rows x 256, 94.42 GiB per rank
+Resolved Engram configuration: EngramConfig(cpu_offload=True, embedding_across_dp=False, dp_shared_memory=False)
+Using FlashInfer for top-p & top-k sampling.
+(EngineCore pid=918) PIN_HOT rehome order n=40 hbm_layers=31 uva_layers=9 strategy=hbm-then-uva (interleave overflows; UVA needs +5.2GiB, HBM frees 1.6)
+(EngineCore pid=918) PIN_HOT rehome done layers=40 HBM_expert=206.61GiB pinned_expert=62.33GiB hbm_free=23.12GiB host_avail=19.28GiB (expect ~206.6 / ~62.4)
+Graph capturing finished in 71 secs, took 1.29 GiB
+GPU KV cache size: 3,179,961 tokens, Maximum concurrency for 1,048,576 tokens per request: 3.03x
+Using FlashInfer autotune cache file: /root/.cache/vllm/flashinfer_autotune_cache/0.6.18.post1/103a/ccaf97c66fb75ac99adc2a262b747fd8348c039a426dd5857ddf41f23ec65d0d/autotune_config
+(EngineCore pid=918) 2026-09-21 02:01:41,802 - INFO - autotuner.py:972 - flashinfer.jit: [Autotuner]: Autotuning process starts ...
+Running FlashInfer autotune with 8192 tokens and token buckets (1, 2, 4, 8, 16, 32, 64, 128, 256, 512, 768, 1024, 1280, 1536, 1792, 2048, 2560, 3072, 3584, 4096, 8192).
+(EngineCore pid=918) 2026-09-21 02:17:58,513 - INFO - autotuner.py:995 - flashinfer.jit: [Autotuner]: Autotuning process ends
+(EngineCore pid=918) 2026-09-21 02:17:58,619 - INFO - autotuner.py:2652 - flashinfer.jit: [Autotuner]: Saved 189 configs to /root/.cache/vllm/flashinfer_autotune_cache/0.6.18.post1
+Graph capturing finished in 13 secs, took 1.10 GiB

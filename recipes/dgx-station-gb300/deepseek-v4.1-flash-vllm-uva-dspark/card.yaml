@@ -3,8 +3,8 @@
 # status measured = a number without a pass/fail verdict (renders blue ≈).
 title: "DeepSeek-V4.1-Flash · 1× DGX Station GB300"
 subtitle: "Full 1,048,576-token context from a single GB300 — routed experts split HBM / Grace over NVLink-C2C, in-checkpoint DSpark drafter"
-version: "v19 “Nightly” (promoted 2026-09-20 · tool-shaped logit drift OPEN, see fidelity)"
-run_id: 2026-09-20-v19-pair-async (v19) · 2026-09-20-fidelity · 2026-09-18-many-seat-v16-v17-v18 (v18 rollback)
+version: "v18 “Many Seat” (release; v19 reverted 2026-09-20 21:42 — failed the tool-call gate, see fidelity)"
+run_id: 2026-09-18-many-seat-v16-v17-v18 (v18) · 2026-09-21-toolcall-gate-49435 (gate + revert) · 2026-09-20-fidelity
 handles: "github.com/J-M-Recipes/recipes · al-engr.com · @jmeadlock"
 
 model:
@@ -13,33 +13,33 @@ model:
   total_params: 552B              # backbone, model card; + 196B Engram. 284B was V4-Flash — corrected 2026-09-20
   active_params: "8B prefill / 16B decode"   # model card (CED: 20-layer encoder + 20-layer decoder); config: 6 of 384 routed + 1 shared per MoE layer
   checkpoint_gb: 510.3            # 510,313,343,553 B byte-verified (digest gate)
-  weights_short: "as shipped · MXFP4 experts / FP8 attn+Engram · KV fp8_ds_mla"
-  engine_extra: "vLLM nightly dee37d89 (0.29.1rc1.dev347) · FlashInfer 0.6.18.post1 · autotune set ddf01704 pinned"
-  memory: "206.6 GiB HBM experts + 62.3 GiB Grace pinned · KV pool 3.18M tok (fp8_ds_mla)"
+  weights_short: "as shipped · MXFP4 experts / FP8 attn+Engram · KV fp8_ds_mla (image default)"
+  engine_extra: "vLLM deepseekv41-flash-0909 (day-0 image, dsv41-feat e47aa78) · FlashInfer 0.6.18 · autotune hash 9ac7b387"
+  memory: "206.6 GiB HBM experts + 62.3 GiB Grace pinned · KV pool 2.50M tok (fp8_ds_mla)"
 
 hero:
-  c1:      { value: 183, unit: tok/s, class: prose, note: "warm, T=0, 192 tok · 183.1–183.7 over six boots/windows, v18 172 same-window (+6.6%) · agent/code/shell text 190–260 on the fixture" }
-  c16:     { value: 995, unit: tok/s, note: "C8 667 · max-num-seqs 24 · 35-seat fund harness C24 aggregate 306–310 (v18 285, +8%), C24 warm turn p50 0.55 s, C16 warm p95 1.7 s" }
+  c1:      { value: 172, unit: tok/s, class: prose, note: "warm, T=0, 192 tok · 171.5–172.5 across 7 windows · agent/code/shell text 190–260 on the fixture · the v19 nightly read 183 (+6.6%) and was reverted: acceptance −4/−8 pt on tool/shell text" }
+  c16:     { value: 950, unit: tok/s, note: "942–966 across windows · C8 655 · max-num-seqs 24 · 35-seat fund harness C24 aggregate 285, C24 warm turn p50 0.55 s, C16 warm p95 1.8 s" }
   prefill: { value: 22.7K, unit: tok/s, note: "104K prompt in 4.6 s · 6.5K @ 15.7K tok/s · 972K prompt in 85 s · 1K / 256K points pending" }
 
 guesser:
   name: DSpark
   source: "in-checkpoint MTP (mtp.0–2), same revision"
   schedule: "k = 5 at 1–4 seqs, 1 at 5–24 (batch-size schedule)"
-  accept: { prose: 30%, code: 64%, shell: 91%, tool-JSON: 84% }   # agent_fixture.sh on v19 (tool-JSON 88% on v18; one 328-token prompt, ±7% run-to-run on the control)
+  accept: { prose: 35%, code: 66%, shell: 91%, tool-JSON: 88% }   # agent_fixture_o on v18, 2026-09-20 (v19 nightly: 34 / 65 / 83 / 84 — the gate it failed)
 
 secondary:
   - label: Long-context behaviour
     items:
       "decode flat to (tokens in ctx)": 425K
       "short-request TTFT during a 480K prefill": ~1 s
-      "cold 120K p95 under 16 live streams": "8.3 s (v19a/b; v18 8.4 s same day)"
-  - label: v19 promotion evidence (2026-09-20, every bar same-window vs v18)
+      "cold 120K p95 under 16 live streams": "8.4 s"
+  - label: v19 nightly — promoted 12:11, reverted 21:42 on 2026-09-20 (results/2026-09-21-toolcall-gate-49435)
     items:
-      "C1 prose, six runs": "183.1–183.7 vs 171.6–172.1 (+6.6%) · boot-to-boot greedy parity 18/18"
-      "replay of real agent transcripts, tool turns": "+4% / +10% per-request (two windows) · text turns +1% / +12%"
-      "C16 warm p95, four windows": "1.68 / 2.56 / 1.72 / 1.72 s (v18 same windows 1.78 / 1.76 / 4.60) · fixture tool-JSON −5% on one prompt, recorded not gated"
-      "rollback": "v18 container kept stopped · docker stop v19 && docker start v18 (~5 min)"
+      "speed": "C1 183 (+6.6%) · C16 995 · fund C24 +8% — real, and not the question"
+      "BFCL v4 simple+multiple, 600 calls, T=0, same window": "v18 93.3% · v19 93.2% · same failure kinds — correctness PASS"
+      "DSpark acceptance tool-JSON / shell": "v18 0.878 / 0.908 · v19 0.838 / 0.829 — FAIL (bar: within 2 pt)"
+      "cause": "nightly kernels, not the fp8 KV writer: nightly d05da62e with vLLM #49435 leaves agent-doc top-1 flips at 11.45% (v18 0.56%)"
   - label: Boot
     items:
       "local NVMe": "8 min (CIFS: 92 min)"
@@ -50,6 +50,6 @@ fidelity:
   - { status: pass,    text: "Weights unchanged: 0 re-quantized bits, 510,313,343,553 B byte-verified vs HF" }
   - { status: pass,    text: "Speculation is target-verified: every emitted token accepted by the full model (lossless at T=0)" }
   - { status: pass,    text: "Greedy parity 44/44 non-tool prompts byte-exact across recipe variants · gauntlet 36/36" }
-  - { status: pass,    text: "Tool calling: Hermes harness 10/10 · 35-seat fund harness 64/64 (v18 and v19 candidate, 2026-09-20)" }
-  - { status: measured, text: "Teacher-forced Δlogprob vs no-hook reference, 79,544 positions (prefill-only): v18 hook mean |Δ| 0.030, top-1 flips 1.1%. v19 (nightly + fp8 KV) 0.059 / 2.2% corpus-wide — BUT on the 3,942 agent/tool-shaped positions v19 is 0.22 / 9.6% flips vs v18 0.027 / 0.9%. Perplexity unchanged (1.5077 → 1.5085 / 1.5070). Tool-shaped drift is OPEN; see results/2026-09-20-fidelity/OPEN-FINDINGS.md" }
-  - { status: measured, text: "GPQA-Diamond 198 run by us, T=0, reasoning on: v19 87.4% (173/198, ±4.6, 6 truncated at 64k) (64k budget) · v18 80.3% at a 16k budget with 24 truncations scored wrong · model card 90.9 at max effort, T=1 — anchor, not a reproduction" }
+  - { status: pass,    text: "Tool calling: BFCL v4 simple_python+multiple 560/600 = 93.3% exact-match (our AST grader, T=0, 2026-09-20) · Hermes harness 10/10 · 35-seat fund harness 64/64" }
+  - { status: measured, text: "Teacher-forced Δlogprob vs no-hook reference, 79,544 positions (prefill-only): v18 hook mean |Δ| 0.030, top-1 flips 1.06% corpus-wide and 0.56% on agent/tool-shaped text — uniform noise. The reverted v19 nightly was 0.059 / 2.2% corpus-wide but 0.257 / 11.45% on tool-shaped text; unchanged on nightly d05da62e (+#49435), so it is the nightly’s kernels, not the KV writer. Perplexity unchanged either way." }
+  - { status: measured, text: "GPQA-Diamond 198 run by us, T=0, reasoning on, 64k budget: v18 86.9% (172/198, ±4.7, 7 truncated) · v19 nightly 87.4% (173/198) — equal-budget pair, wash · model card 90.9 at max effort, T=1 — anchor, not a reproduction" }
