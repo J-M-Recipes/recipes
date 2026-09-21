@@ -1,0 +1,62 @@
+== long_greedy DFlash vs AR, pinned image (00143e9c):
+LONG_GREEDY identical=0/8
+  prompt 0: first divergence at char 64 (tokens 2500 vs 2500)
+  prompt 1: first divergence at char 87 (tokens 2500 vs 2500)
+  prompt 2: first divergence at char 294 (tokens 2500 vs 2500)
+  prompt 3: first divergence at char 103 (tokens 2500 vs 2500)
+  prompt 4: first divergence at char 50 (tokens 2500 vs 2500)
+  prompt 5: first divergence at char 362 (tokens 2500 vs 2500)
+  prompt 6: first divergence at char 33 (tokens 2497 vs 2500)
+  prompt 7: first divergence at char 27 (tokens 2500 vs 2500)
+== long_greedy DFlash vs AR, v0.5.20:
+LONG_GREEDY identical=0/8
+  prompt 0: first divergence at char 64 (tokens 2500 vs 2500)
+  prompt 1: first divergence at char 87 (tokens 2500 vs 2500)
+  prompt 2: first divergence at char 294 (tokens 2500 vs 2500)
+  prompt 3: first divergence at char 103 (tokens 2500 vs 2500)
+  prompt 4: first divergence at char 50 (tokens 2500 vs 2500)
+  prompt 5: first divergence at char 362 (tokens 2500 vs 2500)
+  prompt 6: first divergence at char 33 (tokens 2461 vs 2500)
+  prompt 7: first divergence at char 27 (tokens 2500 vs 2500)
+== long_greedy AR old vs AR new (image numerics):
+LONG_GREEDY identical=0/8
+  prompt 0: first divergence at char 8386 (tokens 2500 vs 2500)
+  prompt 1: first divergence at char 4705 (tokens 2500 vs 2500)
+  prompt 2: first divergence at char 8413 (tokens 2500 vs 2500)
+  prompt 3: first divergence at char 9193 (tokens 2500 vs 2500)
+  prompt 4: first divergence at char 4913 (tokens 2500 vs 2500)
+  prompt 5: first divergence at char 8044 (tokens 2500 vs 2500)
+  prompt 6: first divergence at char 8616 (tokens 2497 vs 2461)
+  prompt 7: first divergence at char 7015 (tokens 2500 vs 2500)
+== greedy_equiv 20x200 vs w2-a:
+oldar: GREEDY_EQUIV identical=1/20
+olddf: GREEDY_EQUIV identical=20/20
+newar: GREEDY_EQUIV identical=1/20
+newdf: GREEDY_EQUIV identical=20/20
+== tf noninferiority vs pinned-AR self-score:
+olddf: }
+missing
+newar: }
+missing
+newdf: }
+missing
+== C1 low (first line):
+oldar: missing
+olddf: missing
+newar: missing
+newdf: missing
+== accept (DFlash):
+olddf: [olddf-low] agentic   400 tok  1.74s ->  230.5 tok/s | accept len 3.37 rate 0.39 (n_lines=3) [olddf-low] MEAN accept len 3.47 rate 0.41  mean C1 241.8 
+
+newdf: [newdf-low] agentic   400 tok  1.68s ->  237.8 tok/s | accept len 3.34 rate 0.39 (n_lines=3) [newdf-low] MEAN accept len 3.37 rate 0.39  mean C1 248.4 
+
+== tools:
+oldar: OK read-passwd      finish=tool_calls calls=['read_file'] 0.2s SUMMARY tool_ok=10/10 
+olddf: OK read-passwd      finish=tool_calls calls=['read_file'] 0.2s SUMMARY tool_ok=10/10 
+newar: OK read-passwd      finish=tool_calls calls=['read_file'] 0.2s SUMMARY tool_ok=10/10 
+newdf: OK read-passwd      finish=tool_calls calls=['read_file'] 0.2s SUMMARY tool_ok=10/10 
+== C8:
+oldar: [x] conc= 8:   668.4 agg tok/s   83.55 per-stream  (reps 673/655/677 spread 3%; warm-pass 646)
+olddf: [x] conc= 8:   507.4 agg tok/s   63.42 per-stream  (reps 134/684/704 spread 112%; warm-pass 654)
+newar: [x] conc= 8:   666.8 agg tok/s   83.35 per-stream  (reps 676/654/671 spread 3%; warm-pass 631)
+newdf: [x] conc= 8:   699.1 agg tok/s   87.39 per-stream  (reps 719/678/700 spread 6%; warm-pass 665)

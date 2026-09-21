@@ -2,6 +2,20 @@
 
 **Reference release: Many Seat, v18** (2026-09-18: v15 hook + `--max-num-seqs 24` + token-sized `--cudagraph-capture-sizes`; 172 tok/s C1 prose, KV 2.50M tokens, C24 warm agent turn 0.55 s p50; **BFCL v4 tool-call exact-match 93.3%**) · **v19 "Nightly" was promoted and reverted on 2026-09-20** (see Round 10) · previous **v15 Pin Hot Experts** (retired 2026-09-18) · **v14 Sixty-K Agent** (retired 2026-09-17) · Historical **v13: 90 tok/s single-stream prose · 140–160 tok/s on agent/code text · 429 agg tok/s at C16** (v12: 89 / 140–160 / 311 · v11: 82 / 130–150 / 287) · 972K-token prompt prefilled in 85 s · Hermes tool-calling 10/10
 
+## Round 11 — where the drift enters, and a v20 candidate (2026-09-21, 05:30–06:55)
+
+Three nightlies between the 0909 image and the reverted v19, hook on, v19 flags, teacher-forced split vs the no-hook capture, acceptance, knee. Bundle: [`results/2026-09-21-kernel-bisect/`](results/2026-09-21-kernel-bisect/README.md).
+
+| image | main date | adds | agent-doc flips | accept tool_json / shell / prose | C1 |
+|---|---|---|--:|---|--:|
+| `0909` (v18) | 09-10 | — | **0.56%** | 0.878 / 0.908 / 0.349 | 172 |
+| **`2671fedf`** | 09-13 | model support on main, no perf kernels | **1.77%** | **0.860 / 0.908 / 0.349** | **189 live / 180 loaded** |
+| `af1c0149` | 09-16 | #56464 DeepSelect, #56962 Mega-mHC, #56512 Engram prefetch | **11.73%** | 0.757 / 0.760 / 0.260 | 194 |
+| `0bfc7a15` | 09-17 | #56935 mega-attn + NVFP4 KV, #56568/#57204 MegaMoE | 10.99% | 0.838 / 0.829 / 0.336 | 183 |
+| `dee37d89` (v19) | 09-18 | #56266 Mega-Gate | 11.45% | 0.838 / 0.829 / 0.336 | 183 |
+
+**The drift enters with the `af1c0149` PR set** — DeepSelect top-k for the sparse indexer, Mega-mHC, Engram prefetch; this bundle does not separate the three. The MegaMoE/mega-attn rung then recovers part of the acceptance without touching the flips. **`2671fedf` is the v20 candidate**: v18's acceptance on every class, BFCL **93.5%** (v18 93.3), +5–10% C1, and an order of magnitude less drift than v19 — it passes the promotion rule as written. Not promoted: it needs a same-window v18 pair, the fund harness at C16/C24 and a pinned autotune set in a scheduled window. `0bfc7a15` and `dee37d89` share the `ddf01704` autotune hash, so Mega-Gate does not change MoE shapes.
+
 ## Round 10 — the tool-call gate, and why v19 came back out (2026-09-20 evening)
 
 v19 (nightly `dee37d89` + hook + off54 + `fp8_ds_mla`) went live at 12:11 on its speed bars. A Grok review that afternoon asked the question the bars did not: *is tool calling still correct?* The per-class teacher-forced split said the logit drift concentrated on tool-shaped text (9.6% top-1 flips vs 0.9% for the v18 hook), and the promotion rule was rewritten the same evening: **BFCL exact-match ≥ v18 − 1 pt AND DSpark tool-JSON/shell acceptance within 2 pt of v18.** Replay tok/s is a speed bar, never a correctness bar. Bundle: [`results/2026-09-21-toolcall-gate-49435/`](results/2026-09-21-toolcall-gate-49435/README.md) (runners, `bfcl_gate.py` grader, `tf_split.py`, every JSON).
