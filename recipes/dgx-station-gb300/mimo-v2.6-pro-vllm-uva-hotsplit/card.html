@@ -1,0 +1,86 @@
+<!doctype html>
+<html><head><meta charset="utf-8">
+<style>
+  html,body{margin:0;background:#0b0f14;}
+  .card{width:1200px;box-sizing:border-box;padding:36px 44px;background:linear-gradient(160deg,#0b0f14 0%,#0f1620 100%);color:#e6edf3;font-family:Inter,-apple-system,Segoe UI,Helvetica,Arial,sans-serif;border:1px solid #1e2a38;border-radius:14px;}
+  .mono{font-family:"JetBrains Mono",SFMono-Regular,Menlo,Consolas,monospace;}
+  .top{display:flex;justify-content:space-between;align-items:flex-start;}
+  h1{margin:0;font-size:38px;font-weight:800;letter-spacing:-0.5px;}
+  .sub{margin-top:6px;font-size:15px;color:#9fb0c3;}
+  .brand{text-align:right;font-size:13px;color:#9fb0c3;line-height:1.5;white-space:nowrap}
+  .brand b{color:#6ee7b7;font-size:16px;letter-spacing:1px}
+  .pills{display:flex;flex-wrap:wrap;gap:8px;margin:18px 0 22px}
+  .pill{border:1px solid #2a3a4d;background:#111a25;border-radius:999px;padding:6px 12px;font-size:13px;color:#cfd9e4}
+  .pill b{color:#fff;font-weight:600}
+  .pill.type{border-color:#6ee7b7;color:#6ee7b7}
+  .grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px}
+  .box{background:#111a25;border:1px solid #1e2a38;border-radius:10px;padding:16px 18px}
+  .lbl{font-size:11px;letter-spacing:1.6px;text-transform:uppercase;color:#7f93a8;margin-bottom:6px}
+  .hero{font-size:56px;font-weight:800;line-height:1;color:#fff}
+  .hero small{font-size:18px;font-weight:500;color:#9fb0c3;margin-left:6px}
+  .note{font-size:12px;color:#9fb0c3;margin-top:8px;line-height:1.4}
+  .row2{display:grid;grid-template-columns:1.2fr 1fr 1fr;gap:14px;margin-top:14px}
+  .kv{font-size:14px;line-height:1.75}
+  .kv b{color:#fff;font-weight:600}
+  .acc span{display:inline-block;margin-right:12px}
+  .fid{margin-top:14px;background:#0e1a17;border:1px solid #1f4d3d;border-radius:10px;padding:16px 18px}
+  .fid .lbl{color:#6ee7b7}
+  .fid ul{margin:0;padding-left:0;list-style:none;display:grid;grid-template-columns:1fr 1fr;gap:6px 24px;font-size:14px;line-height:1.5}
+  .ok::before{content:"✓ ";color:#6ee7b7;font-weight:700}
+  .pend::before{content:"◌ ";color:#f59e0b;font-weight:700}
+  .pend{color:#d9c58a}
+  .meas::before{content:"≈ ";color:#93c5fd;font-weight:700}
+  .pend-inline{color:#f59e0b;font-size:0.6em;font-weight:600;letter-spacing:1px}
+  .foot{display:flex;justify-content:space-between;margin-top:18px;font-size:12px;color:#7f93a8}
+  .foot .mono{color:#9fb0c3}
+  .fid li.pair { list-style: none; margin: 6px 0 2px -18px; padding: 10px 12px; border: 1px solid rgba(255,255,255,.14); border-radius: 8px; background: rgba(255,255,255,.04); }
+  .fid li.pair .big { font-size: 20px; font-weight: 700; color: #e8f0ff; letter-spacing: -.2px; }
+  .fid li.pair .sep { color: rgba(255,255,255,.35); margin: 0 6px; }
+  .fid li.pair .dim { font-size: 11.5px; color: rgba(255,255,255,.62); }
+</style></head><body>
+<div class="card">
+  <div class="top">
+    <div>
+      <h1>MiMo-V2.6-Pro · 1× DGX Station GB300</h1>
+      <div class="sub">A 1.02T MoE from one GB300 — 320 GiB of experts read in place from Grace, hot experts re-homed to HBM by measured usage</div>
+    </div>
+    <div class="brand"><b>J-M-RECIPES</b><br>v23 “Hotsplit” (experimental, 2026-09-22; v22 = same without live counter; v20 = stock-placement control) · 2026-09-22<br>status: experimental</div>
+  </div>
+  <div class="pills">
+<span class="pill type"><b>MoE</b> · 384 routed experts × 69 MoE layers, 8 active</span>
+<span class="pill"><b>1.02T</b> total · <b>42B</b> active</span>
+<span class="pill">checkpoint <b>573.5 GB</b> · rev <span class="mono">54b10491</span></span>
+<span class="pill">weights <b>as shipped · MXFP4 experts / FP8 qkv / BF16 o_proj · nothing re-quantized</b></span>
+<span class="pill">engine <b>vLLM <span class="mono">d05da62e9ccdf8e342b15bf6785d83224cc165af</span> · vLLM nightly d05da62e · Marlin MoE · FlashInfer 0.6.18 (unused for MoE)</b></span>
+<span class="pill">memory <b>152.8 GiB hot experts HBM + ~342 GiB cold Grace · KV pool 302K tok</b></span>
+  </div>
+  <div class="grid">
+<div class="box"><div class="lbl">Decode · C1 (agent-context decode)</div><div class="hero">37.4<small>tok/s</small></div><div class="note">after TTFT, 11.5K-token prompt, T=0 · stock placement same flags 31.2 · tool-JSON 36.6 · synthetic prose 30 (unchanged)</div></div>
+<div class="box"><div class="lbl">Decode · C8 aggregate</div><div class="hero">63.7<small>tok/s</small></div><div class="note">max-num-seqs 8 (slot cap) · v21 same-budget 60.8 · pre-hotsplit v14 56.2</div></div>
+<div class="box"><div class="lbl">Prefill · cold</div><div class="hero">1.38K<small>tok/s</small></div><div class="note">11.5K prompt in 8.4 s · 46K in 33.3 s · 3K in 2.5 s</div></div>
+  </div>
+  <div class="row2">
+<div class="box"><div class="lbl">Guesser</div><div class="kv"><b>none</b> · in-checkpoint DFlash measured and rejected under offload<br>k = 0 · measured before hotsplit: k=3 24.5 tok/s, k=7 17.2, k=0 30.2<br><span class="acc">accept: <span>prose <b>n/a</b></span> <span>code <b>n/a</b></span> <span>shell <b>n/a</b></span> <span>tool-JSON <b>n/a</b></span></span></div></div>
+<div class="box"><div class="lbl">Residency (held-out agent turns)</div><div class="kv">decode traffic from HBM, stock layer order (same HBM bytes): <b>30.4%</b><br>hotsplit, train-ranked: <b>62.2% (oracle 62.5%)</b><br>cold bank share of expert time (profile): <b>~80% for ~39% of traffic</b></div></div>
+<div class="box"><div class="lbl">Boot</div><div class="kv">local NVMe, weights + split + graphs: <b>~7 min</b><br>MoE autotune (Marlin): <b>9 s</b></div></div>
+  </div>
+  <div class="fid"><div class="lbl">Output fidelity — does the recipe change what the model says?</div>
+    <ul>
+<li class="ok">Weights unchanged: 0 re-quantized bits; revision 54b10491, 573,492,132,336 B on disk</li>
+<li class="ok">Greedy parity 6/6 token-identical, stock vs hotsplit (16-layer truncation); residual drift ≤5.0e-4 relative, max |Δlogprob| 0.067 — not bit-exact (two partial sums)</li>
+<li class="ok">Tool calling under the real Hermes harness (custom[mimo26], reasoning low): 10/10 tool-call turns, 10/10 correct on the v23 serving boot</li>
+<li class="pend">Teacher-forced Δlogprob vs the no-hotsplit control over a full-depth corpus</li>
+<li class="pend">Public tool-call suite (BFCL) run by us on this lane</li>
+    </ul>
+  </div>
+  <div class="fid"><div class="lbl">Agent claim card — fixed protocol, held-out sibling, cost per solved task</div>
+    <ul>
+<li class="pend">harness card pending — protocol hash, held-out sibling suite, cost per solved task</li>
+    </ul>
+  </div>
+  <div class="foot">
+    <span>recipe <span class="mono">recipes/dgx-station-gb300/mimo-v2.6-pro-vllm-uva-hotsplit</span> · run <span class="mono">2026-09-22-hotsplit</span></span>
+    <span>github.com/J-M-Recipes/recipes · al-engr.com · @jmeadlock</span>
+  </div>
+</div>
+</body></html>

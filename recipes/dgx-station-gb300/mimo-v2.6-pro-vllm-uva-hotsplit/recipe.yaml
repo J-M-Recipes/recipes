@@ -1,0 +1,177 @@
+schema: jm-recipe/v1
+id: dgx-station-gb300/mimo-v2.6-pro-vllm-uva-hotsplit
+title: MiMo-V2.6-Pro (1.02T MoE) on one DGX Station GB300 (vLLM UVA expert offload + per-expert HBM residency)
+summary: >
+  The 527 GiB MiMo-V2.6-Pro-RL checkpoint (1.02T total / 42B active, 384 routed experts x 69 MoE layers, native MXFP4 experts)
+  does not fit 250 GiB of HBM. This recipe serves it from one GB300 with vLLM's UVA offloader (320 GiB of routed experts read
+  in place from Grace over NVLink-C2C), 262,144-token context, Marlin MoE kernels, and "hotsplit": a post-load hook that
+  re-homes each layer's experts by measured decode usage (hot rows in HBM, cold rows in exact-size pinned Grace memory) and runs
+  the MoE as two Marlin calls with expert_maps. Release v23 (2026-09-22): decode 37.4 tok/s after TTFT at an 11.5K-token prompt
+  (stock layer-order placement, same flags: 31.2), agent tool-call JSON 36.6 (29.5), C8 63.7 aggregate, prose unchanged at ~30,
+  16-layer greedy parity 6/6 token-exact, Hermes harness 10/10 tool calls and 10/10 correct on the serving boot. Held-out decode traffic served
+  from HBM 30.4% -> 62.2% at the same byte budget. No speculative decoding: DFlash k=3/k=7 were measured and lose under offload.
+status: experimental
+owners: [jmeadlock, milo]
+updated: "2026-09-22"
+tags: [mimo-v2.6-pro, mxfp4, vllm, uva-offload, marlin, expert-residency, single-gpu, agent, 1t-moe]
+
+model:
+  name: MiMo-V2.6-Pro-RL
+  params: 1.02T total / 42B activated (model card); 70 layers (60 SWA / 10 global), 384 routed experts, 8 active; layer 0 dense
+  repo: https://huggingface.co/XiaomiMiMo/MiMo-V2.6-Pro-RL
+  revision: 54b10491b1811c76aa9681a9d0ff872396a4064c
+  quantization: as shipped — routed experts MXFP4 (494.9 GiB), fused qkv_proj FP8 e4m3 128x128 blocks (10.9 GiB), o_proj BF16 (13.1 GiB, in ignored_layers). Nothing re-quantized. 573,492,132,336 bytes on disk incl. ViT/audio/DFlash drafter.
+
+hardware:
+  profile: hardware/dgx-station-gb300.yaml
+  nominal: { gpu_memory_gb: 288, host_memory_gb: 496 }
+  observed:
+    gpu: NVIDIA GB300
+    driver: "595.91.07"
+    cuda: "13.0 (container runtime)"
+    gpu_memory_visible_gib: 250.7
+    host_memory_gib: 494.5
+    os: Ubuntu 24.04.5 LTS
+    kernel: 7.0.0-1019-nvidia-64k
+    snapshot: results/2026-09-22-hotsplit/system.json
+  required_settings:
+    - "Checkpoint on LOCAL NVMe (RAID0 /models). Weight load 148-199 s from NVMe."
+    - "Do NOT pass --load-format runai_streamer: on this model it loads the fused FP8 qkv_proj as all zeros and mangles MXFP4 experts (confident garbage). Default safetensors loader."
+    - "--moe-backend marlin and VLLM_USE_DEEP_GEMM=0 on SM103: the auto-picked FlashInfer TRT-LLM MXFP4 cubin is sm_100a-only and turns autotune into a ~2 h crawl (vllm-project/vllm#58031). With Marlin the autotune takes 9 s."
+    - "VLLM_WEIGHT_OFFLOADING_DISABLE_PIN_MEMORY=1: exact-size cudaHostAlloc pinning instead of Tensor.pin_memory() power-of-two rounding (90.3 vs 57.8 GiB host for a 40 GiB offload; vllm-project/vllm#58185). Also required by hotsplit: a cudaHostRegister-pinned offloader does not release freed buffers and the split OOM-kills the host at ~30/69 layers."
+
+runtime:
+  engine: vLLM
+  engine_version: 0.29.1rc1.dev422+gd05da62e9 (nightly, post PR #57784 MiMo V2 MXFP4 + bf16 router)
+  engine_commit: d05da62e9ccdf8e342b15bf6785d83224cc165af
+  container:
+    image: vllm/vllm-openai:nightly-d05da62e9ccdf8e342b15bf6785d83224cc165af
+    digest: sha256:f29125bcc6d276ed38a67c9dfd4e51ccbaba09ad92847a0913c0df38d9c05c71
+    base_image: vllm/vllm-openai (upstream nightly, pinned by digest; three files bind-mounted, nothing rebuilt)
+  key_libraries:
+    torch: 2.13.0+cu130
+    transformers: 5.17.0
+    flashinfer: 0.6.18.post1
+    triton: 3.7.1
+  patches:
+    - path: patches/mimo_v2_hotsplit.py
+      sha256: 41274e36c2132a278149adacee2bbc9c01e871756cf2bc1f0df787cd11df5e9b
+      purpose: "Bind-mounted over vllm/model_executor/models/mimo_v2.py. Stock file + three changes: (1) the vllm#58142 fused-fp8-qkv pairing fix (pending dict outlives one load_weights call); (2) harness-only tolerance for --hf-overrides num_hidden_layers truncation (the parity test; vllm#58184); (3) when HOTSPLIT_COUNTS is set, wraps process_weights_after_loading to call hotsplit.apply_hotsplit(model)."
+    - path: patches/hotsplit.py
+      sha256: c4d3c7a9c4be92434b1fda66eeb0dac6d0f93e78dee6dfb626e1e47c63d2fd6e   # = /w/hotsplit.py inside the v23 container (docker exec sha256sum). v19b-v22 ran the same file without the live counter (e82a171f...)
+      purpose: "Mounted at /w. After weights are in Marlin format, per MoE layer: index_select hot rows into compact HBM tensors and cold rows into compact exact-size pinned-host UVA tensors, build one modular MXFP4 kernel per bank with its own sliced scales, replace quant_method.apply with two kernel.apply(expert_map=...) calls summed. Hot budget defaults to the HBM stock placement gave experts (HOTSPLIT_HOT_GIB overrides). Host-memory floor leaves remaining layers stock instead of dying. Optional graph-safe live routing counter (HOTSPLIT_LIVE_COUNTS). No kernel changes; uses vLLM's EP expert_map path."
+    - path: patches/expert_hist_mix.json
+      sha256: dfa110ca34020d802efe5e5b82a0b2c9d3609c129021428fb739da0933796088
+      purpose: "Per-layer ranking input (HOTSPLIT_COUNTS): decode routing counts from 630 real agent turns (normalised) + an 8-prompt prose-leaning histogram at weight 0.25. The 900-turn corpus itself is private and not published; these counts are."
+    - path: patches/mimo_v2_omni.py
+      sha256: 19940f32f69c71780fb9bd9d55c3257c2433f72439f9ce2c96079009cd29eeea
+      purpose: "Bind-mounted over vllm/model_executor/models/mimo_v2_omni.py. Forwards the EAGLE3 aux-hidden-state interface from MiMoV2OmniForCausalLM to its inner LM so the in-checkpoint DFlash drafter can attach. DFlash is OFF in this recipe, so this mount is inert; it is listed because every measured container carried it."
+
+launch:
+  script: scripts/launch-hotsplit.sh
+  command: "WORKDIR=$PWD MODEL=/models/MiMo-V2.6-Pro-RL COUNTS=/w/patches/expert_hist_mix.json LIVE=1 bash scripts/launch-hotsplit.sh v23 152.8 262144   # TAG, hot GiB, context. Expects $WORKDIR/patch/mimo_v2_hotsplit.py, $WORKDIR/hotsplit.py and $WORKDIR/vllm-cache; drop LIVE=1 to skip the live counter (+0.3-0.6 tok/s); drop the 152.8 to use the stock-equal budget (141.8 GiB, 514K KV tokens)"
+  health: "curl -fs http://localhost:30007/v1/models ; log must show 'Using ''MARLIN'' Mxfp4 MoE backend', 'Total CPU offloaded parameters: 321.75', 'hotsplit plan: 69 layers, budget 152.8 GiB (stock HBM experts 141.8 GiB), hot cells 8692/26496', 'hotsplit done in ~32s; HBM free 34.7 GiB; host avail ~121-123 GiB', 'GPU KV cache size: 302,3xx tokens'. Boot ~7 min (weights ~150 s, split ~32 s, graphs ~10 s)."
+  warmup: "Run scripts/agent_fixture.sh once and discard it: the first fixture pass after boot reads ~20% low (tool_json 23.8 cold vs 29.5 warm on the control)."
+  notable_flags:
+    - "--offload-backend uva --cpu-offload-gb 320 --cpu-offload-params routed_experts.w13_weight routed_experts.w2_weight  (FusedMoEFactory nests weights under routed_experts.; 'experts.w13_weight' matches nothing and OOMs HBM at construction. Stock placement at 320: layers 1-48 in Grace, 49-69 in HBM.)"
+    - "--moe-backend marlin + VLLM_USE_DEEP_GEMM=0  (SM103; see required_settings)"
+    - "--max-model-len 262144 --max-num-seqs 8 --max-num-batched-tokens 2048 --gpu-memory-utilization 0.96"
+    - "--compilation-config {cudagraph_mode: FULL_DECODE_ONLY}"
+    - "--tool-call-parser mimo --reasoning-parser mimo --enable-auto-tool-choice --generation-config auto  (REQUIRED for agent use; generation-config auto is the model's own sampling defaults)"
+    - "HOTSPLIT_COUNTS=<json> HOTSPLIT_WEIGHTS=decode=1,prefill=0 HOTSPLIT_HOT_GIB=152.8  (rank on decode counts; prefill-ranked coverage was 54.9% vs 62.2%)"
+    - "VARIANT stock-equal budget: omit HOTSPLIT_HOT_GIB -> 141.8 GiB hot, KV 513,612 tokens (1.96x one 256K request), decode 36.3 / tool_json 35.7 / C8 60.8 (v21)."
+    - "VARIANT no hotsplit (control): omit HOTSPLIT_COUNTS -> stock layer-order placement, decode 31.2, KV 490,466 (v20)."
+
+metrics:
+  - name: decode after TTFT, 11.5K-token prompt — v22 hotsplit 152.8 GiB (release config without live counter)
+    value: 37.4
+    unit: tok/s
+    workload: "C1, streamed, 11,524-token prompt of shell-script text, 128 output tokens, T=0, ignore_eos, thinking off; median of 3; decode = (tokens-1)/(t_last - t_first)"
+    aggregation: "3 runs 37.4/37.5/37.4; 2,954-token prompt 37.5; 45,829-token prompt 36.9"
+    provenance: { run_id: 2026-09-22-hotsplit, method: "scripts/ttft_bench.py", raw: receipts/ttft-v22-hot153.json }
+  - name: decode after TTFT, 11.5K-token prompt — v23 (v22 + live routing counter, the serving lane)
+    value: 36.9
+    unit: tok/s
+    workload: "same as v22"
+    aggregation: "two invocations: 37.1 (37.1/37.1/37.0) and 36.9 (36.9/37.2/36.9); 45,8xx-token prompt 36.4. Counter cost 0.3-0.6 tok/s"
+    provenance: { run_id: 2026-09-22-hotsplit, method: "scripts/ttft_bench.py", raw: receipts/ttft-v23.json }
+  - name: decode after TTFT, 11.5K-token prompt — v20 control (same flags, no hotsplit)
+    value: 31.2
+    unit: tok/s
+    workload: "same as v22"
+    aggregation: "3 runs 31.2/31.2/31.2; 2,952 tokens 31.3; 45,826 tokens 31.0"
+    provenance: { run_id: 2026-09-22-hotsplit, method: "scripts/ttft_bench.py", raw: receipts/ttft-v20ctrl.json }
+  - name: agent fixture tool_json — v22 / v20 control
+    value: 36.6
+    unit: tok/s
+    workload: "agent_fixture.sh, warm (runs 2 and 3 after a discarded warm-up), C1, T=0; tool_json category"
+    aggregation: "v22 36.6/36.6 · v21 35.7/35.7 · v19b 35.9 · v20 control 29.5/29.5. shell 36.4 vs 28.6, structured 35.9 vs 30.0, code 32.6 vs 30.3, prose 32.7 vs 30.3"
+    provenance: { run_id: 2026-09-22-hotsplit, method: "scripts/agent_fixture.sh", raw: receipts/agentfix-v22-hot153-r2.json }
+  - name: aggregate decode C8 — v22
+    value: 63.7
+    unit: tok/s
+    workload: "knee.sh, 8 concurrent prose prompts, 192 tok, T=0, ignore_eos, max-num-seqs 8"
+    aggregation: "63.4/63.9 · v21 60.8/60.9 · v19b 57.8 · v14 (patched, pre-hotsplit) 56.2"
+    provenance: { run_id: 2026-09-22-hotsplit, method: "scripts/knee.sh", raw: receipts/knee-v22-hot153.json }
+  - name: single-stream decode, synthetic prose knee prompt — v22
+    value: 30.7
+    unit: tok/s
+    workload: "knee.sh C1, 'Write a detailed paragraph about the number N', 192 tok, T=0, ignore_eos, short prompt"
+    aggregation: "30.7/30.7; six single samples 29.7-30.1; v20 control 30.0 x6. This prompt class does not benefit: the hot list is ranked on agent traffic"
+    provenance: { run_id: 2026-09-22-hotsplit, method: "scripts/knee.sh", raw: receipts/knee-v22-hot153.json }
+  - name: prefill, 11.5K-token prompt — v22
+    value: 1376
+    unit: tok/s
+    workload: "TTFT 8.38 s for 11,524 tokens, C1, cold (nonce-prefixed, prefix cache defeated)"
+    aggregation: "median of 3; 2,954 tokens 1,193 tok/s (2.48 s); 45,829 tokens 1,374 tok/s (33.3 s); v20 control 1,259 at 11.5K"
+    provenance: { run_id: 2026-09-22-hotsplit, method: "scripts/ttft_bench.py", raw: receipts/ttft-v22-hot153.json }
+  - name: held-out decode traffic served from HBM — train-ranked hot list vs stock placement
+    value: 62.2
+    unit: "%"
+    workload: "900 real Hermes agent turns (private), 630 rank / 270 held out; decode steps only; same HBM byte budget (8,064 of 26,496 cells)"
+    aggregation: "stock layer order 30.4% · train decode-ranked 62.2% · oracle 62.5% · prefill-ranked 54.9% · mixed prose 0.25 (release list) 61.0%"
+    provenance: { run_id: 2026-09-22-hotsplit, method: "scripts/expert_hist2.py + scripts/hist2_analyse.py + scripts/mixcounts.py", raw: facts.md }
+  - name: Hermes harness tool-call pass rate — v23
+    value: 100
+    unit: percent
+    workload: "10 prompts each requiring a real tool, hermes chat --provider custom[mimo26] -m mimo26-pro --reasoning low -t hermes-cli, on the v23 serving boot"
+    aggregation: "tool-call turns 10/10, correct 10/10 (score_harness.py; harness_test.sh's own awk scorer read empty answers on the current CLI header and printed 1/10 — fixed in this copy)"
+    provenance: { run_id: 2026-09-22-hotsplit, method: "scripts/harness_test.sh + scripts/score_harness.py", raw: harness-summary.md }
+  - name: decode step time split (v21 profile)
+    value: 28.8
+    unit: ms/token
+    workload: "torch profiler, 64 C1 decode tokens on a tool-call prompt, CUDA graphs on"
+    aggregation: "GPU busy 96%; Marlin routed experts 17.3 ms (hot bank 3.4, cold bank 14.0 — ~39% of traffic, ~80% of expert time); dense GEMMs 5.8 (o_proj BF16 + qkv FP8, both at 4.4-5.3 TB/s); routing/align/sum 1.6; attention 1.1"
+    provenance: { run_id: 2026-09-22-hotsplit, method: "scripts/prof_decode.py", raw: receipts/profiler_out_0.txt }
+
+verification:
+  gates:
+    schema:      { how: "scripts/check_recipe.py passes", last_pass_utc: "2026-09-22T23:30:00Z", run_id: 2026-09-22-hotsplit }
+    digest:      { how: "docker image inspect RepoDigests = sha256:f29125bc…; /model is revision 54b10491 (HF download metadata), 573,492,132,336 bytes on disk; patch sha256s above match the files inside the running v23 container (docker exec sha256sum)", last_pass_utc: "2026-09-22T23:20:00Z", run_id: 2026-09-22-hotsplit }
+    health:      { how: "v23: /v1/models 200; log lines per launch.health (receipts/bootlog-v23-hot153-live.txt); live counter snapshot after 10 min covered 69 layers / 5,052 decode tokens; answers 'Jupiter' / 'Paris'", last_pass_utc: "2026-09-22T22:38:00Z", run_id: 2026-09-22-hotsplit }
+    quality:     { how: "16-layer truncated Pro (--hf-overrides num_hidden_layers=16, 40 GiB offload, same image) stock vs hotsplit, greedy: 6/6 outputs token-identical; per-layer last-token residual relative drift rises smoothly to 5.0e-4 by layer 15 (max abs 0.0020); max |Δlogprob| on chosen tokens 0.067 — summation order of two partial MoE sums, not bit-identity. Full model: answers sane on every boot; Hermes harness on v23: 10/10 tool-call turns, 10/10 correct (harness-summary.md). NOT yet run: teacher-forced Δlogprob over a corpus vs the no-hotsplit control, and a public tool-call suite — pending, the card says so.", last_pass_utc: "2026-09-22T20:31:00Z", run_id: 2026-09-22-hotsplit }
+    performance: { how: "Matched warm A/B, only HOTSPLIT_* differing (v20 control vs v19b/v21/v22), each lane: discarded warm-up fixture, ttft_bench x3 per length, fixture x2, prose C1 x6, knee C1/C8. v22 vs v20: decode +20% at 11.5K (37.4 vs 31.2), tool_json +24%, shell +27%, structured +20%, code +8%, prose fixture +8%, synthetic prose C1 flat, prefill +9%.", last_pass_utc: "2026-09-22T22:20:00Z", run_id: 2026-09-22-hotsplit }
+
+limits:
+  - "EXPERIMENTAL. hotsplit is an out-of-tree hook, not a vLLM feature. The upstream design discussion is vllm-project/vllm#57794 (expert-granular residency); our data is posted there."
+  - "The hot list is workload-specific. It was ranked on real agent turns; synthetic prose ('paragraph about the number N') does not speed up (30.0 control vs 29.7-30.7). The first agent-only list cost that prompt ~5% (28.2-28.5); mixing a prose-leaning histogram in at weight 0.25 removed the loss at a 1.2-point coverage cost (62.2 -> 61.0%). Re-rank from your own traffic: scripts/expert_hist2.py (offline) or the live counter + scripts/rerank-weekly.sh."
+  - "Cold bank cost: ~39% of routed traffic, ~80% of expert time (~6x per unit of traffic). Moving 11 GiB of KV to hot cells gave ~+1 tok/s (36.3 -> 37.4); KV 513,612 -> 302,368 tokens (1.15x one 256K request). For more than one concurrent long context, use the stock-equal budget variant."
+  - "No speculative decoding. The in-checkpoint DFlash drafter was measured at k=7 (C1 17.2 tok/s, 50% weighted acceptance) and k=3 (24.5 tok/s, 69%) against 30.2 at k=0 on the pre-hotsplit lane: every verified token fetches its own experts over C2C. Not re-measured with hotsplit."
+  - "Dense GEMMs are bandwidth-bound already (o_proj BF16 36.1 us, qkv FP8 35.9 us per layer at 4.4-5.3 TB/s). The only lever is quantizing o_proj (BF16 in the checkpoint's ignored_layers, 13.1 GiB/token read, ~1.2 ms/token) — a model change that needs a quality gate. Not done."
+  - "Parity is token-exact greedy on a 16-layer truncation, not bit-exact and not a full-depth teacher-forced corpus. That gate is pending."
+  - "The live counter counts decode-sized steps (<= 16 tokens, static under graph capture) including padded slots at C>1. Its weekly merge refuses below 50,000 decode tokens per layer and never restarts the lane; a re-rank applies on the next boot."
+  - "Host memory: ~120 GiB free after the split. There is no room for a second large model on this box while this lane runs."
+  - "Every full-Pro boot v3-v13 of this campaign used --load-format runai_streamer and produced confident garbage; see required_settings. v14 (default loader) is the first sane boot and the pre-hotsplit reference (C1 30.2, C8 56.2, with two now-unnecessary patches)."
+
+rollback:
+  script: scripts/launch-hotsplit.sh
+  summary: "docker stop the lane; start the kept v22 (same budget, no live counter) or v20 control (no hotsplit) container, or relaunch without HOTSPLIT_COUNTS. Hot restart of a kept container ~7 min."
+
+links:
+  blog: https://al-engr.com/gb300-mimo-v26-pro-testing.html
+  vllm_rfc_expert_residency: https://github.com/vllm-project/vllm/issues/57794#issuecomment-5785394491
+  vllm_pr_exact_pin: https://github.com/vllm-project/vllm/pull/58185
+  vllm_pr_truncation_guard: https://github.com/vllm-project/vllm/pull/58184
+  vllm_pr_qkv_pairing: https://github.com/vllm-project/vllm/pull/58142
+  vllm_issue_sm103_autotune: https://github.com/vllm-project/vllm/issues/58031
+  model: https://huggingface.co/XiaomiMiMo/MiMo-V2.6-Pro-RL

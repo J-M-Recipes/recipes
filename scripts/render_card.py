@@ -93,7 +93,8 @@ def hero(card: dict) -> str:
     boxes = []
     for key, label in (("c1", "Decode · C1"), ("c16", "Decode · C16 aggregate"), ("prefill", "Prefill · cold")):
         b = h.get(key, {})
-        lbl = label + (f" ({e(b['class'])})" if b.get("class") else "")
+        lbl = e(b["label"]) if b.get("label") else label  # optional override, e.g. a C8 aggregate on a slot-capped lane
+        lbl = lbl + (f" ({e(b['class'])})" if b.get("class") else "")
         boxes.append(
             f'<div class="box"><div class="lbl">{lbl}</div>'
             f'<div class="hero">{val(b.get("value"))}<small>{e(b.get("unit", "tok/s"))}</small></div>'
