@@ -1,0 +1,46 @@
+# card.yaml — at-a-glance card sidecar. Rendered by scripts/render_card.py; never hand-edit card.html.
+# Every number traces to recipe.yaml metrics or results/2026-09-22-hotsplit. Unknown = pending (renders amber).
+title: "MiMo-V2.6-Pro · 1× DGX Station GB300"
+subtitle: "A 1.02T MoE from one GB300 — 320 GiB of experts read in place from Grace, hot experts re-homed to HBM by measured usage"
+version: "v23 “Hotsplit” (experimental, 2026-09-22; v22 = same without live counter; v20 = stock-placement control)"
+run_id: 2026-09-22-hotsplit
+handles: "github.com/J-M-Recipes/recipes · al-engr.com · @jmeadlock"
+
+model:
+  type: MoE
+  type_detail: "384 routed experts × 69 MoE layers, 8 active"
+  total_params: 1.02T
+  active_params: 42B              # model card; config: 8 of 384 routed per MoE layer, layer 0 dense
+  checkpoint_gb: 573.5            # 573,492,132,336 B on disk at revision 54b10491 (incl. ViT/audio/drafter)
+  weights_short: "as shipped · MXFP4 experts / FP8 qkv / BF16 o_proj · nothing re-quantized"
+  engine_extra: "vLLM nightly d05da62e · Marlin MoE · FlashInfer 0.6.18 (unused for MoE)"
+  memory: "152.8 GiB hot experts HBM + ~342 GiB cold Grace · KV pool 302K tok"
+
+hero:
+  c1:      { value: 37.4, unit: tok/s, class: "agent-context decode", note: "after TTFT, 11.5K-token prompt, T=0 · stock placement same flags 31.2 · tool-JSON 36.6 · synthetic prose 30 (unchanged)" }
+  c16:     { value: 63.7, unit: tok/s, label: "Decode · C8 aggregate", note: "max-num-seqs 8 (slot cap) · v21 same-budget 60.8 · pre-hotsplit v14 56.2" }
+  prefill: { value: 1.38K, unit: tok/s, note: "11.5K prompt in 8.4 s · 46K in 33.3 s · 3K in 2.5 s" }
+
+guesser:
+  name: none
+  source: "in-checkpoint DFlash measured and rejected under offload"
+  schedule: "k = 0 · measured before hotsplit: k=3 24.5 tok/s, k=7 17.2, k=0 30.2"
+  accept: { prose: "n/a", code: "n/a", shell: "n/a", tool-JSON: "n/a" }
+
+secondary:
+  - label: Residency (held-out agent turns)
+    items:
+      "decode traffic from HBM, stock layer order (same HBM bytes)": "30.4%"
+      "hotsplit, train-ranked": "62.2% (oracle 62.5%)"
+      "cold bank share of expert time (profile)": "~80% for ~39% of traffic"
+  - label: Boot
+    items:
+      "local NVMe, weights + split + graphs": "~7 min"
+      "MoE autotune (Marlin)": "9 s"
+
+fidelity:
+  - { status: pass,    text: "Weights unchanged: 0 re-quantized bits; revision 54b10491, 573,492,132,336 B on disk" }
+  - { status: pass,    text: "Greedy parity 6/6 token-identical, stock vs hotsplit (16-layer truncation); residual drift ≤5.0e-4 relative, max |Δlogprob| 0.067 — not bit-exact (two partial sums)" }
+  - { status: pass,    text: "Tool calling under the real Hermes harness (custom[mimo26], reasoning low): 10/10 tool-call turns, 10/10 correct on the v23 serving boot" }
+  - { status: pending, text: "Teacher-forced Δlogprob vs the no-hotsplit control over a full-depth corpus" }
+  - { status: pending, text: "Public tool-call suite (BFCL) run by us on this lane" }
