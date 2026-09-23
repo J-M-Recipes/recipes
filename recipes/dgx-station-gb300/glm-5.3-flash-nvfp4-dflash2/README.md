@@ -8,13 +8,13 @@
 
 Round 1 (September 1) is preserved below; two of its conclusions were wrong and are corrected here.
 
-> **Upstream watch (2026-09-20).** The pinned image (`nightly-dev-cu13-20260911-00143e9c`) predates **sgl-project/sglang#37818** (merged 2026-09-12): DFlash could miss a KDA/Mamba state checkpoint when accepted verify tokens cross a tracking boundary, leaving full-attention KV and linear-attention state at different positions — this exact configuration. It would show on long generations only; our teacher-forced gate used short references on the pinned image and would not see it. The fix ships in tagged **v0.5.20** (2026-09-18; first release listing GLM-5.3-Flash as supported). Rebase + long-generation TF gate is a scheduled-window item. The DFlash2 draft repo also moved twice after our `7d74cdd8` pin; a newer draft is a separate gated axis. Table: [`research/upstream-watch-2026-09-20.md`](research/upstream-watch-2026-09-20.md).
+> **Upstream watch (2026-09-20).** The pinned image (`nightly-dev-cu13-20260911-00143e9c`) predates **sgl-project/sglang#37818** (merged 2026-09-12): DFlash could miss a KDA/Mamba state checkpoint when accepted verify tokens cross a tracking boundary, leaving full-attention KV and linear-attention state at different positions — this exact configuration. It would show on long generations only; our teacher-forced gate used short references on the pinned image and would not see it. The fix ships in tagged **v0.5.20** (2026-09-18; first release listing GLM-5.3-Flash as supported). ~~Rebase + long-generation TF gate is a scheduled-window item.~~ **DONE 2026-09-21** — rebased to `v0.5.20-cu130`, four-boot window with the ≥2K-token TF gate re-run (bit-identical across all four servers), greedy 20/20 + tools 10/10 ×4; see the header blockquote and [`results/2026-09-21-v0520-rebase/`](results/2026-09-21-v0520-rebase/README.md). The newer `bf582e4e` draft was tested the same day: no gain, pin stays. The DFlash2 draft repo also moved twice after our `7d74cdd8` pin; a newer draft is a separate gated axis. Table: [`research/upstream-watch-2026-09-20.md`](research/upstream-watch-2026-09-20.md).
 
 ![Serving topology](diagrams/topology.svg)
 
 ## What this runs
 
-GLM-5.3-Flash (320B MoE, 18B active; hybrid KDA linear attention + DeepSeek sparse attention + MLA) in **NVIDIA's first-party NVFP4** (`nvidia/GLM-5.3-Flash-NVFP4`), served by **released-track SGLang nightly** with the **DFlash2** block-diffusion draft at block size 7. One GPU, nothing offloaded, 1M context.
+GLM-5.3-Flash (320B MoE, 18B active; hybrid KDA linear attention + DeepSeek sparse attention + MLA) in **NVIDIA's first-party NVFP4** (`nvidia/GLM-5.3-Flash-NVFP4`), served by **released-track SGLang v0.5.20** with the **DFlash2** block-diffusion draft at block size 7. One GPU, nothing offloaded, 1M context.
 
 Two configs from the same weights and image:
 
@@ -82,7 +82,7 @@ Flags that matter:
 | schema | `scripts/check_recipe.py` | 2026-09-06 |
 | digest | `docker image inspect` matches; model dirs are the pinned revisions | 2026-09-06 |
 | health | `/health` 200; `warmup.sh` completes C1/4/8/16/32 | 2026-09-02 |
-| quality | coherent output on the prose/code set; DFlash2 accept length 2.77–3.95 on prose; tool calls parse with the parsers on. **No teacher-forced divergence gate was run for this recipe** — see Known limits. | 2026-09-02 |
+| quality | teacher-forced \|Δlogp\| vs zai-org FP8 original 0.136 mean (40×128 greedy tokens) + instrument self-consistency 0.00000 · four-boot TF bit-identical (max Δ 0.0, 2,857 tok, 2026-09-21 rebase) · greedy 20/20 vs the DFlash reference · tools 10/10 ×4 + Hermes 10/10 · **CORRECTED 2026-09-21:** DFlash2 is target-verified, not byte-identical to AR (see limits). | 2026-09-21 |
 | performance | C1 median-of-3 within 5% of 234.2 tok/s after warmup | 2026-09-02 |
 
 **Warm up or your benchmarks lie.** The first request at each new batch shape after a restart pays up to 30 s of kernel autotune (CUDA graphs are on the whole time — it's per-shape JIT). The same applies to prompt-length classes: the first 8k/32k/64k prompt after restart pays ~16 s; warm, those prefill in 0.3–2 s. Our own day-one "concurrency cliff" (220 agg tok/s, 15 s TTFT at C8+) was this artifact. Bench warm or bench wrong.

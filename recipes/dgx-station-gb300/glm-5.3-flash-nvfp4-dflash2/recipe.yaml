@@ -8,7 +8,7 @@ summary: >
   (4,025 agg) on one GPU. Quality gate is teacher-forced logprob divergence vs the FP8 original, not eyeballing.
 status: verified
 owners: [jmeadlock, milo]
-updated: "2026-09-16"
+updated: "2026-09-21"
 tags: [glm-5.3-flash, nvfp4, sglang, dflash2, speculative-decoding, single-gpu, interactive, high-concurrency, 1m-context]
 
 model:
@@ -137,9 +137,9 @@ metrics:
 verification:
   gates:
     schema:      { how: "scripts/check_recipe.py passes", last_pass_utc: "2026-09-11T17:30:00Z", run_id: 2026-09-11-nvidia-nvfp4-b7-1M }
-    digest:      { how: "docker image inspect reports the digest above; model dir is the pinned revision, 204,475,659,764 bytes / 42 files byte-verified against the Hub listing", last_pass_utc: "2026-09-11T13:00:00Z", run_id: 2026-09-11-nvidia-nvfp4-b7-1M }
+    digest:      { how: "docker image inspect reports the digest above; model dir is the pinned revision, 204,475,659,764 bytes / 42 files byte-verified against the Hub listing (re-inspected on the v0.5.20 rebase, 2026-09-21)", last_pass_utc: "2026-09-21", run_id: 2026-09-21-v0520-rebase }
     health:      { how: "/health 200 after boot; all shapes warmed", last_pass_utc: "2026-09-11T16:47:00Z", run_id: 2026-09-11-nvidia-nvfp4-b7-1M }
-    quality:     { how: "teacher-forced |dlogp| vs zai-org FP8 original on 40 prompts x 128 greedy tokens: nvidia 0.136 (argmax differs 15.6%) vs LibertAI 0.147 (15.9%); instrument self-consistency 0.00000. Plus 10/10 parsed tool calls (scripts/tool_harness.py) and a real Hermes agent harness 10/10 tool turns.", last_pass_utc: "2026-09-11T15:45:00Z", run_id: 2026-09-11-nvidia-nvfp4-b7-1M, notes: "replaces the output-judged gate of run 2026-09-01" }
+    quality:     { how: "teacher-forced |dlogp| vs zai-org FP8 original on 40 prompts x 128 greedy tokens: nvidia 0.136 (argmax differs 15.6%) vs LibertAI 0.147 (15.9%); instrument self-consistency 0.00000. Rebase window 2026-09-21: TF bit-identical across four boots (max delta 0.0 over 2,857 tokens), greedy 20/20 vs the DFlash reference, tools 10/10 x4 + Hermes 10/10. Plus 10/10 parsed tool calls (scripts/tool_harness.py) and a real Hermes agent harness 10/10 tool turns. CORRECTED 2026-09-21: DFlash2 is target-verified, not byte-identical to AR.", last_pass_utc: "2026-09-21", run_id: 2026-09-21-v0520-rebase, notes: "replaces the output-judged gate of run 2026-09-01" }
     performance: { how: "C1 recipe-method (EFFORT=low) median-of-3 within 3% of 202.7 after warmup; C48 AR within 5% of 2,214", last_pass_utc: "2026-09-16T02:06:00Z", run_id: 2026-09-15-effort-drafter-nightly }
 
 limits:
