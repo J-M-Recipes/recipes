@@ -44,7 +44,7 @@
       <h1>MiMo-V2.6-Pro · 1× DGX Station GB300</h1>
       <div class="sub">A 1.02T MoE from one GB300 — 320 GiB of experts read in place from Grace, hot experts re-homed to HBM by measured usage</div>
     </div>
-    <div class="brand"><b>J-M-RECIPES</b><br>v23 “Hotsplit” (experimental, 2026-09-22; v22 = same without live counter; v20 = stock-placement control) · 2026-09-22<br>status: experimental</div>
+    <div class="brand"><b>J-M-RECIPES</b><br>v23 “Hotsplit” (experimental, 2026-09-22; v24 = 1M-context variant, 33.0 tok/s; v20 = stock-placement control) · 2026-09-22<br>status: experimental</div>
   </div>
   <div class="pills">
 <span class="pill type"><b>MoE</b> · 384 routed experts × 69 MoE layers, 8 active</span>
@@ -62,7 +62,7 @@
   <div class="row2">
 <div class="box"><div class="lbl">Guesser</div><div class="kv"><b>none</b> · in-checkpoint DFlash measured and rejected under offload<br>k = 0 · measured before hotsplit: k=3 24.5 tok/s, k=7 17.2, k=0 30.2<br><span class="acc">accept: <span>prose <b>n/a</b></span> <span>code <b>n/a</b></span> <span>shell <b>n/a</b></span> <span>tool-JSON <b>n/a</b></span></span></div></div>
 <div class="box"><div class="lbl">Residency (held-out agent turns)</div><div class="kv">decode traffic from HBM, stock layer order (same HBM bytes): <b>30.4%</b><br>hotsplit, train-ranked: <b>62.2% (oracle 62.5%)</b><br>cold bank share of expert time (profile): <b>~80% for ~39% of traffic</b></div></div>
-<div class="box"><div class="lbl">Long context · boot</div><div class="kv">needle 10/50/90% at 65K/131K/196K/254K: <b>12/12</b><br>decode after TTFT at 254K (11.5K: 37): <b>33.8 tok/s</b><br>TTFT at 254K (prefill 1.26K tok/s): <b>201 s</b><br>boot, local NVMe (weights + split + graphs): <b>~7 min</b></div></div>
+<div class="box"><div class="lbl">Long context · boot</div><div class="kv">needle 10/50/90% at 65K/131K/196K/254K: <b>12/12</b><br>decode after TTFT at 254K (11.5K: 37): <b>33.8 tok/s</b><br>1M variant (v24, 110 GiB hot): 11.5K / 524K decode: <b>33.0 / 28.6 tok/s</b><br>1M variant: needles at 524K · at 1M: <b>3/3 · pending</b><br>TTFT at 254K (prefill 1.26K tok/s): <b>201 s</b><br>boot, local NVMe (weights + split + graphs): <b>~7 min</b></div></div>
   </div>
   <div class="fid"><div class="lbl">Output fidelity — does the recipe change what the model says?</div>
     <ul>

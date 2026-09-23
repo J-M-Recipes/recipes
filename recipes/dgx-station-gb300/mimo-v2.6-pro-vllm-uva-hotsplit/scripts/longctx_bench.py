@@ -17,7 +17,7 @@ for f in files:
     try: t = open(f, errors="ignore").read()
     except Exception: continue
     corpus.append(f"\n# ==== {f} ====\n{t}"); n += len(t)
-    if n > 2_500_000: break
+    if n > int(os.environ.get("CORPUS_CHARS", 8_000_000)): break
 CORPUS = "".join(corpus)
 
 def post(path, obj, stream=False):

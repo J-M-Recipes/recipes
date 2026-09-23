@@ -9,7 +9,7 @@ The 527 GiB [MiMo-V2.6-Pro-RL](https://huggingface.co/XiaomiMiMo/MiMo-V2.6-Pro-R
 - vLLM's UVA offloader reads 320 GiB of routed experts **in place** from Grace memory over NVLink-C2C (exact-size pinned, no H2D copy);
 - Marlin MoE kernels (the auto-picked FlashInfer TRT-LLM MXFP4 backend's autotune crawled ~2 h with 320 GiB of experts in Grace; CORRECTED 2026-09-23: an earlier version blamed an sm_100a-only cubin, which was wrong — see vllm-project/vllm#58031);
 - **hotsplit**: after load, each layer's experts are re-homed by *measured decode usage* — hot rows in HBM, cold rows in Grace — and the MoE runs as two Marlin calls with `expert_map`s. Stock `--cpu-offload-gb` decides residency by layer order (layers 1–48 in Grace, 49–69 in HBM); hotsplit decides it by what the router actually picks;
-- 262,144-token context, reasoning and tool parsers on, no speculative decoding.
+- 262,144-token context (v23), or 1,048,576 with the v24 variant below; reasoning and tool parsers on; no speculative decoding.
 
 ## Hardware
 
@@ -40,6 +40,8 @@ WORKDIR=$WORKDIR MODEL=/models/MiMo-V2.6-Pro-RL COUNTS=/w/expert_hist_mix.json L
 
 Required: `--moe-backend marlin`, `VLLM_USE_DEEP_GEMM=0`, `VLLM_WEIGHT_OFFLOADING_DISABLE_PIN_MEMORY=1` (exact-size pinning; hotsplit OOMs the host without it), `--cpu-offload-params routed_experts.w13_weight routed_experts.w2_weight`. **Do not** use `--load-format runai_streamer` on this model (zeroes the fused FP8 qkv_proj → confident garbage).
 
+**1M context (v24):** `bash scripts/launch-hotsplit.sh v24 110 1048576`, which gives 110 GiB of hot experts and a KV pool of 1,209,097 tokens. It costs ~12% at short context (decode 33.0 vs 37.4 at 11.5K). This is the author's serving lane since September 23.
+
 Variants: drop `152.8` for the stock-equal budget (KV 514K); unset `COUNTS` for the stock control; drop `LIVE=1` to remove the live counter (+0.3–0.6 tok/s).
 
 ## Verify
@@ -65,6 +67,7 @@ Warm, same image and flags; only the hotsplit env differs.
 | GPU KV cache | 490,466 tok | 513,612 | 302,368 (1.15× one 256K request) |
 
 - **Long context (v23, one request, lane idle):** needle recall at 10/50/90% depth **12/12** at 65K / 131K / 196K / 254K prompt tokens. Decode after TTFT **34.0 / 34.3 / 33.3 / 33.8 tok/s**, and 36.9–37.1 at 11.5K. Prefill 1,350 → 1,262 tok/s, so TTFT is **201 s at 254K**. Bench: `scripts/longctx_bench.py`; rows, method, and two discarded contended rows: `results/2026-09-22-hotsplit/longctx.md`.
+- **1M-context variant (v24):** decode 33.0 at 11.5K (−12%), tool_json 32.7, prefill 1,235 tok/s. Needles 3/3 at 65K and 3/3 at 524K; decode 28.6 tok/s and TTFT ~490 s at 524K. **1M itself is not measured.** I stopped that run during the first 1.04M prefill (~17 min of GPU per prompt). My pre-boot estimate was −7%; it was wrong. Details: `results/2026-09-22-hotsplit/longctx.md`.
 - Held-out decode traffic served from HBM at the stock byte budget: **30.4% → 62.2%** (ranked on 630 real agent turns, tested on 270 held out; oracle 62.5%; prefill-ranked 54.9%).
 - Hermes harness on the v23 serving boot: **10/10 tool-call turns, 10/10 correct** (`results/2026-09-22-hotsplit/harness-summary.md`).
 - Fidelity: 16-layer truncated Pro, stock vs hotsplit, greedy **6/6 token-identical**; residual drift ≤5.0e-4 relative by layer 15; max |Δlogprob| 0.067 (two partial sums change summation order — not bit-exact). Full-depth teacher-forced Δlogprob and a public tool-call suite are **pending**.
@@ -76,7 +79,7 @@ All receipts: `results/2026-09-22-hotsplit/` (`facts.md`, `receipts/`, `harness/
 
 - **Experimental, out-of-tree.** Upstream design discussion: [vLLM RFC #57794](https://github.com/vllm-project/vllm/issues/57794#issuecomment-5785394491) (our data posted).
 - **The hot list is workload-specific.** Agent-only ranking cost synthetic prose ~5%; mixing a prose histogram in at 0.25 fixed that. Re-rank for your traffic: offline with `scripts/expert_hist2.py` → `scripts/hist2_analyse.py` → `scripts/mixcounts.py`, or online with `LIVE=1` + `scripts/rerank-weekly.sh` (refuses below 50K decode tokens/layer; applies on the next boot; never restarts anything).
-- **KV trade.** The +11 GiB hot budget leaves 302K KV tokens; for more than one long context at once use the stock-equal variant (514K).
+- **KV trade.** 60 of 70 layers are sliding-window, so each GiB of hot experts traded buys ~19K KV tokens. 152.8 GiB hot → 302K KV (37.4 tok/s); 141.8 → 514K (36.3); 110 → 1.21M (33.0).
 - **No speculative decoding.** In-checkpoint DFlash k=7 (17.2 tok/s) and k=3 (24.5) both lost to k=0 (30.2) under offload on the pre-hotsplit lane.
 - **Dense GEMMs are bandwidth-bound.** o_proj is BF16 in the checkpoint (13.1 GiB read per token, ~1.2 ms/token); quantizing it is a model change that needs a quality gate. Not done.
 - Parity is greedy token-exact on 16 layers, not bit-exact, not a full-depth corpus.
