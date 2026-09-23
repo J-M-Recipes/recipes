@@ -361,7 +361,7 @@ Everything below was measured on this box with receipts and is not worth re-runn
 | DFlash2 draft over UVA (K4) | stopped at frozen continue gate | `results/2026-09-07-dflash2-uva/` |
 | PR #1 demand-fill DMA | failed continue gate | `results/2026-09-07-dma-demand-fill/` |
 | offline slot reallocation from trace | failed continue gate | `results/2026-09-07-offline-cache-prefetch/`, `results/2026-09-08-e1-v2-offline-repair/` |
-| simple trace prediction / static expert pin | LRU 0.719 beats oracle pin 0.633 | `results/2026-09-13-k2-fair-gate-needle-trace/` |
+| simple trace prediction / static expert pin | ~~LRU 0.719 beats oracle pin 0.633~~ **CORRECTED 2026-09-15: 0.719 was a `T//8000` subsample; exact full-trace replay at the same budget gives LRU 0.802** — still beats oracle pin 0.633 | `results/2026-09-13-k2-fair-gate-needle-trace/` |
 | agent-traffic slot remap | +0.002 hit on 96,504 captured agent steps | `results/2026-09-14-agent-remap-draftcorr-scalarfuse-k2/` |
 | MTP-draft routing prefetch | draft→next-step overlap 0.0316 vs chance 0.0312 | same |
 | `--max-num-batched-tokens 16384` | +0.19% decode | same |
