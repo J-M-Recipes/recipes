@@ -168,8 +168,8 @@ Profile: [`hardware/dgx-station-gb300.yaml`](../../../hardware/dgx-station-gb300
 
 | | pin |
 |---|---|
-| Image | `vllm/vllm-openai:deepseekv41-flash-0909` @ `sha256:00d577a6a63281e15336029d5bcee4e9a2cf182214a4f20ba6111b1c8e79893d` (upstream day-0 build, 2026-09-10) |
-| vLLM | `0.1.dev20904+g179dd0fa9` |
+| Image | `vllm/vllm-openai:nightly-2671fedfc7ae604761990603fc736c0c4f21de57` @ `sha256:91c875065792e9b79dfec5019e5017f96b1511eed292e7ec15182444b23efe66` (vLLM nightly `2671fedf`, 2026-09-13 — last before the #56633 mHC-fold drift; **this is the v20 pin**) |
+| vLLM | `0.29.1rc1.dev9+g2671fedfc` (v18 and earlier: `0.1.dev20904+g179dd0fa9` on the day-0 `deepseekv41-flash-0909` image) |
 | Libraries | torch 2.13.0+cu130 · transformers 5.17.0 · flashinfer 0.6.18 · triton 3.7.1 |
 | Model | `deepseek-ai/DeepSeek-V4.1-Flash` @ `df42c109f1defefcbfcedbe7d905718a12266e40`, 510,313,343,553 bytes, byte-verified |
 
@@ -252,7 +252,7 @@ FlashInfer autotunes the MXFP4 MoE kernels and caches the result under a hash of
 
 ## Results
 
-### v18 — Many Seat (current)
+### v18 — Many Seat (rollback lane)
 
 Same-window idle knee re-check 2026-09-18 (v17 ×2 then v18 ×2, box otherwise idle) with a same-afternoon v15 control. Knee prompt class **prose**, T=0, 192 tokens. Not slot-capped at C16 (`--max-num-seqs 24`). Bundle: [`results/2026-09-18-many-seat-v16-v17-v18/`](results/2026-09-18-many-seat-v16-v17-v18/).
 
