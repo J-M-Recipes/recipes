@@ -57,12 +57,12 @@
   <div class="grid">
 <div class="box"><div class="lbl">Decode · C1 (agent-context decode)</div><div class="hero">37.4<small>tok/s</small></div><div class="note">after TTFT, 11.5K-token prompt, T=0 · stock placement same flags 31.2 · tool-JSON 36.6 · synthetic prose 30 (unchanged)</div></div>
 <div class="box"><div class="lbl">Decode · C8 aggregate</div><div class="hero">63.7<small>tok/s</small></div><div class="note">max-num-seqs 8 (slot cap) · v21 same-budget 60.8 · pre-hotsplit v14 56.2</div></div>
-<div class="box"><div class="lbl">Prefill · cold</div><div class="hero">1.38K<small>tok/s</small></div><div class="note">11.5K prompt in 8.4 s · 46K in 33.3 s · 3K in 2.5 s</div></div>
+<div class="box"><div class="lbl">Prefill · cold</div><div class="hero">1.38K<small>tok/s</small></div><div class="note">11.5K prompt in 8.4 s · 46K in 33.3 s · 254K in 201 s</div></div>
   </div>
   <div class="row2">
 <div class="box"><div class="lbl">Guesser</div><div class="kv"><b>none</b> · in-checkpoint DFlash measured and rejected under offload<br>k = 0 · measured before hotsplit: k=3 24.5 tok/s, k=7 17.2, k=0 30.2<br><span class="acc">accept: <span>prose <b>n/a</b></span> <span>code <b>n/a</b></span> <span>shell <b>n/a</b></span> <span>tool-JSON <b>n/a</b></span></span></div></div>
 <div class="box"><div class="lbl">Residency (held-out agent turns)</div><div class="kv">decode traffic from HBM, stock layer order (same HBM bytes): <b>30.4%</b><br>hotsplit, train-ranked: <b>62.2% (oracle 62.5%)</b><br>cold bank share of expert time (profile): <b>~80% for ~39% of traffic</b></div></div>
-<div class="box"><div class="lbl">Boot</div><div class="kv">local NVMe, weights + split + graphs: <b>~7 min</b><br>MoE autotune (Marlin): <b>9 s</b></div></div>
+<div class="box"><div class="lbl">Long context · boot</div><div class="kv">needle 10/50/90% at 65K/131K/196K/254K: <b>12/12</b><br>decode after TTFT at 254K (11.5K: 37): <b>33.8 tok/s</b><br>TTFT at 254K (prefill 1.26K tok/s): <b>201 s</b><br>boot, local NVMe (weights + split + graphs): <b>~7 min</b></div></div>
   </div>
   <div class="fid"><div class="lbl">Output fidelity — does the recipe change what the model says?</div>
     <ul>
