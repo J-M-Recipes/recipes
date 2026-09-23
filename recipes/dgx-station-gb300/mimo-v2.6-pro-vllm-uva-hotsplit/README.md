@@ -46,6 +46,7 @@ Variants: drop `152.8` for the stock-equal budget (KV 514K); unset `COUNTS` for 
 
 - `curl -fs http://localhost:30007/v1/models`; boot ~7 min.
 - Log lines: `Using 'MARLIN' Mxfp4 MoE backend`, `Total CPU offloaded parameters: 321.75`, `hotsplit plan: 69 layers, budget 152.8 GiB (stock HBM experts 141.8 GiB), hot cells 8692/26496`, `hotsplit done in ~32s; HBM free 34.7 GiB`, `GPU KV cache size: 302,3xx tokens`.
+- Long context: `python3 scripts/longctx_bench.py <tag> 65536 131072 196608 253952` (~45 min on an idle lane).
 - `bash scripts/agent_fixture.sh warm` once and discard (first pass reads ~20% low), then `python3 scripts/ttft_bench.py <tag>` and `bash scripts/agent_fixture.sh <tag>`.
 - Tool calling through Hermes: `bash scripts/harness_test.sh` then `python3 scripts/score_harness.py /tmp/harness-mimo26`.
 
@@ -63,6 +64,7 @@ Warm, same image and flags; only the hotsplit env differs.
 | prefill, 11.5K prompt | 1,259 tok/s | 1,334 | 1,376 |
 | GPU KV cache | 490,466 tok | 513,612 | 302,368 (1.15× one 256K request) |
 
+- **Long context (v23, one request, lane idle):** needle recall at 10/50/90% depth **12/12** at 65K / 131K / 196K / 254K prompt tokens. Decode after TTFT **34.0 / 34.3 / 33.3 / 33.8 tok/s**, and 36.9–37.1 at 11.5K. Prefill 1,350 → 1,262 tok/s, so TTFT is **201 s at 254K**. Bench: `scripts/longctx_bench.py`; rows, method, and two discarded contended rows: `results/2026-09-22-hotsplit/longctx.md`.
 - Held-out decode traffic served from HBM at the stock byte budget: **30.4% → 62.2%** (ranked on 630 real agent turns, tested on 270 held out; oracle 62.5%; prefill-ranked 54.9%).
 - Hermes harness on the v23 serving boot: **10/10 tool-call turns, 10/10 correct** (`results/2026-09-22-hotsplit/harness-summary.md`).
 - Fidelity: 16-layer truncated Pro, stock vs hotsplit, greedy **6/6 token-identical**; residual drift ≤5.0e-4 relative by layer 15; max |Δlogprob| 0.067 (two partial sums change summation order — not bit-exact). Full-depth teacher-forced Δlogprob and a public tool-call suite are **pending**.
