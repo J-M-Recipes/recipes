@@ -8,7 +8,8 @@ summary: >
   re-homes each layer's experts by measured decode usage (hot rows in HBM, cold rows in exact-size pinned Grace memory) and runs
   the MoE as two Marlin calls with expert_maps. Release v23 (2026-09-22): decode 37.4 tok/s after TTFT at an 11.5K-token prompt
   (stock layer-order placement, same flags: 31.2), agent tool-call JSON 36.6 (29.5), C8 63.7 aggregate, prose unchanged at ~30,
-  16-layer greedy parity 6/6 token-exact, Hermes harness 10/10 tool calls and 10/10 correct on the serving boot. Held-out decode traffic served
+  16-layer greedy parity 6/6 token-exact, Hermes harness 10/10 tool calls and 10/10 correct on the serving boot.
+  1M-context variant v24 (110 GiB hot, KV 1.21M tokens): decode 33.0 at 11.5K, needles 3/3 at 524K, 1M unmeasured. Held-out decode traffic served
   from HBM 30.4% -> 62.2% at the same byte budget. No speculative decoding: DFlash k=3/k=7 were measured and lose under offload.
 status: experimental
 owners: [jmeadlock, milo]
@@ -80,9 +81,22 @@ launch:
     - "--tool-call-parser mimo --reasoning-parser mimo --enable-auto-tool-choice --generation-config auto  (REQUIRED for agent use; generation-config auto is the model's own sampling defaults)"
     - "HOTSPLIT_COUNTS=<json> HOTSPLIT_WEIGHTS=decode=1,prefill=0 HOTSPLIT_HOT_GIB=152.8  (rank on decode counts; prefill-ranked coverage was 54.9% vs 62.2%)"
     - "VARIANT stock-equal budget: omit HOTSPLIT_HOT_GIB -> 141.8 GiB hot, KV 513,612 tokens (1.96x one 256K request), decode 36.3 / tool_json 35.7 / C8 60.8 (v21)."
+    - "VARIANT 1M context (v24, the author's serving lane since 2026-09-23): launch-hotsplit.sh v24 110 1048576 -> 110 GiB hot (6,257 cells), KV 1,209,097 tokens, decode 33.0 at 11.5K (-12%), tool_json 32.7, prefill 1,235; 524K prompt: needles 3/3, TTFT ~490 s, decode 28.6. 1M itself unmeasured."
     - "VARIANT no hotsplit (control): omit HOTSPLIT_COUNTS -> stock layer-order placement, decode 31.2, KV 490,466 (v20)."
 
 metrics:
+  - name: decode after TTFT, 11.5K-token prompt — v24 1M-context variant (110 GiB hot)
+    value: 33.0
+    unit: tok/s
+    workload: "same as v22 (ttft_bench.py), on a boot with --max-model-len 1048576 and HOTSPLIT_HOT_GIB=110, live counter on"
+    aggregation: "33.0/32.9/33.2; 2,952 tokens 33.2; 45,828 tokens 32.7; prefill 1,235 tok/s at 11.5K. Fixture tool_json 32.7/32.6, shell 32.5, structured 31.7-31.8, code 29.4-29.5, prose 29.0. -12% vs v22 at 11.5K"
+    provenance: { run_id: 2026-09-22-hotsplit, method: "scripts/ttft_bench.py + scripts/agent_fixture.sh", raw: receipts/ttft-v24-1m.json }
+  - name: long-context decode after TTFT, 524K-token prompt — v24 1M-context variant
+    value: 28.6
+    unit: tok/s
+    workload: "scripts/longctx_bench.py, same method as the v23 rows; 1M served max_model_len; KV pool 1,209,097 tokens"
+    aggregation: "65.3K 32.0 · 524.0K 28.6. Needles 6/6 (65K 3/3, 524K 3/3). TTFT 489-496 s at 524K (prefill 1,057-1,070 tok/s). ~1.04M: not measured (run stopped)"
+    provenance: { run_id: 2026-09-22-hotsplit, method: "scripts/longctx_bench.py", raw: receipts/longctx-v24.jsonl }
   - name: long-context decode after TTFT, 253.7K-token prompt — v23
     value: 33.8
     unit: tok/s
@@ -162,6 +176,7 @@ limits:
   - "EXPERIMENTAL. hotsplit is an out-of-tree hook, not a vLLM feature. The upstream design discussion is vllm-project/vllm#57794 (expert-granular residency); our data is posted there."
   - "The hot list is workload-specific. It was ranked on real agent turns; synthetic prose ('paragraph about the number N') does not speed up (30.0 control vs 29.7-30.7). The first agent-only list cost that prompt ~5% (28.2-28.5); mixing a prose-leaning histogram in at weight 0.25 removed the loss at a 1.2-point coverage cost (62.2 -> 61.0%). Re-rank from your own traffic: scripts/expert_hist2.py (offline) or the live counter + scripts/rerank-weekly.sh."
   - "Cold bank cost: ~39% of routed traffic, ~80% of expert time (~6x per unit of traffic). Moving 11 GiB of KV to hot cells gave ~+1 tok/s (36.3 -> 37.4); KV 513,612 -> 302,368 tokens (1.15x one 256K request). For more than one concurrent long context, use the stock-equal budget variant."
+  - "Context vs speed. Each GiB of hot experts traded for KV buys ~19K tokens of context (60 of 70 layers are 128-token sliding window). 262K (v23, 152.8 GiB hot): 37.4 tok/s. ~500K (stock-equal 141.8 GiB): 36.3. 1M (v24, 110 GiB): 33.0, measured; the pre-boot estimate was 34.9 and was wrong. Recall and speed at 1M are unmeasured: 524K is the longest prompt run."
   - "No speculative decoding. The in-checkpoint DFlash drafter was measured at k=7 (C1 17.2 tok/s, 50% weighted acceptance) and k=3 (24.5 tok/s, 69%) against 30.2 at k=0 on the pre-hotsplit lane: every verified token fetches its own experts over C2C. Not re-measured with hotsplit."
   - "Dense GEMMs are bandwidth-bound already (o_proj BF16 36.1 us, qkv FP8 35.9 us per layer at 4.4-5.3 TB/s). The only lever is quantizing o_proj (BF16 in the checkpoint's ignored_layers, 13.1 GiB/token read, ~1.2 ms/token) — a model change that needs a quality gate. Not done."
   - "Parity is token-exact greedy on a 16-layer truncation, not bit-exact and not a full-depth teacher-forced corpus. That gate is pending."

@@ -2,7 +2,7 @@
 # Every number traces to recipe.yaml metrics or results/2026-09-22-hotsplit. Unknown = pending (renders amber).
 title: "MiMo-V2.6-Pro · 1× DGX Station GB300"
 subtitle: "A 1.02T MoE from one GB300 — 320 GiB of experts read in place from Grace, hot experts re-homed to HBM by measured usage"
-version: "v23 “Hotsplit” (experimental, 2026-09-22; v22 = same without live counter; v20 = stock-placement control)"
+version: "v23 “Hotsplit” (experimental, 2026-09-22; v24 = 1M-context variant, 33.0 tok/s; v20 = stock-placement control)"
 run_id: 2026-09-22-hotsplit
 handles: "github.com/J-M-Recipes/recipes · al-engr.com · @jmeadlock"
 
@@ -37,6 +37,8 @@ secondary:
     items:
       "needle 10/50/90% at 65K/131K/196K/254K": "12/12"
       "decode after TTFT at 254K (11.5K: 37)": "33.8 tok/s"
+      "1M variant (v24, 110 GiB hot): 11.5K / 524K decode": "33.0 / 28.6 tok/s"
+      "1M variant: needles at 524K · at 1M": "3/3 · pending"
       "TTFT at 254K (prefill 1.26K tok/s)": "201 s"
       "boot, local NVMe (weights + split + graphs)": "~7 min"
 
