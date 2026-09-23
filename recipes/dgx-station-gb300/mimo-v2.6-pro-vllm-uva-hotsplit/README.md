@@ -7,7 +7,7 @@
 The 527 GiB [MiMo-V2.6-Pro-RL](https://huggingface.co/XiaomiMiMo/MiMo-V2.6-Pro-RL) checkpoint (1.02T total / 42B active, 384 routed experts × 69 MoE layers, native MXFP4 experts, revision `54b10491`) on one GPU that has 250 GiB of HBM:
 
 - vLLM's UVA offloader reads 320 GiB of routed experts **in place** from Grace memory over NVLink-C2C (exact-size pinned, no H2D copy);
-- Marlin MoE kernels (the FlashInfer TRT-LLM MXFP4 cubin is sm_100a-only and crawls on SM103);
+- Marlin MoE kernels (the auto-picked FlashInfer TRT-LLM MXFP4 backend's autotune crawled ~2 h with 320 GiB of experts in Grace; CORRECTED 2026-09-23: an earlier version blamed an sm_100a-only cubin, which was wrong — see vllm-project/vllm#58031);
 - **hotsplit**: after load, each layer's experts are re-homed by *measured decode usage* — hot rows in HBM, cold rows in Grace — and the MoE runs as two Marlin calls with `expert_map`s. Stock `--cpu-offload-gb` decides residency by layer order (layers 1–48 in Grace, 49–69 in HBM); hotsplit decides it by what the router actually picks;
 - 262,144-token context, reasoning and tool parsers on, no speculative decoding.
 

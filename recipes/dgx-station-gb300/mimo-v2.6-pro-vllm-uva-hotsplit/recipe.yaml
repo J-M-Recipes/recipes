@@ -37,7 +37,7 @@ hardware:
   required_settings:
     - "Checkpoint on LOCAL NVMe (RAID0 /models). Weight load 148-199 s from NVMe."
     - "Do NOT pass --load-format runai_streamer: on this model it loads the fused FP8 qkv_proj as all zeros and mangles MXFP4 experts (confident garbage). Default safetensors loader."
-    - "--moe-backend marlin and VLLM_USE_DEEP_GEMM=0 on SM103: the auto-picked FlashInfer TRT-LLM MXFP4 cubin is sm_100a-only and turns autotune into a ~2 h crawl (vllm-project/vllm#58031). With Marlin the autotune takes 9 s."
+    - "--moe-backend marlin and VLLM_USE_DEEP_GEMM=0 on SM103: the auto-picked FlashInfer TRT-LLM MXFP4 backend's autotune took ~2 h with 320 GiB of experts in Grace (vllm-project/vllm#58031). With Marlin the autotune takes 9 s. CORRECTED 2026-09-23: an earlier version blamed an sm_100a-only cubin; that was wrong (the op ships sm_103a cubins). On DSV4.1 the same op tunes 71 min per pass under stock UVA placement vs 8 min with hot experts in HBM, same box and nightly."
     - "VLLM_WEIGHT_OFFLOADING_DISABLE_PIN_MEMORY=1: exact-size cudaHostAlloc pinning instead of Tensor.pin_memory() power-of-two rounding (90.3 vs 57.8 GiB host for a 40 GiB offload; vllm-project/vllm#58185). Also required by hotsplit: a cudaHostRegister-pinned offloader does not release freed buffers and the split OOM-kills the host at ~30/69 layers."
 
 runtime:
