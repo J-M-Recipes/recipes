@@ -1,0 +1,64 @@
+== vision gate
+stock/vision.txt: VISION_GATE FAIL
+{"text_prompt_tokens": 29, "image_prompt_tokens": 32, "delta": 3, "image_tokens": null, "checks": {"prompt_token_delta": false, "image_tokens_reported_positive": true, "reads_HELLO": false}, "content": "The image shows the Coca-Cola logo:\n\n**Shapes and colors:**\n- A large **circle** filled with *
+tf5/vision-cold.txt: VISION_GATE PASS
+{"text_prompt_tokens": 29, "image_prompt_tokens": 392, "delta": 363, "image_tokens": 361, "checks": {"prompt_token_delta": true, "image_tokens_reported_positive": true, "reads_HELLO": true}, "content": "The image contains:\n\n**Shapes:**\n- A **red square** (top left)\n- A **blue circle** (top right
+tf5/vision.txt: VISION_GATE PASS
+{"text_prompt_tokens": 29, "image_prompt_tokens": 392, "delta": 363, "image_tokens": 361, "checks": {"prompt_token_delta": true, "image_tokens_reported_positive": true, "reads_HELLO": true}, "content": "The image contains:\n\n**Shapes:**\n- A red square (top left)\n- A blue circle (top right)\n\n**T
+tf5/vision-after.txt: VISION_GATE PASS
+{"text_prompt_tokens": 29, "image_prompt_tokens": 392, "delta": 363, "image_tokens": 361, "checks": {"prompt_token_delta": true, "image_tokens_reported_positive": true, "reads_HELLO": true}, "content": "The image contains:\n\n**Shapes:**\n- A **red square** (top left)\n- A **blue circle** (top right
+== versions
+stock: sglang 0.5.20 transformers 5.12.1 [transformers] You are using a model of type `glm5_next` to instantiate a model of type ``. This may be expected if you are loading a checkpoint that shares a subset of the architecture (e.g., loading a `sam2_video` checkpoint into `Sam2Model`), but is otherwise not supported and can yield errors. Please verify that the checkpoint is compatible with the model you are instantiating. TokenizersBackend NoneType 
+tf5: sglang 0.5.20 transformers 5.16.1 Glm5NextProcessor Glm5NextImageProcessor 
+== greedy 20x200 tf5 vs Card D newdf (same image base, stock transformers)
+GREEDY_EQUIV identical=2/20
+== greedy 20x200 tf5 vs w2-a
+GREEDY_EQUIV identical=2/20
+== long greedy 8x2500 tf5 vs Card D newdf
+LONG_GREEDY identical=0/8
+  prompt 0: first divergence at char 161 (tokens 2500 vs 2500)
+  prompt 1: first divergence at char 113 (tokens 2500 vs 2500)
+  prompt 2: first divergence at char 95 (tokens 2500 vs 2500)
+  prompt 3: first divergence at char 29 (tokens 2500 vs 2500)
+  prompt 4: first divergence at char 124 (tokens 2500 vs 2500)
+  prompt 5: first divergence at char 0 (tokens 2500 vs 2500)
+  prompt 6: first divergence at char 64 (tokens 2500 vs 2500)
+  prompt 7: first divergence at char 185 (tokens 2500 vs 2500)
+== TF logprob tf5 vs Card D newdf
+  "3": 2.5475854873657227,
+  "4": 3.102114677429199,
+  "5": 1.7973544551059604,
+  "6": 1.4150571823120117,
+  "7": 2.753020405769348,
+  "8": 3.5506513118743896,
+  "9": 3.2557950019836426,
+  "10": 2.3084259033203125,
+  "11": 2.377493381500244,
+  "12": 5.2149128913879395,
+  "13": 3.836193561553955,
+  "14": 2.760392665863037,
+  "15": 3.8555665016174316,
+  "16": 1.4992811679840088,
+  "17": 6.611360549926758,
+  "18": 2.5597472190856934,
+  "19": 4.112333059310913
+ },
+ "bar": {
+  "p99_le_0.05": false,
+  "max_le_0.5": false,
+  "tokens_ge_3000": false
+ },
+ "NONINFERIOR": false
+}
+== tools
+SUMMARY tool_ok=10/10
+SUMMARY tool_ok=10/10
+== C1 low
+Card D newdf:
+== accept
+[tf5-low] agentic   400 tok  1.71s ->  233.8 tok/s | accept len nan rate nan (n_lines=0)
+[tf5-low] no accept lines scraped; mean C1 255.0
+== C8
+[x] conc= 8:   681.0 agg tok/s   85.12 per-stream  (reps 697/655/691 spread 6%; warm-pass 663)
+Card D newdf:
+[x] conc= 8:   699.1 agg tok/s   87.39 per-stream  (reps 719/678/700 spread 6%; warm-pass 665)

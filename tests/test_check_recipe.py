@@ -182,3 +182,18 @@ def test_patch_sha_must_match_file(tmp_path):
     r["runtime"]["patches"] = [{"path": "patches/hook.py", "sha256": SHA, "purpose": "test"}]
     p = write_recipe(tmp_path, r, files={"patches/hook.py": "print(1)\n"})
     assert any("sha256" in e and "hook.py" in e for e in errors_of(p))
+
+
+def test_container_dockerfile_sha_must_match_file(tmp_path):
+    import hashlib
+    body = "FROM img@sha256:" + SHA + "\n"
+    r = base_recipe()
+    r["runtime"]["container"]["dockerfile"] = "Dockerfile.x"
+    r["runtime"]["container"]["dockerfile_sha256"] = SHA
+    p = write_recipe(tmp_path, r, files={"Dockerfile.x": body})
+    assert any("dockerfile sha256 mismatch" in e for e in errors_of(p))
+    r["runtime"]["container"]["dockerfile_sha256"] = hashlib.sha256(body.encode()).hexdigest()
+    p = write_recipe(tmp_path.joinpath("b"), r, files={"Dockerfile.x": body})
+    assert errors_of(p) == []
+    p = write_recipe(tmp_path.joinpath("c"), r)
+    assert any("Dockerfile.x" in e and "not found" in e for e in errors_of(p))
