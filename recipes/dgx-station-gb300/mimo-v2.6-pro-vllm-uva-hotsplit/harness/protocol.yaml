@@ -1,0 +1,32 @@
+# Fixed outer protocol for agent claims on this recipe (J-M-Recipes, MiMo-V2.6-Pro hotsplit on one GB300)
+# Pinned so the harness card travels with the model claim. Any change = new file + new sha256 + new run.
+# Same shape as the DSV4.1 recipe's protocol (adopted 2026-09-21 per @getmeosu); MiMo-specific lines marked.
+version: 1
+endpoint: "OpenAI-compatible /v1/chat/completions on the served lane (:30007, --tool-call-parser mimo --reasoning-parser mimo --enable-auto-tool-choice); API key not part of the claim"
+sampling: { temperature: 0, thinking: false, max_tokens: 2048, chat_template_kwargs: { enable_thinking: false } }   # MiMo: thinking is toggled by enable_thinking, not thinking
+tool_choice: auto
+retries: "1 on transport error; a second failure counts as unsolved"
+concurrency: "8 (BFCL suites; the lane's --max-num-seqs is 8)"
+turns: "single-turn (BFCL)"
+system_prompt:
+  bfcl: "none (BFCL supplies the user turn and the function list verbatim; parameter types dict->object, tuple->array, float->number)"
+solved:
+  bfcl: "exactly one tool call whose function name matches a ground-truth key and whose arguments satisfy every required ground-truth parameter (value in the allowed list after JSON normalisation; 5 == 5.0; strings stripped, case-insensitive) with no extra parameters. Grader: scripts/bfcl_gate.py (same grader as the DSV4.1 and GLM-5.3-Flash recipes) — a same-grader A/B, not a leaderboard score"
+suites:
+  dev: "BFCL_v4_simple_python (400) + BFCL_v4_multiple (200) = 600 · decides candidacy"
+  heldout: "BFCL_v4_live_simple (258) + BFCL_v4_live_multiple (1,053) = 1,311 · frozen 2026-09-21 · run only at promotion, once per arm · decides promotion"
+  data_sha256: "../deepseek-v4.1-flash-vllm-uva-dspark/results/2026-09-21-toolcall-gate-49435/BFCL-SHA256SUMS (same files)"
+arms: "control = stock layer-order UVA placement (kept container v20-ctrl, no HOTSPLIT_COUNTS); candidate = v23 hotsplit (kept container v23-hot153-live, the published headline boot). Same image digest, same weights, same flags otherwise."
+rule: "a candidate that passes dev and fails held-out is recorded as overfit-to-harness and is not re-run against the sibling"
+promotion_bars:   # written before the run (2026-09-23 22:45 CDT); experimental -> verified requires all four
+  - "teacher-forced: control -> v23 corpus perplexity within 0.5% relative, and top-1 flip rate <= 2.0% (tf_logprob.py, 39-doc corpus, MAXPOS 4096)"
+  - "BFCL dev: v23 all-case exact-match >= control - 1.0 pt"
+  - "BFCL held-out: v23 all-case exact-match >= control - 1.0 pt"
+  - "no errors (transport/5xx) above 0.5% of cases on either arm"
+not_a_bar: "full-depth greedy parity (mimo_greedy.py, 12 prompts x 512 tokens) is reported, not gated: hotsplit changes the order of two partial sums, so bit-exact decode is not expected"
+cost:
+  formula: "usd_per_solved_task = mean_gpu_watts * wall_seconds / 3600 / 1000 * usd_per_kwh / tasks_solved"
+  power_source: "nvidia-smi -i 1 power.draw sampled every 5 s for the whole suite (power-<tag>.csv); mean of all samples. MiMo change vs DSV4.1 protocol (which averaged two points)"
+  usd_per_kwh: 0.15
+  usd_per_kwh_note: "stated assumption (Telluride residential)"
+  amortized_hardware: "not in the headline"

@@ -1,6 +1,6 @@
 # MiMo-V2.6-Pro on one DGX Station GB300 — vLLM UVA expert offload + per-expert HBM residency ("hotsplit")
 
-**Status: experimental (v23, 2026-09-22).** Serving lane on the author's box; the residency hook is out-of-tree.
+**Status: verified (v23, promoted 2026-09-24).** The residency hook is still out-of-tree. Previous status: experimental (2026-09-22).
 
 ## What this runs
 
@@ -52,6 +52,25 @@ Variants: drop `152.8` for the stock-equal budget (KV 514K); unset `COUNTS` for 
 - `bash scripts/agent_fixture.sh warm` once and discard (first pass reads ~20% low), then `python3 scripts/ttft_bench.py <tag>` and `bash scripts/agent_fixture.sh <tag>`.
 - Tool calling through Hermes: `bash scripts/harness_test.sh` then `python3 scripts/score_harness.py /tmp/harness-mimo26`.
 
+## Verification (2026-09-24)
+
+Promotion run `results/2026-09-24-promotion/`. The bars were written into `harness/protocol.yaml` (sha256 `84faecb9…`) before the run. **Control** = the kept v20 container: stock layer-order UVA placement. **Candidate** = the kept v23 container: hotsplit, 152.8 GiB hot. Both use the same image digest, weights and flags; only the `HOTSPLIT_*` environment differs. Each arm was booted, then identity-checked (`docker exec sha256sum` of both mounted patches, hotsplit plan line, KV size), warmed, and measured.
+
+| bar | control (stock placement) | v23 hotsplit | result |
+|---|--:|--:|---|
+| Teacher-forced perplexity, 80,384 positions / 39 docs | 1.5081 | 1.5077 (−0.025%) | **pass** (≤ 0.5%) |
+| Teacher-forced top-1 flips vs control | — | 1.23% | **pass** (≤ 2.0%) |
+| BFCL dev (simple_python + multiple, 600) | 93.67% | 93.83% | **pass** (≥ control − 1) |
+| BFCL held-out live sibling (1,311, first run on this model) | 78.49% | 78.18% | **pass** (≥ control − 1) |
+| Errors, 3,822 requests | 0 | 0 | **pass** |
+
+- **Noise floor.** I rebooted the *control* container and recaptured. The control against its own reboot flips 1.17% of top-1 tokens: mean |Δ| 0.025 vs 0.026, p99 0.41 vs 0.43. Hotsplit therefore adds about 0.05 pt of argmax movement over the lane's own run-to-run nondeterminism.
+- **Greedy parity is not a usable signal on this lane.** 512-token greedy outputs were identical on 1/12 prompts control vs v23, and also 1/12 control vs its own reboot. One prompt (“Is 2³¹ − 1 prime?”) answers *No* on one control boot and *Yes* on the next (and on v23). This is vLLM batch/kernel nondeterminism at T=0, not hotsplit. Do not use byte-parity as a regression test for this recipe.
+- BFCL was scored with our grader (the same as the DSV4.1 and GLM-5.3-Flash recipes): a same-grader A/B, not a leaderboard number. On held-out, 34 of 1,311 cases disagree between the two arms (19 control-only, 15 v23-only). v23's unsolved cases: wrong-arg-value 170, no-call 52, missing-arg 34, wrong-function 30, errors 0, truncated 0.
+- Energy: v23 held-out ran at a mean of 372 W over 1,839 s (control 344 W over 2,390 s), which is **$0.028 per 1000 solved** at $0.15/kWh, energy only.
+- **1M row (v24):** needles **3/3 at 1.04M prompt tokens** (10/50/90% depth). TTFT 1,101 s (944 tok/s prefill); decode after TTFT **25.7 tok/s** on a 1,035,393-token prompt.
+- Reproduce: `scripts/finish-mimo-pro-2026-09-23.sh` (runner), `scripts/noise-floor.sh`, `scripts/verdict.py`.
+
 ## Results
 
 Warm, same image and flags; only the hotsplit env differs.
@@ -67,22 +86,22 @@ Warm, same image and flags; only the hotsplit env differs.
 | GPU KV cache | 490,466 tok | 513,612 | 302,368 (1.15× one 256K request) |
 
 - **Long context (v23, one request, lane idle):** needle recall at 10/50/90% depth **12/12** at 65K / 131K / 196K / 254K prompt tokens. Decode after TTFT **34.0 / 34.3 / 33.3 / 33.8 tok/s**, and 36.9–37.1 at 11.5K. Prefill 1,350 → 1,262 tok/s, so TTFT is **201 s at 254K**. Bench: `scripts/longctx_bench.py`; rows, method, and two discarded contended rows: `results/2026-09-22-hotsplit/longctx.md`.
-- **1M-context variant (v24):** decode 33.0 at 11.5K (−12%), tool_json 32.7, prefill 1,235 tok/s. Needles 3/3 at 65K and 3/3 at 524K; decode 28.6 tok/s and TTFT ~490 s at 524K. **1M itself is not measured.** I stopped that run during the first 1.04M prefill (~17 min of GPU per prompt). My pre-boot estimate was −7%; it was wrong. Details: `results/2026-09-22-hotsplit/longctx.md`.
+- **1M-context variant (v24):** decode 33.0 at 11.5K (−12%), tool_json 32.7, prefill 1,235 tok/s. Needles 3/3 at 65K and 3/3 at 524K; decode 28.6 tok/s and TTFT ~490 s at 524K. ~~**1M itself is not measured.**~~ **CORRECTED 2026-09-24:** measured: 3/3 needles at 1.04M, decode 25.7 tok/s, TTFT 18.4 min (see Verification). My pre-boot speed estimate (−7%) was wrong. Details: `results/2026-09-22-hotsplit/longctx.md`.
 - Held-out decode traffic served from HBM at the stock byte budget: **30.4% → 62.2%** (ranked on 630 real agent turns, tested on 270 held out; oracle 62.5%; prefill-ranked 54.9%).
 - Hermes harness on the v23 serving boot: **10/10 tool-call turns, 10/10 correct** (`results/2026-09-22-hotsplit/harness-summary.md`).
-- Fidelity: 16-layer truncated Pro, stock vs hotsplit, greedy **6/6 token-identical**; residual drift ≤5.0e-4 relative by layer 15; max |Δlogprob| 0.067 (two partial sums change summation order — not bit-exact). Full-depth teacher-forced Δlogprob and a public tool-call suite are **pending**.
+- Fidelity: 16-layer truncated Pro, stock vs hotsplit, greedy **6/6 token-identical**; residual drift ≤5.0e-4 relative by layer 15; max |Δlogprob| 0.067 (two partial sums change summation order — not bit-exact). ~~Full-depth teacher-forced Δlogprob and a public tool-call suite are **pending**.~~ Both done 2026-09-24; see Verification.
 - Where the time goes (v21, 64 C1 decode tokens, torch profiler): 28.8 ms/token, GPU busy 96%. Marlin routed experts 17.3 ms — hot bank 3.4, **cold bank 14.0** (~39% of traffic, ~80% of expert time). Dense GEMMs 5.8 ms, already bandwidth-bound.
 
 All receipts: `results/2026-09-22-hotsplit/` (`facts.md`, `receipts/`, `harness/`).
 
 ## Known limits
 
-- **Experimental, out-of-tree.** Upstream design discussion: [vLLM RFC #57794](https://github.com/vllm-project/vllm/issues/57794#issuecomment-5785394491) (our data posted).
+- **Out-of-tree** (verified 2026-09-24, but not a vLLM feature). Upstream design discussion: [vLLM RFC #57794](https://github.com/vllm-project/vllm/issues/57794#issuecomment-5785394491) (our data posted).
 - **The hot list is workload-specific.** Agent-only ranking cost synthetic prose ~5%; mixing a prose histogram in at 0.25 fixed that. Re-rank for your traffic: offline with `scripts/expert_hist2.py` → `scripts/hist2_analyse.py` → `scripts/mixcounts.py`, or online with `LIVE=1` + `scripts/rerank-weekly.sh` (refuses below 50K decode tokens/layer; applies on the next boot; never restarts anything).
 - **KV trade.** 60 of 70 layers are sliding-window, so each GiB of hot experts traded buys ~19K KV tokens. 152.8 GiB hot → 302K KV (37.4 tok/s); 141.8 → 514K (36.3); 110 → 1.21M (33.0).
 - **No speculative decoding.** In-checkpoint DFlash k=7 (17.2 tok/s) and k=3 (24.5) both lost to k=0 (30.2) under offload on the pre-hotsplit lane.
 - **Dense GEMMs are bandwidth-bound.** o_proj is BF16 in the checkpoint (13.1 GiB read per token, ~1.2 ms/token); quantizing it is a model change that needs a quality gate. Not done.
-- Parity is greedy token-exact on 16 layers, not bit-exact, not a full-depth corpus.
+- Not bit-exact. Full-depth teacher-forced flips are 1.23% vs a 1.17% control-reboot floor, and long greedy outputs differ between boots with or without hotsplit.
 
 ## Rollback
 

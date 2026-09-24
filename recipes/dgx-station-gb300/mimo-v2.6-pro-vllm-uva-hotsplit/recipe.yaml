@@ -8,12 +8,14 @@ summary: >
   re-homes each layer's experts by measured decode usage (hot rows in HBM, cold rows in exact-size pinned Grace memory) and runs
   the MoE as two Marlin calls with expert_maps. Release v23 (2026-09-22): decode 37.4 tok/s after TTFT at an 11.5K-token prompt
   (stock layer-order placement, same flags: 31.2), agent tool-call JSON 36.6 (29.5), C8 63.7 aggregate, prose unchanged at ~30,
-  16-layer greedy parity 6/6 token-exact, Hermes harness 10/10 tool calls and 10/10 correct on the serving boot.
-  1M-context variant v24 (110 GiB hot, KV 1.21M tokens): decode 33.0 at 11.5K, needles 3/3 at 524K, 1M unmeasured. Held-out decode traffic served
+  Verified 2026-09-24 against the stock-placement control, same image and boot flags: teacher-forced perplexity 1.5081 -> 1.5077 over
+  80,384 positions (top-1 flips 1.23%; the control against its own reboot: 1.17%), BFCL dev 93.8 vs 93.7, held-out BFCL live
+  sibling 78.2 vs 78.5, 0 errors. Hermes harness 10/10 tool calls and 10/10 correct on the serving boot.
+  1M-context variant v24 (110 GiB hot, KV 1.21M tokens): decode 33.0 at 11.5K, needles 3/3 at 524K and 3/3 at 1.04M (decode 25.7, TTFT 18.4 min). Held-out decode traffic served
   from HBM 30.4% -> 62.2% at the same byte budget. No speculative decoding: DFlash k=3/k=7 were measured and lose under offload.
-status: experimental
+status: verified
 owners: [jmeadlock, milo]
-updated: "2026-09-22"
+updated: "2026-09-24"
 tags: [mimo-v2.6-pro, mxfp4, vllm, uva-offload, marlin, expert-residency, single-gpu, agent, 1t-moe]
 
 model:
@@ -85,6 +87,30 @@ launch:
     - "VARIANT no hotsplit (control): omit HOTSPLIT_COUNTS -> stock layer-order placement, decode 31.2, KV 490,466 (v20)."
 
 metrics:
+  - name: teacher-forced top-1 flip rate, stock-placement control -> v23 hotsplit
+    value: 1.23
+    unit: "%"
+    workload: "tf_logprob.py: /v1/completions max_tokens=1 prompt_logprobs=1 T=0 (prefill only), 39-doc corpus (18 agent prompts + greedy outputs, 21 x 10-K slices), MAXPOS 4096; tokenization matched on 39/39"
+    aggregation: "987/80,384 positions; mean|dlogprob| 0.0263, p50 6.7e-5, p99 0.427, max 4.34; ppl 1.5081 -> 1.5077 (-0.025%). NOISE FLOOR: the control against its own reboot (same container, same flags) 943/80,384 = 1.17%, mean|d| 0.0251, p99 0.407, ppl 1.5081 -> 1.5081. Hotsplit adds ~0.05 pt of flips over run-to-run nondeterminism. Bar (protocol.yaml, written before the run): ppl within 0.5% and flips <= 2.0% - PASS"
+    provenance: { run_id: 2026-09-24-promotion, method: "scripts/tf_logprob.py + scripts/noise-floor.sh", raw: receipts/tf-compare-ctrl-vs-v23.json }
+  - name: BFCL held-out live sibling (live_simple 258 + live_multiple 1,053), v23 hotsplit
+    value: 78.18
+    unit: "%"
+    workload: "bfcl_gate.py SUITE=heldout, T=0, enable_thinking false, tool_choice auto, C8, max_tokens 2048; our AST grader (same-grader A/B, not a leaderboard score); first and only held-out run on this model"
+    aggregation: "v23 1025/1311 vs control 1029/1311 (78.49%), delta -0.31 pt vs the >= control - 1 pt bar - PASS. 34 cases disagree (19 control-only, 15 v23-only). Unsolved v23: wrong-arg-value 170, no-call 52, missing-arg 34, wrong-function 30, errors 0, truncated 0 (control 172/46/34/30). Mean GPU power 372 W (control 344), wall 1,839 s (control 2,390)"
+    provenance: { run_id: 2026-09-24-promotion, method: "scripts/bfcl_gate.py + scripts/verdict.py", raw: receipts/bfcl-v23-heldout-summary.json }
+  - name: BFCL dev (simple_python 400 + multiple 200), v23 hotsplit
+    value: 93.83
+    unit: "%"
+    workload: "same protocol as held-out, SUITE=dev"
+    aggregation: "v23 563/600 vs control 562/600 (93.67%), +0.16 pt; 3 cases disagree; errors 0 both. simple_python 94.75 both; multiple 92.0 vs 91.5"
+    provenance: { run_id: 2026-09-24-promotion, method: "scripts/bfcl_gate.py", raw: receipts/bfcl-v23-dev-summary.json }
+  - name: needle recall at 1.04M prompt tokens — v24 1M-context variant
+    value: 3
+    unit: "of 3"
+    workload: "longctx_bench.py 1040000: prompts 1,039,679-1,039,704 tokens, needle at 10/50/90% depth, T=0, thinking off, lane idle"
+    aggregation: "3/3 exact codes. TTFT 1,101 s (prefill 944 tok/s). Decode after TTFT on a 1,035,393-token prompt: 25.7 tok/s (524K: 28.6, 11.5K: 33.0)"
+    provenance: { run_id: 2026-09-24-promotion, method: "scripts/longctx_bench.py", raw: receipts/longctx-v24-1m.log }
   - name: decode after TTFT, 11.5K-token prompt — v24 1M-context variant (110 GiB hot)
     value: 33.0
     unit: tok/s
@@ -166,20 +192,20 @@ metrics:
 
 verification:
   gates:
-    schema:      { how: "scripts/check_recipe.py passes", last_pass_utc: "2026-09-22T23:30:00Z", run_id: 2026-09-22-hotsplit }
-    digest:      { how: "docker image inspect RepoDigests = sha256:f29125bc…; /model is revision 54b10491 (HF download metadata), 573,492,132,336 bytes on disk; patch sha256s above match the files inside the running v23 container (docker exec sha256sum)", last_pass_utc: "2026-09-22T23:20:00Z", run_id: 2026-09-22-hotsplit }
+    schema:      { how: "scripts/check_recipe.py passes", last_pass_utc: "2026-09-24T14:00:00Z", run_id: 2026-09-24-promotion }
+    digest:      { how: "docker image inspect RepoDigests = sha256:f29125bc…; /model is revision 54b10491 (HF download metadata), 573,492,132,336 bytes on disk; patch sha256s above match the files inside the running v23 container (docker exec sha256sum); re-checked on all three promotion boots (ctrl, v23, v24: receipts/identity-*.txt)", last_pass_utc: "2026-09-24T11:53:00Z", run_id: 2026-09-24-promotion }
     health:      { how: "v23: /v1/models 200; log lines per launch.health (receipts/bootlog-v23-hot153-live.txt); live counter snapshot after 10 min covered 69 layers / 5,052 decode tokens; answers 'Jupiter' / 'Paris'", last_pass_utc: "2026-09-22T22:38:00Z", run_id: 2026-09-22-hotsplit }
-    quality:     { how: "16-layer truncated Pro (--hf-overrides num_hidden_layers=16, 40 GiB offload, same image) stock vs hotsplit, greedy: 6/6 outputs token-identical; per-layer last-token residual relative drift rises smoothly to 5.0e-4 by layer 15 (max abs 0.0020); max |Δlogprob| on chosen tokens 0.067 — summation order of two partial MoE sums, not bit-identity. Full model: answers sane on every boot; Hermes harness on v23: 10/10 tool-call turns, 10/10 correct (harness-summary.md). NOT yet run: teacher-forced Δlogprob over a corpus vs the no-hotsplit control, and a public tool-call suite — pending, the card says so.", last_pass_utc: "2026-09-22T20:31:00Z", run_id: 2026-09-22-hotsplit }
+    quality:     { how: "PROMOTION 2026-09-24-promotion (results/2026-09-24-promotion, bars pinned in harness/protocol.yaml sha256 84faecb9 before the run). Arms: control = kept container v20 (stock layer-order UVA placement), candidate = kept container v23 (hotsplit 152.8 GiB) - same image sha256:f29125bc, same weights, same flags; identity (docker exec sha256sum of both mounted patches, hotsplit plan line, KV size) recorded per arm. (1) Teacher-forced dlogprob, 80,384 positions / 39 docs, prefill-only: ppl 1.5081 -> 1.5077, top-1 flips 1.23%, mean|d| 0.026, p99 0.43; noise floor control-vs-control-reboot flips 1.17%, mean|d| 0.025 - PASS. (2) BFCL dev 93.83 vs 93.67 - PASS. (3) BFCL held-out live sibling 78.18 vs 78.49 (-0.31 pt, bar -1) - PASS. (4) errors 0/3,822 requests - PASS. Reported not gated: full-depth greedy 512-token parity 1/12 identical control vs v23 AND 1/12 control vs its own reboot - vLLM at C1 is not deterministic run-to-run on this lane, so greedy parity carries no signal about hotsplit here (the reason-2 prompt flips its yes/no answer between two control boots). Earlier evidence kept: 16-layer truncation greedy 6/6, residual drift <= 5e-4; Hermes harness 10/10 on v23.", last_pass_utc: "2026-09-24T13:21:00Z", run_id: 2026-09-24-promotion }
     performance: { how: "Matched warm A/B, only HOTSPLIT_* differing (v20 control vs v19b/v21/v22), each lane: discarded warm-up fixture, ttft_bench x3 per length, fixture x2, prose C1 x6, knee C1/C8. v22 vs v20: decode +20% at 11.5K (37.4 vs 31.2), tool_json +24%, shell +27%, structured +20%, code +8%, prose fixture +8%, synthetic prose C1 flat, prefill +9%.", last_pass_utc: "2026-09-22T22:20:00Z", run_id: 2026-09-22-hotsplit }
 
 limits:
-  - "EXPERIMENTAL. hotsplit is an out-of-tree hook, not a vLLM feature. The upstream design discussion is vllm-project/vllm#57794 (expert-granular residency); our data is posted there."
+  - "CORRECTED 2026-09-24: status is now verified (quality gate above); the hook is still out-of-tree, not a vLLM feature. The upstream design discussion is vllm-project/vllm#57794 (expert-granular residency); our data is posted there."
   - "The hot list is workload-specific. It was ranked on real agent turns; synthetic prose ('paragraph about the number N') does not speed up (30.0 control vs 29.7-30.7). The first agent-only list cost that prompt ~5% (28.2-28.5); mixing a prose-leaning histogram in at weight 0.25 removed the loss at a 1.2-point coverage cost (62.2 -> 61.0%). Re-rank from your own traffic: scripts/expert_hist2.py (offline) or the live counter + scripts/rerank-weekly.sh."
   - "Cold bank cost: ~39% of routed traffic, ~80% of expert time (~6x per unit of traffic). Moving 11 GiB of KV to hot cells gave ~+1 tok/s (36.3 -> 37.4); KV 513,612 -> 302,368 tokens (1.15x one 256K request). For more than one concurrent long context, use the stock-equal budget variant."
-  - "Context vs speed. Each GiB of hot experts traded for KV buys ~19K tokens of context (60 of 70 layers are 128-token sliding window). 262K (v23, 152.8 GiB hot): 37.4 tok/s. ~500K (stock-equal 141.8 GiB): 36.3. 1M (v24, 110 GiB): 33.0, measured; the pre-boot estimate was 34.9 and was wrong. Recall and speed at 1M are unmeasured: 524K is the longest prompt run."
+  - "Context vs speed. Each GiB of hot experts traded for KV buys ~19K tokens of context (60 of 70 layers are 128-token sliding window). 262K (v23, 152.8 GiB hot): 37.4 tok/s. ~500K (stock-equal 141.8 GiB): 36.3. 1M (v24, 110 GiB): 33.0, measured; the pre-boot estimate was 34.9 and was wrong. Recall and speed at 1M are unmeasured: 524K is the longest prompt run. CORRECTED 2026-09-24: measured - needles 3/3 at 1.04M prompt tokens, decode 25.7 tok/s after an 18.4-min TTFT (944 tok/s prefill)."
   - "No speculative decoding. The in-checkpoint DFlash drafter was measured at k=7 (C1 17.2 tok/s, 50% weighted acceptance) and k=3 (24.5 tok/s, 69%) against 30.2 at k=0 on the pre-hotsplit lane: every verified token fetches its own experts over C2C. Not re-measured with hotsplit."
   - "Dense GEMMs are bandwidth-bound already (o_proj BF16 36.1 us, qkv FP8 35.9 us per layer at 4.4-5.3 TB/s). The only lever is quantizing o_proj (BF16 in the checkpoint's ignored_layers, 13.1 GiB/token read, ~1.2 ms/token) — a model change that needs a quality gate. Not done."
-  - "Parity is token-exact greedy on a 16-layer truncation, not bit-exact and not a full-depth teacher-forced corpus. That gate is pending."
+  - "CORRECTED 2026-09-24: the full-depth teacher-forced gate ran (1.23% top-1 flips vs a 1.17% control-reboot floor; ppl unchanged). Full-depth greedy is NOT reproducible run-to-run even on the control (1/12 identical across two boots of the same container), so long greedy outputs from this lane will differ between boots with or without hotsplit; do not use byte-parity as a regression test here."
   - "The live counter counts decode-sized steps (<= 16 tokens, static under graph capture) including padded slots at C>1. Its weekly merge refuses below 50,000 decode tokens per layer and never restarts the lane; a re-rank applies on the next boot."
   - "Host memory: ~120 GiB free after the split. There is no room for a second large model on this box while this lane runs."
   - "Every full-Pro boot v3-v13 of this campaign used --load-format runai_streamer and produced confident garbage; see required_settings. v14 (default loader) is the first sane boot and the pre-hotsplit reference (C1 30.2, C8 56.2, with two now-unnecessary patches)."

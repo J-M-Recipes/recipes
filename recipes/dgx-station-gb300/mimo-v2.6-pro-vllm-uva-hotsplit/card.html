@@ -44,7 +44,7 @@
       <h1>MiMo-V2.6-Pro · 1× DGX Station GB300</h1>
       <div class="sub">A 1.02T MoE from one GB300 — 320 GiB of experts read in place from Grace, hot experts re-homed to HBM by measured usage</div>
     </div>
-    <div class="brand"><b>J-M-RECIPES</b><br>v23 “Hotsplit” (experimental, 2026-09-22; v24 = 1M-context variant, 33.0 tok/s; v20 = stock-placement control) · 2026-09-22<br>status: experimental</div>
+    <div class="brand"><b>J-M-RECIPES</b><br>v23 “Hotsplit” (verified 2026-09-24; v24 = 1M-context variant, 33.0 tok/s; v20 = stock-placement control) · 2026-09-24<br>status: verified</div>
   </div>
   <div class="pills">
 <span class="pill type"><b>MoE</b> · 384 routed experts × 69 MoE layers, 8 active</span>
@@ -62,24 +62,25 @@
   <div class="row2">
 <div class="box"><div class="lbl">Guesser</div><div class="kv"><b>none</b> · in-checkpoint DFlash measured and rejected under offload<br>k = 0 · measured before hotsplit: k=3 24.5 tok/s, k=7 17.2, k=0 30.2<br><span class="acc">accept: <span>prose <b>n/a</b></span> <span>code <b>n/a</b></span> <span>shell <b>n/a</b></span> <span>tool-JSON <b>n/a</b></span></span></div></div>
 <div class="box"><div class="lbl">Residency (held-out agent turns)</div><div class="kv">decode traffic from HBM, stock layer order (same HBM bytes): <b>30.4%</b><br>hotsplit, train-ranked: <b>62.2% (oracle 62.5%)</b><br>cold bank share of expert time (profile): <b>~80% for ~39% of traffic</b></div></div>
-<div class="box"><div class="lbl">Long context · boot</div><div class="kv">needle 10/50/90% at 65K/131K/196K/254K: <b>12/12</b><br>decode after TTFT at 254K (11.5K: 37): <b>33.8 tok/s</b><br>1M variant (v24, 110 GiB hot): 11.5K / 524K decode: <b>33.0 / 28.6 tok/s</b><br>1M variant: needles at 524K · at 1M: <b>3/3 · pending</b><br>TTFT at 254K (prefill 1.26K tok/s): <b>201 s</b><br>boot, local NVMe (weights + split + graphs): <b>~7 min</b></div></div>
+<div class="box"><div class="lbl">Long context · boot</div><div class="kv">needle 10/50/90% at 65K/131K/196K/254K: <b>12/12</b><br>decode after TTFT at 254K (11.5K: 37): <b>33.8 tok/s</b><br>1M variant (v24, 110 GiB hot): 11.5K / 524K decode: <b>33.0 / 28.6 tok/s</b><br>1M variant: needles at 524K · at 1.04M (decode 25.7, TTFT 18.4 min): <b>3/3 · 3/3</b><br>TTFT at 254K (prefill 1.26K tok/s): <b>201 s</b><br>boot, local NVMe (weights + split + graphs): <b>~7 min</b></div></div>
   </div>
   <div class="fid"><div class="lbl">Output fidelity — does the recipe change what the model says?</div>
     <ul>
 <li class="ok">Weights unchanged: 0 re-quantized bits; revision 54b10491, 573,492,132,336 B on disk</li>
-<li class="ok">Greedy parity 6/6 token-identical, stock vs hotsplit (16-layer truncation); residual drift ≤5.0e-4 relative, max |Δlogprob| 0.067 — not bit-exact (two partial sums)</li>
+<li class="ok">Teacher-forced vs stock placement, 80,384 positions: ppl 1.5081 → 1.5077, top-1 flips 1.23% — control vs its own reboot 1.17%. Not bit-exact; full-depth greedy is not reproducible run-to-run even on the control (1/12)</li>
 <li class="ok">Tool calling under the real Hermes harness (custom[mimo26], reasoning low): 10/10 tool-call turns, 10/10 correct on the v23 serving boot</li>
-<li class="pend">Teacher-forced Δlogprob vs the no-hotsplit control over a full-depth corpus</li>
-<li class="pend">Public tool-call suite (BFCL) run by us on this lane</li>
+<li class="ok">BFCL (our grader, same-grader A/B): dev 93.8 vs control 93.7 · held-out live sibling 78.2 vs 78.5 (bar −1 pt) · 0 errors</li>
     </ul>
   </div>
   <div class="fid"><div class="lbl">Agent claim card — fixed protocol, held-out sibling, cost per solved task</div>
     <ul>
-<li class="pend">harness card pending — protocol hash, held-out sibling suite, cost per solved task</li>
+<li class="ok">protocol <span class="mono">harness/protocol.yaml</span> sha256 <span class="mono">84faecb94f31</span> · T=0, enable_thinking false, tool_choice auto, 1 retry, C8, single-turn BFCL; control = stock placement, same boot flags</li>
+<li class="ok">dev suite (decides candidacy): <b>BFCL dev (simple_python 400 + multiple 200)</b> 563/600 solved (93.8%) · control (stock placement) 562/600 = 93.7%, same window; 3 cases disagree. Decides candidacy only</li>
+<li class="pair"><span class="big">Pass@1 78.2%</span> <span class="dim">(1025/1311)</span> <span class="sep">·</span> <span class="big">$0.028 / 1000 solved</span><br><span class="dim">BFCL live sibling (live_simple 258 + live_multiple 1,053) · decides promotion · protocol sha 84faecb94f31 · priced 2026-09-24: energy only, $0.15/kWh × GPU 1 mean 372 W (5 s samples) × 1,839 s / 1,025 solved, C8. Amortized hardware not included; at the DSV4.1 card&#x27;s $3.80/hr Station assumption it adds $1.90 / 1000 solved at this lane&#x27;s C8 rate</span><br><span class="dim">unsolved: 52 no-call · 0 truncated · 0 error · 170 wrong-arg-value · 30 wrong-function · 34 missing-arg</span></li>
     </ul>
   </div>
   <div class="foot">
-    <span>recipe <span class="mono">recipes/dgx-station-gb300/mimo-v2.6-pro-vllm-uva-hotsplit</span> · run <span class="mono">2026-09-22-hotsplit</span></span>
+    <span>recipe <span class="mono">recipes/dgx-station-gb300/mimo-v2.6-pro-vllm-uva-hotsplit</span> · run <span class="mono">2026-09-24-promotion</span></span>
     <span>github.com/J-M-Recipes/recipes · al-engr.com · @jmeadlock</span>
   </div>
 </div>
