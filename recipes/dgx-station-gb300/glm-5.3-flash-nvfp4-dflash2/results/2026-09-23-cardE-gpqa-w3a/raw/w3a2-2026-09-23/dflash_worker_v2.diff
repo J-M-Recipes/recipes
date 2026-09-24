@@ -1,0 +1,219 @@
+0a1
+> # PATCHED (jmeadlock W3a.2 verify-width incl. grammar steps 2026-09-23)
+31c32,36
+< from sglang.srt.model_executor.cuda_graph_config import Backend
+---
+> from sglang.srt.model_executor.cuda_graph_config import (
+>     Backend,
+>     Phase,
+>     check_cuda_graph_backend,
+> )
+44a50
+>     get_context,
+91c97
+< from sglang.srt.utils.common import empty_context
+---
+> from sglang.srt.utils.common import empty_context, get_available_gpu_memory
+564a571,582
+>         # W3a verify-width: target verifies only the first K block positions.
+>         self._vw = int(os.environ.get("SGLANG_DFLASH_VERIFY_WIDTH", "0") or 0)
+>         if self._vw and not (2 <= self._vw < int(self.block_size)):
+>             raise ValueError(
+>                 f"SGLANG_DFLASH_VERIFY_WIDTH={self._vw} must satisfy 2 <= K < block_size={self.block_size}"
+>             )
+>         self._vw_runtime = None  # (target_attn_backend, target_graph_runner) built at init_cuda_graphs
+>         self._vw_out_bufs: dict = {}
+>         self._vw_slot = 0
+>         self._vw_steps = 0
+>         self._vw_fallback_steps = 0
+>         self._vw_why: dict = {}
+648a667,701
+>             )
+>         if self._vw:
+>             self._build_verify_width_runtime(int(self._vw))
+> 
+>     def _build_verify_width_runtime(self, width: int) -> None:
+>         """W3a: a second target attn backend + verify graph runner at `width` tokens/req."""
+>         if get_parallel().enable_dp_attention:
+>             raise ValueError("SGLANG_DFLASH_VERIFY_WIDTH is not supported with dp attention")
+>         from sglang.srt.model_executor.runner import DecodeCudaGraphRunner
+> 
+>         tmr = self._target_worker.model_runner
+>         before = get_available_gpu_memory(self.device, self.gpu_id)
+>         full = int(self.block_size)
+>         get_context().override(
+>             "dflash_verify_width.capture_override", speculative_num_draft_tokens=width
+>         )
+>         try:
+>             backup_init = tmr.init_new_workspace
+>             try:
+>                 attn_backend = tmr._get_attention_backend(init_new_workspace=True)
+>             finally:
+>                 tmr.init_new_workspace = backup_init
+>             # Mirror ModelRunner.init_attention_backends: every reachable backend carries THIS translator.
+>             tmr.kv_index_translator.bind_and_verify_backends([attn_backend])
+>             graph_runner = None
+>             if not check_cuda_graph_backend(Phase.DECODE, Backend.DISABLED):
+>                 graph_runner = DecodeCudaGraphRunner(
+>                     tmr,
+>                     attn_backend=attn_backend,
+>                     speculative_num_steps=get_spec().speculative_num_steps,
+>                     speculative_num_draft_tokens=width,
+>                 )
+>         finally:
+>             get_context().override(
+>                 "dflash_verify_width.capture_restore", speculative_num_draft_tokens=full
+649a703,714
+>         if int(get_spec().speculative_num_draft_tokens) != full:
+>             raise RuntimeError("DFLASH verify-width: failed to restore speculative_num_draft_tokens")
+>         self._vw_runtime = (attn_backend, graph_runner)
+>         after = get_available_gpu_memory(self.device, self.gpu_id)
+>         if self.ps.tp_rank == 0:
+>             logger.info(
+>                 "DFLASH verify-width runtime built: draft block=%d, target verify width=%d, graph=%s, mem=%.2f GB",
+>                 full,
+>                 width,
+>                 graph_runner is not None,
+>                 before - after,
+>             )
+650a716,728
+>     def _vw_out_tokens_buf(self, bs: int, width: int) -> torch.Tensor:
+>         bufs = self._vw_out_bufs.get(width)
+>         if bufs is None or bufs[0].shape[0] < bs:
+>             cap = max(int(bs), 2 * bufs[0].shape[0] if bufs is not None else int(bs))
+>             bufs = [
+>                 torch.empty((cap, width), dtype=torch.int64, device=self.device)
+>                 for _ in range(2)
+>             ]
+>             self._vw_out_bufs[width] = bufs
+>         slot = self._vw_slot
+>         self._vw_slot = (slot + 1) % 2
+>         return bufs[slot][:bs]
+> 
+2064a2143
+>         width: Optional[int] = None,
+2065a2145
+>         width = int(self.block_size) if width is None else int(width)
+2095,2097c2175
+<             target_predict = torch.argmax(next_token_logits, dim=-1).view(
+<                 bs, int(self.block_size)
+<             )
+---
+>             target_predict = torch.argmax(next_token_logits, dim=-1).view(bs, width)
+2107a2186,2187
+>                     if width != int(self.block_size):
+>                         out_tokens = self._vw_out_tokens_buf(bs, width)
+2580a2661,2707
+> 
+>         # W3a.2 verify-width: greedy, non-selector-sampling steps verify only [:, :vw]; grammar steps too
+>         # (the grammar bitmask is built over the same K-wide chain below).
+>         vw = block_size
+>         if self._vw_runtime is not None:
+>             if (
+>                 _is_all_greedy(batch.sampling_info)
+>                 and self._selector_sample is None
+>             ):
+>                 vw = int(self._vw)
+>                 self._vw_steps += 1
+>                 if batch.has_grammar:
+>                     self._vw_why["narrow_grammar"] = self._vw_why.get("narrow_grammar", 0) + 1
+>             else:
+>                 self._vw_fallback_steps += 1
+>                 _si = batch.sampling_info
+>                 _why = (
+>                     "nongreedy" if not _is_all_greedy(_si)
+>                     else "selector_sample"
+>                 )
+>                 self._vw_why[_why] = self._vw_why.get(_why, 0) + 1
+>                 if self._vw_why[_why] <= 2 and self.ps.tp_rank == 0:
+>                     logger.info(
+>                         "DFLASH verify-width fallback: why=%s has_grammar=%s si_none=%s is_all_greedy=%s selector_sample_none=%s selector=%s sel_sampling=%s",
+>                         _why, batch.has_grammar, _si is None,
+>                         None if _si is None else _si.is_all_greedy,
+>                         self._selector_sample is None, self.selector is not None,
+>                         getattr(self, "_selector_sampling_enabled", None),
+>                     )
+>             if (self._vw_steps + self._vw_fallback_steps) % 256 == 1 and self.ps.tp_rank == 0:
+>                 logger.info(
+>                     "DFLASH verify-width stats: width=%d steps=%d fallback_full_width=%d why=%s",
+>                     int(self._vw),
+>                     self._vw_steps,
+>                     self._vw_fallback_steps,
+>                     dict(self._vw_why),
+>                 )
+>         if vw != block_size:
+>             v_tokens = draft_tokens[:, :vw].contiguous()
+>             v_positions = positions_2d[:, :vw].reshape(-1)
+>             v_cache_loc_2d = verify_out_cache_loc_2d[:, :vw].contiguous()
+>             v_cache_loc = v_cache_loc_2d.reshape(-1)
+>         else:
+>             v_tokens = draft_tokens
+>             v_positions = positions
+>             v_cache_loc_2d = verify_out_cache_loc_2d
+>             v_cache_loc = verify_out_cache_loc
+2584c2711
+<             GrammarTree.from_linear_chain(draft_tokens) if batch.has_grammar else None
+---
+>             GrammarTree.from_linear_chain(v_tokens) if batch.has_grammar else None
+2591c2718
+<         verify_input_ids = draft_tokens.reshape(-1)
+---
+>         verify_input_ids = v_tokens.reshape(-1)
+2594,2595c2721,2722
+<             positions=positions,
+<             draft_token_num=int(self.block_size),
+---
+>             positions=v_positions,
+>             draft_token_num=int(vw),
+2600c2727
+<         batch.out_cache_loc = verify_out_cache_loc
+---
+>         batch.out_cache_loc = v_cache_loc
+2610c2737
+<             verify_host_seq_lens = seq_lens_cpu_backup + block_size
+---
+>             verify_host_seq_lens = seq_lens_cpu_backup + vw
+2616a2744,2748
+>         _vw_saved = None
+>         if vw != block_size:
+>             _tmr = self.target_worker.model_runner
+>             _vw_saved = (_tmr.attn_backend, _tmr.decode_cuda_graph_runner)
+>             _tmr.attn_backend, _tmr.decode_cuda_graph_runner = self._vw_runtime
+2663c2795
+<                 draft_token_num=int(self.block_size),
+---
+>                 draft_token_num=int(vw),
+2670c2802
+<         candidates = draft_tokens
+---
+>         candidates = v_tokens
+2684a2817
+>             width=vw,
+2699c2832
+<                 ).view(bs, int(self.block_size))
+---
+>                 ).view(bs, int(vw))
+2720c2853
+<                 chain_stride=block_size,
+---
+>                 chain_stride=vw,
+2733a2867,2869
+>         if _vw_saved is not None:
+>             _tmr = self.target_worker.model_runner
+>             _tmr.attn_backend, _tmr.decode_cuda_graph_runner = _vw_saved
+2745c2881
+<         hidden = hidden.view(bs, int(self.block_size), -1)
+---
+>         hidden = hidden.view(bs, int(vw), -1)
+2749,2751c2885,2887
+<             cache_loc=verify_out_cache_loc,
+<             cache_loc_2d=verify_out_cache_loc_2d,
+<             positions=positions,
+---
+>             cache_loc=v_cache_loc,
+>             cache_loc_2d=v_cache_loc_2d,
+>             positions=v_positions,
+2769c2905
+<             speculative_num_draft_tokens=int(self.block_size),
+---
+>             speculative_num_draft_tokens=int(vw),

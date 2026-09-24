@@ -1,0 +1,5 @@
+801c801,802
+<         assert pool.tail_extra_slots == num_draft_tokens, (
+---
+>         # PATCHED (jmeadlock W3a.2 verify-width incl. grammar steps 2026-09-23): tail ring sized for the max width; a narrower verify is in-bounds.
+>         assert pool.tail_extra_slots >= num_draft_tokens, (
