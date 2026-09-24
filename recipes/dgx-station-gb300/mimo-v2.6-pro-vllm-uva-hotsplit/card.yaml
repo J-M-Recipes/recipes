@@ -2,8 +2,8 @@
 # Every number traces to recipe.yaml metrics or results/2026-09-22-hotsplit. Unknown = pending (renders amber).
 title: "MiMo-V2.6-Pro · 1× DGX Station GB300"
 subtitle: "A 1.02T MoE from one GB300 — 320 GiB of experts read in place from Grace, hot experts re-homed to HBM by measured usage"
-version: "v23 “Hotsplit” (experimental, 2026-09-22; v24 = 1M-context variant, 33.0 tok/s; v20 = stock-placement control)"
-run_id: 2026-09-22-hotsplit
+version: "v23 “Hotsplit” (verified 2026-09-24; v24 = 1M-context variant, 33.0 tok/s; v20 = stock-placement control)"
+run_id: 2026-09-24-promotion
 handles: "github.com/J-M-Recipes/recipes · al-engr.com · @jmeadlock"
 
 model:
@@ -38,13 +38,42 @@ secondary:
       "needle 10/50/90% at 65K/131K/196K/254K": "12/12"
       "decode after TTFT at 254K (11.5K: 37)": "33.8 tok/s"
       "1M variant (v24, 110 GiB hot): 11.5K / 524K decode": "33.0 / 28.6 tok/s"
-      "1M variant: needles at 524K · at 1M": "3/3 · pending"
+      "1M variant: needles at 524K · at 1.04M (decode 25.7, TTFT 18.4 min)": "3/3 · 3/3"
       "TTFT at 254K (prefill 1.26K tok/s)": "201 s"
       "boot, local NVMe (weights + split + graphs)": "~7 min"
 
 fidelity:
   - { status: pass,    text: "Weights unchanged: 0 re-quantized bits; revision 54b10491, 573,492,132,336 B on disk" }
-  - { status: pass,    text: "Greedy parity 6/6 token-identical, stock vs hotsplit (16-layer truncation); residual drift ≤5.0e-4 relative, max |Δlogprob| 0.067 — not bit-exact (two partial sums)" }
+  - { status: pass,    text: "Teacher-forced vs stock placement, 80,384 positions: ppl 1.5081 → 1.5077, top-1 flips 1.23% — control vs its own reboot 1.17%. Not bit-exact; full-depth greedy is not reproducible run-to-run even on the control (1/12)" }
   - { status: pass,    text: "Tool calling under the real Hermes harness (custom[mimo26], reasoning low): 10/10 tool-call turns, 10/10 correct on the v23 serving boot" }
-  - { status: pending, text: "Teacher-forced Δlogprob vs the no-hotsplit control over a full-depth corpus" }
-  - { status: pending, text: "Public tool-call suite (BFCL) run by us on this lane" }
+  - { status: pass,    text: "BFCL (our grader, same-grader A/B): dev 93.8 vs control 93.7 · held-out live sibling 78.2 vs 78.5 (bar −1 pt) · 0 errors" }
+
+harness:
+  protocol:
+    file: harness/protocol.yaml
+    sha256: 84faecb94f312bebf43eb2c5f5a19b44c6b079f42c8169874b6a5d92e56dc26a
+    summary: "T=0, enable_thinking false, tool_choice auto, 1 retry, C8, single-turn BFCL; control = stock placement, same boot flags"
+  dev:
+    name: BFCL dev (simple_python 400 + multiple 200)
+    solved: 563
+    n: 600
+    pct: "93.8%"
+    status: pass
+    note: "control (stock placement) 562/600 = 93.7%, same window; 3 cases disagree. Decides candidacy only"
+  heldout:
+    name: BFCL live sibling (live_simple 258 + live_multiple 1,053)
+    solved: 1025
+    n: 1311
+    pct: "78.2%"
+    status: pass
+    note: "frozen 2026-09-21, first and only run on this model: control 1029/1311 = 78.5%, Δ −0.31 pt against the ≥ control − 1 rule; 34 cases disagree (19/15)"
+    unsolved: { "no-call": 52, "truncated": 0, "error": 0, "wrong-arg-value": 170, "wrong-function": 30, "missing-arg": 34 }   # control: 46 / 0 / 0 / 172 / 30 / 34
+  cost:
+    usd_per_1000_solved: "0.028"
+    priced_on: "2026-09-24"
+    basis: "energy only, $0.15/kWh × GPU 1 mean 372 W (5 s samples) × 1,839 s / 1,025 solved, C8. Amortized hardware not included; at the DSV4.1 card's $3.80/hr Station assumption it adds $1.90 / 1000 solved at this lane's C8 rate"
+    usd_per_solved_task: "0.000028"
+    mean_w: 372
+    wall_s: 1839
+    solved: 1025
+    usd_per_kwh: 0.15
