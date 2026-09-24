@@ -1,6 +1,8 @@
 # GLM-5.3-Flash NVFP4 + DFlash2 on one DGX Station GB300
 
-**Status: verified** (rebased to **SGLang v0.5.20** September 21, 2026; draft `bf582e4e` tested the same afternoon — greedy 20/20 identical, acceptance and speed within noise, pin stays on `7d74cdd8`; round 3, September 16, 2026) · **~202 tok/s** single-stream answer-only (`reasoning_effort: low`) / **~265** with max-effort thinking counted · **~730 agg at C8** (DFlash2) · **2,214 agg / 50 per user at C48** and **4,025 agg / 34 per user at C128** (autoregressive) · 1M context · quality gated by teacher-forced divergence vs the FP8 original
+**Status: verified** (claim card, long context and GPQA added September 23, 2026; rebased to **SGLang v0.5.20** September 21, 2026; draft `bf582e4e` tested the same afternoon — greedy 20/20 identical, acceptance and speed within noise, pin stays on `7d74cdd8`; round 3, September 16, 2026) · **~202 tok/s** single-stream answer-only (`reasoning_effort: low`) / **~265** with max-effort thinking counted · **~730 agg at C8** (DFlash2) · **2,214 agg / 50 per user at C48** and **4,025 agg / 34 per user at C128** (autoregressive) · 1M context, **needle recall 27/27 up to 881K prompt tokens** · **BFCL held-out Pass@1 79.3% (1,040/1,311)** · **GPQA-Diamond 75.3% at a 64K cap** (lower bound) · quality gated by teacher-forced divergence vs the FP8 original
+
+> **Round 4 (September 23, 2026): what the model does, and a parked speed patch.** One window on the v0.5.20 daily config. Agent claim card pinned (`harness/protocol.yaml`): BFCL dev 551/600 (91.8%), held-out **1,040/1,311 (79.3%)**, run once, $0.20 / 1000 solved amortized. `strict: true` tools *lose* 35 dev cases, so they stay off. Needle ladder **27/27** from 7K to **881K** prompt tokens (the 881K rungs on a 16-slot variant with a 1.46M-token pool). GPQA-Diamond **149/198 = 75.3%** at a 64K max-tokens cap, but 44 questions (22%) still hit the cap: a lower bound, not the model's score. **W3a (verify only the first K of 7 draft tokens) is parked:** K=5 is lossless and +4–7% on essay/prose, but −3% on code, and no width clears the bar. Side finding: `--tool-call-parser glm47` puts a grammar on *every* chat request, so a spec-decode change that skips grammar steps never runs. Bundle: [`results/2026-09-23-cardE-gpqa-w3a/`](results/2026-09-23-cardE-gpqa-w3a/README.md).
 
 > **Rebase (September 21, 2026).** Image pin moved from nightly `20260911-00143e9c` to tagged **`lmsysorg/sglang:v0.5.20-cu130`** (`sha256:06e4f2ed21af…`) for sgl-project/sglang#37818, the DFlash/KDA state-checkpoint fix. Four boots in one window, AR and DFlash2 on each image: teacher-forced logprobs bit-identical across all four (Δ 0.0 over 2,857 tokens), greedy 20/20 vs the DFlash reference, tools 10/10 ×4, and DFlash2 C1 **+4–5%** on every class (history 193→202, code 276→288, shell 155→162 tok/s), C8 ~700. The bug itself is not demonstrable with 8×2,500-token greedy runs — see the bundle. **Correction the bundle forces:** DFlash2 is *target-verified*, not byte-identical to AR on this model (DFlash-vs-AR agree 1/20 at 200 tokens, 0/8 at 2,500, while teacher-forced logprobs of either text are identical) — the earlier "lossless" reading came from comparing DFlash boots to a DFlash reference. Bundle: [`results/2026-09-21-v0520-rebase/`](results/2026-09-21-v0520-rebase/README.md).
 
@@ -88,6 +90,37 @@ Flags that matter:
 **Warm up or your benchmarks lie.** The first request at each new batch shape after a restart pays up to 30 s of kernel autotune (CUDA graphs are on the whole time — it's per-shape JIT). The same applies to prompt-length classes: the first 8k/32k/64k prompt after restart pays ~16 s; warm, those prefill in 0.3–2 s. Our own day-one "concurrency cliff" (220 agg tok/s, 15 s TTFT at C8+) was this artifact. Bench warm or bench wrong.
 
 ## Results
+
+### Round 4 — claim card, long context, GPQA, verify width · run [`2026-09-23-cardE-gpqa-w3a`](results/2026-09-23-cardE-gpqa-w3a/README.md) · raw [`throughput.csv`](results/2026-09-23-cardE-gpqa-w3a/throughput.csv)
+
+Daily config (`e0`: DFlash2 block 7, 48 KDA slots, mem 0.85, 1M ctx, v0.5.20), fresh container per boot, cold boots. Every C1 number is answer-only (`reasoning_effort: low`), median of 3.
+
+**Agent claim card.** Protocol pinned at [`harness/protocol.yaml`](harness/protocol.yaml) (sha256 `7120a254c43a…`): T=0, effort low, `tool_choice: auto`, C8, 2,048 max tokens, no retries, same grader as the DSV4.1 recipe.
+
+| suite | solved | notes |
+|---|---|---|
+| BFCL dev (simple_python 400 + multiple 200) | **551/600 (91.8%)** | decides candidacy · 2 HTTP 400s counted unsolved |
+| BFCL held-out (live_simple 258 + live_multiple 1,053) | **1,040/1,311 (79.3%)** | frozen, run once · unsolved: 184 wrong-arg-value · 31 missing-arg · 29 wrong-function · 18 no-call · 9 HTTP 400 · 0 truncated |
+| BFCL dev with `strict: true` tools | 516/600 (86.0%) | **−35 vs non-strict** → strict fails dev; held-out not run (rule) |
+
+Cost of the held-out pass: 197 s at C8 → **$0.20 / 1000 solved** amortized ($3.80/hr Station) + $0.0026 energy (333 W mean of start/end samples, $0.15/kWh). These are same-grader numbers, not leaderboard numbers.
+
+**Long context.** Needle ladder (single key / five keys / distractor) **18/18** on `e0` from 7K to 476K prompt tokens. A 16-slot variant (`e0b`: `--max-mamba-cache-size 16`, mem 0.90 → 1,458,304-token pool, 3 running) passes **9/9 at 476K, 676K and 881K**, and its C1 is the same as e0 (200.9 / 150.2 / 286.4 / 159.7). Cold prefill on v0.5.20: 6,825 tok in 0.27 s → 109,516 tok in 4.13 s (25–27K tok/s, same as round 1). Cold boot → serving 384 s (e0), 349 s (e0b).
+
+**GPQA-Diamond** (198 q, T=0, default max effort, C8): 128/198 (64.6%) at 32K max tokens with 69 truncated → truncated questions re-asked at 64K and merged by index → **149/198 = 75.3% ± 6.0 pp**. 44 are still truncated and scored wrong; on the 154 that finished the model is 149/154. This is a **lower bound at a 64K cap**. We ran it on our box, it is not a leaderboard entry, and a larger cap would likely score higher.
+
+**W3a — fixed verify width (parked).** The drafter still proposes 7 tokens; the target verifies only the first K. Patch + tests + card in [`raw/w3a2-2026-09-23/`](results/2026-09-23-cardE-gpqa-w3a/raw/w3a2-2026-09-23/).
+
+| vs adjacent stock control | history | prose | code | shell | greedy vs stock | TF Δ |
+|---|---|---|---|---|---|---|
+| stock `ctrl-e0` | 200.4 | 149.9 | 286.1 | 158.8 | 20/20 | — |
+| K=5 | +4.0% | +7.0% | **−3.0%** | +4.2% | 20/20 | 0.0 |
+| K=4 | +4.8% | +10.5% | **−7.6%** | −3.2% | 20/20 | 0.0 |
+| K=3 | +0.2% | +17.6% | **−17.8%** | −5.5% | **1/20 ✗** | 0.0 |
+
+The win bar was prose and essay faster with code no worse than −1%; no width clears it. Narrowing helps where the drafter is weak and costs where it is strong, which argues for choosing the width per request by acceptance (W3b, not built). Two lessons outlast the numbers:
+- **The first W3a run was invalid.** SGLang's GLM tool parser puts an EBNF grammar on every chat request, the patch skipped grammar steps, and so it never ran on real traffic (`steps=0 fallback_full_width=4097`) while every output gate passed. The fix verifies grammar steps at width K, and a unit test proves the K-wide grammar mask equals the first K rows of the full mask (320 comparisons, 0 mismatches).
+- **Count activation, not just output.** The boot now fails unless the patch's own counter shows it running on >95% of steps. Every output-equality gate passes when the patch is silently off.
 
 ### Round 2 — run [`2026-09-11-nvidia-nvfp4-b7-1M`](results/2026-09-11-nvidia-nvfp4-b7-1M/) · raw [`throughput.csv`](results/2026-09-11-nvidia-nvfp4-b7-1M/throughput.csv)
 
@@ -178,6 +211,9 @@ For reference, [catid/dgx_station_benchmarks](https://github.com/catid/dgx_stati
 - **Measure with `chat_template_kwargs: {"reasoning_effort": "low"}`** or you are benchmarking max-effort thinking. `enable_thinking` is not a template variable for this model.
 - **bf16 KDA state** (`--mamba-ssm-dtype bfloat16`) halves slot cost and is what makes 128 users fit — but SGLang documents it as output-shifting and it is not KL-gated here. Also incompatible with DFlash2 on this image.
 - **Native MTP** works on `8874c51a` (round 3 W7: natural accept len 3.16, tools 10/10, greedy-lossless) but is **slower than DFlash2** (−7% recipe, −20% code) and the NextN layer costs 15.4 GB vs the 2.7 GB drafter. [#36829](https://github.com/sgl-project/sglang/issues/36829)'s ~1.0 acceptance did not reproduce here. Not used.
+- **`--tool-call-parser glm47` attaches a grammar (`full_assistant_ebnf`) to every chat request**, tools or not (round 4). Any speculative-decoding change that skips grammar-constrained steps is silently a no-op on real traffic. Check the change's own counters, not just output parity.
+- **`strict: true` tools cost accuracy** on BFCL dev (516 vs 551 of 600, round 4). Leave tool schemas non-strict.
+- **GPQA-Diamond needs >64K tokens at max effort on ~22% of questions.** At a 64K cap, 44/198 still truncate. Quote 75.3% as a floor with the cap.
 - **Never enable HiCache** for agent traffic on this model: host-tier load-back drops tool calls ([#38031](https://github.com/sgl-project/sglang/issues/38031)).
 - **Autotune tax on first hit** of every batch shape after restart (13 s TTFT at C16 observed). Warm every shape you serve; discard the first pass when measuring.
 - **NVFP4 disagrees with the FP8 original on ~16% of tokens** whoever quantized it. If that matters, the FP8 original with UVA offload works on this box (~22 tok/s C1 as configured for scoring) — a different recipe.

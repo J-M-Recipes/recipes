@@ -1,0 +1,37 @@
+device: NVIDIA GB300
+PASS T1 dflash_worker_v2 patched
+PASS T1 kpool_plan patched
+PASS T2 K=5 accept==min(accept7,K-1)
+PASS T2 K=5 bonus==top1[accept]
+PASS T2 K=5 commit prefix of full-width commit
+PASS T2 K=5 new_seq_lens
+PASS T2 K=5 triton==eager
+PASS T2 K=4 accept==min(accept7,K-1)
+PASS T2 K=4 bonus==top1[accept]
+PASS T2 K=4 commit prefix of full-width commit
+PASS T2 K=4 new_seq_lens
+PASS T2 K=4 triton==eager
+PASS T2 K=3 accept==min(accept7,K-1)
+PASS T2 K=3 bonus==top1[accept]
+PASS T2 K=3 commit prefix of full-width commit
+PASS T2 K=3 new_seq_lens
+PASS T2 K=3 triton==eager
+PASS T2 K=2 accept==min(accept7,K-1)
+PASS T2 K=2 bonus==top1[accept]
+PASS T2 K=2 commit prefix of full-width commit
+PASS T2 K=2 new_seq_lens
+PASS T2 K=2 triton==eager
+     T2 accept7 histogram [2342, 2762, 2934, 2797, 2920, 2910, 3335]
+PASS T3 kpool compressed pages identical (ring POOL+5 vs POOL+7, N=5, 40 steps x 3 reqs)  nonzero_bytes=12116
+PASS T4 tail 7 accepts N=5
+PASS T4 tail 7 accepts N=7
+PASS T4 tail 7 rejects N=8
+W3A_UNIT ALL_PASS
+===
+PASS T1 dflash_worker_v2 is W3a.2
+vocab 154880 grammar XGrammarGrammar ebnf_lines 120
+PASS T5 K-chain mask == first K rows of 7-chain mask  comparisons=160 mismatches=[]
+PASS T5 test is meaningful (constrained rows>0, rejected drafts>0)  constrained_rows=837 rejected_chains=2
+PASS T5r K-chain mask == first K rows of 7-chain mask  comparisons=160 mismatches=[]
+PASS T5r test is meaningful (constrained rows>0, rejected drafts>0)  constrained_rows=711 rejected_chains=1
+W3A2_GRAMMAR ALL_PASS

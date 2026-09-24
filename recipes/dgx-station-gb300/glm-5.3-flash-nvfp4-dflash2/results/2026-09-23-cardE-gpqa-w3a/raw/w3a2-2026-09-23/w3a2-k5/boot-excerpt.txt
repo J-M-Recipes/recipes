@@ -1,0 +1,16 @@
+[2026-09-24 02:39:06] DFLASH fa4 draft: overriding KV cache dtype torch.float8_e4m3fn -> torch.bfloat16 (fa4 needs K.dtype == Q.dtype; cannot read the target's quantized KV).
+[2026-09-24 02:40:24] DFLASH fa4 draft: overriding KV cache dtype torch.float8_e4m3fn -> torch.bfloat16 (fa4 needs K.dtype == Q.dtype; cannot read the target's quantized KV).
+[2026-09-24 02:40:24] DFLASH block size mismatch: using speculative_num_draft_tokens=7 but draft config block_size=8.
+[2026-09-24 02:40:25] Initialized DFLASH draft runner. attention_backend=fa4, model=DFlash2DraftModel, block_size=7, draft_window_size=None, compact_cache=False
+[2026-09-24 02:40:25] DFLASH draft runner ready. mask_token=<|MASK|>, mask_token_id=154856, mask_token_id_override=154856, noise_embed_scale=1.0
+[2026-09-24 02:40:25] DFLASH fused KV materialization enabled. n_layers=5, num_kv_heads=8, head_dim=128
+[2026-09-24 02:40:36] DSA KPool metadata fusion enabled (pool=4)
+[2026-09-24 02:43:37] Capture target verify CUDA graph begin. backend=full, num_tokens_per_req=7, bs=[1, 2, 3, 4, 5, 6, 7, 8, 9], avail mem=36.73 GB
+[2026-09-24 02:44:04] Capture target verify CUDA graph end. elapsed=26.48 s, mem usage=0.94 GB, avail mem=35.79 GB.
+[2026-09-24 02:44:04] DFLASH selector decode folded into the draft cuda graph (sampling_enabled=True).
+[2026-09-24 02:44:04] Capture draft verify CUDA graph begin. backend=full, num_tokens_per_req=7, bs=[1, 2, 3, 4, 5, 6, 7, 8, 9], avail mem=35.79 GB
+[2026-09-24 02:44:24] Capture draft verify CUDA graph end. elapsed=20.10 s, mem usage=0.04 GB, avail mem=35.76 GB.
+[2026-09-24 02:44:24] DSA KPool metadata fusion enabled (pool=4)
+[2026-09-24 02:44:30] DFLASH verify-width runtime built: draft block=7, target verify width=5, graph=True, mem=0.28 GB
+[2026-09-24 02:44:32] DFLASH sampling pre-warm: borrowing=False bs=9 peak=123047936 B headroom=162077696 B
+[2026-09-24 02:44:32] max_total_num_tokens=577024, chunked_prefill_size=8192, max_prefill_tokens=8192, max_running_requests=9, context_len=1048576, available_gpu_mem=35.31 GB
