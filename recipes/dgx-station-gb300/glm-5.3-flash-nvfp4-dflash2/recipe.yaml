@@ -6,11 +6,12 @@ summary: >
   DFlash2 block-diffusion draft (block 7), 1M context. Interactive: ~202 tok/s single-stream answer-only (~265 with max-effort thinking counted), ~730 agg at C8.
   Same weights in plain autoregressive mode serve 48 users at 50 tok/s each and 128 users at 34 tok/s each
   (4,025 agg) on one GPU. Quality gate is teacher-forced logprob divergence vs the FP8 original, not eyeballing. BFCL held-out Pass@1 79.3%,
-  needle recall 27/27 to 881K tokens, GPQA-Diamond 75.3% at a 64K cap (lower bound).
+  needle recall 27/27 to 881K tokens, GPQA-Diamond 75.3% at a 64K cap (lower bound). Image input needs transformers 5.16.1
+  (derived image, Dockerfile.tf5.16.1; reported by Paul Torruella).
 status: verified
 owners: [jmeadlock, milo]
-updated: "2026-09-23"
-tags: [glm-5.3-flash, nvfp4, sglang, dflash2, speculative-decoding, single-gpu, interactive, high-concurrency, 1m-context]
+updated: "2026-09-24"
+tags: [glm-5.3-flash, nvfp4, sglang, dflash2, speculative-decoding, single-gpu, interactive, high-concurrency, 1m-context, multimodal]
 
 model:
   name: GLM-5.3-Flash
@@ -43,18 +44,21 @@ runtime:
   engine_version: "0.5.20 (tagged release 2026-09-18; first release listing GLM-5.3-Flash supported — #36507, #38621; carries #37818 DFlash/KDA checkpoint fix. Prior pin: main nightly 0.0.0.dev1+g00143e9c2, 2026-09-11)"
   engine_commit: 94602c9c
   container:
-    image: lmsysorg/sglang:v0.5.20-cu130
-    digest: sha256:06e4f2ed21afde4ff513cda65070124e727ba23ccaeff7712b8c40e1097d611f
-    base_image: "tagged release image, no source build (rebased 2026-09-21 from nightly-dev-cu13-20260911-00143e9c @ sha256:f159f796afdd2bcfa924f4fa09564c82c7d54fc24b1ecae2e308213b8592cb0b, results/2026-09-21-v0520-rebase). The nightly replaced the frozen glm53-nvfp4-sglang:gb300-v2 @ sha256:f710fd42cf749cbc6c3e1799244b5bdefd3b8f34d978aa810a9c1f97f86b143a (scripts/build-image.sh) from run 2026-09-01; nightly reproduces its numbers (g0 vs g1 in throughput.csv)"
+    image: glmf-sglang:0.5.20-tf5.16.1
+    digest: sha256:98dabd1b8b8816484c65c3edc8e29ec3f59b126ef362d97dbb5e6e51dd76ee3d
+    dockerfile: Dockerfile.tf5.16.1
+    dockerfile_sha256: 8cee99bdc9576884e394c2d636a2dbad5b1c5f1a668e2a48c02ca62bb04005b9
+    base_image: "LOCAL BUILD, not in any registry: the digest above is the local image ID on the reference Station; build with docker build -t glmf-sglang:0.5.20-tf5.16.1 -f Dockerfile.tf5.16.1 . (CPU-only). Base lmsysorg/sglang:v0.5.20-cu130 @ sha256:06e4f2ed21afde4ff513cda65070124e727ba23ccaeff7712b8c40e1097d611f plus transformers 5.16.1 + tokenizers 0.23.2 (pip freeze diff = exactly those two lines; results/2026-09-24-tf5161-vision). The stock base serves text identically but silently drops images (transformers 5.12.1 predates glm5_next). Fix reported by Paul Torruella (x.com/PaulTorrue36658), 2026-09-24. Base history: tagged release image, no source build (rebased 2026-09-21 from nightly-dev-cu13-20260911-00143e9c @ sha256:f159f796afdd2bcfa924f4fa09564c82c7d54fc24b1ecae2e308213b8592cb0b, results/2026-09-21-v0520-rebase). The nightly replaced the frozen glm53-nvfp4-sglang:gb300-v2 @ sha256:f710fd42cf749cbc6c3e1799244b5bdefd3b8f34d978aa810a9c1f97f86b143a (scripts/build-image.sh) from run 2026-09-01; nightly reproduces its numbers (g0 vs g1 in throughput.csv)"
   key_libraries:
     torch: 2.13.0+cu130
-    transformers: 5.12.1
+    transformers: 5.16.1
+    tokenizers: 0.23.2
     triton: 3.7.1
 
 launch:
   script: scripts/launch-glmf.sh
-  command: "TAG=daily IMAGE=lmsysorg/sglang:v0.5.20-cu130 MODEL=/path/to/GLM-5.3-Flash-NVFP4 DRAFT=/path/to/GLM-5.3-Flash-DFlash2 SPEC=dflash KV=fp8_e4m3 MEM=0.85 CTX=1048576 MAXBS=16 EXTRA='--max-mamba-cache-size 48 --speculative-dflash-block-size 7' bash scripts/launch-glmf.sh"
-  health: "curl -fs http://localhost:30001/health; then warm every batch shape you will serve (python3 -c 'import flash_bench as fb; fb.knee(reps=0)' from scripts/). First hit of each new batch shape after boot is kernel autotune, not serving."
+  command: "TAG=daily IMAGE=glmf-sglang:0.5.20-tf5.16.1 MODEL=/path/to/GLM-5.3-Flash-NVFP4 DRAFT=/path/to/GLM-5.3-Flash-DFlash2 SPEC=dflash KV=fp8_e4m3 MEM=0.85 CTX=1048576 MAXBS=16 EXTRA='--max-mamba-cache-size 48 --speculative-dflash-block-size 7' bash scripts/launch-glmf.sh"
+  health: "curl -fs http://localhost:30001/health; python3 scripts/vision_gate.py must print VISION_GATE PASS (image_tokens > 0, reads HELLO) -- the stock base returns 200 with 0 image tokens; then warm every batch shape you will serve (python3 -c 'import flash_bench as fb; fb.knee(reps=0)' from scripts/). First hit of each new batch shape after boot is kernel autotune, not serving."
   warmup: "python3 -c 'import flash_bench as fb; fb.knee(reps=0)' from scripts/ — warms C1..C32 once each; exact launch line in results/2026-09-11-nvidia-nvfp4-b7-1M/launch-command.txt"
   notable_flags:
     - "VARIANT interactive_daily: as above: DFlash2 block 7, 48 mamba slots (9 running), 1M ctx, 576K-token KV pool. C1 ~202 answer-only, C8 ~730."
@@ -100,6 +104,18 @@ metrics:
     workload: page cache dropped, fresh container, daily config, to /v1/models 200; warming all shapes adds 102 s
     aggregation: single boot (16-slot variant 349 s)
     provenance: { run_id: 2026-09-23-cardE-gpqa-w3a, method: card script, raw: raw/cardE-2026-09-23/e0/boot-time.txt }
+  - name: image input, vision gate
+    value: 361
+    unit: image tokens (prompt 29 -> 392) for scripts/vision-gate.png; answer names red square, blue circle, HELLO
+    workload: derived image glmf-sglang:0.5.20-tf5.16.1, daily config; stock v0.5.20-cu130 on the same boot config gives 29 -> 32 prompt tokens, 0 image tokens, and a hallucinated description
+    aggregation: every boot, 6 server starts / 20 requests, all pass on the derived image
+    provenance: { run_id: 2026-09-24-tf5161-vision, method: scripts/vision_gate.py, raw: raw/cardH-2026-09-24/h6/vision-boot.txt }
+  - name: single-stream decode (recipe method) — v0.5.20 + transformers 5.16.1
+    value: 200.4
+    unit: tok/s
+    workload: C1, history essay, 512 output tokens, answer-only (reasoning_effort low), pinned derived image, fresh boot; prose 149.8 / code 285.9 / shell 157.7; C8 699.4 agg
+    aggregation: median of 3
+    provenance: { run_id: 2026-09-24-tf5161-vision, method: scripts/c1_methods.py EFFORT=low, raw: raw/cardH-2026-09-24/h6/c1-low.txt }
   - name: single-stream decode (recipe method) — v0.5.20
     value: 201.9
     unit: tok/s
@@ -168,9 +184,9 @@ metrics:
 verification:
   gates:
     schema:      { how: "scripts/check_recipe.py passes", last_pass_utc: "2026-09-11T17:30:00Z", run_id: 2026-09-11-nvidia-nvfp4-b7-1M }
-    digest:      { how: "docker image inspect reports the digest above; model dir is the pinned revision, 204,475,659,764 bytes / 42 files byte-verified against the Hub listing (re-inspected on the v0.5.20 rebase, 2026-09-21)", last_pass_utc: "2026-09-21", run_id: 2026-09-21-v0520-rebase }
-    health:      { how: "/health 200 after boot; all shapes warmed", last_pass_utc: "2026-09-11T16:47:00Z", run_id: 2026-09-11-nvidia-nvfp4-b7-1M }
-    quality:     { how: "teacher-forced |dlogp| vs zai-org FP8 original on 40 prompts x 128 greedy tokens: nvidia 0.136 (argmax differs 15.6%) vs LibertAI 0.147 (15.9%); instrument self-consistency 0.00000. Rebase window 2026-09-21: TF bit-identical across four boots (max delta 0.0 over 2,857 tokens), greedy 20/20 vs the DFlash reference, tools 10/10 x4 + Hermes 10/10. Plus 10/10 parsed tool calls (scripts/tool_harness.py) and a real Hermes agent harness 10/10 tool turns. CORRECTED 2026-09-21: DFlash2 is target-verified, not byte-identical to AR.", last_pass_utc: "2026-09-21", run_id: 2026-09-21-v0520-rebase, notes: "replaces the output-judged gate of run 2026-09-01" }
+    digest:      { how: "local image ID matches the digest above after a rebuild from Dockerfile.tf5.16.1 (sha256 8cee99bd...); pip freeze identical to the tested build; base pulled by digest. Model dir is the pinned revision, 204,475,659,764 bytes / 42 files byte-verified against the Hub listing (2026-09-21)", last_pass_utc: "2026-09-24", run_id: 2026-09-24-tf5161-vision }
+    health:      { how: "/health 200 after boot; vision_gate.py PASS (361 image tokens, reads HELLO); all shapes warmed", last_pass_utc: "2026-09-24T22:39:10Z", run_id: 2026-09-24-tf5161-vision }
+    quality:     { how: "teacher-forced |dlogp| vs zai-org FP8 original on 40 prompts x 128 greedy tokens: nvidia 0.136 (argmax differs 15.6%) vs LibertAI 0.147 (15.9%); instrument self-consistency 0.00000. Rebase window 2026-09-21: TF bit-identical across four boots (max delta 0.0 over 2,857 tokens), greedy 20/20 vs the DFlash reference, tools 10/10 x4 + Hermes 10/10. Plus 10/10 parsed tool calls (scripts/tool_harness.py) and a real Hermes agent harness 10/10 tool turns. CORRECTED 2026-09-21: DFlash2 is target-verified, not byte-identical to AR. 2026-09-24 derived image (transformers 5.16.1): TF vs the v0.5.20 reference max delta 0.000000 over 2,857 tokens, greedy 20/20, tools 10/10 x2, TF vs FP8 oracle 0.1360 (unchanged).", last_pass_utc: "2026-09-24T22:41:40Z", run_id: 2026-09-24-tf5161-vision, notes: "replaces the output-judged gate of run 2026-09-01" }
     performance: { how: "C1 recipe-method (EFFORT=low) median-of-3 within 3% of 202.7 after warmup; C48 AR within 5% of 2,214", last_pass_utc: "2026-09-16T02:06:00Z", run_id: 2026-09-15-effort-drafter-nightly }
 
 limits:
@@ -189,6 +205,8 @@ limits:
   - "ROUND 4 2026-09-23: --tool-call-parser glm47 attaches a full_assistant_ebnf grammar to every chat request (tools or not). A speculative-decoding change that skips grammar steps is a silent no-op on real traffic; gate on the change's own activation counter."
   - "ROUND 4 2026-09-23: fixed verify width (draft 7, verify first K) is parked. K=5 lossless (greedy 20/20, TF delta 0.0) and +4-7% on essay/prose but -3% on code; K=4 -7.6% code; K=3 diverges on greedy (1/20). No single width wins; an acceptance-adaptive width is the untested next step."
   - "ROUND 4 2026-09-23: GPQA-Diamond at max effort truncates 22% of questions even at 64K max tokens; 75.3% is a floor at that cap."
+  - "CORRECTED 2026-09-24 (reported by Paul Torruella, x.com/PaulTorrue36658): the 2026-09-21 rebase to lmsysorg/sglang:v0.5.20-cu130 silently broke image input. That image ships transformers 5.12.1, which predates GLM-5.3-Flash (first in transformers 5.16.1): AutoProcessor falls back to a bare tokenizer, SGLang drops the image, returns HTTP 200 with 0 image tokens, and the model describes an image it never saw. The frozen v2 image had 5.16.1, so this was a regression our text-only gates could not see. Fixed with the derived image (Dockerfile.tf5.16.1); vision_gate.py now runs every boot. SGLang main still pins 5.12.1, so a newer SGLang tag alone does not fix it."
+  - "2026-09-24, one unexplained boot: the first fresh boot of the derived image served a slightly different model function (greedy 2/20 and TF mean 0.146 vs the reference, code C1 313.6 vs 288). Seven later boots and restarts of the same image, including an exact replay of that boot's request order, matched the reference (greedy 20/20 on the six where greedy ran, TF within the bar on all seven, delta 0.0 where measured). Not transformers, not image traffic, not request order; cause unknown. Gate text quality per boot, not per image. Receipts in results/2026-09-24-tf5161-vision/raw/cardH-2026-09-24/tf5/."
 
 rollback:
   script: scripts/swap-model.sh

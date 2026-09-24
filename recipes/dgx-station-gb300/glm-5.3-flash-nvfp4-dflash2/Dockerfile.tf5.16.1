@@ -1,0 +1,17 @@
+# GLM-5.3-Flash on SGLang v0.5.20 with image input working.
+#
+# Why: lmsysorg/sglang:v0.5.20-cu130 ships transformers 5.12.1, which predates GLM-5.3-Flash
+# (glm5_next; first released in transformers v5.16.1). On 5.12.1, AutoProcessor falls back to a bare
+# tokenizer, SGLang has no image processor, and image parts of a chat request are silently dropped:
+# HTTP 200, no error, prompt is text-only. Text tokenization and chat-template rendering are
+# byte-identical between 5.12.1 and 5.16.1 on this checkpoint (results/2026-09-24-tf5161-vision).
+#
+# Reported and fixed by Paul Torruella (https://x.com/PaulTorrue36658), 2026-09-24.
+#
+# Build (CPU-only, needs network for pip; a running server is not affected):
+#   docker build -t glmf-sglang:0.5.20-tf5.16.1 -f Dockerfile.tf5.16.1 .
+FROM lmsysorg/sglang@sha256:06e4f2ed21afde4ff513cda65070124e727ba23ccaeff7712b8c40e1097d611f
+# tokenizers is pinned to what pip resolved in the tested build, so a rebuild changes exactly two packages
+# vs the base (pip freeze diff: transformers 5.12.1 -> 5.16.1, tokenizers 0.22.2 -> 0.23.2).
+RUN pip install --no-cache-dir "transformers==5.16.1" "tokenizers==0.23.2" \
+ && python3 -c "import transformers, tokenizers; assert transformers.__version__ == '5.16.1'; assert tokenizers.__version__ == '0.23.2'"

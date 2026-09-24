@@ -139,6 +139,17 @@ def check_recipe(path: Path, root: Path | None = None) -> list[str]:
         elif _sha256(fp) != p.get("sha256"):
             errs.append(pre + f"patch '{p.get('path')}' sha256 mismatch (on disk {_sha256(fp)[:12]}…)")
 
+    # 7b. container dockerfile exists and matches its pinned sha256
+    ctr = (r.get("runtime") or {}).get("container") or {}
+    if ctr.get("dockerfile"):
+        fp = rdir / ctr["dockerfile"]
+        if not fp.exists():
+            errs.append(pre + f"container dockerfile '{ctr['dockerfile']}' not found")
+        elif ctr.get("dockerfile_sha256") and _sha256(fp) != ctr["dockerfile_sha256"]:
+            errs.append(pre + f"container dockerfile sha256 mismatch (on disk {_sha256(fp)[:12]}…)")
+    elif ctr.get("dockerfile_sha256"):
+        errs.append(pre + "container dockerfile_sha256 set without container dockerfile")
+
     # 8. credentials
     for f in rdir.rglob("*"):
         if not f.is_file() or f.suffix.lower() in CRED_SKIP_SUFFIX or f.stat().st_size > 5_000_000:

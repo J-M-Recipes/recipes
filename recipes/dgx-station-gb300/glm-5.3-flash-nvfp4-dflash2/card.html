@@ -42,16 +42,16 @@
   <div class="top">
     <div>
       <h1>GLM-5.3-Flash · 1× DGX Station GB300</h1>
-      <div class="sub">NVIDIA first-party NVFP4 + SGLang v0.5.20 + DFlash2 block-diffusion draft (block 7) — 1M context configured, one GPU, nothing offloaded</div>
+      <div class="sub">NVIDIA first-party NVFP4 + SGLang v0.5.20 (transformers 5.16.1 for image input) + DFlash2 block-diffusion draft (block 7) — 1M context configured, one GPU, nothing offloaded</div>
     </div>
-    <div class="brand"><b>J-M-RECIPES</b><br>v0.5.20 “Claim card” (2026-09-23 · SGLang 94602c9c · draft 7d74cdd8 · BFCL held-out, needle to 881K, GPQA added) · 2026-09-23<br>status: verified</div>
+    <div class="brand"><b>J-M-RECIPES</b><br>v0.5.20 + tf 5.16.1 “Vision fix” (2026-09-24 · SGLang 94602c9c · draft 7d74cdd8 · image input restored, reported by Paul Torruella; claim card 2026-09-23) · 2026-09-24<br>status: verified</div>
   </div>
   <div class="pills">
 <span class="pill type"><b>MoE</b> · 288 routed experts, 8 active · hybrid KDA + DSA + MLA attention</span>
 <span class="pill"><b>320B</b> total · <b>18B</b> active</span>
 <span class="pill">checkpoint <b>204.5 GB</b> · rev <span class="mono">09b04e5e</span></span>
 <span class="pill">weights <b>as shipped · NVFP4 routed experts (NVIDIA ModelOpt) · attn/shared/router/embeddings/lm_head unquantized</b></span>
-<span class="pill">engine <b>SGLang <span class="mono">94602c9c</span> · SGLang 0.5.20 (94602c9c) · lmsysorg/sglang:v0.5.20-cu130 · torch 2.13.0+cu130</b></span>
+<span class="pill">engine <b>SGLang <span class="mono">94602c9c</span> · SGLang 0.5.20 (94602c9c) · glmf-sglang:0.5.20-tf5.16.1 (v0.5.20-cu130 + transformers 5.16.1, Dockerfile.tf5.16.1) · torch 2.13.0+cu130</b></span>
 <span class="pill">memory <b>single GPU, nothing offloaded · KV pool 576K tok (fp8 DSA indexer + bf16 MLA KV) · 48 KDA state slots (9 running) · 1M ctx configured</b></span>
   </div>
   <div class="grid">
@@ -69,6 +69,7 @@
 <li class="ok">Weights unchanged: 0 re-quantized bits, 204,475,659,764 B / 42 files byte-verified vs HF</li>
 <li class="ok">Speculation is target-verified: every emitted token accepted by the full model. CORRECTED 2026-09-21: NOT byte-identical to AR decode (agree 1/20 at 200 tok, 0/8 at 2,500) — the earlier &#x27;lossless&#x27; reading compared DFlash boots to a DFlash reference</li>
 <li class="ok">Greedy parity 20/20 vs the DFlash reference (20×200 tok) on both boots × both images · long greedy 8×2,500: DFlash-vs-AR divergence at identical offsets on both images — verify-path argmax tie-breaking, not a checkpoint miss</li>
+<li class="ok">Image input: 361 image tokens, correct description, every boot of the derived image (6 server starts, 20 requests) · stock v0.5.20 gives 0 image tokens and a hallucinated answer · text on the derived image TF Δ 0.0 over 2,857 tok vs the v0.5.20 reference, greedy 20/20 · one earlier boot diverged and never reproduced</li>
 <li class="ok">Tool calling 10/10 parsed on all four rebase boots · real Hermes agent harness 10/10 tool turns</li>
 <li class="meas">Teacher-forced Δlogprob vs zai-org FP8 original (40×128 greedy tokens): mean |Δ| 0.136, argmax differs 15.6% (LibertAI NVFP4 0.147 / 15.9%) — shared NVFP4 bias · instrument self-consistency 0.00000 · four-boot TF bit-identical across images × AR/DFlash (max Δ 0.0 over 2,857 tokens)</li>
 <li class="meas">GPQA-Diamond run by us: 149/198 = 75.3% ± 6.0 pp at a 64K max-tokens cap (T=0, max effort) — a floor: 44 questions still truncated, 149/154 on finished answers</li>
@@ -82,7 +83,7 @@
     </ul>
   </div>
   <div class="foot">
-    <span>recipe <span class="mono">recipes/dgx-station-gb300/glm-5.3-flash-nvfp4-dflash2</span> · run <span class="mono">2026-09-23-cardE-gpqa-w3a (claim card, needle, GPQA, prefill, boot) · 2026-09-21-v0520-rebase (hero C1, rebase fidelity) · 2026-09-15-effort-drafter-nightly (acceptance, effort method) · 2026-09-11-nvidia-nvfp4-b7-1M (concurrency curve, TF vs FP8, Hermes) · 2026-09-01-flash-dflash2 (prefill)</span></span>
+    <span>recipe <span class="mono">recipes/dgx-station-gb300/glm-5.3-flash-nvfp4-dflash2</span> · run <span class="mono">2026-09-24-tf5161-vision (image input, derived-image text parity) · 2026-09-23-cardE-gpqa-w3a (claim card, needle, GPQA, prefill, boot) · 2026-09-21-v0520-rebase (hero C1, rebase fidelity) · 2026-09-15-effort-drafter-nightly (acceptance, effort method) · 2026-09-11-nvidia-nvfp4-b7-1M (concurrency curve, TF vs FP8, Hermes) · 2026-09-01-flash-dflash2 (prefill)</span></span>
     <span>github.com/J-M-Recipes/recipes · al-engr.com · @jmeadlock</span>
   </div>
 </div>

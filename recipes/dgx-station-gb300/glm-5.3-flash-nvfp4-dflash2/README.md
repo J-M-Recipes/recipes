@@ -1,6 +1,8 @@
 # GLM-5.3-Flash NVFP4 + DFlash2 on one DGX Station GB300
 
-**Status: verified** (claim card, long context and GPQA added September 23, 2026; rebased to **SGLang v0.5.20** September 21, 2026; draft `bf582e4e` tested the same afternoon — greedy 20/20 identical, acceptance and speed within noise, pin stays on `7d74cdd8`; round 3, September 16, 2026) · **~202 tok/s** single-stream answer-only (`reasoning_effort: low`) / **~265** with max-effort thinking counted · **~730 agg at C8** (DFlash2) · **2,214 agg / 50 per user at C48** and **4,025 agg / 34 per user at C128** (autoregressive) · 1M context, **needle recall 27/27 up to 881K prompt tokens** · **BFCL held-out Pass@1 79.3% (1,040/1,311)** · **GPQA-Diamond 75.3% at a 64K cap** (lower bound) · quality gated by teacher-forced divergence vs the FP8 original
+**Status: verified** (image input fixed September 24, 2026 — derived image with transformers 5.16.1, reported by [Paul Torruella](https://x.com/PaulTorrue36658); claim card, long context and GPQA added September 23, 2026; rebased to **SGLang v0.5.20** September 21, 2026; draft `bf582e4e` tested the same afternoon — greedy 20/20 identical, acceptance and speed within noise, pin stays on `7d74cdd8`; round 3, September 16, 2026) · **~202 tok/s** single-stream answer-only (`reasoning_effort: low`) / **~265** with max-effort thinking counted · **~730 agg at C8** (DFlash2) · **2,214 agg / 50 per user at C48** and **4,025 agg / 34 per user at C128** (autoregressive) · 1M context, **needle recall 27/27 up to 881K prompt tokens** · **BFCL held-out Pass@1 79.3% (1,040/1,311)** · **GPQA-Diamond 75.3% at a 64K cap** (lower bound) · quality gated by teacher-forced divergence vs the FP8 original
+
+> **Image input fix (September 24, 2026). Reported by [Paul Torruella](https://x.com/PaulTorrue36658).** The 9/21 rebase to `lmsysorg/sglang:v0.5.20-cu130` silently broke image input. That image ships **transformers 5.12.1**, which predates GLM-5.3-Flash (first released in transformers 5.16.1). SGLang loads a bare tokenizer with no image processor, drops the image, returns HTTP 200 with **0 image tokens**, and the model describes an image it never saw (our test image of a red square, a blue circle and "HELLO" came back as *"the Coca-Cola logo"*). The old frozen image had 5.16.1, so this was a regression our text-only gates could not see. Paul traced it and built the fix, a two-package derived image: [`Dockerfile.tf5.16.1`](Dockerfile.tf5.16.1). Verified here on a fresh boot of the pinned rebuild: **361 image tokens**, correct description, and text unchanged (teacher-forced Δ **0.0** over 2,857 tokens vs the v0.5.20 reference, greedy 20/20, tools 10/10, C1 200 / C8 699). [`scripts/vision_gate.py`](scripts/vision_gate.py) now runs on every boot. One earlier boot of the same image served slightly different numerics and never reproduced in six more boots; see the bundle. Bundle: [`results/2026-09-24-tf5161-vision/`](results/2026-09-24-tf5161-vision/README.md).
 
 > **Round 4 (September 23, 2026): what the model does, and a parked speed patch.** One window on the v0.5.20 daily config. Agent claim card pinned (`harness/protocol.yaml`): BFCL dev 551/600 (91.8%), held-out **1,040/1,311 (79.3%)**, run once, $0.20 / 1000 solved amortized. `strict: true` tools *lose* 35 dev cases, so they stay off. Needle ladder **27/27** from 7K to **881K** prompt tokens (the 881K rungs on a 16-slot variant with a 1.46M-token pool). GPQA-Diamond **149/198 = 75.3%** at a 64K max-tokens cap, but 44 questions (22%) still hit the cap: a lower bound, not the model's score. **W3a (verify only the first K of 7 draft tokens) is parked:** K=5 is lossless and +4–7% on essay/prose, but −3% on code, and no width clears the bar. Side finding: `--tool-call-parser glm47` puts a grammar on *every* chat request, so a spec-decode change that skips grammar steps never runs. Bundle: [`results/2026-09-23-cardE-gpqa-w3a/`](results/2026-09-23-cardE-gpqa-w3a/README.md).
 
@@ -40,16 +42,30 @@ Profile: [`hardware/dgx-station-gb300.yaml`](../../../hardware/dgx-station-gb300
 
 | | pin |
 |---|---|
-| Image | `glm53-nvfp4-sglang:gb300-v2` @ `sha256:f710fd42cf749cbc6c3e1799244b5bdefd3b8f34d978aa810a9c1f97f86b143a` — a frozen `docker commit`; rebuild with [`scripts/build-image.sh`](scripts/build-image.sh) |
-| Base | `lmsysorg/sglang:v0.5.18` @ `sha256:9e148f5a…` (2026-08-21) |
-| SGLang | 0.5.18 + [PR #36507](https://github.com/sgl-project/sglang/pull/36507) `glm-5.3-flash-support` @ `0a6b5d8c` (carries [#36708](https://github.com/sgl-project/sglang/pull/36708) DFlash hidden-state adapter). Released SGLang ≤ 0.5.18 cannot load this architecture — see [`research/failure-ledger.md`](research/failure-ledger.md) for the ten walls between "hardware works" and "first token". |
-| Libraries | torch 2.13.0+cu130 · transformers 5.16.1 · triton 3.7.1 · cuDNN 9.14 |
-| Target | [`LibertAIDAI/GLM-5.3-Flash-NVFP4`](https://huggingface.co/LibertAIDAI/GLM-5.3-Flash-NVFP4) @ `aa28e1f54130286c95fee10d0705c74ce8743734` (182 GB) — mount the `original/` snapshot dir, not the wrapper |
-| Draft | [`incoai/GLM-5.3-Flash-DFlash2`](https://huggingface.co/incoai/GLM-5.3-Flash-DFlash2) @ `7d74cdd881ed7e32c31175984a67823127b66cfe` (2.2 GB) |
+| Image | **`glmf-sglang:0.5.20-tf5.16.1`**, built locally from [`Dockerfile.tf5.16.1`](Dockerfile.tf5.16.1) (sha256 `8cee99bd…`); reference image ID `sha256:98dabd1b…`. Not in any registry: `docker build -t glmf-sglang:0.5.20-tf5.16.1 -f Dockerfile.tf5.16.1 .` (CPU-only, seconds) |
+| Base | `lmsysorg/sglang:v0.5.20-cu130` @ `sha256:06e4f2ed21afde4ff513cda65070124e727ba23ccaeff7712b8c40e1097d611f` (tagged release 2026-09-18). The base alone serves text identically but **silently drops images**. |
+| SGLang | 0.5.20 (`94602c9c`), the first release listing GLM-5.3-Flash as supported; carries the #37818 DFlash/KDA checkpoint fix |
+| Libraries | torch 2.13.0+cu130 · **transformers 5.16.1** · **tokenizers 0.23.2** (the only two packages that differ from the base, per `pip freeze`) · triton 3.7.1 |
+| Target | [`nvidia/GLM-5.3-Flash-NVFP4`](https://huggingface.co/nvidia/GLM-5.3-Flash-NVFP4) @ `09b04e5e74bca08ca8549fc736d4cdd8624bfde3` (204.5 GB, 42 files) |
+| Draft | [`incoai/GLM-5.3-Flash-DFlash2`](https://huggingface.co/incoai/GLM-5.3-Flash-DFlash2) @ `7d74cdd881ed7e32c31175984a67823127b66cfe` |
 
-Full lock: [`results/2026-09-01-flash-dflash2/software-lock.txt`](results/2026-09-01-flash-dflash2/software-lock.txt).
+Round 1 ran on a frozen `docker commit` (`glm53-nvfp4-sglang:gb300-v2` @ `sha256:f710fd42…`, SGLang 0.5.18 + [PR #36507](https://github.com/sgl-project/sglang/pull/36507), LibertAI NVFP4, [`scripts/build-image.sh`](scripts/build-image.sh)); lock in [`results/2026-09-01-flash-dflash2/software-lock.txt`](results/2026-09-01-flash-dflash2/software-lock.txt). Released SGLang ≤ 0.5.18 cannot load this architecture; see [`research/failure-ledger.md`](research/failure-ledger.md).
 
 ## Launch
+
+```bash
+docker build -t glmf-sglang:0.5.20-tf5.16.1 -f Dockerfile.tf5.16.1 .
+TAG=daily IMAGE=glmf-sglang:0.5.20-tf5.16.1 \
+  MODEL=/path/to/GLM-5.3-Flash-NVFP4 DRAFT=/path/to/GLM-5.3-Flash-DFlash2 \
+  SPEC=dflash KV=fp8_e4m3 MEM=0.85 CTX=1048576 MAXBS=16 \
+  EXTRA='--max-mamba-cache-size 48 --speculative-dflash-block-size 7' \
+  bash scripts/launch-glmf.sh
+# wait for /v1/models, then — not optional —
+python3 scripts/vision_gate.py        # must print VISION_GATE PASS; the stock base prints FAIL
+(cd scripts && python3 -c 'import flash_bench as fb; fb.knee(reps=0)')   # warm C1..C32
+```
+
+Batch variants (AR, 128 users) are in `recipe.yaml` → `launch.notable_flags`. The round-1 launchers below still describe the frozen v2 image and are kept as history:
 
 ```bash
 MODEL_DIR=/path/to/GLM-5.3-Flash-NVFP4/aa28e1f5…/original \
@@ -82,9 +98,10 @@ Flags that matter:
 | gate | how | last pass |
 |---|---|---|
 | schema | `scripts/check_recipe.py` | 2026-09-06 |
-| digest | `docker image inspect` matches; model dirs are the pinned revisions | 2026-09-06 |
-| health | `/health` 200; `warmup.sh` completes C1/4/8/16/32 | 2026-09-02 |
-| quality | teacher-forced \|Δlogp\| vs zai-org FP8 original 0.136 mean (40×128 greedy tokens) + instrument self-consistency 0.00000 · four-boot TF bit-identical (max Δ 0.0, 2,857 tok, 2026-09-21 rebase) · greedy 20/20 vs the DFlash reference · tools 10/10 ×4 + Hermes 10/10 · **CORRECTED 2026-09-21:** DFlash2 is target-verified, not byte-identical to AR (see limits). | 2026-09-21 |
+| digest | local image ID matches after a rebuild from `Dockerfile.tf5.16.1`; `pip freeze` diff vs base = transformers + tokenizers only; model dirs are the pinned revisions | 2026-09-24 |
+| image input | `scripts/vision_gate.py`: prompt grows ≥100 tokens, `image_tokens` > 0, answer reads HELLO. **Run every boot.** | 2026-09-24 |
+| health | `/health` 200; warm C1–C32 completes | 2026-09-24 |
+| quality | teacher-forced \|Δlogp\| vs zai-org FP8 original 0.136 mean (40×128 greedy tokens) + instrument self-consistency 0.00000 · four-boot TF bit-identical (max Δ 0.0, 2,857 tok, 2026-09-21 rebase) · greedy 20/20 vs the DFlash reference · tools 10/10 ×4 + Hermes 10/10 · **CORRECTED 2026-09-21:** DFlash2 is target-verified, not byte-identical to AR (see limits) · derived image TF Δ 0.0 vs the v0.5.20 reference, greedy 20/20 (2026-09-24). **Gate text on every boot:** one boot of the same image served different numerics (see limits). | 2026-09-24 |
 | performance | C1 median-of-3 within 5% of 234.2 tok/s after warmup | 2026-09-02 |
 
 **Warm up or your benchmarks lie.** The first request at each new batch shape after a restart pays up to 30 s of kernel autotune (CUDA graphs are on the whole time — it's per-shape JIT). The same applies to prompt-length classes: the first 8k/32k/64k prompt after restart pays ~16 s; warm, those prefill in 0.3–2 s. Our own day-one "concurrency cliff" (220 agg tok/s, 15 s TTFT at C8+) was this artifact. Bench warm or bench wrong.
@@ -204,6 +221,10 @@ For reference, [catid/dgx_station_benchmarks](https://github.com/catid/dgx_stati
 
 ## Known limits
 
+- **Image input needs transformers ≥ 5.16.1.** Stock `lmsysorg/sglang:v0.5.20-cu130` (5.12.1) accepts images and returns 200 but gives the model 0 image tokens, so the model describes an image it never saw. SGLang main still pins 5.12.1. Use the derived image and run `vision_gate.py` after every boot. *(Reported by [Paul Torruella](https://x.com/PaulTorrue36658), 2026-09-24.)*
+- **One server start out of eight on the derived image served slightly different numerics** (greedy 2/20 vs the reference, TF mean |Δ| 0.146) and never reproduced, not even with its exact request order replayed. The cause is unknown. A text gate is evidence about the boot it ran on, not about the image.
+- **First boot of a new DGX Station** (reported by Paul, not reproduced here): if the NVIDIA driver fails to load and there is no login prompt, add `systemd.unit=multi-user.target` to the GRUB linux line, boot to a console and enable ssh. See the hardware profile.
+
 - **Concurrency is capped by KDA state slots, not compute.** Default budget → 7 running requests. Raise `--max-mamba-cache-size` (5 slots per request); bytes come out of the KV pool one-for-one. `no_buffer` strategy (3 slots/req) needs page_size 1 and does not work with this model's DSA paging.
 - **DFlash2 above ~24 users** is a memory problem (fp32 intermediate states × 7 draft tokens per slot), not a speed problem. Use the AR variant for batch.
 - **"FP8 KV" is half true.** Only the DSA indexer pool is fp8; the MLA KV stays bf16 with `--kv-cache-dtype fp8_e4m3` ([sglang#36830](https://github.com/sgl-project/sglang/issues/36830), `index_kpool=4`). The cookbook's `--dsa-*-backend trtllm` pairing does not change this on GLM-5.3 (round 3 W4: pool lines identical).
@@ -229,5 +250,6 @@ For reference, [catid/dgx_station_benchmarks](https://github.com/catid/dgx_stati
 - [incoai](https://huggingface.co/incoai) — the DFlash2 draft model
 - SGLang PR [#36507](https://github.com/sgl-project/sglang/pull/36507) / [#36708](https://github.com/sgl-project/sglang/pull/36708) authors — the model support that made this possible
 - [catid](https://github.com/catid/dgx_station_benchmarks) — the public baseline we measured against
+- [Paul Torruella](https://x.com/PaulTorrue36658) — found, diagnosed and fixed the silent image-input regression (transformers 5.16.1 derived image), and the first-boot GRUB workaround
 
 Longer write-up: [al-engr.com/gb300-glm-53-testing.html](https://al-engr.com/gb300-glm-53-testing.html). Origin repo: [jmeadlock/gb300-glm-flash-recipe](https://github.com/jmeadlock/gb300-glm-flash-recipe).
