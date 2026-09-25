@@ -49,12 +49,14 @@ Win bar was set on `replay.py` (+5%), which turned out to have ±17 tok/s spread
 |---|---|---|---|---|
 | E5 | prefix cache (measure) | hits 0→34k | — | 8.8K system prompt: 0.665→0.360 s warm |
 | E1 | THP `always` | AnonHugePages 0.5→**2.5 GB** (needed ≥50) | 78.4 | pinned `cudaHostRegister` buffers are not THP-eligible; sysfs alone does nothing |
-| E2 | `VLLM_WEIGHT_OFFLOADING_DISABLE_PIN_MEMORY=1` | host used 450→**384 GB** | **76.3 (−7%)** | pageable+ATS is slower; 66 GB host RAM back isn't needed |
+| E2 | `VLLM_WEIGHT_OFFLOADING_DISABLE_PIN_MEMORY=1` | host used 450→**384 GB** | **76.3 (−7%)** | pageable+ATS is slower; 66 GB host RAM back isn't needed — **corrected 2026-09-25, see below** |
 | E3 | + `--language-model-only` | KV 10.05→**11.14** | 76.2 | +1.1 GiB, not the 3 needed for offload 65 |
 | E4 | + `VLLM_USE_RUST_FRONTEND=1` | tool parser survived | 76.0 | no decode gain; 6.5K TTFT 0.37→0.52 s |
 | E1b | THP `always` on unpinned path | AnonHugePages still **2.5 GB**; weights are in **Shmem** (354 GB), `shmem_enabled=[never]` | **77.3** | THP `enabled` was never the relevant knob; the untested lever is `transparent_hugepage/shmem_enabled` |
 
 Lane rolled back to v11 at 05:56 CDT. Report and correction: the overnight operator followed the plan exactly; the wrong instrument was in the plan.
+
+**Correction to E2 (2026-09-25).** The −7% came from one knee on the `0909` image with a replay-era baseline. It does not hold on nightly `dee37d89`, where the flag costs **−2.1 to −3.3%** across C1–C16 (C1 88.4 vs stock mean 91.0; C16 411.7 vs 420.4), and PR #58185, which takes the same path, costs −2.5 to −2.8%. That comes from 7 alternating boots of the recipes#1015 config (3 stock, 3 [vllm#58185](https://github.com/vllm-project/vllm/pull/58185), 1 flag), all loading the same autotune set, and the fastest non-stock boot is slower than the slowest stock boot at every concurrency. The "pageable+ATS" mechanism in the row is also wrong: with the flag on, the UVA path allocates **exact-size pinned** memory (`cudaHostAlloc`); it is not pageable. What the flag actually changes is PyTorch's power-of-two host rounding. Host memory: −54.8 GiB (cgroup shmem 380.2 → 325.4 GiB). Raw data: [vllm#58185 comment](https://github.com/vllm-project/vllm/pull/58185#issuecomment-5833189800).
 
 ## Day two (2026-09-12): residency, speculation depth, adaptive verification
 
