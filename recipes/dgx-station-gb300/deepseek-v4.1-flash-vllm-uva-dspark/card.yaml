@@ -3,8 +3,8 @@
 # status measured = a number without a pass/fail verdict (renders blue ≈).
 title: "DeepSeek-V4.1-Flash · 1× DGX Station GB300"
 subtitle: "Full 1,048,576-token context from a single GB300 — routed experts split HBM / Grace over NVLink-C2C, in-checkpoint DSpark drafter"
-version: "v20 “Clean Nightly” (release 2026-09-21; nightly 2671fedf — last before the #56633 mHC-fold drift; v18 = rollback; v19 reverted 2026-09-20)"
-run_id: 2026-09-21-v20-promotion (v20) · 2026-09-21-kernel-bisect · 2026-09-21-toolcall-gate-49435 (gate + v19 revert) · 2026-09-20-fidelity
+version: "v21 “Fused Split” serving 2026-09-27 (0909 + hook v21, +6.2% C1 vs v18) · documented release v20 “Clean Nightly” 2026-09-21 · v18 = rollback"
+run_id: 2026-09-27-v21-fused-split (v21) · 2026-09-21-v20-promotion (v20) · 2026-09-21-toolcall-gate-49435
 handles: "github.com/J-M-Recipes/recipes · al-engr.com · @jmeadlock"
 
 model:
@@ -18,8 +18,8 @@ model:
   memory: "206.6 GiB HBM experts + 62.3 GiB Grace pinned (off54) · KV pool 2.55M tok (fp8_ds_mla)"
 
 hero:
-  c1:      { value: 181, unit: tok/s, class: prose, note: "warm, T=0, 192 tok · 180.3–180.9 two boots vs v18 171.8 same window (+5.1% pair mean) · agent/code/shell text 190–260 on the fixture · the v19 nightly read 183 (+6.6%) and was reverted: acceptance −4/−8 pt on tool/shell text" }
-  c16:     { value: 970, unit: tok/s, note: "979 / 965 two boots vs v18 952 · C8 670 / 661 vs 660 · max-num-seqs 24 · 35-seat fund harness C24 aggregate 285, C24 warm turn p50 0.55 s, C16 warm p95 1.8 s" }
+  c1:      { value: 183, unit: tok/s, class: prose, note: "v21 on 0909: 182.8 vs v18 171.8 / 172.5 bracketing controls (+6.2%), 2026-09-27 · v20 nightly: 180.3–180.9 vs v18 171.8 same window (+5.1% pair mean) · agent/code/shell text 190–260 on the fixture · the v19 nightly read 183 (+6.6%) and was reverted: acceptance −4/−8 pt on tool/shell text" }
+  c16:     { value: 993, unit: tok/s, note: "v21 992.8 vs v18 957 / 952 (+4.0%) · C8 687 vs 656 / 657 · v20: 979 / 965 vs v18 952 · C8 670 / 661 vs 660 · max-num-seqs 24 · 35-seat fund harness C24 aggregate 285, C24 warm turn p50 0.55 s, C16 warm p95 1.8 s" }
   prefill: { value: 22.7K, unit: tok/s, note: "104K prompt in 4.6 s · 6.5K @ 15.7K tok/s · 972K prompt in 85 s · 1K / 256K points pending" }
 
 guesser:
@@ -49,7 +49,7 @@ secondary:
 fidelity:
   - { status: pass,    text: "Weights unchanged: 0 re-quantized bits, 510,313,343,553 B byte-verified vs HF" }
   - { status: pass,    text: "Speculation is target-verified: every emitted token accepted by the full model (lossless at T=0)" }
-  - { status: pass,    text: "Greedy parity 44/44 non-tool prompts byte-exact across recipe variants · gauntlet 36/36" }
+  - { status: pass,    text: "Greedy parity 44/44 non-tool prompts byte-exact across recipe variants · v21 hook 16/16 non-tool vs both v18 controls (2026-09-27) · gauntlet 36/36" }
   - { status: pass,    text: "Tool calling: BFCL v4 simple_python+multiple 560/600 = 93.3% exact-match (our AST grader, T=0, 2026-09-20) · Hermes harness 10/10 · 35-seat fund harness 64/64" }
   - { status: measured, text: "Teacher-forced Δlogprob vs no-hook reference, 79,544 positions (prefill-only): v18 hook mean |Δ| 0.030, top-1 flips 1.06% corpus-wide and 0.56% on agent/tool-shaped text — uniform noise. The reverted v19 nightly was 0.059 / 2.2% corpus-wide but 0.257 / 11.45% on tool-shaped text; unchanged on nightly d05da62e (+#49435), so it is the nightly’s kernels, not the KV writer. Perplexity unchanged either way." }
   - { status: measured, text: "GPQA-Diamond 198 run by us, T=0, reasoning on, 64k budget: v18 86.9% (172/198, ±4.7, 7 truncated) · v19 nightly 87.4% (173/198) — equal-budget pair, wash · model card 90.9 at max effort, T=1 — anchor, not a reproduction" }
