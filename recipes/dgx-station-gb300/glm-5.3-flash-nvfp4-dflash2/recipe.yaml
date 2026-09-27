@@ -10,7 +10,7 @@ summary: >
   (derived image, Dockerfile.tf5.16.1; reported by Paul Torruella).
 status: verified
 owners: [jmeadlock, milo]
-updated: "2026-09-24"
+updated: "2026-09-27"
 tags: [glm-5.3-flash, nvfp4, sglang, dflash2, speculative-decoding, single-gpu, interactive, high-concurrency, 1m-context, multimodal]
 
 model:
@@ -207,7 +207,9 @@ limits:
   - "ROUND 4 2026-09-23: GPQA-Diamond at max effort truncates 22% of questions even at 64K max tokens; 75.3% is a floor at that cap."
   - "CORRECTED 2026-09-24 (reported by Paul Torruella, x.com/PaulTorrue36658): the 2026-09-21 rebase to lmsysorg/sglang:v0.5.20-cu130 silently broke image input. That image ships transformers 5.12.1, which predates GLM-5.3-Flash (first in transformers 5.16.1): AutoProcessor falls back to a bare tokenizer, SGLang drops the image, returns HTTP 200 with 0 image tokens, and the model describes an image it never saw. The frozen v2 image had 5.16.1, so this was a regression our text-only gates could not see. Fixed with the derived image (Dockerfile.tf5.16.1); vision_gate.py now runs every boot. SGLang main still pins 5.12.1, so a newer SGLang tag alone does not fix it."
   - "2026-09-24, one unexplained boot: the first fresh boot of the derived image served a slightly different model function (greedy 2/20 and TF mean 0.146 vs the reference, code C1 313.6 vs 288). Seven later boots and restarts of the same image, including an exact replay of that boot's request order, matched the reference (greedy 20/20 on the six where greedy ran, TF within the bar on all seven, delta 0.0 where measured). Not transformers, not image traffic, not request order; cause unknown. Gate text quality per boot, not per image. Receipts in results/2026-09-24-tf5161-vision/raw/cardH-2026-09-24/tf5/."
-
+  - "ROUND 5 2026-09-27 (results/2026-09-27-round5-nightly-replayssm): SGLang nightly 425a1f8f (carries #39200 mHC-boundary fuse, #40517 ReplaySSM-for-GLM, #39816 Cute-DSL AR) measured same-window vs two v0.5.20 controls: C1 code +6%, prose +10%, C8 +4% — but greedy 1/20 vs the W2 reference and teacher-forced mean |dlogp| 0.139 (controls 0.000, 20/20). The nightly's kernels change the model function; tools 10/10 on every arm did not see it. NOT ADOPTED; pin stays v0.5.20. Bisect between 94602c9c and 425a1f8f with the TF gate before any rebase."
+  - "ROUND 5 2026-09-27: W5 REOPENED — --enable-linear-replayssm-spec boots WITH DFlash on the 09-27 nightly (#40517 made the KDA gate capability-based). Frees the 9.57 GB intermediate_ssm_state_cache: KV pool 577,024 -> 856,576 tokens (+48%) at the same mem-fraction; answer-only C1 +11% history / +13% code, C8 +7%; forces --mamba-ssm-dtype float32 and max-effort thinking-counted C1 drops 264 -> 239 (-9.5%). Zero additional TF drift vs the same nightly without it (identical 0.139) — ReplaySSM is clean; the image is not. Candidate for the batch lane once a clean image carries #40517; measure the fp32-state max-effort trade on real transcripts first."
+  - "PROFILE 2026-09-27 (results/2026-09-27-round5-nightly-replayssm/profile): v0.5.20 C1 answer-only decode step is 13.9 ms wall at 111% GPU-busy (DFlash2 draft on a second stream overlaps the target), inter-step gap 1.06 ms. 1,769 launches/step of which 1,505 are <12 us kernels worth 6.6 ms (splitKreduce x192, mHC pre/post x180, prenorm GEMM x90, TGV x94); expert bmm_E2m1 gemm1/gemm2 42x(61+34) us = 4.1 ms on t128x8x512 at M~8; KDA state update 1.9 ms; DSA attention 0.08 ms. The step is launch-shaped, not bandwidth-shaped — fusion PRs (#39200 class) are the lever, once they arrive without drift."
 rollback:
   script: scripts/swap-model.sh
   summary: "docker rm -f glm53-flash and relaunch the previous checkpoint dir with the same image and flags; ~5 min wall including warmup."

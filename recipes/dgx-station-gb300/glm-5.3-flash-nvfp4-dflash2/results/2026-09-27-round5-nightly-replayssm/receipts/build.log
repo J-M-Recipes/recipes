@@ -1,0 +1,81 @@
+#0 building with "default" instance using docker driver
+
+#1 [internal] load build definition from Dockerfile.nightly-tf5161
+#1 transferring dockerfile: 321B done
+#1 DONE 0.1s
+
+#2 [internal] load metadata for docker.io/lmsysorg/sglang:nightly-dev-cu13-20260927-425a1f8f
+#2 DONE 0.0s
+
+#3 [internal] load .dockerignore
+#3 transferring context: 2B done
+#3 DONE 0.0s
+
+#4 [1/2] FROM docker.io/lmsysorg/sglang:nightly-dev-cu13-20260927-425a1f8f@sha256:750718d6416b730c6ebbdd2d2f86c78d31878e4bd5cdddcd64dd1ab9f7d5537d
+#4 resolve docker.io/lmsysorg/sglang:nightly-dev-cu13-20260927-425a1f8f@sha256:750718d6416b730c6ebbdd2d2f86c78d31878e4bd5cdddcd64dd1ab9f7d5537d 0.0s done
+#4 DONE 2.7s
+
+#5 [2/2] RUN pip install --no-cache-dir "transformers==5.16.1" "tokenizers==0.23.2" && python3 -c "import transformers, tokenizers; assert transformers.__version__ == '5.16.1'; assert tokenizers.__version__ == '0.23.2'"
+#5 1.305 Collecting transformers==5.16.1
+#5 1.471   Downloading transformers-5.16.1-py3-none-any.whl.metadata (32 kB)
+#5 1.666 Collecting tokenizers==0.23.2
+#5 1.695   Downloading tokenizers-0.23.2-cp310-abi3-manylinux_2_17_aarch64.manylinux2014_aarch64.whl.metadata (9.8 kB)
+#5 1.700 Requirement already satisfied: huggingface-hub<2.0,>=1.5.0 in /opt/sglang/lib/python3.12/site-packages (from transformers==5.16.1) (1.33.0)
+#5 1.701 Requirement already satisfied: numpy>=1.17 in /opt/sglang/lib/python3.12/site-packages (from transformers==5.16.1) (2.3.5)
+#5 1.701 Requirement already satisfied: packaging>=20.0 in /opt/sglang/lib/python3.12/site-packages (from transformers==5.16.1) (26.3)
+#5 1.701 Requirement already satisfied: pyyaml>=5.1 in /opt/sglang/lib/python3.12/site-packages (from transformers==5.16.1) (6.0.1)
+#5 1.702 Requirement already satisfied: regex>=2025.10.22 in /opt/sglang/lib/python3.12/site-packages (from transformers==5.16.1) (2026.9.10)
+#5 1.702 Requirement already satisfied: typer in /opt/sglang/lib/python3.12/site-packages (from transformers==5.16.1) (0.27.2)
+#5 1.703 Requirement already satisfied: safetensors>=0.8.0 in /opt/sglang/lib/python3.12/site-packages (from transformers==5.16.1) (0.8.0)
+#5 1.703 Requirement already satisfied: tqdm>=4.60 in /opt/sglang/lib/python3.12/site-packages (from transformers==5.16.1) (4.70.1)
+#5 1.705 Requirement already satisfied: click<9.0.0,>=8.4.2 in /opt/sglang/lib/python3.12/site-packages (from huggingface-hub<2.0,>=1.5.0->transformers==5.16.1) (8.5.0)
+#5 1.706 Requirement already satisfied: filelock>=3.10.0 in /opt/sglang/lib/python3.12/site-packages (from huggingface-hub<2.0,>=1.5.0->transformers==5.16.1) (4.0.4)
+#5 1.706 Requirement already satisfied: fsspec>=2023.5.0 in /opt/sglang/lib/python3.12/site-packages (from huggingface-hub<2.0,>=1.5.0->transformers==5.16.1) (2026.6.0)
+#5 1.706 Requirement already satisfied: hf-xet<2.0.0,>=1.6.0 in /opt/sglang/lib/python3.12/site-packages (from huggingface-hub<2.0,>=1.5.0->transformers==5.16.1) (1.6.0)
+#5 1.707 Requirement already satisfied: httpx<1,>=0.23.0 in /opt/sglang/lib/python3.12/site-packages (from huggingface-hub<2.0,>=1.5.0->transformers==5.16.1) (0.28.1)
+#5 1.707 Requirement already satisfied: typing-extensions>=4.1.0 in /opt/sglang/lib/python3.12/site-packages (from huggingface-hub<2.0,>=1.5.0->transformers==5.16.1) (4.16.0)
+#5 1.712 Requirement already satisfied: anyio in /opt/sglang/lib/python3.12/site-packages (from httpx<1,>=0.23.0->huggingface-hub<2.0,>=1.5.0->transformers==5.16.1) (4.15.1)
+#5 1.712 Requirement already satisfied: certifi in /opt/sglang/lib/python3.12/site-packages (from httpx<1,>=0.23.0->huggingface-hub<2.0,>=1.5.0->transformers==5.16.1) (2026.7.22)
+#5 1.712 Requirement already satisfied: httpcore==1.* in /opt/sglang/lib/python3.12/site-packages (from httpx<1,>=0.23.0->huggingface-hub<2.0,>=1.5.0->transformers==5.16.1) (1.0.9)
+#5 1.713 Requirement already satisfied: idna in /opt/sglang/lib/python3.12/site-packages (from httpx<1,>=0.23.0->huggingface-hub<2.0,>=1.5.0->transformers==5.16.1) (3.20)
+#5 1.714 Requirement already satisfied: h11>=0.16 in /opt/sglang/lib/python3.12/site-packages (from httpcore==1.*->httpx<1,>=0.23.0->huggingface-hub<2.0,>=1.5.0->transformers==5.16.1) (0.16.0)
+#5 1.728 Requirement already satisfied: shellingham>=1.3.0 in /opt/sglang/lib/python3.12/site-packages (from typer->transformers==5.16.1) (1.5.4)
+#5 1.729 Requirement already satisfied: rich>=13.8.0 in /opt/sglang/lib/python3.12/site-packages (from typer->transformers==5.16.1) (15.0.0)
+#5 1.729 Requirement already satisfied: annotated-doc>=0.0.2 in /opt/sglang/lib/python3.12/site-packages (from typer->transformers==5.16.1) (0.0.5)
+#5 1.731 Requirement already satisfied: markdown-it-py>=2.2.0 in /opt/sglang/lib/python3.12/site-packages (from rich>=13.8.0->typer->transformers==5.16.1) (4.2.0)
+#5 1.731 Requirement already satisfied: pygments<3.0.0,>=2.13.0 in /opt/sglang/lib/python3.12/site-packages (from rich>=13.8.0->typer->transformers==5.16.1) (2.21.0)
+#5 1.732 Requirement already satisfied: mdurl~=0.1 in /opt/sglang/lib/python3.12/site-packages (from markdown-it-py>=2.2.0->rich>=13.8.0->typer->transformers==5.16.1) (0.1.2)
+#5 1.767 Downloading transformers-5.16.1-py3-none-any.whl (12.1 MB)
+#5 1.975    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 12.1/12.1 MB 79.9 MB/s  0:00:00
+#5 2.005 Downloading tokenizers-0.23.2-cp310-abi3-manylinux_2_17_aarch64.manylinux2014_aarch64.whl (3.5 MB)
+#5 2.020    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 3.5/3.5 MB 239.9 MB/s  0:00:00
+#5 2.315 Installing collected packages: tokenizers, transformers
+#5 2.315   Attempting uninstall: tokenizers
+#5 2.320     Found existing installation: tokenizers 0.22.2
+#5 2.323     Uninstalling tokenizers-0.22.2:
+#5 2.332       Successfully uninstalled tokenizers-0.22.2
+#5 2.435   Attempting uninstall: transformers
+#5 2.442     Found existing installation: transformers 5.12.1
+#5 2.588     Uninstalling transformers-5.12.1:
+#5 2.952       Successfully uninstalled transformers-5.12.1
+#5 8.188 
+#5 8.189 ERROR: pip's dependency resolver does not currently take into account all the packages that are installed. This behaviour is the source of the following dependency conflicts.
+#5 8.189 cosmos-guardrail 0.3.1 requires opencv-python>=4.10.0.84, which is not installed.
+#5 8.189 sglang 0.0.0.dev1+g425a1f8f2 requires tokenizers==0.22.2, but you have tokenizers 0.23.2 which is incompatible.
+#5 8.189 sglang 0.0.0.dev1+g425a1f8f2 requires transformers==5.12.1, but you have transformers 5.16.1 which is incompatible.
+#5 8.189 cosmos-guardrail 0.3.1 requires imageio>=2.37.0, but you have imageio 2.36.0 which is incompatible.
+#5 8.204 Successfully installed tokenizers-0.23.2 transformers-5.16.1
+#5 DONE 10.5s
+
+#6 exporting to image
+#6 exporting layers
+#6 exporting layers 3.2s done
+#6 exporting manifest sha256:aac4545ddfb3b3c6e202de3a59549b708d74f2284f39052775e2391fc7c3179f 0.0s done
+#6 exporting config sha256:e8823fecc777bdde372d7c30371ec2b6a5ab471231fcd22330151df3cd09e68a 0.0s done
+#6 exporting attestation manifest sha256:e105d9d01e1838c8c1a1df21c036e4ed6b05c12bbf3d59dc137c023a113eb0e8 0.0s done
+#6 exporting manifest list sha256:49a1375de283f99694674a68d5ef850d2fbbed464a2390203685068975e3f45e
+#6 exporting manifest list sha256:49a1375de283f99694674a68d5ef850d2fbbed464a2390203685068975e3f45e 0.0s done
+#6 naming to docker.io/library/glmf-sglang:nightly-20260927-425a1f8f-tf5.16.1 done
+#6 unpacking to docker.io/library/glmf-sglang:nightly-20260927-425a1f8f-tf5.16.1
+#6 unpacking to docker.io/library/glmf-sglang:nightly-20260927-425a1f8f-tf5.16.1 1.0s done
+#6 DONE 4.4s

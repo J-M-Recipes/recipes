@@ -1,0 +1,31 @@
+/sgl-workspace/sglang/python/sglang/launch_server.py:71: UserWarning: 'python -m sglang.launch_server' is still supported, but 'sglang serve' is the recommended entrypoint.
+[2026-09-27 18:20:27] Breakable CUDA graph is incompatible with KDA hybrid linear attention; disabling prefill CUDA graph.
+[2026-09-27 18:20:28] --enable-linear-replayssm-spec: setting --mamba-ssm-dtype float32 (cached replay uses compensated checkpoint projection and materialization).
+[2026-09-27 18:20:46] DFLASH fa4 draft: overriding KV cache dtype torch.float8_e4m3fn -> torch.bfloat16 (fa4 needs K.dtype == Q.dtype; cannot read the target's quantized KV).
+[2026-09-27 18:20:49] Load weight begin. avail mem=248.90 GB
+[2026-09-27 18:21:41] Load weight end. elapsed=51.50 s, type=Glm5NextForConditionalGeneration, quant=modelopt_fp4, quant_algo=NVFP4, avail mem=71.93 GB, mem usage=176.97 GB.
+[2026-09-27 18:21:46] Load weight begin. avail mem=71.81 GB
+[2026-09-27 18:21:46] Load weight end. elapsed=0.23 s, type=DFlash2DraftModel, avail mem=69.12 GB, mem usage=2.69 GB.
+[2026-09-27 18:21:46] DFLASH fa4 draft: overriding KV cache dtype torch.float8_e4m3fn -> torch.bfloat16 (fa4 needs K.dtype == Q.dtype; cannot read the target's quantized KV).
+[2026-09-27 18:21:46] DFLASH block size mismatch: using speculative_num_draft_tokens=7 but draft config block_size=8.
+[2026-09-27 18:21:46] Initialized DFLASH draft runner. attention_backend=fa4, model=DFlash2DraftModel, block_size=7, draft_window_size=None, compact_cache=False
+[2026-09-27 18:21:46] DFLASH draft runner ready. mask_token=<|MASK|>, mask_token_id=154856, mask_token_id_override=154856, noise_embed_scale=1.0
+[2026-09-27 18:21:46] DFLASH fused KV materialization enabled. n_layers=5, num_kv_heads=8, head_dim=128
+[2026-09-27 18:21:47] max_running_requests is capped to 9 by the mamba state cache (max_mamba_cache_size=48, 5 state slots per request). To raise it: increase --mamba-full-memory-ratio or --max-mamba-cache-size, or halve the state size with --mamba-ssm-dtype bfloat16.
+[2026-09-27 18:21:47] Mamba Cache is allocated. max_mamba_cache_size: 48, conv_state size: 0.24GB, ssm_state size: 6.70GB intermediate_ssm_state_cache size: 0.00GB intermediate_conv_window_cache size: 0.34GB 
+[2026-09-27 18:21:47] GDN ReplaySSM ring buffers allocated (record_len=16, fold=True): d=0.419GB, k=0.419GB, g=0.837GB rawv=0.419GB, rawk=0.419GB, beta=0.007GB 
+[2026-09-27 18:21:47] KV Cache is allocated. dtype: torch.float8_e4m3fn, #tokens: 856576, KV size: 5.65 GB
+[2026-09-27 18:21:48] KV Cache is allocated. dtype: torch.bfloat16, #tokens: 856576, K size: 8.17 GB, V size: 8.17 GB
+[2026-09-27 18:21:57] KDA kernel dispatcher: decode=TritonKDAKernel, verify=TritonKDAKernel, extend=TritonKDAKernel packed_decode=True
+[2026-09-27 18:21:57] Overriding draft attention backend to fa4.
+/opt/sglang/lib/python3.12/site-packages/triton/language/core.py:2284: UserWarning: tl.make_block_ptr is deprecated. Use TensorDescriptor or tl.make_tensor_descriptor instead.
+/opt/sglang/lib/python3.12/site-packages/torch/_inductor/compile_fx.py:321: UserWarning: TensorFloat32 tensor cores for float32 matrix multiplication available but not enabled. Consider setting `torch.set_float32_matmul_precision('high')` for better performance.
+[2026-09-27 18:25:48] DFLASH selector decode folded into the draft cuda graph (sampling_enabled=True).
+[2026-09-27 18:25:48] Capture draft verify CUDA graph begin. backend=full, num_tokens_per_req=7, bs=[1, 2, 3, 4, 5, 6, 7, 8, 9], avail mem=35.68 GB
+/opt/sglang/lib/python3.12/site-packages/nvidia_cutlass_dsl/dsl_packages/cutlass/base_dsl/dsl.py:2309: UserWarning: Argument aux_data (position 18) cannot be converted to a JitArgument for function 'cutlass___call___sglangkernelsopsattentionflash_attncuteflash_fwd_sm100FlashAttentionForwardSm100_object_at__Tensorgmemoi64i641_Tensorgmemoi64i64i641_Tensorgmemoi64i64i641_Tensorgm'. Its type `<class 'sglang.kernels.ops.attention.flash_attn.cute.utils.AuxData'>` is not supported. If the value is known at compile time, annotate it: `aux_data: Constexpr`. Otherwise, implement the `JitArgument` or `DynamicExpression` protocol for type `<class 'sglang.kernels.ops.attention.flash_attn.cute.utils.AuxData'>`, or register a custom argument adapter.
+[2026-09-27 18:26:09] Capture draft verify CUDA graph end. elapsed=20.52 s, mem usage=0.04 GB, avail mem=35.65 GB.
+[2026-09-27 18:26:22] DFLASH sampling pre-warm: borrowing=False bs=9 peak=123047936 B headroom=162077696 B
+[2026-09-27 18:26:22] max_total_num_tokens=856576, chunked_prefill_size=8192, max_prefill_tokens=8192, max_running_requests=9, context_len=1048576, available_gpu_mem=35.48 GB
+[2026-09-27 18:26:22] Engine startup timings (s): load_weight=51.73, kv_cache_allocation=1.79, scheduler_e2e=343.58, cuda_graph={prefill=0.00, decode=0.00, target_verify=51.72, draft_prefill=0.00, draft_decode=20.52, draft_extend=0.00}, tokenizer_e2e=351.76
+/sgl-workspace/sglang/python/sglang/srt/entrypoints/http_server.py:470: FastAPIDeprecationWarning: ORJSONResponse is deprecated, FastAPI now serializes data directly to JSON bytes via Pydantic when a return type or response model is set, which is faster and doesn't need a custom response class. Read more in the FastAPI docs: https://fastapi.tiangolo.com/advanced/custom-response/#orjson-or-response-model and https://fastapi.tiangolo.com/tutorial/response-model/
+sglang 0.0.0.dev1+g425a1f8f2 transformers 5.16.1 torch 2.13.0+cu130
