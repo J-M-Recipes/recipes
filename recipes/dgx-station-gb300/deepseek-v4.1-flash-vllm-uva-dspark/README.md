@@ -1,6 +1,25 @@
 # DeepSeek-V4.1-Flash at 1M context on one DGX Station GB300
 
-**Reference release: Clean Nightly, v20** (2026-09-21: vLLM nightly `2671fedf` — the last before the #56633 mHC-fold drift — + v15 hook + off54 + fp8_ds_mla + v18's 24-seat/cudagraph flags; **181 tok/s C1 prose (+5.1% pair mean vs v18)**, KV 2.55M tokens, C24 warm agent p95 2.4–2.8 s vs 3.4; **held-out BFCL live sibling 78.8% vs v18 78.9%**, dev 92.7–93.5%; tools 64/64 ×3; $0.008 per 1000 solved tasks; see Round 11b) · rollback **Many Seat, v18** (2026-09-18: v15 hook + `--max-num-seqs 24` + token-sized `--cudagraph-capture-sizes`; 172 tok/s C1 prose, KV 2.50M tokens, C24 warm agent turn 0.55 s p50; **BFCL v4 tool-call exact-match 93.3%**) · **v19 "Nightly" was promoted and reverted on 2026-09-20** (see Round 10) · previous **v15 Pin Hot Experts** (retired 2026-09-18) · **v14 Sixty-K Agent** (retired 2026-09-17) · Historical **v13: 90 tok/s single-stream prose · 140–160 tok/s on agent/code text · 429 agg tok/s at C16** (v12: 89 / 140–160 / 311 · v11: 82 / 130–150 / 287) · 972K-token prompt prefilled in 85 s · Hermes tool-calling 10/10
+**Serving on `:30006` since 2026-09-27 08:12 CDT: Fused Split, v21** (v18 launch on the 0909 image + hook v21 — `split_ids()` as one Triton kernel; **182.8 tok/s C1 prose, +6.2 % vs v18 bracketing controls 171.8 / 172.5**, C8 687 (+4.6 %), C16 993 (+4.0 %), non-tool greedy 16/16 vs both controls; held-out BFCL on v21 pending; see Round 12) · documented release **Clean Nightly, v20** (2026-09-21: vLLM nightly `2671fedf` — the last before the #56633 mHC-fold drift — + v15 hook + off54 + fp8_ds_mla + v18's 24-seat/cudagraph flags; **181 tok/s C1 prose (+5.1% pair mean vs v18)**, KV 2.55M tokens, C24 warm agent p95 2.4–2.8 s vs 3.4; **held-out BFCL live sibling 78.8% vs v18 78.9%**, dev 92.7–93.5%; tools 64/64 ×3; $0.008 per 1000 solved tasks; see Round 11b) · rollback **Many Seat, v18** (2026-09-18: v15 hook + `--max-num-seqs 24` + token-sized `--cudagraph-capture-sizes`; 172 tok/s C1 prose, KV 2.50M tokens, C24 warm agent turn 0.55 s p50; **BFCL v4 tool-call exact-match 93.3%**) · **v19 "Nightly" was promoted and reverted on 2026-09-20** (see Round 10) · previous **v15 Pin Hot Experts** (retired 2026-09-18) · **v14 Sixty-K Agent** (retired 2026-09-17) · Historical **v13: 90 tok/s single-stream prose · 140–160 tok/s on agent/code text · 429 agg tok/s at C16** (v12: 89 / 140–160 / 311 · v11: 82 / 130–150 / 287) · 972K-token prompt prefilled in 85 s · Hermes tool-calling 10/10
+
+
+## Round 12 — the step profile after residency, huge pages closed, and one fused kernel worth +6 % (2026-09-27, 05:00–08:20)
+
+Bundle: [`results/2026-09-27-v21-fused-split/`](results/2026-09-27-v21-fused-split/README.md).
+
+**Huge pages, closed in 30 minutes without a boot.** A GPU-side microbench of pinned Grace memory — random 256 B gathers (Engram-shaped) and 17.9 MiB streams (expert-shaped) — reads the same on 64 K pages, on THP-madvise anon and on 100 % hugetlbfs 512 MiB pages: ~118 GB/s / ~355 GB/s, all within ±1 % (HBM control 973 GB/s / 1.8 TB/s). C2C is bandwidth-bound, not translation-bound; `cudaHostAlloc` regions ignore `shmem_enabled` entirely. That also explains the September-11 THP non-result.
+
+**First profile of the v18 step.** Torch profiler on the exact v18 config: a C1 prose decode step is 14.6 ms at 101 % GPU-busy with a 0.7 ms inter-step gap — no CPU bubble. Expert GEMM 5.0 ms (34 %; 56 launches at 53 + 28 µs on M≈6 — tile-quantized, ~4× the bandwidth floor), dense GEMM 4.2 (29 %), **small kernels 2.7 ms over ~1,300 launches (18 %)**, attention 1.2 (8 %), mHC 1.0, Engram 0.04. The v15 hook's two-call hot/cold split is nearly free (cold-side launches are 5 µs no-ops), but its `split_ids()` was six torch ops per layer — ~400 launches of the swarm.
+
+**v21.** One Triton kernel does the same integer remap. Bit-exact vs the torch path at every T; then a same-window CTL → CAND → CTL on fresh boots, same autotune set:
+
+| | C1 | C2 | C4 | C8 | C12 | C16 | replay n=4 |
+|---|--:|--:|--:|--:|--:|--:|---|
+| v18 hook (CTL1) | 171.8 | 274.3 | 414.9 | 656.0 | 809.3 | 957.0 | 343 / 450 |
+| **v21 hook** | **182.8** | **287.0** | **433.7** | **686.8** | **845.0** | **992.8** | 335 / 463 |
+| v18 hook (CTL2) | 172.5 | 272.8 | 415.8 | 657.1 | 813.4 | 952.4 | 332 / 470 |
+
++6.2 % C1, +4.0–4.9 % everywhere else, replay a wash, acceptance unchanged; non-tool greedy 16/16 identical against both controls (the one differing prompt is a tool-call prompt of the documented jitter class). Promoted 08:12 CDT; v18 kept stopped as rollback. **Note:** this was measured against v18 because the lane had been on v18 since v20 was stopped on 2026-09-21 20:57 CDT (no ledger entry). v20 + hook v21 should compose and is unmeasured; held-out BFCL on v21 is pending.
 
 ## Round 11c — the "unexplained" C8 loss was the capture-size list, and it is a trade worth keeping (2026-09-21, 14:04–15:30)
 
