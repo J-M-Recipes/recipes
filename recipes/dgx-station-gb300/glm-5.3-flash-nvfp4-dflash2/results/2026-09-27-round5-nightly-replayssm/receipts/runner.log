@@ -1,0 +1,58 @@
+2026-09-27 12:49:10 CDT ===== CARD I START =====
+2026-09-27 12:49:10 CDT stop+keep dsv41-vllm-v21-fused-split-BOUND-REF (GLM Flash needs the GPU)
+2026-09-27 12:49:17 CDT pull+derive lmsysorg/sglang:nightly-dev-cu13-20260927-425a1f8f -> glmf-sglang:nightly-20260927-425a1f8f-tf5.16.1
+2026-09-27 12:52:44 CDT nightly image ready: 49a1375de283
+2026-09-27 12:52:44 CDT BOOT prof image=glmf-sglang:0.5.20-tf5.16.1 spec=dflash extra=[--max-mamba-cache-size 48 --speculative-dflash-block-size 7]
+2026-09-27 12:59:11 CDT ready glmf-I-prof i=77
+stop_profile err HTTP Error 500: Internal Server Error
+captured prose
+captured code
+captured shell
+2026-09-27 13:00:57 CDT I0 profile captured: 3 trace files
+2026-09-27 13:00:57 CDT BOOT ctl1 image=glmf-sglang:0.5.20-tf5.16.1 spec=dflash extra=[--max-mamba-cache-size 48 --speculative-dflash-block-size 7]
+2026-09-27 13:00:57 CDT stop+keep glmf-I-prof
+2026-09-27 13:06:36 CDT ready glmf-I-ctl1 i=67
+2026-09-27 13:10:09 CDT GREEDY_GEN_FAIL ctl1
+grep: ~/glmf/cardI-2026-09-27/ctl1/greedy-vs-w2.txt: No such file or directory
+tail: cannot open '~/glmf/cardI-2026-09-27/ctl1/tf-compare.txt' for reading: No such file or directory
+2026-09-27 13:10:09 CDT ARM ctl1: [ctl1-low] recipe-method history-essay 512 effort=low: runs [195.6, 201.6, 201.5] median 2 | [ctl1-low] code 400 effort=low: runs [287.3, 287.7, 287.8] median 287. | C8 [x] conc= 8:   693.5 agg tok/s   86.69 per-stream  (reps 688/692/701 spread 2%;  | tools tool_ok=10/10 tool_ok=10/10  |  | TF 
+2026-09-27 13:10:09 CDT BOOT night image=glmf-sglang:nightly-20260927-425a1f8f-tf5.16.1 spec=dflash extra=[--max-mamba-cache-size 48 --speculative-dflash-block-size 7]
+2026-09-27 13:10:09 CDT stop+keep glmf-I-ctl1
+2026-09-27 13:16:32 CDT ready glmf-I-night i=76
+2026-09-27 13:20:01 CDT GREEDY_GEN_FAIL night
+grep: ~/glmf/cardI-2026-09-27/night/greedy-vs-w2.txt: No such file or directory
+tail: cannot open '~/glmf/cardI-2026-09-27/night/tf-compare.txt' for reading: No such file or directory
+2026-09-27 13:20:01 CDT ARM night: [night-low] recipe-method history-essay 512 effort=low: runs [201.1, 203.0, 203.1] median  | [night-low] code 400 effort=low: runs [304.6, 304.9, 305.0] median 304 | C8 [x] conc= 8:   736.1 agg tok/s   92.01 per-stream  (reps 751/761/697 spread 9%;  | tools tool_ok=10/10 tool_ok=10/10  |  | TF 
+2026-09-27 13:20:02 CDT BOOT night-rssm image=glmf-sglang:nightly-20260927-425a1f8f-tf5.16.1 spec=dflash extra=[--max-mamba-cache-size 48 --speculative-dflash-block-size 7 --enable-linear-replayssm-spec]
+2026-09-27 13:20:02 CDT stop+keep glmf-I-night
+2026-09-27 13:26:23 CDT ready glmf-I-night-rssm i=75
+2026-09-27 13:29:54 CDT GREEDY_GEN_FAIL night-rssm
+grep: ~/glmf/cardI-2026-09-27/night-rssm/greedy-vs-w2.txt: No such file or directory
+tail: cannot open '~/glmf/cardI-2026-09-27/night-rssm/tf-compare.txt' for reading: No such file or directory
+2026-09-27 13:29:54 CDT ARM night-rssm: [night-rssm-low] recipe-method history-essay 512 effort=low: runs [218.4, 223.9, 224.0] me | [night-rssm-low] code 400 effort=low: runs [323.8, 324.2, 324.3] media | C8 [x] conc= 8:   756.7 agg tok/s   94.59 per-stream  (reps 722/777/771 spread 7%;  | tools tool_ok=10/10 tool_ok=10/10  |  | TF 
+2026-09-27 13:29:54 CDT BOOT ctl2 image=glmf-sglang:0.5.20-tf5.16.1 spec=dflash extra=[--max-mamba-cache-size 48 --speculative-dflash-block-size 7]
+2026-09-27 13:29:54 CDT stop+keep glmf-I-night-rssm
+2026-09-27 13:35:35 CDT ready glmf-I-ctl2 i=67
+2026-09-27 13:39:36 CDT GREEDY_GEN_FAIL ctl2
+grep: ~/glmf/cardI-2026-09-27/ctl2/greedy-vs-w2.txt: No such file or directory
+tail: cannot open '~/glmf/cardI-2026-09-27/ctl2/tf-compare.txt' for reading: No such file or directory
+2026-09-27 13:39:36 CDT ARM ctl2: [ctl2-low] recipe-method history-essay 512 effort=low: runs [199.9, 201.6, 201.5] median 2 | [ctl2-low] code 400 effort=low: runs [287.4, 287.2, 287.5] median 287. | C8 [x] conc= 8:   528.9 agg tok/s   66.11 per-stream  (reps 703/136/748 spread 116% | tools tool_ok=10/10 tool_ok=10/10  |  | TF 
+2026-09-27 13:39:36 CDT stop+keep glmf-I-ctl2
+2026-09-27 13:45:12 CDT v21 rebound after 321s
+2026-09-27 13:45:12 CDT ===== CARD I END =====
+2026-09-27 13:58:04 CDT ===== CARD I-b (gates rerun) START =====
+2026-09-27 13:58:04 CDT stop+keep dsv41-vllm-v21-fused-split-BOUND-REF
+2026-09-27 13:58:14 CDT start glmf-I-night-rssm
+2026-09-27 14:01:17 CDT ready glmf-I-night-rssm i=37
+2026-09-27 14:02:06 CDT GATES night-rssm: GREEDY_EQUIV identical=1/20 | TF } | max2 od history-essay 512 effort=max: runs [237.2, 238.7, 238.7] m | accept 
+2026-09-27 14:02:06 CDT stop+keep glmf-I-night-rssm
+2026-09-27 14:02:13 CDT start glmf-I-night
+2026-09-27 14:04:34 CDT ready glmf-I-night i=29
+2026-09-27 14:05:20 CDT GATES night: GREEDY_EQUIV identical=1/20 | TF } | max2 story-essay 512 effort=max: runs [261.8, 263.8, 263.9] median | accept 
+2026-09-27 14:05:20 CDT stop+keep glmf-I-night
+2026-09-27 14:05:26 CDT start glmf-I-ctl2
+2026-09-27 14:08:13 CDT ready glmf-I-ctl2 i=34
+2026-09-27 14:08:59 CDT GATES ctl2: GREEDY_EQUIV identical=20/20 | TF } | max2 tory-essay 512 effort=max: runs [263.5, 265.2, 265.3] median  | accept 
+2026-09-27 14:08:59 CDT stop+keep glmf-I-ctl2
+2026-09-27 14:14:30 CDT v21 rebound after 321s
+2026-09-27 14:14:30 CDT ===== CARD I-b END =====
