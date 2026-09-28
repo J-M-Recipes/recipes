@@ -1,0 +1,70 @@
+# Fixed outer protocol v2 — MiMo-V2.6-Pro-MOPD weight swap on the hotsplit recipe (J-M-Recipes, one GB300)
+# Written 2026-09-28 BEFORE the run. Any change = new file, new sha256, new run. v1 (harness/protocol.yaml, 84faecb9…) stays the
+# record for the RL-weights promotion of 2026-09-24; v2 adds the MOPD question and the flood fixture.
+version: 2.1
+revision_note: >
+  v2.1 (2026-09-28 05:40 CDT): v2.0 had no per-task call budget. The first rl-hot pass showed history-1 tasks flooding to
+  421-849 calls (415-843 exact dups) and 14-39 min each on RL weights, which would have taken the campaign to 12-14 h. v2.1 adds
+  MAX_CALLS=120 per task (status "flooded") and MAX_TURNS=6; the task set and fixture sha256 are unchanged. The v2.0 partial
+  rl-hot pass (40 tasks: all 36 h0 + 4 h1) is kept as results/.../flood-rlhot-v2.0-partial.log — a receipt, not a comparison row.
+supersedes: harness/protocol.yaml (v1, sha256 84faecb9…) — v1 bars are re-used verbatim for the residency A/B below
+question: >
+  Xiaomi replaced MiMo-V2.6-Pro-RL with MiMo-V2.6-Pro-MOPD (HF rev adea8e2c, 2026-09-27) to fix tool-call repetition
+  (mimo.xiaomi.com/blog/mimo-v2-6-tool-call-repetition). config.json, chat_template.jinja, generation_config.json and
+  model.safetensors.index.json are byte-identical to RL rev 54b10491 (verified on the M4, 2026-09-28). Three things to settle:
+  (Q1) does the recipe's serving path (image, three bind-mounted patches, launch flags) survive the weight swap with the same
+  fidelity bars; (Q2) does the RL-derived expert ranking (expert_hist_mix.json) still describe the MOPD router, i.e. is
+  hotsplit's ranking input portable across a 12-step distillation merge; (Q3) does MOPD change what our own agent traffic
+  sees — tool-call repetition/flooding on a fixture shaped like the public failure reports, RL vs MOPD, same box, same grader.
+endpoint: "OpenAI-compatible /v1/chat/completions on :30007 (--tool-call-parser mimo --reasoning-parser mimo --enable-auto-tool-choice); API key not part of the claim"
+image: "vllm/vllm-openai:nightly-d05da62e9ccdf8e342b15bf6785d83224cc165af (sha256:f29125bc…), unchanged from v23"
+patches: "patches/mimo_v2_hotsplit.py 41274e36…, patches/hotsplit.py c4d3c7a9…, patches/mimo_v2_omni.py 19940f32… — sha256 read inside the running container (docker exec), unchanged from v23"
+weights:
+  rl: "XiaomiMiMo/MiMo-V2.6-Pro-RL rev 54b10491 at /models/milo/MiMo-V2.6-Pro-RL (the v23/v24 published weights)"
+  mopd: "XiaomiMiMo/MiMo-V2.6-Pro-MOPD rev adea8e2c5373181e5a973fa1ecb343cb31af214b, 573,489,510,171 bytes per HF API, per-file size manifest checked (hf download --revision pinned, 2026-09-28)"
+arms:
+  m-ctrl: "MOPD weights, stock layer-order UVA placement (no HOTSPLIT_COUNTS), 262144 ctx, flags identical to v20-ctrl"
+  m-hot:  "MOPD weights, hotsplit 152.8 GiB hot from the RL ranking expert_hist_mix.json, LIVE=1, flags identical to v23"
+  rl-hot: "the kept container mimo26-pro-v23-hot153-live (RL weights, hotsplit) — flood fixture only; its fidelity numbers stand from 2026-09-24"
+sampling:
+  fidelity: { temperature: 0, max_tokens: 2048, chat_template_kwargs: { enable_thinking: false } }   # tf/greedy/BFCL, same as v1
+  flood:    { temperature: 0, max_tokens: 4096, chat_template_kwargs: { enable_thinking: true }, max_turns: 6, max_calls_per_task: 120, concurrency: 4 }   # thinking ON: the postmortem's harness numbers are with reasoning; the repetition lives in the thinking->tool_call transition
+tool_choice: auto
+retries: "1 on transport error; a second failure counts as unsolved/error"
+concurrency: "8 (BFCL; --max-num-seqs is 8), 4 (tf capture), 4 (flood fixture)"
+suites:
+  tf: "finish/tf_corpus.jsonl, 39 docs, MAXPOS 4096, 80,384 positions (same corpus as v1)"
+  dev: "BFCL_v4_simple_python (400) + BFCL_v4_multiple (200) = 600 · decides candidacy"
+  heldout: "BFCL_v4_live_simple (258) + BFCL_v4_live_multiple (1,053) = 1,311 · frozen 2026-09-21 · once per arm, at the end"
+  flood: "scripts/flood_fixture.py — 36 tasks x {history 0, history 1} = 72 runs per arm; families F1 pagination(6) F2 error-switch(6) F3 fan-out(6, 12 calls legitimate) F4 fix-loop(6) F5 missing-path(6) F6 multi-hop(6); fixture sha256 e5d69856d8aac72d0a17ed44f18d2a24c44489c3d960dfd8885e38f45936f90b (python3 flood_fixture.py sha); selftest: scripted good agent 72/72 @ 0% dup, scripted flooder 0/72 @ 91.7% dup"
+  data_sha256: "finish/BFCL-SHA256SUMS (same files as v1)"
+metrics:
+  within_turn_rep: "Xiaomi's metric: sum(N-U)/sum(N) over assistant turns, duplicates = same tool + identical JSON-canonicalised args, no tool feedback between them. Lower bound on repetition."
+  cross_turn_rep: "calls identical to an already-answered call while environment state was unchanged (state changes only on a successful patch_file), over all calls. Catches 'ignored the error / ignored the cursor' loops the within-turn metric misses."
+  flood_tasks: "tasks with any assistant turn exceeding the family's legitimate call budget (F1 6, F2 3, F3 14, F4 5, F5 4, F6 4)"
+  solved: "final ANSWER: contains the ground truth; unsolved split no_answer (turn cap) / truncated / error / wrong / flooded (>= 120 calls)"
+bars:   # written before the run
+  residency_ab:   # Q1 — m-ctrl vs m-hot, the v1 bars verbatim; passing keeps status: verified on MOPD weights
+    - "teacher-forced: m-ctrl -> m-hot corpus perplexity within 0.5% relative, top-1 flip rate <= 2.0%"
+    - "BFCL dev: m-hot >= m-ctrl - 1.0 pt"
+    - "BFCL held-out: m-hot >= m-ctrl - 1.0 pt"
+    - "no errors (transport/5xx) above 0.5% of cases on either arm"
+  weight_swap_report:   # Q1 — RL vs MOPD is a MODEL change, so these are REPORTED, not gated (a different model is expected to differ)
+    - "tf-ctrl (RL, 2026-09-24) vs tf-m-ctrl (MOPD): ppl and flip rate reported as the size of the MOPD change; also greedy 12x512 parity RL-vs-MOPD reported"
+    - "BFCL dev/held-out RL vs MOPD reported side by side; a drop > 2.0 pt on held-out is a finding to publish, not a gate"
+  ranking_portability:   # Q2 — decides whether the recipe ships the RL ranking or a re-ranked MOPD histogram
+    - "m-hot live counts (>= 50,000 routed tokens/layer, harvested from the BFCL dev + flood traffic) vs expert_hist_mix.json, scripts/ranking_portability.py. Calibration on RL-only data (2026-09-28, small snapshots 2–5k tokens/layer): RL ranking serves 54.8–56.3% of RL live traffic, oracle 67.7–68.4%, Jaccard between two RL snapshots' oracles 0.72 — so an absolute bar is the noise floor. Bar: PORTABLE if hbm_served_share(RL ranking on MOPD live) >= hbm_served_share(RL ranking on RL live from the rl-hot flood run, same sample size) - 3.0 pts; else RE-RANK: hotsplit_rerank.py on the MOPD counts, reboot as m-hot2 for a second TF+dev pass (no held-out)"
+  flood:   # Q3 — same-grader A/B, n=72 per arm, small; report with counts, never as a rate to three decimals
+    - "rl-hot vs m-hot: within_turn_rep, cross_turn_rep, flood_tasks, solved, tokens — all reported. No promotion bar: this is a model comparison, not a serving change. A change in solved of <= 3 tasks is noise at this n."
+    - "m-ctrl vs m-hot on the same fixture: hotsplit must not change flood_tasks by more than 2 or solved by more than 3 (residency sanity; the two arms should be near-identical)"
+not_a_bar: "full-depth greedy parity m-ctrl vs m-hot (reported, not gated — hotsplit reorders two partial sums)"
+cost:
+  formula: "usd_per_solved_task = mean_gpu_watts * wall_seconds / 3600 / 1000 * usd_per_kwh / tasks_solved"
+  power_source: "nvidia-smi -i 1 power.draw every 5 s over each suite (power-<tag>.csv)"
+  usd_per_kwh: 0.15
+  usd_per_kwh_note: "stated assumption (Telluride residential)"
+stop_rules:
+  - "STOP file ~/mimo26/mopd/STOP: stop-and-keep, exit 0"
+  - "m-ctrl boot fails or BFCL smoke acc < 0.5 / no_call > 4: stop, keep the container, report — do not iterate on flags"
+  - "any container other than mimo26-* is up on the GPU: refuse to start (the DSV4.1 lane is stopped-and-kept by the operator before the run, not by the runner)"
+  - "no restore-on-done: all mimo26 containers stopped-and-kept at the end; :30006 is NOT restarted by the runner"

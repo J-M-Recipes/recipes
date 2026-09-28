@@ -1,9 +1,9 @@
 # card.yaml — at-a-glance card sidecar. Rendered by scripts/render_card.py; never hand-edit card.html.
-# Every number traces to recipe.yaml metrics or results/2026-09-22-hotsplit. Unknown = pending (renders amber).
-title: "MiMo-V2.6-Pro · 1× DGX Station GB300"
+# Every number traces to recipe.yaml metrics or results/2026-09-2{2,4,8}-*. Unknown = pending (renders amber).
+title: "MiMo-V2.6-Pro-MOPD · 1× DGX Station GB300"
 subtitle: "A 1.02T MoE from one GB300 — 320 GiB of experts read in place from Grace, hot experts re-homed to HBM by measured usage"
-version: "v23 “Hotsplit” (verified 2026-09-24; v24 = 1M-context variant, 33.0 tok/s; v20 = stock-placement control)"
-run_id: 2026-09-24-promotion
+version: "v23 “Hotsplit” on MiMo-V2.6-Pro-MOPD (re-verified 2026-09-28; RL weights verified 2026-09-24; v24 = 1M variant, 33.0 tok/s)"
+run_id: 2026-09-28-mopd
 handles: "github.com/J-M-Recipes/recipes · al-engr.com · @jmeadlock"
 
 model:
@@ -11,13 +11,13 @@ model:
   type_detail: "384 routed experts × 69 MoE layers, 8 active"
   total_params: 1.02T
   active_params: 42B              # model card; config: 8 of 384 routed per MoE layer, layer 0 dense
-  checkpoint_gb: 573.5            # 573,492,132,336 B on disk at revision 54b10491 (incl. ViT/audio/drafter)
+  checkpoint_gb: 573.5            # 573,489,510,171 B on disk at revision adea8e2c (MOPD; RL 54b10491 was 573,492,132,336; incl. ViT/audio/drafter)
   weights_short: "as shipped · MXFP4 experts / FP8 qkv / BF16 o_proj · nothing re-quantized"
   engine_extra: "vLLM nightly d05da62e · Marlin MoE · FlashInfer 0.6.18 (unused for MoE)"
   memory: "152.8 GiB hot experts HBM + ~342 GiB cold Grace · KV pool 302K tok"
 
 hero:
-  c1:      { value: 37.4, unit: tok/s, class: "agent-context decode", note: "after TTFT, 11.5K-token prompt, T=0 · stock placement same flags 31.2 · tool-JSON 36.6 · synthetic prose 30 (unchanged)" }
+  c1:      { value: 37.1, unit: tok/s, class: "agent-context decode", note: "after TTFT, 11.5K-token prompt, T=0, MOPD weights · RL weights 37.4 · stock placement same flags 31.2 · tool-JSON 36.2 · synthetic prose 30 (unchanged)" }
   c16:     { value: 63.7, unit: tok/s, label: "Decode · C8 aggregate", note: "max-num-seqs 8 (slot cap) · v21 same-budget 60.8 · pre-hotsplit v14 56.2" }
   prefill: { value: 1.38K, unit: tok/s, note: "11.5K prompt in 8.4 s · 46K in 33.3 s · 254K in 201 s" }
 
@@ -28,11 +28,13 @@ guesser:
   accept: { prose: "n/a", code: "n/a", shell: "n/a", tool-JSON: "n/a" }
 
 secondary:
-  - label: Residency (held-out agent turns)
+  - label: Residency · flood fixture (RL → MOPD weights)
     items:
       "decode traffic from HBM, stock layer order (same HBM bytes)": "30.4%"
-      "hotsplit, train-ranked": "62.2% (oracle 62.5%)"
+      "hotsplit, train-ranked (held-out agent turns)": "62.2% (oracle 62.5%)"
       "cold bank share of expert time (profile)": "~80% for ~39% of traffic"
+      "flood fixture, 72 runs: RL weights solved · history-1 flooded": "47/72 · 25/36 (94.7% duplicate calls)"
+      "flood fixture, MOPD weights, stock / hotsplit": "72/72 · 72/72, 0 duplicates"
   - label: Long context · boot
     items:
       "needle 10/50/90% at 65K/131K/196K/254K": "12/12"
@@ -43,37 +45,37 @@ secondary:
       "boot, local NVMe (weights + split + graphs)": "~7 min"
 
 fidelity:
-  - { status: pass,    text: "Weights unchanged: 0 re-quantized bits; revision 54b10491, 573,492,132,336 B on disk" }
-  - { status: pass,    text: "Teacher-forced vs stock placement, 80,384 positions: ppl 1.5081 → 1.5077, top-1 flips 1.23% — control vs its own reboot 1.17%. Not bit-exact; full-depth greedy is not reproducible run-to-run even on the control (1/12)" }
+  - { status: pass,    text: "Weights unchanged: 0 re-quantized bits; MOPD revision adea8e2c, 573,489,510,171 B, per-file sizes = HF manifest (155/155)" }
+  - { status: pass,    text: "Teacher-forced vs stock placement on MOPD, 80,384 positions: ppl 1.5062 → 1.5062, top-1 flips 1.18% (RL weights 09-24: 1.23%, control-reboot floor 1.17%). Not bit-exact; full-depth greedy is not reproducible run-to-run even on the control (1/12)" }
   - { status: pass,    text: "Tool calling under the real Hermes harness (custom[mimo26], reasoning low): 10/10 tool-call turns, 10/10 correct on the v23 serving boot" }
-  - { status: pass,    text: "BFCL (our grader, same-grader A/B): dev 93.8 vs control 93.7 · held-out live sibling 78.2 vs 78.5 (bar −1 pt) · 0 errors" }
+  - { status: pass,    text: "BFCL on MOPD (our grader, same-grader A/B): dev 93.2 vs control 93.8 · held-out live sibling 78.7 vs 78.4 (bar −1 pt) · 0 errors. RL → MOPD on the control: +0.16 / −0.08 pt" }
 
 harness:
   protocol:
-    file: harness/protocol.yaml
-    sha256: 84faecb94f312bebf43eb2c5f5a19b44c6b079f42c8169874b6a5d92e56dc26a
-    summary: "T=0, enable_thinking false, tool_choice auto, 1 retry, C8, single-turn BFCL; control = stock placement, same boot flags"
+    file: harness/protocol-v2.yaml
+    sha256: b83c9e5ab2d843613e1e77f4c762bb573a86c3efb2deadbefe393390ae7d0c95
+    summary: "v2.1: T=0, enable_thinking false, tool_choice auto, 1 retry, C8, single-turn BFCL; control = stock placement, same boot flags; + flood fixture (thinking on, 6 turns, 120-call cap). v1 (84faecb9) = the 09-24 RL run"
   dev:
     name: BFCL dev (simple_python 400 + multiple 200)
-    solved: 563
+    solved: 559
     n: 600
-    pct: "93.8%"
+    pct: "93.2%"
     status: pass
-    note: "control (stock placement) 562/600 = 93.7%, same window; 3 cases disagree. Decides candidacy only"
+    note: "MOPD weights; control (stock placement) 563/600 = 93.8%, same window, Δ −0.66 vs the −1 bar; RL v23 re-run the same morning 564/600. Decides candidacy only"
   heldout:
     name: BFCL live sibling (live_simple 258 + live_multiple 1,053)
-    solved: 1025
+    solved: 1032
     n: 1311
-    pct: "78.2%"
+    pct: "78.7%"
     status: pass
-    note: "frozen 2026-09-21, first and only run on this model: control 1029/1311 = 78.5%, Δ −0.31 pt against the ≥ control − 1 rule; 34 cases disagree (19/15)"
-    unsolved: { "no-call": 52, "truncated": 0, "error": 0, "wrong-arg-value": 170, "wrong-function": 30, "missing-arg": 34 }   # control: 46 / 0 / 0 / 172 / 30 / 34
+    note: "frozen 2026-09-21; MOPD weights, once per arm: control 1028/1311 = 78.4%, Δ +0.31 pt against the ≥ control − 1 rule. RL run 09-24: 1025 vs 1029"
+    unsolved: { "no-call": 39, "truncated": 0, "error": 0, "wrong-arg-value": 178, "wrong-function": 32, "missing-arg": 30 }   # control: 45 / 0 / 0 / 178 / 31 / 29
   cost:
-    usd_per_1000_solved: "0.028"
-    priced_on: "2026-09-24"
-    basis: "energy only, $0.15/kWh × GPU 1 mean 372 W (5 s samples) × 1,839 s / 1,025 solved, C8. Amortized hardware not included; at the DSV4.1 card's $3.80/hr Station assumption it adds $1.90 / 1000 solved at this lane's C8 rate"
-    usd_per_solved_task: "0.000028"
-    mean_w: 372
-    wall_s: 1839
-    solved: 1025
+    usd_per_1000_solved: "0.026"
+    priced_on: "2026-09-28"
+    basis: "energy only, $0.15/kWh × GPU 1 mean 371 W (5 s samples) × 1,746 s / 1,032 solved, C8, MOPD weights. Amortized hardware not included; at the DSV4.1 card's $3.80/hr Station assumption it adds $1.79 / 1000 solved at this lane's C8 rate"
+    usd_per_solved_task: "0.000026"
+    mean_w: 371
+    wall_s: 1746
+    solved: 1032
     usd_per_kwh: 0.15
