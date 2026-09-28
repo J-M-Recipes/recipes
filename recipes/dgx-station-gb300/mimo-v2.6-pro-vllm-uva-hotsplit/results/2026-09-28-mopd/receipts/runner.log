@@ -1,0 +1,174 @@
+2026-09-28 05:40:03 CDT ===== MOPD RUN START (2026-09-28-mopd) =====
+2026-09-28 05:40:03 CDT ===== ARM rl-hot (mimo26-pro-v23-hot153-live) =====
+2026-09-28 05:40:09 CDT docker start mimo26-pro-v23-hot153-live
+2026-09-28 05:46:33 CDT BOUND mimo26-pro-v23-hot153-live after 380s
+/mimo26-pro-v23-hot153-live image=sha256:f29125bcc6d276ed38a67c9dfd4e51ccbaba09ad92847a0913c0df38d9c05c71 model=/models/milo/MiMo-V2.6-Pro-RL
+    41274e36c2132a278149adacee2bbc9c01e871756cf2bc1f0df787cd11df5e9b  /usr/local/lib/python3.12/dist-packages/vllm/model_executor/models/mimo_v2.py
+    19940f32f69c71780fb9bd9d55c3257c2433f72439f9ce2c96079009cd29eeea  /usr/local/lib/python3.12/dist-packages/vllm/model_executor/models/mimo_v2_omni.py
+    c4d3c7a9c4be92434b1fda66eeb0dac6d0f93e78dee6dfb626e1e47c63d2fd6e  /w/hotsplit.py
+    a9dc00e2a0c2c172efd198f42e81e41c95472021b57c65366c06587d44038b62  /model/config.json
+    11ea52e156de38a458e6b7720ad45915d65b97d4ec979a09f55e3c9bd1b4d059  /model/chat_template.jinja
+    (EngineCore pid=359) INFO 09-28 09:45:35 [kv_cache_utils.py:2404] GPU KV cache size: 302,324 tokens, Maximum concurrency for 262,144 tokens per request: 1.15x
+    (EngineCore pid=359) INFO 09-28 10:40:48 [mxfp4.py:462] Using 'MARLIN' Mxfp4 MoE backend.
+    (EngineCore pid=359) INFO 09-28 10:41:36 [uva.py:68] Total CPU offloaded parameters: 321.75
+    (EngineCore pid=359) INFO 09-28 10:45:17 [hotsplit.py:140] hotsplit plan: 69 layers, budget 152.8 GiB (stock HBM experts 141.8 GiB), hot cells 8692/26496, train-weighted coverage 61.8%
+    (EngineCore pid=359) INFO 09-28 10:45:44 [hotsplit.py:173] hotsplit done in 27s; HBM free 34.7 GiB; host avail 135.9 GiB
+    (EngineCore pid=359) INFO 09-28 10:46:06 [kv_cache_utils.py:2404] GPU KV cache size: 302,324 tokens, Maximum concurrency for 262,144 tokens per request: 1.15x
+2026-09-28 05:47:38 CDT warm done
+power ~/mimo26/mopd/run-2026-09-28-mopd/power-rlhot-flood.csv: mean 364.8 W over 451 samples
+2026-09-28 06:25:33 CDT flood: FLOOD rlhot: solved 47/72 | within-turn rep 94.66% | cross-turn rep 94.66% | flood turns 25 (tasks 25) | max calls/turn 407 | unsolved {'no_answer': 0, 'truncated': 0, 'error': 0, 'wrong': 0, 'flooded': 25} | h0 rep 0.00% h1 rep 97.52%
+power ~/mimo26/mopd/run-2026-09-28-mopd/power-rlhot-dev.csv: mean 355.4 W over 162 samples
+2026-09-28 06:39:05 CDT bfcl dev: BFCL rlhot-dev [dev]: all 564/600 = 0.94 | simple_python 0.945 | multiple 0.93 | errors 0 | 813s
+2026-09-28 06:39:05 CDT waiting up to 630s for the live counter flush, then snapshot live counts as rlhot
+live tokens/layer 137011.0 {'since': 1790592344.501794, 'at': 1790595945.8749712, 'note': 'live lane counts incl. padded slots'}
+2026-09-28 06:46:15 CDT ===== ARM m-ctrl (mimo26-pro-mctrl-2026-09-28-mopd) =====
+2026-09-28 06:46:15 CDT stop-and-keep mimo26-pro-v23-hot153-live
+2026-09-28 06:46:26 CDT docker run mimo26-pro-mctrl-2026-09-28-mopd (ctrl) model=/models/milo/MiMo-V2.6-Pro-MOPD
+2026-09-28 06:53:30 CDT BOUND mimo26-pro-mctrl-2026-09-28-mopd after 420s
+/mimo26-pro-mctrl-2026-09-28-mopd image=sha256:f29125bcc6d276ed38a67c9dfd4e51ccbaba09ad92847a0913c0df38d9c05c71 model=/models/milo/MiMo-V2.6-Pro-MOPD
+    41274e36c2132a278149adacee2bbc9c01e871756cf2bc1f0df787cd11df5e9b  /usr/local/lib/python3.12/dist-packages/vllm/model_executor/models/mimo_v2.py
+    19940f32f69c71780fb9bd9d55c3257c2433f72439f9ce2c96079009cd29eeea  /usr/local/lib/python3.12/dist-packages/vllm/model_executor/models/mimo_v2_omni.py
+    c4d3c7a9c4be92434b1fda66eeb0dac6d0f93e78dee6dfb626e1e47c63d2fd6e  /w/hotsplit.py
+    a9dc00e2a0c2c172efd198f42e81e41c95472021b57c65366c06587d44038b62  /model/config.json
+    11ea52e156de38a458e6b7720ad45915d65b97d4ec979a09f55e3c9bd1b4d059  /model/chat_template.jinja
+    (EngineCore pid=359) INFO 09-28 11:47:18 [mxfp4.py:462] Using 'MARLIN' Mxfp4 MoE backend.
+    (EngineCore pid=359) INFO 09-28 11:48:06 [uva.py:68] Total CPU offloaded parameters: 321.75
+    (EngineCore pid=359) INFO 09-28 11:52:54 [kv_cache_utils.py:2404] GPU KV cache size: 490,466 tokens, Maximum concurrency for 262,144 tokens per request: 1.87x
+2026-09-28 06:54:48 CDT warm done
+2026-09-28 06:57:20 CDT greedy: [mctrl] wrote greedy-mctrl.json
+2026-09-28 06:58:27 CDT tf: [mctrl] wrote tf-mctrl.jsonl: docs=39 errors=0 positions=80384 wall=67s
+2026-09-28 06:58:52 CDT bfcl smoke: BFCL mctrl-smoke [dev]: all 20/24 = 0.8333 | simple_python 0.8333 | multiple None | errors 0 | 25s
+power ~/mimo26/mopd/run-2026-09-28-mopd/power-mctrl-dev.csv: mean 334.4 W over 183 samples
+2026-09-28 07:14:10 CDT bfcl dev: BFCL mctrl-dev [dev]: all 563/600 = 0.9383 | simple_python 0.945 | multiple 0.925 | errors 0 | 918s
+power ~/mimo26/mopd/run-2026-09-28-mopd/power-mctrl-heldout.csv: mean 345.7 W over 407 samples
+2026-09-28 07:48:19 CDT bfcl heldout: BFCL mctrl-heldout [heldout]: all 1028/1311 = 0.7841 | live_simple 0.7829 | live_multiple 0.7844 | errors 0 | 2049s
+power ~/mimo26/mopd/run-2026-09-28-mopd/power-mctrl-flood.csv: mean 338.7 W over 103 samples
+2026-09-28 07:56:58 CDT flood: FLOOD mctrl: solved 72/72 | within-turn rep 0.00% | cross-turn rep 0.00% | flood turns 0 (tasks 0) | max calls/turn 13 | unsolved {'no_answer': 0, 'truncated': 0, 'error': 0, 'wrong': 0, 'flooded': 0} | h0 rep 0.00% h1 rep 0.00%
+2026-09-28 07:56:58 CDT ===== ARM m-hot (mimo26-pro-mhot153-live-2026-09-28-mopd) =====
+2026-09-28 07:56:58 CDT stop-and-keep mimo26-pro-mctrl-2026-09-28-mopd
+2026-09-28 07:57:09 CDT docker run mimo26-pro-mhot153-live-2026-09-28-mopd (hot) model=/models/milo/MiMo-V2.6-Pro-MOPD
+2026-09-28 08:04:35 CDT BOUND mimo26-pro-mhot153-live-2026-09-28-mopd after 440s
+/mimo26-pro-mhot153-live-2026-09-28-mopd image=sha256:f29125bcc6d276ed38a67c9dfd4e51ccbaba09ad92847a0913c0df38d9c05c71 model=/models/milo/MiMo-V2.6-Pro-MOPD
+    41274e36c2132a278149adacee2bbc9c01e871756cf2bc1f0df787cd11df5e9b  /usr/local/lib/python3.12/dist-packages/vllm/model_executor/models/mimo_v2.py
+    19940f32f69c71780fb9bd9d55c3257c2433f72439f9ce2c96079009cd29eeea  /usr/local/lib/python3.12/dist-packages/vllm/model_executor/models/mimo_v2_omni.py
+    c4d3c7a9c4be92434b1fda66eeb0dac6d0f93e78dee6dfb626e1e47c63d2fd6e  /w/hotsplit.py
+    a9dc00e2a0c2c172efd198f42e81e41c95472021b57c65366c06587d44038b62  /model/config.json
+    11ea52e156de38a458e6b7720ad45915d65b97d4ec979a09f55e3c9bd1b4d059  /model/chat_template.jinja
+    (EngineCore pid=359) INFO 09-28 12:58:04 [mxfp4.py:462] Using 'MARLIN' Mxfp4 MoE backend.
+    (EngineCore pid=359) INFO 09-28 12:58:51 [uva.py:68] Total CPU offloaded parameters: 321.75
+    (EngineCore pid=359) INFO 09-28 13:02:40 [hotsplit.py:140] hotsplit plan: 69 layers, budget 152.8 GiB (stock HBM experts 141.8 GiB), hot cells 8692/26496, train-weighted coverage 61.8%
+    (EngineCore pid=359) INFO 09-28 13:03:12 [hotsplit.py:173] hotsplit done in 32s; HBM free 34.7 GiB; host avail 134.7 GiB
+    (EngineCore pid=359) INFO 09-28 13:04:05 [kv_cache_utils.py:2404] GPU KV cache size: 302,324 tokens, Maximum concurrency for 262,144 tokens per request: 1.15x
+2026-09-28 08:05:44 CDT warm done
+2026-09-28 08:08:27 CDT ttft/decode: [mopd-mhot] prompt   2952 tok: TTFT   2.48s (  1192 tok/s prefill)  decode  37.2 tok/s  runs [(2.49, 37.2), (2.48, 37.2), (2.47, 37.0)] [mopd-mhot] prompt  11522 tok: TTFT   8.38s (  1376 tok/s prefill)  decode  37.1 tok/s  runs [(8.38, 37.1), (8.38, 37.0), (8.37, 37.1)] [mopd-mhot] prompt  45827 to
+2026-09-28 08:09:24 CDT fixture: [mopd-mhot-r2] tool_json     36.2 tok/s  accept= nan%  acc/step=0.00  tokens=282 [mopd-mhot-r2] code          32.2 tok/s  accept= nan%  acc/step=0.00  tokens=725 [mopd-mhot-r2] shell_ops     36.1 tok/s  accept= nan%  acc/step=0.00  tokens=148 [mopd-mhot-r2] structured    35.1 tok/s  accept= nan%  ac
+2026-09-28 08:11:45 CDT greedy: [mhot] wrote greedy-mhot.json
+2026-09-28 08:12:48 CDT tf: [mhot] wrote tf-mhot.jsonl: docs=39 errors=0 positions=80384 wall=63s
+2026-09-28 08:13:11 CDT bfcl smoke: BFCL mhot-smoke [dev]: all 20/24 = 0.8333 | simple_python 0.8333 | multiple None | errors 0 | 23s
+power ~/mimo26/mopd/run-2026-09-28-mopd/power-mhot-dev.csv: mean 355.2 W over 159 samples
+2026-09-28 08:26:31 CDT bfcl dev: BFCL mhot-dev [dev]: all 559/600 = 0.9317 | simple_python 0.94 | multiple 0.915 | errors 0 | 800s
+power ~/mimo26/mopd/run-2026-09-28-mopd/power-mhot-heldout.csv: mean 371.5 W over 347 samples
+2026-09-28 08:55:37 CDT bfcl heldout: BFCL mhot-heldout [heldout]: all 1032/1311 = 0.7872 | live_simple 0.7713 | live_multiple 0.7911 | errors 0 | 1746s
+power ~/mimo26/mopd/run-2026-09-28-mopd/power-mhot-flood.csv: mean 371.4 W over 86 samples
+2026-09-28 09:02:45 CDT flood: FLOOD mhot: solved 72/72 | within-turn rep 0.00% | cross-turn rep 0.00% | flood turns 0 (tasks 0) | max calls/turn 12 | unsolved {'no_answer': 0, 'truncated': 0, 'error': 0, 'wrong': 0, 'flooded': 0} | h0 rep 0.00% h1 rep 0.00%
+2026-09-28 09:02:45 CDT waiting up to 630s for the live counter flush, then snapshot live counts as mhot
+live tokens/layer 104198.0 {'since': 1790600592.6712134, 'at': 1790604194.118384, 'note': 'live lane counts incl. padded slots'}
+2026-09-28 09:03:45 CDT stop-and-keep mimo26-pro-mhot153-live-2026-09-28-mopd
+2026-09-28 09:03:56 CDT TF residency: TF Δlogprob mctrl → mhot: positions=80384 docs=39 (token-mismatch docs=0) mean|Δ|=0.02506 p50=0.00005 p99=0.4049 max=4.195 top-1 flips=951 (1.183%) ppl 1.5062 → 1.5062; wrote tf-compare-mctrl-vs-mhot.json
+2026-09-28 09:03:57 CDT TF weights RL->MOPD: TF Δlogprob ctrl → mctrl: positions=80384 docs=39 (token-mismatch docs=0) mean|Δ|=0.03346 p50=0.00007 p99=0.5294 max=4.206 top-1 flips=1286 (1.600%) ppl 1.5081 → 1.5062; wrote tf-compare-ctrl-vs-mctrl.json
+2026-09-28 09:03:57 CDT GREEDY identical=1/12  (greedy-mctrl.json vs greedy-mhot.json) -> greedy-compare-mctrl-vs-mhot.json
+2026-09-28 09:03:57 CDT GREEDY identical=1/12  (greedy-rlctrl0924.json vs greedy-mctrl.json) -> greedy-compare-rlctrl0924-vs-mctrl.json
+2026-09-28 09:03:57 CDT portability: hbm_served_share_rl_ranking_on_mopd           0.5340 hbm_served_share_rl_ranking_on_rl_live        0.4585 verdict                                       RE-RANK 
+2026-09-28 09:03:57 CDT flood RL->MOPD: all  solved 47/72 -> 72/72 | within-rep 94.66% -> 0.00% | cross-rep 94.66% -> 0.00% | flood tasks 25 -> 0 | calls 5934 -> 341 | tokens 113748 -> 16828
+2026-09-28 09:03:57 CDT flood residency: all  solved 72/72 -> 72/72 | within-rep 0.00% -> 0.00% | cross-rep 0.00% -> 0.00% | flood tasks 0 -> 0 | calls 339 -> 341 | tokens 16707 -> 16828
+# MiMo-V2.6-Pro-MOPD run — verdict (bars from harness/protocol-v2.yaml)
+
+| bar | result | detail |
+|---|---|---|
+| Q1 residency m-ctrl->m-hot: TF ppl within 0.5% rel | **PASS** | ppl 1.5062 -> 1.5062 (0.006%) |
+| Q1 residency m-ctrl->m-hot: TF top-1 flips <= 2.0% | **PASS** | 951/80384 = 1.183% · mean|Δ| 0.02506 p99 0.4049 max 4.195 · docs 39 |
+| Q1 residency BFCL dev mhot >= mctrl - 1 pt | **PASS** | mctrl 563/600 = 93.83% · mhot 559/600 = 93.17% · Δ -0.66 pt · no-call 4/4 · fail kinds {'value': 32, 'no_call': 4, 'name': 1} / {'value': 36, 'no_call': 4, 'name': 1} |
+| errors mctrl dev <= 0.5% | **PASS** | 0/600 · wall 918 s |
+| errors mhot dev <= 0.5% | **PASS** | 0/600 · wall 800 s |
+| Q1 residency BFCL heldout mhot >= mctrl - 1 pt | **PASS** | mctrl 1028/1311 = 78.41% · mhot 1032/1311 = 78.72% · Δ +0.31 pt · no-call 45/39 · fail kinds {'value': 178, 'no_call': 45, 'missing': 29, 'name': 31} / {'value': 178, 'no_call': 39, 'missing': 30, 'name': 32} |
+| errors mctrl heldout <= 0.5% | **PASS** | 0/1311 · wall 2049 s |
+| errors mhot heldout <= 0.5% | **PASS** | 0/1311 · wall 1746 s |
+| Q1 weights RL(09-24 ctrl)->m-ctrl | **BLOCKED (reported)** | tf-compare-rlctrl0924-vs-mctrl.json: [Errno 2] No such file or directory: '~/mimo26/mopd/run-2026-09-28-mopd/tf-compare-rlctrl0924-vs-mctrl.json' |
+| Q1 weights BFCL dev RL->MOPD (finding if < -2 pt) | **PASS (reported)** | RL 562/600 = 93.67% · MOPD 563/600 = 93.83% · Δ +0.16 pt |
+| Q1 weights BFCL heldout RL->MOPD (finding if < -2 pt) | **PASS (reported)** | RL 1029/1311 = 78.49% · MOPD 1028/1311 = 78.41% · Δ -0.08 pt |
+| Q1 rl-hot dev re-run (same-model repeat) | **info** | 564/600 = 94.00% (09-24 v23: 563/600 = 93.83%) |
+| Q2 RL ranking on MOPD live >= RL ranking on RL live - 3 pt | **PASS** | MOPD 53.4% vs RL 45.9% (oracles 72.2% / 80.1%; Jaccard rank-vs-MOPD-oracle 0.367, RL-vs-RL 0.274; tokens/layer MOPD 104198 RL 137011) -> RE-RANK |
+| Q3 flood rl-hot (RL) | **info** | solved 47/72 · within-rep 94.66% · cross-rep 94.66% · flood tasks 25 · dup tasks 25 · calls 5934 · max/turn 407 · tokens 113748 · unsolved {'no_answer': 0, 'truncated': 0, 'error': 0, 'wrong': 0, 'flooded': 25} |
+| Q3 flood m-ctrl (MOPD stock) | **info** | solved 72/72 · within-rep 0.00% · cross-rep 0.00% · flood tasks 0 · dup tasks 0 · calls 339 · max/turn 13 · tokens 16707 · unsolved {'no_answer': 0, 'truncated': 0, 'error': 0, 'wrong': 0, 'flooded': 0} |
+| Q3 flood m-hot (MOPD hotsplit) | **info** | solved 72/72 · within-rep 0.00% · cross-rep 0.00% · flood tasks 0 · dup tasks 0 · calls 341 · max/turn 12 · tokens 16828 · unsolved {'no_answer': 0, 'truncated': 0, 'error': 0, 'wrong': 0, 'flooded': 0} |
+| Q3 residency sanity: |Δ flood tasks| <= 2 and |Δ solved| <= 3 | **PASS** | Δ flood tasks 0, Δ solved 0 |
+
+greedy-compare-residency.log: GREEDY identical=1/12  (greedy-mctrl.json vs greedy-mhot.json) -> greedy-compare-mctrl-vs-mhot.json
+  tool-shaped-1: first divergence at token 112 (tokens 259 vs 251)
+  tool-shaped-2: identical (tokens 46 vs 46)
+  code-1: first divergence at token 159 (tokens 512 vs 512)
+  code-2: first divergence at token 0 (tokens 152 vs 136)
+  code-3: first divergence at token 47 (tokens 512 vs 512)
+  prose-1: first divergence at token 19 (tokens 512 vs 512)
+  prose-2: first divergence at token 44 (tokens 370 vs 356)
+  reason-1: first divergence at token 25 (tokens 512 vs 512)
+  reason-2: first divergence at token 7 (tokens 512 vs 512)
+  structured-1: first divergence at token 11 (tokens 163 vs 171)
+  ops-1: first divergence at token 5 (tokens 512 vs 512)
+  long-1: first divergence at token 61 (tokens 512 vs 512)
+
+greedy-compare-weights.log: GREEDY identical=1/12  (greedy-rlctrl0924.json vs greedy-mctrl.json) -> greedy-compare-rlctrl0924-vs-mctrl.json
+  tool-shaped-1: first divergence at token 0 (tokens 512 vs 259)
+  tool-shaped-2: identical (tokens 46 vs 46)
+  code-1: first divergence at token 0 (tokens 512 vs 512)
+  code-2: first divergence at token 0 (tokens 512 vs 152)
+  code-3: first divergence at token 5 (tokens 512 vs 512)
+  prose-1: first divergence at token 19 (tokens 512 vs 512)
+  prose-2: first divergence at token 0 (tokens 384 vs 370)
+  reason-1: first divergence at token 24 (tokens 491 vs 512)
+  reason-2: first divergence at token 7 (tokens 512 vs 512)
+  structured-1: first divergence at token 2 (tokens 146 vs 163)
+  ops-1: first divergence at token 0 (tokens 512 vs 512)
+  long-1: first divergence at token 52 (tokens 512 vs 512)
+
+tf-compare-residency.log: TF Δlogprob mctrl → mhot: positions=80384 docs=39 (token-mismatch docs=0) mean|Δ|=0.02506 p50=0.00005 p99=0.4049 max=4.195 top-1 flips=951 (1.183%) ppl 1.5062 → 1.5062; wrote tf-compare-mctrl-vs-mhot.json
+
+tf-compare-weights.log: TF Δlogprob ctrl → mctrl: positions=80384 docs=39 (token-mismatch docs=0) mean|Δ|=0.03346 p50=0.00007 p99=0.5294 max=4.206 top-1 flips=1286 (1.600%) ppl 1.5081 → 1.5062; wrote tf-compare-ctrl-vs-mctrl.json
+
+ttft-mhot.log: [mopd-mhot] prompt   2952 tok: TTFT   2.48s (  1192 tok/s prefill)  decode  37.2 tok/s  runs [(2.49, 37.2), (2.48, 37.2), (2.47, 37.0)]
+[mopd-mhot] prompt  11522 tok: TTFT   8.38s (  1376 tok/s prefill)  decode  37.1 tok/s  runs [(8.38, 37.1), (8.38, 37.0), (8.37, 37.1)]
+[mopd-mhot] prompt  45827 tok: TTFT  33.33s (  1375 tok/s prefill)  decode  36.6 tok/s  runs [(33.35, 36.6), (33.31, 36.6), (33.33, 36.6)]
+
+fixture-mhot.log: [mopd-mhot-r2] tool_json     36.2 tok/s  accept= nan%  acc/step=0.00  tokens=282
+[mopd-mhot-r2] code          32.2 tok/s  accept= nan%  acc/step=0.00  tokens=725
+[mopd-mhot-r2] shell_ops     36.1 tok/s  accept= nan%  acc/step=0.00  tokens=148
+[mopd-mhot-r2] structured    35.1 tok/s  accept= nan%  acc/step=0.00  tokens=372
+[mopd-mhot-r2] prose         32.2 tok/s  accept= nan%  acc/step=0.00  tokens=354
+[mopd-mhot-r2] weighted accept=nan%
+
+portability.log: K                                             8692
+layers                                        69
+mopd_live_tokens_per_layer                    104198
+hbm_served_share_rl_ranking_on_mopd           0.5340
+hbm_served_share_oracle_mopd                  0.7221
+jaccard_rlrank_vs_mopd_oracle                 0.3673
+pearson_share_rlrank_vs_mopd                  0.4368
+stock_layer_order_share_on_mopd               0.3043
+rl_live_tokens_per_layer                      137011
+hbm_served_share_rl_ranking_on_rl_live        0.4585
+hbm_served_share_oracle_rl_live               0.8014
+jaccard_rlrank_vs_rl_oracle                   0.2744
+pearson_share_rlrank_vs_rl_live               0.2533
+jaccard_mopd_oracle_vs_rl_oracle              0.4174
+verdict                                       RE-RANK
+power power-mctrl-dev.csv: mean 334.4 W, 183 samples
+power power-mctrl-flood.csv: mean 338.7 W, 103 samples
+power power-mctrl-heldout.csv: mean 345.7 W, 407 samples
+power power-mhot-dev.csv: mean 355.2 W, 159 samples
+power power-mhot-flood.csv: mean 371.4 W, 86 samples
+power power-mhot-heldout.csv: mean 371.5 W, 347 samples
+power power-rlhot-dev.csv: mean 355.4 W, 162 samples
+power power-rlhot-flood.csv: mean 364.8 W, 451 samples
+
+OVERALL (gated bars only): PASS — recipe verified on MOPD weights
+2026-09-28 09:03:58 CDT ===== MOPD RUN END (all mimo26 containers stopped-and-kept; GPU idle; :30006 NOT restored) =====

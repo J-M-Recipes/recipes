@@ -1,10 +1,12 @@
 # MiMo-V2.6-Pro on one DGX Station GB300 — vLLM UVA expert offload + per-expert HBM residency ("hotsplit")
 
-**Status: verified (v23, promoted 2026-09-24).** The residency hook is still out-of-tree. Previous status: experimental (2026-09-22).
+**Status: verified (v23, promoted 2026-09-24; re-verified on the MOPD checkpoint 2026-09-28).** The residency hook is still out-of-tree. Previous status: experimental (2026-09-22).
+
+**2026-09-28 — weights are now [MiMo-V2.6-Pro-MOPD](https://huggingface.co/XiaomiMiMo/MiMo-V2.6-Pro-MOPD)** (rev `adea8e2c`), Xiaomi's fix for the tool-call repetition they [diagnosed](https://mimo.xiaomi.com/blog/mimo-v2-6-tool-call-repetition) in the RL release. `config.json`, `chat_template.jinja`, `generation_config.json` and the shard index are byte-identical to the RL checkpoint, so nothing in the launch changes but the mount. Same image, same three patches, same bars: **pass**. And on a 72-run flood fixture, RL flooded 25 of 36 history-primed tasks; MOPD flooded none. Details in [Verification (2026-09-28)](#verification-2026-09-28-mopd-weights).
 
 ## What this runs
 
-The 527 GiB [MiMo-V2.6-Pro-RL](https://huggingface.co/XiaomiMiMo/MiMo-V2.6-Pro-RL) checkpoint (1.02T total / 42B active, 384 routed experts × 69 MoE layers, native MXFP4 experts, revision `54b10491`) on one GPU that has 250 GiB of HBM:
+The 527 GiB [MiMo-V2.6-Pro-MOPD](https://huggingface.co/XiaomiMiMo/MiMo-V2.6-Pro-MOPD) checkpoint (1.02T total / 42B active, 384 routed experts × 69 MoE layers, native MXFP4 experts, revision `adea8e2c`; until 2026-09-27 the RL release, revision `54b10491`, same layout) on one GPU that has 250 GiB of HBM:
 
 - vLLM's UVA offloader reads 320 GiB of routed experts **in place** from Grace memory over NVLink-C2C (exact-size pinned, no H2D copy);
 - Marlin MoE kernels (the auto-picked FlashInfer TRT-LLM MXFP4 backend's autotune crawled ~2 h with 320 GiB of experts in Grace; CORRECTED 2026-09-23: an earlier version blamed an sm_100a-only cubin, which was wrong — see vllm-project/vllm#58031);
@@ -34,7 +36,7 @@ Ranking input: `patches/expert_hist_mix.json` (decode routing counts from 630 re
 mkdir -p $WORKDIR/{patch,vllm-cache,live}
 cp patches/mimo_v2_hotsplit.py patches/mimo_v2_omni.py $WORKDIR/patch/
 cp patches/hotsplit.py patches/expert_hist_mix.json $WORKDIR/
-WORKDIR=$WORKDIR MODEL=/models/MiMo-V2.6-Pro-RL COUNTS=/w/expert_hist_mix.json LIVE=1 \
+WORKDIR=$WORKDIR MODEL=/models/MiMo-V2.6-Pro-MOPD COUNTS=/w/expert_hist_mix.json LIVE=1 \
   bash scripts/launch-hotsplit.sh v23 152.8 262144
 ```
 
@@ -52,7 +54,39 @@ Variants: drop `152.8` for the stock-equal budget (KV 514K); unset `COUNTS` for 
 - `bash scripts/agent_fixture.sh warm` once and discard (first pass reads ~20% low), then `python3 scripts/ttft_bench.py <tag>` and `bash scripts/agent_fixture.sh <tag>`.
 - Tool calling through Hermes: `bash scripts/harness_test.sh` then `python3 scripts/score_harness.py /tmp/harness-mimo26`.
 
-## Verification (2026-09-24)
+## Verification (2026-09-28, MOPD weights)
+
+Run `results/2026-09-28-mopd/`. Bars pinned in `harness/protocol-v2.yaml` (v2.1, sha256 `b83c9e5a…`) before the run; verdict by `scripts/verdict2.py`, fail-closed. Three arms on one morning, same image digest and the same three patch sha256s read inside each running container: **rl-hot** = the kept v23 container (RL weights, hotsplit); **m-ctrl** = MOPD weights, stock layer-order placement; **m-hot** = MOPD weights, hotsplit 152.8 GiB from the same RL-derived ranking, live counter on.
+
+| bar (m-ctrl → m-hot, MOPD weights) | m-ctrl | m-hot | result | v23 on RL, 09-24 |
+|---|--:|--:|---|--:|
+| Teacher-forced perplexity, 80,384 positions | 1.5062 | 1.5062 (+0.006%) | **pass** | 1.5081 → 1.5077 |
+| Teacher-forced top-1 flips | — | 1.18% | **pass** | 1.23% |
+| BFCL dev (600) | 93.83% | 93.17% (−0.66) | **pass** | 93.7 → 93.8 |
+| BFCL held-out live sibling (1,311) | 78.41% | 78.72% (+0.31) | **pass** | 78.5 → 78.2 |
+| Errors, 3,822 requests | 0 | 0 | **pass** | 0 |
+| Flood fixture (72 runs) | 72/72, 0 dups | 72/72, 0 dups | **pass** (Δ0) | — |
+
+Speed on MOPD is the RL speed: decode **37.1 tok/s** at 11.5K (2.9K 37.2, 46K 36.6), prefill 1,376 tok/s, fixture tool_json 36.2 / shell 36.1 / structured 35.1 / code 32.2 / prose 32.2.
+
+**How big is the weight change?** RL control (09-24) → MOPD control: top-1 flips 1.60%, mean |Δlogprob| 0.033, ppl 1.5081 → 1.5062; BFCL dev +0.16 pt, held-out −0.08 pt; greedy 1/12 identical (the same as two boots of one container). A real but small edit, and the benchmarks held, as Xiaomi said.
+
+**The flood fixture** (`scripts/flood_fixture.py`, deterministic simulated environment, T=0, thinking on, 6 turns, 120 calls per task then *flooded*): 36 tasks — pagination with cursors, EACCES → `read_file_sudo`, a 12-file fan-out where 12 calls are the right answer, a test-fix loop, ENOENT → `list_dir`, search → read — each run twice: **history 0** (clean context) and **history 1** (one prior turn in context with 12 calls, 8 of them duplicates — Xiaomi's "history 1"). Duplicates = same tool + identical JSON-canonicalised arguments in one turn, their lower-bound metric.
+
+| | solved | history-0 solved | history-1 solved | history-1 flooded | duplicate rate | calls | tokens | wall |
+|---|--:|--:|--:|--:|--:|--:|--:|--:|
+| RL weights (v23 boot) | 47/72 | **36/36, 0 dups** | 11/36 | **25/36** (max 407 calls in one turn) | 94.7% | 5,934 | 113,748 | 2.4 h |
+| MOPD, stock placement | **72/72** | 36/36 | 36/36 | 0 | 0.00% | 339 | 16,707 | 0.6 h |
+| MOPD, hotsplit | **72/72** | 36/36 | 36/36 | 0 | 0.00% | 341 | 16,828 | 0.5 h |
+
+With RL weights the switch is the *context*, not the task: the same 36 tasks are clean until one flooded turn is in the history, then 25 of them go to hundreds of exact-duplicate calls. RL families flooded: EACCES 6/6, ENOENT 6/6, pagination 5/6, multi-hop 4/6, fan-out 2/6, fix-loop 2/6. MOPD: none, in either placement. n=72 per arm: same-box A/B with counts, not a rate; it cannot see Xiaomi's 0.05% baseline (that needs ~10⁵ real responses), it sees the contagion they described.
+
+- **Ranking portability.** The RL-derived hot list serves 53.4% of MOPD decode traffic on this run's mix (BFCL + fixture) vs 45.9% of RL decode traffic on the same mix (oracles 72.2 / 80.1) — MOPD did not move the router away from the RL ranking. Both are below the 62.2% on real Hermes turns because benchmark traffic routes differently (two RL snapshots' oracles overlap Jaccard 0.72 on real traffic, 0.27 here). The ranking is traffic-shaped, not weight-shaped: `expert_hist_mix.json` ships unchanged and re-ranking stays on live lane traffic (`rerank-weekly.sh`), never on benchmark traffic. `scripts/ranking_portability.py`.
+- **Protocol v2.0 → v2.1 mid-campaign**, disclosed in the protocol's `revision_note`: the first rl-hot pass had no per-task call cap and history-1 tasks ran to 421–849 calls and 14–39 min each. Stopped after 40 tasks (`receipts/flood-rlhot-v2.0-partial.log`), `MAX_CALLS=120` and 6 turns added, all three arms run under v2.1; task set and fixture sha256 unchanged.
+- Energy: m-hot held-out 371 W over 1,746 s → **$0.026 per 1000 solved** at $0.15/kWh (m-ctrl 346 W, 2,049 s, $0.029).
+- Reproduce: `scripts/run-mopd-2026-09-28.sh` (runner), `scripts/flood_fixture.py selftest` (scripted good agent 72/72 @ 0 dups, scripted flooder 0/72 @ 91.7%), `scripts/verdict2.py`.
+
+## Verification (2026-09-24, RL weights)
 
 Promotion run `results/2026-09-24-promotion/`. The bars were written into `harness/protocol.yaml` (sha256 `84faecb9…`) before the run. **Control** = the kept v20 container: stock layer-order UVA placement. **Candidate** = the kept v23 container: hotsplit, 152.8 GiB hot. Both use the same image digest, weights and flags; only the `HOTSPLIT_*` environment differs. Each arm was booted, then identity-checked (`docker exec sha256sum` of both mounted patches, hotsplit plan line, KV size), warmed, and measured.
 
@@ -96,6 +130,7 @@ All receipts: `results/2026-09-22-hotsplit/` (`facts.md`, `receipts/`, `harness/
 
 ## Known limits
 
+- **Weights are MOPD since 2026-09-28.** Every number outside the 2026-09-28 section was measured on the RL checkpoint (`54b10491`); the serving path is identical and re-verified. Serving RL for agent use is not recommended after the flood result above.
 - **Out-of-tree** (verified 2026-09-24, but not a vLLM feature). Upstream design discussion: [vLLM RFC #57794](https://github.com/vllm-project/vllm/issues/57794#issuecomment-5785394491) (our data posted).
 - **The hot list is workload-specific.** Agent-only ranking cost synthetic prose ~5%; mixing a prose histogram in at 0.25 fixed that. Re-rank for your traffic: offline with `scripts/expert_hist2.py` → `scripts/hist2_analyse.py` → `scripts/mixcounts.py`, or online with `LIVE=1` + `scripts/rerank-weekly.sh` (refuses below 50K decode tokens/layer; applies on the next boot; never restarts anything).
 - **KV trade.** 60 of 70 layers are sliding-window, so each GiB of hot experts traded buys ~19K KV tokens. 152.8 GiB hot → 302K KV (37.4 tok/s); 141.8 → 514K (36.3); 110 → 1.21M (33.0).
