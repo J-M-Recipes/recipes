@@ -49,6 +49,20 @@ Daily lane `:30001` is now `glmf-DAILY-rssm-20260929`:
 
 Containers `glmf-K3-{D,F-ar,E,E-ctl}` stopped and kept. `glmf-DAILY-rssm-20260929` left running.
 
+## Concurrency on the promoted image (knee curve, same instrument as every prior round)
+
+Live daily lane, warm, 256-token completions, thinking off, 3 reps per concurrency ([`receipts/promote/knee-daily-rssm.txt`](receipts/promote/knee-daily-rssm.txt)). v0.5.20 daily reference rows are the 2026-09-24 `tf5` boot (`results/2026-09-24-tf5161-vision/raw/cardH-2026-09-24/tf5/knee-c8.txt`).
+
+| conc | promoted (ReplaySSM) agg / per-stream | reps · spread | v0.5.20 daily agg / per-stream |
+|--:|--:|--|--:|
+| 1 | 184 / 184 | 180/186/186 · 3 % | ~190 (knee instrument; `c1_methods` history reads 195–201 on both) |
+| 2 | 312 / 156 | 303/327/307 · 8 % | — |
+| 4 | 485 / 121 | 478/489/489 · 2 % | — |
+| **8** | **744 / 93.0** | 760/743/729 · 4 % | 699 / 87.4 (6 %) |
+| 16 | 554 / 34.6 | **226**/703/732 · 91 % | (slot-capped at 9 running; C16 is a queue, not a batch) |
+
+C8 **+6 %** aggregate on the promoted image (744 vs 699), consistent with Round 5's +7 % for ReplaySSM on the drifted nightly. C16 is not a measurement on either image: the daily config runs 48 KDA slots = 9 running requests, so 16 streams queue, and the first rep here (226) is the queue draining cold — the two warm reps (703/732) are the C8 number again. The 1,180 C16 hero on the card is the 2026-09-11 120-slot variant and is unchanged by this round.
+
 ## Reproducibility of the promoted image
 
 The image serving on the Station was built as a `COPY` overlay of the reverted files (Round 7 method). [`Dockerfile.0922-revert39688`](../../Dockerfile.0922-revert39688) rebuilds it from the pinned base digest with `git apply` of [`patches/revert-39688-on-582389ce.patch`](../../patches/revert-39688-on-582389ce.patch). Checked 2026-09-29 on the Station: aggregate sha256 over every `srt/**/*.py` and `kernels/**/*.py` in `/sgl-workspace/sglang/python/sglang` is **`6266d9f1…` in both images**; `prefill_track_metadata.py` absent in both; `pip freeze` transformers 5.16.1 / tokenizers 0.23.2 / torch 2.13.0+cu130 in both. Receipt: [`receipts/dockerfile-reproduce.txt`](receipts/dockerfile-reproduce.txt).
