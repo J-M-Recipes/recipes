@@ -1,0 +1,100 @@
++ CKPT=$MODELS/GLM-5.3-Flash-NVFP4-nvidia-09b04e5e
++ DRAFT=$MODELS/GLM-5.3-Flash-DFlash2
++ IMG=glmf-sglang:0922-582389ce-revert39688-tf5.16.1
++ NAME=glmf-DAILY-rssm-20260929
++ TF=$HOME/window-20260913/scripts/tf_noninferiority.py
++ CTRL_TF=$HOME/glmf/w5-ctrl/tf-w5-ctrl.json
++ SGL=/sgl-workspace/sglang/python/sglang
++ export BASE_URL=http://127.0.0.1:30001/v1 MODEL_NAME=glm-5.3-flash API_KEY=none
++ BASE_URL=http://127.0.0.1:30001/v1
++ MODEL_NAME=glm-5.3-flash
++ API_KEY=none
++ log '===== PROMOTE START ====='
+++ date '+%F %T %Z'
++ printf '%s %s\n' '2026-09-29 16:29:06 CDT' '===== PROMOTE START ====='
+2026-09-29 16:29:06 CDT ===== PROMOTE START =====
+++ docker ps --format '{{.Names}}'
+++ grep -vE '^glmf-'
+++ true
++ other=
++ [[ -n '' ]]
+++ docker ps --format '{{.Names}}'
+++ grep '^glmf-'
+++ true
++ sleep 3
++ sudo sh -c 'sync; echo 3 > /proc/sys/vm/drop_caches'
++ unset MODEL
++ TAG=DAILY-rssm-20260929
++ MODEL=$MODELS/GLM-5.3-Flash-NVFP4-nvidia-09b04e5e
++ DRAFT=$MODELS/GLM-5.3-Flash-DFlash2
++ IMAGE=glmf-sglang:0922-582389ce-revert39688-tf5.16.1
++ SPEC=dflash
++ KV=fp8_e4m3
++ MEM=0.85
++ CTX=1048576
++ MAXBS=16
++ EXTRA='--max-mamba-cache-size 48 --speculative-dflash-block-size 7 --enable-linear-replayssm-spec'
++ DOCKER_ENV='-e TORCHINDUCTOR_COMPILE_THREADS=1'
++ bash launch-glmf.sh
++ sleep 5
+++ seq 1 300
++ for i in $(seq 1 300)
++ curl -sf --max-time 2 http://127.0.0.1:30001/v1/models
++ docker ps --format '{{.Names}}'
++ grep -q '^glmf-DAILY-rssm-20260929$'
++ sleep 5
++ for i in $(seq 1 300)
++ curl -sf --max-time 2 http://127.0.0.1:30001/v1/models
++ docker ps --format '{{.Names}}'
++ grep -q '^glmf-DAILY-rssm-20260929$'
++ sleep 5
++ for i in $(seq 1 300)
++ curl -sf --max-time 2 http://127.0.0.1:30001/v1/models
++ docker ps --format '{{.Names}}'
++ grep -q '^glmf-DAILY-rssm-20260929$'
++ sleep 5
++ for i in $(seq 1 300)
++ curl -sf --max-time 2 http://127.0.0.1:30001/v1/models
++ docker ps --format '{{.Names}}'
++ grep -q '^glmf-DAILY-rssm-20260929$'
++ sleep 5
++ for i in $(seq 1 300)
++ curl -sf --max-time 2 http://127.0.0.1:30001/v1/models
++ docker ps --format '{{.Names}}'
++ grep -q '^glmf-DAILY-rssm-20260929$'
++ sleep 5
++ for i in $(seq 1 300)
++ curl -sf --max-time 2 http://127.0.0.1:30001/v1/models
++ docker ps --format '{{.Names}}'
++ grep -q '^glmf-DAILY-rssm-20260929$'
++ sleep 5
++ for i in $(seq 1 300)
++ curl -sf --max-time 2 http://127.0.0.1:30001/v1/models
++ docker ps --format '{{.Names}}'
++ grep -q '^glmf-DAILY-rssm-20260929$'
++ sleep 5
++ for i in $(seq 1 300)
++ curl -sf --max-time 2 http://127.0.0.1:30001/v1/models
++ docker ps --format '{{.Names}}'
++ grep -q '^glmf-DAILY-rssm-20260929$'
++ sleep 5
++ for i in $(seq 1 300)
++ curl -sf --max-time 2 http://127.0.0.1:30001/v1/models
++ docker ps --format '{{.Names}}'
++ grep -q '^glmf-DAILY-rssm-20260929$'
++ sleep 5
++ for i in $(seq 1 300)
++ curl -sf --max-time 2 http://127.0.0.1:30001/v1/models
++ docker ps --format '{{.Names}}'
++ grep -q '^glmf-DAILY-rssm-20260929$'
++ sleep 5
++ for i in $(seq 1 300)
++ curl -sf --max-time 2 http://127.0.0.1:30001/v1/models
++ docker ps --format '{{.Names}}'
++ grep -q '^glmf-DAILY-rssm-20260929$'
++ sleep 5
++ for i in $(seq 1 300)
++ curl -sf --max-time 2 http://127.0.0.1:30001/v1/models
++ docker ps --format '{{.Names}}'
++ grep -q '^glmf-DAILY-rssm-20260929$'
++ sleep 5

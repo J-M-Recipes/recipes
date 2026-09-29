@@ -1,0 +1,27 @@
+# GLM-5.3-Flash daily image since 2026-09-29: SGLang nightly 2026-09-22 (582389ce) with sgl-project/sglang#39688
+# reverted, plus transformers 5.16.1 for image input. Carries #40517 (ReplaySSM for GLM-5.3-Flash).
+#
+# Why this base and this revert (results/2026-09-27-round5-nightly-replayssm, ...round6..., ...round7..., ...round8...):
+#   - --enable-linear-replayssm-spec needs #40517 (merged 2026-09-21 17:34 UTC); 582389ce is the first public nightly with it.
+#   - Every nightly from 2026-09-21 on drifts the model function vs v0.5.20 (teacher-forced mean |dlogp| 0.139, deterministic).
+#     Round 7 bisected that to #39688 (c8eb54c4): full revert -> 0.000 / p99 0.000; gate-only -> 0.138 (kernel half is the cause).
+#   - The revert conflicts on nightlies after 09-22 (retraction_backup rename), so the pin is 09-22 until a tagged release carries
+#     #40517 or upstream fixes #39688 (https://github.com/sgl-project/sglang/issues/41609).
+#
+# Build (CPU-only, ~1 min; needs network for the pull and pip):
+#   docker build -t glmf-sglang:0922-582389ce-revert39688-tf5.16.1 -f Dockerfile.0922-revert39688 .
+# Boot gate (every boot, see scripts/launch-glmf.sh callers): inside the container,
+#   sha256sum /sgl-workspace/sglang/python/sglang/srt/models/glm5_next.py      -> bae77af69d0b280582daeeed7631b54687b91f4073d61906f4a454b31baa8fe1
+#   sha256sum /sgl-workspace/sglang/python/sglang/kernels/ops/attention/fla/kda.py -> 5d0e0922583c158634cd8093c987c4a73aa0d28fcd52fd9d244de1956b55ceeb
+#   /sgl-workspace/sglang/python/sglang/srt/layers/attention/mamba/prefill_track_metadata.py must NOT exist.
+FROM lmsysorg/sglang@sha256:0e1b14e302619a42ef5581b87db6804651d4f946301cf543d74a3a1eb1c33b40
+# transformers 5.12.1 in the base predates glm5_next and silently drops images (results/2026-09-24-tf5161-vision).
+RUN pip install --no-cache-dir "transformers==5.16.1" "tokenizers==0.23.2" \
+ && python3 -c "import transformers, tokenizers; assert transformers.__version__ == '5.16.1'; assert tokenizers.__version__ == '0.23.2'"
+# git revert --no-commit c8eb54c4 on 582389ce, runtime python files only (10 files; one file the commit added is removed).
+COPY patches/revert-39688-on-582389ce.patch /tmp/revert-39688.patch
+RUN cd /sgl-workspace/sglang && git apply --check /tmp/revert-39688.patch && git apply /tmp/revert-39688.patch \
+ && test ! -e python/sglang/srt/layers/attention/mamba/prefill_track_metadata.py \
+ && echo "bae77af69d0b280582daeeed7631b54687b91f4073d61906f4a454b31baa8fe1  python/sglang/srt/models/glm5_next.py" | sha256sum -c - \
+ && echo "5d0e0922583c158634cd8093c987c4a73aa0d28fcd52fd9d244de1956b55ceeb  python/sglang/kernels/ops/attention/fla/kda.py" | sha256sum -c - \
+ && python3 -c "import sglang, sglang.srt.models.glm5_next" && rm /tmp/revert-39688.patch
