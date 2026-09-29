@@ -44,7 +44,7 @@
       <h1>GLM-5.3-Flash · 1× DGX Station GB300</h1>
       <div class="sub">NVIDIA first-party NVFP4 + SGLang v0.5.20 (transformers 5.16.1 for image input) + DFlash2 block-diffusion draft (block 7) — 1M context configured, one GPU, nothing offloaded</div>
     </div>
-    <div class="brand"><b>J-M-RECIPES</b><br>v0.5.20 + tf 5.16.1 (2026-09-27 · SGLang 94602c9c · draft 7d74cdd8 · pin held after Rounds 5–6: nightly drift bracketed, ReplaySSM clean but image-blocked) · 2026-09-27<br>status: verified</div>
+    <div class="brand"><b>J-M-RECIPES</b><br>v0.5.20 + tf 5.16.1 (2026-09-29 · SGLang 94602c9c · draft 7d74cdd8 · Round 7: drift = #39688; ReplaySSM candidate, not promoted) · 2026-09-29<br>status: verified</div>
   </div>
   <div class="pills">
 <span class="pill type"><b>MoE</b> · 288 routed experts, 8 active · hybrid KDA + DSA + MLA attention</span>
@@ -62,7 +62,7 @@
   <div class="row2">
 <div class="box"><div class="lbl">Guesser</div><div class="kv"><b>DFlash2</b> · incoai/GLM-5.3-Flash-DFlash2 @ 7d74cdd8 (bf582e4e tested 2026-09-21: greedy 20/20 identical, accept 3.42/0.40 vs 3.37/0.39, C1 246 vs 248 — no gain, pin stays)<br>block diffusion: 7 draft tokens per verify pass (--speculative-dflash-block-size 7), single fixed size<br><span class="acc">accept: <span>prose <b>17%</b></span> <span>code <b>48%</b></span> <span>agentic <b>41%</b></span> <span>tool-JSON <b>67%</b></span></span></div></div>
 <div class="box"><div class="lbl">Concurrency by mode</div><div class="kv">DFlash2 interactive (≤24 users): <b>C8 743 agg (09-11) / 699 (v0.5.20) · C24 1,482 agg / 71.8 per user at the 120-slot cap</b><br>AR batch (SPEC=none, bf16 SSM): <b>C48 2,214 agg / 50 per user · C128 4,025 / 34 · 201K KV pool</b></div></div>
-<div class="box"><div class="lbl">Long-context &amp; boot</div><div class="kv">needle recall (single / 5-key / distractor): <b>27/27 · 18/18 on the daily config to 476K prompt tokens · 9/9 at 476K / 676K / 881K with 16 slots (1.46M-token pool, 3 running)</b><br>decode flat to (tokens in ctx): <b><span class="pend-inline">PENDING</span></b><br>first hit of a new batch shape: <b>up to 30 s kernel autotune · new prompt-length classes ~16 s — warm every shape you serve</b><br>cold boot → serving: <b>384 s daily config (page cache dropped) · +102 s to warm all shapes · 349 s for the 16-slot variant</b></div></div>
+<div class="box"><div class="lbl">Long-context &amp; boot</div><div class="kv">needle recall (single / 5-key / distractor): <b>27/27 · 18/18 on the daily config to 476K prompt tokens · 9/9 at 476K / 676K / 881K with 16 slots (1.46M-token pool, 3 running)</b><br>decode flat to (tokens in ctx): <b><span class="pend-inline">PENDING</span></b><br>first hit of a new batch shape: <b>up to 30 s kernel autotune · new prompt-length classes ~16 s — warm every shape you serve</b><br>cold boot → serving: <b>384 s daily config (page cache dropped) · +102 s to warm all shapes · 349 s for the 16-slot variant</b><br>tool-call flood fixture (MiMo-style, 72 tasks, DFlash on / off): <b>72/72 · 72/72 solved · 0 flooded · 0 duplicate calls · max 13 calls/turn (2026-09-28, v0.5.20 daily)</b></div></div>
   </div>
   <div class="fid"><div class="lbl">Output fidelity — does the recipe change what the model says?</div>
     <ul>
@@ -77,13 +77,13 @@
   </div>
   <div class="fid"><div class="lbl">Agent claim card — fixed protocol, held-out sibling, cost per solved task</div>
     <ul>
-<li class="ok">protocol <span class="mono">harness/protocol.yaml</span> sha256 <span class="mono">7120a254c43a</span> · T=0, reasoning_effort low, tool_choice auto, non-strict tools, no retries, C8, 2,048 max tokens</li>
+<li class="ok">protocol <span class="mono">harness/protocol.yaml</span> sha256 <span class="mono">7120a254c43a</span> · T=0, reasoning_effort low, tool_choice auto, non-strict tools, no retries, C8, 2,048 max tokens · + flood fixture 2026-09-28 (thinking on, 10 turns, 120-call cap, C4): 72/72, 0 flooded, DFlash on and off</li>
 <li class="ok">dev suite (decides candidacy): <b>BFCL dev (simple_python 400 + multiple 200)</b> 551/600 solved (91.8%) · 2026-09-23 · 2 HTTP 400 counted unsolved · strict:true tools 516/600 (86.0%) — strict stays off. Decides candidacy only</li>
 <li class="pair"><span class="big">Pass@1 79.3%</span> <span class="dim">(1040/1311)</span> <span class="sep">·</span> <span class="big">$0.20 / 1000 solved</span><br><span class="dim">BFCL live sibling (live_simple 258 + live_multiple 1,053) · decides promotion · protocol sha 7120a254c43a · priced 2026-09-23: Station amortized $3.80/hr (≈$100k / 3 yr / 8,760 h) over 197 s at C8, not saturated + energy $0.15/kWh (333 W mean of start/end samples × 197 s = $0.0026 / 1000 alone)</span><br><span class="dim">unsolved: 18 no-call · 0 truncated · 9 error · 184 wrong-arg-value · 29 wrong-function · 31 missing-arg</span></li>
     </ul>
   </div>
   <div class="foot">
-    <span>recipe <span class="mono">recipes/dgx-station-gb300/glm-5.3-flash-nvfp4-dflash2</span> · run <span class="mono">2026-09-27-round6-drift-bisect · 2026-09-27-round5-nightly-replayssm · 2026-09-24-tf5161-vision (image input, text parity) · 2026-09-23-cardE-gpqa-w3a (claim card, needle, GPQA, prefill, boot) · 2026-09-21-v0520-rebase (hero C1, rebase fidelity) · 2026-09-15-effort-drafter-nightly (acceptance, effort method) · 2026-09-11-nvidia-nvfp4-b7-1M (concurrency curve, TF vs FP8, Hermes) · 2026-09-01-flash-dflash2 (prefill)</span></span>
+    <span>recipe <span class="mono">recipes/dgx-station-gb300/glm-5.3-flash-nvfp4-dflash2</span> · run <span class="mono">2026-09-28-round7-39688-revert (drift cause, ReplaySSM candidate, flood fixture) · 2026-09-27-round6-drift-bisect · 2026-09-27-round5-nightly-replayssm · 2026-09-24-tf5161-vision (image input, text parity) · 2026-09-23-cardE-gpqa-w3a (claim card, needle, GPQA, prefill, boot) · 2026-09-21-v0520-rebase (hero C1, rebase fidelity) · 2026-09-15-effort-drafter-nightly (acceptance, effort method) · 2026-09-11-nvidia-nvfp4-b7-1M (concurrency curve, TF vs FP8, Hermes) · 2026-09-01-flash-dflash2 (prefill)</span></span>
     <span>github.com/J-M-Recipes/recipes · al-engr.com · @jmeadlock</span>
   </div>
 </div>

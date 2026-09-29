@@ -2,8 +2,8 @@
 # Every number here traces to recipe.yaml metrics or a results/<run_id>/ bundle. Unknown = pending (renders amber).
 title: "GLM-5.3-Flash · 1× DGX Station GB300"
 subtitle: "NVIDIA first-party NVFP4 + SGLang v0.5.20 (transformers 5.16.1 for image input) + DFlash2 block-diffusion draft (block 7) — 1M context configured, one GPU, nothing offloaded"
-version: "v0.5.20 + tf 5.16.1 (2026-09-27 · SGLang 94602c9c · draft 7d74cdd8 · pin held after Rounds 5–6: nightly drift bracketed, ReplaySSM clean but image-blocked)"
-run_id: 2026-09-27-round6-drift-bisect · 2026-09-27-round5-nightly-replayssm · 2026-09-24-tf5161-vision (image input, text parity) · 2026-09-23-cardE-gpqa-w3a (claim card, needle, GPQA, prefill, boot) · 2026-09-21-v0520-rebase (hero C1, rebase fidelity) · 2026-09-15-effort-drafter-nightly (acceptance, effort method) · 2026-09-11-nvidia-nvfp4-b7-1M (concurrency curve, TF vs FP8, Hermes) · 2026-09-01-flash-dflash2 (prefill)
+version: "v0.5.20 + tf 5.16.1 (2026-09-29 · SGLang 94602c9c · draft 7d74cdd8 · Round 7: drift = #39688; ReplaySSM candidate, not promoted)"
+run_id: 2026-09-28-round7-39688-revert (drift cause, ReplaySSM candidate, flood fixture) · 2026-09-27-round6-drift-bisect · 2026-09-27-round5-nightly-replayssm · 2026-09-24-tf5161-vision (image input, text parity) · 2026-09-23-cardE-gpqa-w3a (claim card, needle, GPQA, prefill, boot) · 2026-09-21-v0520-rebase (hero C1, rebase fidelity) · 2026-09-15-effort-drafter-nightly (acceptance, effort method) · 2026-09-11-nvidia-nvfp4-b7-1M (concurrency curve, TF vs FP8, Hermes) · 2026-09-01-flash-dflash2 (prefill)
 handles: "github.com/J-M-Recipes/recipes · al-engr.com · @jmeadlock"
 
 model:
@@ -38,6 +38,7 @@ secondary:
       "decode flat to (tokens in ctx)": pending
       "first hit of a new batch shape": "up to 30 s kernel autotune · new prompt-length classes ~16 s — warm every shape you serve"
       "cold boot → serving": "384 s daily config (page cache dropped) · +102 s to warm all shapes · 349 s for the 16-slot variant"
+      "tool-call flood fixture (MiMo-style, 72 tasks, DFlash on / off)": "72/72 · 72/72 solved · 0 flooded · 0 duplicate calls · max 13 calls/turn (2026-09-28, v0.5.20 daily)"
 
 fidelity:
   - { status: pass,    text: "Weights unchanged: 0 re-quantized bits, 204,475,659,764 B / 42 files byte-verified vs HF" }
@@ -53,7 +54,7 @@ harness:
   protocol:
     file: harness/protocol.yaml
     sha256: 7120a254c43a9a01150903c69ad8cd8881fad7125357dcd956ed04406e461d3d
-    summary: "T=0, reasoning_effort low, tool_choice auto, non-strict tools, no retries, C8, 2,048 max tokens"
+    summary: "T=0, reasoning_effort low, tool_choice auto, non-strict tools, no retries, C8, 2,048 max tokens · + flood fixture 2026-09-28 (thinking on, 10 turns, 120-call cap, C4): 72/72, 0 flooded, DFlash on and off"
   dev:
     name: BFCL dev (simple_python 400 + multiple 200)
     solved: 551
