@@ -1,0 +1,13 @@
+diff --git a/python/sglang/srt/models/glm5_next.py b/python/sglang/srt/models/glm5_next.py
+index 3538914fd4..d0f0925d8f 100644
+--- a/python/sglang/srt/models/glm5_next.py
++++ b/python/sglang/srt/models/glm5_next.py
+@@ -348,6 +348,8 @@ class Glm5NextLinearAttention(nn.Module):
+             return False
+         if quant_config is None:
+             return True
++        # CARD-K ARM B: restore pre-#39688 gate (fusion only when unquantized)
++        return False
+         if quant_config.get_name() not in {
+             "fp8",
+             "mxfp8",

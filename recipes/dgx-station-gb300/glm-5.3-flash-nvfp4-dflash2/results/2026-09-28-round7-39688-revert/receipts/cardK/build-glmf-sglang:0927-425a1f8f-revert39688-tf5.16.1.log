@@ -1,0 +1,67 @@
+#0 building with "default" instance using docker driver
+
+#1 [internal] load build definition from Dockerfile
+#1 transferring dockerfile: 360B done
+#1 DONE 0.1s
+
+#2 [internal] load metadata for docker.io/library/glmf-sglang:nightly-20260927-425a1f8f-tf5.16.1
+#2 DONE 0.0s
+
+#3 [internal] load .dockerignore
+#3 transferring context:
+#3 transferring context: 2B done
+#3 DONE 0.0s
+
+#4 [1/4] FROM docker.io/library/glmf-sglang:nightly-20260927-425a1f8f-tf5.16.1@sha256:49a1375de283f99694674a68d5ef850d2fbbed464a2390203685068975e3f45e
+#4 resolve docker.io/library/glmf-sglang:nightly-20260927-425a1f8f-tf5.16.1@sha256:49a1375de283f99694674a68d5ef850d2fbbed464a2390203685068975e3f45e 0.0s done
+#4 ...
+
+#5 [internal] load build context
+#5 transferring context: 609.55kB done
+#5 DONE 0.1s
+
+#4 [1/4] FROM docker.io/library/glmf-sglang:nightly-20260927-425a1f8f-tf5.16.1@sha256:49a1375de283f99694674a68d5ef850d2fbbed464a2390203685068975e3f45e
+#4 DONE 1.8s
+
+#6 [2/4] COPY python/sglang/ /sgl-workspace/sglang/python/sglang/
+#6 DONE 0.2s
+
+#7 [3/4] RUN rm -f /sgl-workspace/sglang/python/sglang/srt/layers/attention/mamba/prefill_track_metadata.py
+#7 DONE 0.4s
+
+#8 [4/4] RUN python3 -c "import sglang, sglang.srt.models.glm5_next as g; print('overlay import ok', sglang.__version__)"
+#8 28.81 /sgl-workspace/sglang/python/sglang/srt/layers/quantization/awq/awq.py:53: UserWarning: Only CUDA, HIP and XPU support AWQ currently.
+#8 28.81   warnings.warn(f"Only CUDA, HIP and XPU support AWQ currently.")
+#8 36.53 /sgl-workspace/sglang/python/sglang/srt/layers/quantization/gguf.py:69: UserWarning: Only CUDA, MUSA and NPU support GGUF quantization currently.
+#8 36.53   warnings.warn(f"Only CUDA, MUSA and NPU support GGUF quantization currently.")
+#8 37.98 Traceback (most recent call last):
+#8 37.98   File "<string>", line 1, in <module>
+#8 37.98   File "/sgl-workspace/sglang/python/sglang/srt/models/glm5_next.py", line 14, in <module>
+#8 37.98     from sglang.srt.batch_overlap.two_batch_overlap import (
+#8 37.98   File "/sgl-workspace/sglang/python/sglang/srt/batch_overlap/two_batch_overlap.py", line 37, in <module>
+#8 37.98     from sglang.srt.managers.schedule_batch import ScheduleBatch
+#8 37.98   File "/sgl-workspace/sglang/python/sglang/srt/managers/schedule_batch.py", line 112, in <module>
+#8 37.98     from sglang.srt.mem_cache.common import (
+#8 37.98 ImportError: cannot import name 'retraction_backup' from 'sglang.srt.mem_cache.common' (/sgl-workspace/sglang/python/sglang/srt/mem_cache/common.py). Did you mean: 'RetractionBackup'?
+#8 ERROR: process "/bin/sh -c python3 -c \"import sglang, sglang.srt.models.glm5_next as g; print('overlay import ok', sglang.__version__)\"" did not complete successfully: exit code: 1
+------
+ > [4/4] RUN python3 -c "import sglang, sglang.srt.models.glm5_next as g; print('overlay import ok', sglang.__version__)":
+36.53   warnings.warn(f"Only CUDA, MUSA and NPU support GGUF quantization currently.")
+37.98 Traceback (most recent call last):
+37.98   File "<string>", line 1, in <module>
+37.98   File "/sgl-workspace/sglang/python/sglang/srt/models/glm5_next.py", line 14, in <module>
+37.98     from sglang.srt.batch_overlap.two_batch_overlap import (
+37.98   File "/sgl-workspace/sglang/python/sglang/srt/batch_overlap/two_batch_overlap.py", line 37, in <module>
+37.98     from sglang.srt.managers.schedule_batch import ScheduleBatch
+37.98   File "/sgl-workspace/sglang/python/sglang/srt/managers/schedule_batch.py", line 112, in <module>
+37.98     from sglang.srt.mem_cache.common import (
+37.98 ImportError: cannot import name 'retraction_backup' from 'sglang.srt.mem_cache.common' (/sgl-workspace/sglang/python/sglang/srt/mem_cache/common.py). Did you mean: 'RetractionBackup'?
+------
+Dockerfile:4
+--------------------
+   2 |     COPY python/sglang/ /sgl-workspace/sglang/python/sglang/
+   3 |     RUN rm -f /sgl-workspace/sglang/python/sglang/srt/layers/attention/mamba/prefill_track_metadata.py
+   4 | >>> RUN python3 -c "import sglang, sglang.srt.models.glm5_next as g; print('overlay import ok', sglang.__version__)"
+   5 |     
+--------------------
+ERROR: failed to build: failed to solve: process "/bin/sh -c python3 -c \"import sglang, sglang.srt.models.glm5_next as g; print('overlay import ok', sglang.__version__)\"" did not complete successfully: exit code: 1

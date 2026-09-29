@@ -1,0 +1,911 @@
+diff --git a/python/sglang/kernels/ops/attention/fla/kda.py b/python/sglang/kernels/ops/attention/fla/kda.py
+index 3b877ec675..9b91feb236 100644
+--- a/python/sglang/kernels/ops/attention/fla/kda.py
++++ b/python/sglang/kernels/ops/attention/fla/kda.py
+@@ -917,7 +917,6 @@ def softplus_fwd(x):
+ @triton.heuristics(
+     {
+         "HAS_BIAS": lambda args: args["dt_bias"] is not None,
+-        "HAS_BETA": lambda args: args["beta"] is not None,
+         "HAS_SCALE": lambda args: args["scale"] is not None,
+         "IS_VARLEN": lambda args: args["cu_seqlens"] is not None,
+         "USE_LOWER_BOUND": lambda args: args["lower_bound"] is not None,
+@@ -929,7 +928,7 @@ def softplus_fwd(x):
+         for BS in BS_LIST
+         for num_warps in [2, 4, 8]
+     ],
+-    key=["H", "S", "BT", "IS_VARLEN", "HAS_BETA"],
++    key=["H", "S", "BT", "IS_VARLEN"],
+ )
+ @triton.jit(do_not_specialize=["T"])
+ def kda_gate_chunk_cumsum_vector_kernel(
+@@ -941,18 +940,12 @@ def kda_gate_chunk_cumsum_vector_kernel(
+     cu_seqlens,
+     chunk_indices,
+     lower_bound,
+-    beta,
+-    beta_out,
+-    beta_stride_b: tl.constexpr,
+-    beta_stride_t: tl.constexpr,
+-    beta_stride_h: tl.constexpr,
+     T,
+     H: tl.constexpr,
+     S: tl.constexpr,
+     BT: tl.constexpr,
+     BS: tl.constexpr,
+     HAS_BIAS: tl.constexpr,
+-    HAS_BETA: tl.constexpr,
+     HAS_SCALE: tl.constexpr,
+     IS_VARLEN: tl.constexpr,
+     USE_LOWER_BOUND: tl.constexpr,
+@@ -1018,24 +1011,6 @@ def kda_gate_chunk_cumsum_vector_kernel(
+         b_o *= scale
+     tl.store(p_o, b_o.to(p_o.dtype.element_ty), boundary_check=(0, 1))
+ 
+-    if HAS_BETA:
+-        if i_s == 0:
+-            offsets_t = i_t * BT + tl.arange(0, BT)
+-            if IS_VARLEN:
+-                beta_offsets = (bos + offsets_t) * beta_stride_t
+-            else:
+-                beta_offsets = i_b * beta_stride_b + offsets_t * beta_stride_t
+-            b_beta = tl.load(
+-                beta + beta_offsets + i_h * beta_stride_h,
+-                mask=offsets_t < T,
+-                other=0.0,
+-            ).to(tl.float32)
+-            tl.store(
+-                beta_out + (bos + offsets_t) * H + i_h,
+-                tl.sigmoid(b_beta),
+-                mask=offsets_t < T,
+-            )
+-
+ 
+ def kda_gate_chunk_cumsum(
+     g: torch.Tensor,
+@@ -1047,10 +1022,9 @@ def kda_gate_chunk_cumsum(
+     output_dtype: Optional[torch.dtype] = torch.float,
+     chunk_indices: Optional[torch.LongTensor] = None,
+     lower_bound: Optional[float] = None,
+-    beta: Optional[torch.Tensor] = None,
+-) -> torch.Tensor | tuple[torch.Tensor, torch.Tensor]:
++) -> torch.Tensor:
+     """
+-    Fused KDA gate activation + chunk-local cumulative sum, with optional beta.
++    Fused KDA gate activation + chunk-local cumulative sum.
+ 
+     Combines two memory-bound kernels into one:
+       1. Gate activation: g = -exp(A_log) * softplus(raw_g + dt_bias)
+@@ -1066,11 +1040,9 @@ def kda_gate_chunk_cumsum(
+         output_dtype: Output dtype (default float32).
+         chunk_indices: Pre-computed chunk indices for varlen mode.
+         lower_bound: If set, use safe gate: lower_bound * sigmoid(exp(A_log) * g).
+-        beta: Optional raw beta of shape [B, T, H], including strided projections.
+ 
+     Returns:
+-        Cumulative-summed gated tensor of shape [B, T, H, K]. If beta is
+-        supplied, also return its sigmoid in a contiguous float32 [B, T, H] tensor.
++        Cumulative-summed gated tensor of shape [B, T, H, K].
+     """
+     if cu_seqlens is not None:
+         assert g.shape[0] == 1, (
+@@ -1087,18 +1059,6 @@ def kda_gate_chunk_cumsum(
+     )
+ 
+     g_org, g = g, torch.empty_like(g, dtype=output_dtype or g.dtype)
+-    if beta is not None:
+-        assert beta.shape == (B, T, H)
+-        assert beta.device == g.device
+-        beta_out = torch.empty((B, T, H), dtype=torch.float32, device=beta.device)
+-        beta_strides = beta.stride()
+-        if cu_seqlens is not None:
+-            beta_strides = (0, beta_strides[1], beta_strides[2])
+-    else:
+-        beta_out = None
+-        beta_strides = (0, 0, 0)
+-    if B * T == 0:
+-        return g if beta is None else (g, beta_out)
+ 
+     def grid(meta):
+         return (cdiv(meta["S"], meta["BS"]), NT, B * H)
+@@ -1112,17 +1072,12 @@ def kda_gate_chunk_cumsum(
+         cu_seqlens=cu_seqlens,
+         chunk_indices=chunk_indices,
+         lower_bound=lower_bound,
+-        beta=beta,
+-        beta_out=beta_out,
+-        beta_stride_b=beta_strides[0],
+-        beta_stride_t=beta_strides[1],
+-        beta_stride_h=beta_strides[2],
+         T=T,
+         H=H,
+         S=S,
+         BT=BT,
+     )
+-    return g if beta is None else (g, beta_out)
++    return g
+ 
+ 
+ def chunk_kda_fwd(
+@@ -1141,7 +1096,6 @@ def chunk_kda_fwd(
+     output_intermediate_states: bool = False,
+     track_state: Optional[torch.Tensor] = None,
+     track_chunk_idx: Optional[torch.Tensor] = None,
+-    beta_is_raw: bool = False,
+ ):
+     chunk_size = 64
+     # Pre-compute chunk indices once and thread through all downstream kernels.
+@@ -1164,14 +1118,9 @@ def chunk_kda_fwd(
+             cu_seqlens=cu_seqlens,
+             chunk_indices=chunk_indices,
+             lower_bound=lower_bound,
+-            beta=beta if beta_is_raw else None,
+         )
+-        if beta_is_raw:
+-            g, beta = g
+     else:
+         # g is already gate-activated by caller; just do cumsum.
+-        if beta_is_raw:
+-            beta = beta.float().sigmoid().contiguous()
+         g = chunk_local_cumsum(
+             g,
+             chunk_size=chunk_size,
+@@ -1277,13 +1226,16 @@ def chunk_kda(
+         q = l2norm_fwd(q.contiguous())
+         k = l2norm_fwd(k.contiguous())
+ 
++    if beta_is_raw:
++        beta = beta.float().sigmoid()
++
+     # Returns o [B, T, H, V] when output_intermediate_states=False, or (o, h [B, NT, H, V, K]) when output_intermediate_states=True.
+     return chunk_kda_fwd(
+         q=q,
+         k=k,
+         v=v.contiguous(),
+         g=g.contiguous(),
+-        beta=beta if beta_is_raw else beta.contiguous(),
++        beta=beta.contiguous(),
+         scale=scale,
+         initial_state=initial_state,
+         initial_state_indices=initial_state_indices,
+@@ -1294,5 +1246,4 @@ def chunk_kda(
+         output_intermediate_states=output_intermediate_states,
+         track_state=track_state,
+         track_chunk_idx=track_chunk_idx,
+-        beta_is_raw=beta_is_raw,
+     )
+diff --git a/python/sglang/srt/layers/attention/hybrid_linear_attn_backend.py b/python/sglang/srt/layers/attention/hybrid_linear_attn_backend.py
+index 6249cb6b5b..b1e4ac8971 100644
+--- a/python/sglang/srt/layers/attention/hybrid_linear_attn_backend.py
++++ b/python/sglang/srt/layers/attention/hybrid_linear_attn_backend.py
+@@ -26,9 +26,6 @@ from sglang.srt.layers.attention.mamba.mamba2_metadata import (
+     ForwardMetadata,
+     Mamba2Metadata,
+ )
+-from sglang.srt.layers.attention.mamba.prefill_track_metadata import (
+-    build_prefill_track_plan,
+-)
+ from sglang.srt.layers.attention.mamba.replay_state_indices_validator import (
+     validate_replay_state_indices_cpu,
+ )
+@@ -39,7 +36,6 @@ from sglang.srt.model_executor.model_runner import ModelRunner
+ from sglang.srt.runtime_context import get_exec, get_memory, get_spec
+ from sglang.srt.speculative.eagle_info import EagleDraftInput, EagleVerifyInput
+ from sglang.srt.speculative.spec_info import SpecInput
+-from sglang.srt.utils import is_pin_memory_available
+ 
+ if TYPE_CHECKING:
+     from sglang.srt.layers.attention.verify_mask import VerifyMask
+@@ -122,22 +118,6 @@ class MambaAttnBackendBase(AttentionBackend):
+         state ops, incl. the cuda-graph replay-prep copy into ``state_indices_list``."""
+         return self.req_to_token_pool.translate_mamba_indices(mamba_indices)
+ 
+-    @staticmethod
+-    def _has_cpu_prefill_track_metadata(forward_batch: ForwardBatch) -> bool:
+-        return (
+-            forward_batch.forward_mode.is_extend()
+-            and not forward_batch.forward_mode.is_target_verify()
+-            and all(
+-                values is not None and len(values) == forward_batch.batch_size
+-                for values in (
+-                    forward_batch.mamba_prefill_track_mask_cpu,
+-                    forward_batch.mamba_track_seqlens_cpu,
+-                    forward_batch.extend_seq_lens_cpu,
+-                    forward_batch.extend_prefix_lens_cpu,
+-                )
+-            )
+-        )
+-
+     def _forward_metadata(self, forward_batch: ForwardBatch):
+         bs = forward_batch.batch_size
+ 
+@@ -154,8 +134,6 @@ class MambaAttnBackendBase(AttentionBackend):
+         track_ssm_seq_idx = None
+         track_ssm_end_locs = None
+         track_ssm_recompute_dst = None
+-        logical_num_tokens = None
+-        track_mask_indices = None
+ 
+         mamba_cache_indices = self.req_to_token_pool.get_mamba_indices(
+             forward_batch.req_pool_indices
+@@ -168,20 +146,10 @@ class MambaAttnBackendBase(AttentionBackend):
+                 forward_batch.mamba_track_indices
+             )
+         # Resolve the tracked-row selection once per forward
+-        cpu_track_metadata = self._has_cpu_prefill_track_metadata(forward_batch)
+-        if cpu_track_metadata:
+-            rows = [
+-                i
+-                for i, track in enumerate(forward_batch.mamba_prefill_track_mask_cpu)
+-                if track
+-            ]
+-            has_mamba_track_mask = bool(rows)
+-            track_mask_indices = self._track_indices_to_device(rows) if rows else None
+-        else:
+-            has_mamba_track_mask = bool(
+-                forward_batch.mamba_track_mask is not None
+-                and forward_batch.mamba_track_mask.any()
+-            )
++        has_mamba_track_mask = bool(
++            forward_batch.mamba_track_mask is not None
++            and forward_batch.mamba_track_mask.any()
++        )
+         _real_bs = forward_batch._original_batch_size
+         if _real_bs is not None and _real_bs < mamba_cache_indices.shape[0]:
+             mamba_cache_indices = mamba_cache_indices.clone()
+@@ -290,17 +258,9 @@ class MambaAttnBackendBase(AttentionBackend):
+                     forward_batch.extend_start_loc[-1]
+                     + forward_batch.extend_seq_lens[-1]
+                 )
+-                if (
+-                    forward_batch.extend_seq_lens_cpu is not None
+-                    and len(forward_batch.extend_seq_lens_cpu) == bs
+-                    and forward_batch.tbo_parent_token_range is None
+-                ):
+-                    logical_num_tokens = sum(forward_batch.extend_seq_lens_cpu)
+-                else:
+-                    logical_num_tokens = int(query_start_loc[-1])
+                 if has_mamba_track_mask:
+                     track_conv_indices = self._init_track_conv_indices(
+-                        query_start_loc, forward_batch, track_mask_indices
++                        query_start_loc, forward_batch
+                     )
+ 
+                     (
+@@ -319,8 +279,6 @@ class MambaAttnBackendBase(AttentionBackend):
+ 
+         return ForwardMetadata(
+             query_start_loc=query_start_loc,
+-            logical_num_tokens=logical_num_tokens,
+-            mamba_track_mask_indices=track_mask_indices,
+             mamba_cache_indices=mamba_cache_indices,
+             # Physical track destinations (None when tracking off); cuda-graph
+             # supplies this via the static backend buffer in _replay_metadata.
+@@ -389,10 +347,7 @@ class MambaAttnBackendBase(AttentionBackend):
+         )
+ 
+     def _init_track_conv_indices(
+-        self,
+-        query_start_loc: torch.Tensor,
+-        forward_batch: ForwardBatch,
+-        track_mask_indices: Optional[torch.Tensor] = None,
++        self, query_start_loc: torch.Tensor, forward_batch: ForwardBatch
+     ):
+         """Flattened input positions of conv states to track during extend (up to
+         the last complete chunk boundary, mamba_track_mask rows only)."""
+@@ -406,11 +361,7 @@ class MambaAttnBackendBase(AttentionBackend):
+             "this path should only run when the track mask is set on an extend batch"
+         )
+         start_indices = query_start_loc[:-1] + aligned_len - conv_state_len
+-        start_indices = (
+-            start_indices.index_select(0, track_mask_indices)
+-            if track_mask_indices is not None
+-            else start_indices[forward_batch.mamba_track_mask]
+-        )
++        start_indices = start_indices[forward_batch.mamba_track_mask]
+ 
+         indices = start_indices.unsqueeze(-1) + torch.arange(
+             conv_state_len,
+@@ -428,10 +379,6 @@ class MambaAttnBackendBase(AttentionBackend):
+         chunk boundary. Also returns ``track_ssm_h_batch_src``: the batch rows of
+         the unaligned tracked seqs, used to integer-index the fp32 snapshot
+         buffer on the KDA path so the copy stays free of GPU syncs."""
+-        if self._has_cpu_prefill_track_metadata(forward_batch):
+-            return self._init_track_ssm_indices_from_cpu(
+-                mamba_cache_indices, forward_batch
+-            )
+         state_chunk_size = self.mamba_chunk_size
+         # CPU to avoid kernel launches for the masking ops
+         mamba_track_mask = forward_batch.mamba_track_mask.cpu()
+@@ -507,38 +454,6 @@ class MambaAttnBackendBase(AttentionBackend):
+             to_device(track_ssm_recompute_dst),
+         )
+ 
+-    def _track_indices_to_device(self, values, dtype=torch.int64):
+-        return torch.tensor(
+-            values, dtype=dtype, pin_memory=is_pin_memory_available(self.device)
+-        ).to(self.device, non_blocking=True)
+-
+-    def _init_track_ssm_indices_from_cpu(self, mamba_cache_indices, forward_batch):
+-        is_mamba2 = isinstance(self, Mamba2AttnBackend)
+-        plan = build_prefill_track_plan(
+-            forward_batch.mamba_prefill_track_mask_cpu,
+-            forward_batch.mamba_track_seqlens_cpu,
+-            forward_batch.extend_seq_lens_cpu,
+-            forward_batch.extend_prefix_lens_cpu,
+-            self.mamba_chunk_size,
+-            mamba2=is_mamba2,
+-        )
+-        to_device = self._track_indices_to_device
+-        final_rows = to_device(plan.final_rows)
+-        h_rows = to_device(plan.h_rows)
+-        recompute_rows = to_device(plan.recompute_rows) if is_mamba2 else None
+-        destinations = forward_batch.mamba_track_indices
+-        return (
+-            to_device(plan.chunk_indices, torch.int32),
+-            to_device(plan.h_src),
+-            destinations.index_select(0, h_rows),
+-            to_device(plan.unaligned_rows),
+-            mamba_cache_indices.index_select(0, final_rows),
+-            destinations.index_select(0, final_rows),
+-            recompute_rows,
+-            to_device(plan.recompute_end_locs) if is_mamba2 else None,
+-            destinations.index_select(0, recompute_rows) if is_mamba2 else None,
+-        )
+-
+     def init_forward_metadata_capture_cpu_graph(
+         self,
+         bs: int,
+diff --git a/python/sglang/srt/layers/attention/linear/gdn_backend.py b/python/sglang/srt/layers/attention/linear/gdn_backend.py
+index 21148e6b0d..dfdfee7904 100644
+--- a/python/sglang/srt/layers/attention/linear/gdn_backend.py
++++ b/python/sglang/srt/layers/attention/linear/gdn_backend.py
+@@ -540,10 +540,9 @@ class GDNAttnBackend(MambaAttnBackendBase):
+                 raise ValueError("GDN MIS metadata requires --enable-mis")
+             self.mis_metadata = build_gdn_mis_metadata(forward_batch)
+         if self.forward_metadata.has_mamba_track_mask:
+-            if getattr(self.forward_metadata, "mamba_track_mask_indices", None) is None:
+-                self.forward_metadata.mamba_track_mask_indices = (
+-                    forward_batch.mamba_track_mask.nonzero(as_tuple=True)[0]
+-                )
++            self.forward_metadata.mamba_track_mask_indices = (
++                forward_batch.mamba_track_mask.nonzero(as_tuple=True)[0]
++            )
+             self.forward_metadata.conv_states_mask_indices = (
+                 forward_batch.mamba_track_indices[
+                     self.forward_metadata.mamba_track_mask_indices
+diff --git a/python/sglang/srt/layers/attention/linear/kda_backend.py b/python/sglang/srt/layers/attention/linear/kda_backend.py
+index 54ffc91d5d..b3b5cf8ab9 100644
+--- a/python/sglang/srt/layers/attention/linear/kda_backend.py
++++ b/python/sglang/srt/layers/attention/linear/kda_backend.py
+@@ -533,10 +533,9 @@ class KDAAttnBackend(MambaAttnBackendBase):
+     def init_forward_metadata(self, forward_batch: ForwardBatch):
+         super().init_forward_metadata(forward_batch)
+         if self.forward_metadata.has_mamba_track_mask:
+-            if self.forward_metadata.mamba_track_mask_indices is None:
+-                self.forward_metadata.mamba_track_mask_indices = (
+-                    forward_batch.mamba_track_mask.nonzero(as_tuple=True)[0]
+-                )
++            self.forward_metadata.mamba_track_mask_indices = (
++                forward_batch.mamba_track_mask.nonzero(as_tuple=True)[0]
++            )
+             self.forward_metadata.conv_states_mask_indices = (
+                 forward_batch.mamba_track_indices[
+                     self.forward_metadata.mamba_track_mask_indices
+@@ -823,9 +822,7 @@ class KDAAttnBackend(MambaAttnBackendBase):
+         has_initial_state = forward_batch.extend_prefix_lens > 0
+ 
+         physical_num_tokens = mixed_qkv.shape[0]
+-        logical_num_tokens = self.forward_metadata.logical_num_tokens
+-        if logical_num_tokens is None:
+-            logical_num_tokens = int(query_start_loc[-1])
++        logical_num_tokens = int(query_start_loc[-1])
+         if logical_num_tokens < physical_num_tokens:
+             mixed_qkv = mixed_qkv[:logical_num_tokens]
+             a = a[:, :logical_num_tokens]
+diff --git a/python/sglang/srt/layers/attention/mamba/mamba2_metadata.py b/python/sglang/srt/layers/attention/mamba/mamba2_metadata.py
+index c0cba1d8b8..369654de68 100644
+--- a/python/sglang/srt/layers/attention/mamba/mamba2_metadata.py
++++ b/python/sglang/srt/layers/attention/mamba/mamba2_metadata.py
+@@ -29,7 +29,6 @@ from sglang.srt.model_executor.forward_batch_info import ForwardBatch
+ class ForwardMetadata:
+     query_start_loc: torch.Tensor
+     mamba_cache_indices: torch.Tensor
+-    logical_num_tokens: Optional[int] = None
+     mamba_cache_indices_gdn: Optional[torch.Tensor] = None
+     # Mamba track DESTINATION slots (PHYSICAL, length == batch). Like
+     # mamba_cache_indices: a backend-owned static buffer under cuda-graph (translated
+diff --git a/python/sglang/srt/layers/attention/mamba/prefill_track_metadata.py b/python/sglang/srt/layers/attention/mamba/prefill_track_metadata.py
+deleted file mode 100644
+index 06ac00b80b..0000000000
+--- a/python/sglang/srt/layers/attention/mamba/prefill_track_metadata.py
++++ /dev/null
+@@ -1,57 +0,0 @@
+-"""Host-side row selection for prefill state snapshots.
+-
+-Slot IDs deliberately stay on the device: unified pools translate virtual IDs
+-before these row indices gather physical source and destination slots.
+-"""
+-
+-from dataclasses import dataclass
+-from itertools import accumulate
+-
+-
+-@dataclass
+-class PrefillTrackPlan:
+-    tracked_rows: list[int]
+-    final_rows: list[int]
+-    unaligned_rows: list[int]
+-    h_rows: list[int]
+-    h_src: list[int]
+-    recompute_rows: list[int]
+-    recompute_end_locs: list[int]
+-    chunk_indices: list[int]
+-
+-
+-def build_prefill_track_plan(
+-    mask: list[bool],
+-    track_lens: list[int],
+-    extend_lens: list[int],
+-    prefix_lens: list[int],
+-    chunk_size: int,
+-    *,
+-    mamba2: bool,
+-) -> PrefillTrackPlan:
+-    """Use the backend's actual chunk size, including Mamba2's flat grid."""
+-    assert len(mask) == len(track_lens) == len(extend_lens) == len(prefix_lens)
+-    starts = list(accumulate(extend_lens, initial=0))
+-    h_offsets = list(
+-        accumulate(((n + chunk_size - 1) // chunk_size for n in extend_lens), initial=0)
+-    )
+-    plan = PrefillTrackPlan([], [], [], [], [], [], [], [-1] * len(mask))
+-    for row, track in enumerate(mask):
+-        if not track:
+-            continue
+-        plan.tracked_rows.append(row)
+-        length = track_lens[row] - prefix_lens[row]
+-        if length % chunk_size == 0:
+-            plan.final_rows.append(row)
+-            continue
+-        chunk = length // chunk_size
+-        plan.unaligned_rows.append(row)
+-        plan.chunk_indices[row] = chunk
+-        end = starts[row] + chunk * chunk_size
+-        if mamba2 and end % chunk_size:
+-            plan.recompute_rows.append(row)
+-            plan.recompute_end_locs.append(end)
+-        else:
+-            plan.h_rows.append(row)
+-            plan.h_src.append(end // chunk_size if mamba2 else h_offsets[row] + chunk)
+-    return plan
+diff --git a/python/sglang/srt/managers/schedule_batch.py b/python/sglang/srt/managers/schedule_batch.py
+index bb0616c717..bfeb0b0462 100755
+--- a/python/sglang/srt/managers/schedule_batch.py
++++ b/python/sglang/srt/managers/schedule_batch.py
+@@ -2409,9 +2409,6 @@ class ScheduleBatch(ScheduleBatchDisaggregationDecodeMixin):
+     mamba_track_buffer_indices: Optional[List[int]] = None  # shape: [b], 0 or 1
+     mamba_track_mask: torch.Tensor = None  # shape: [b], bool
+     mamba_track_seqlens: torch.Tensor = None  # shape: [b], int64
+-    # TBO rejects Mamba tracking; enabling it must also slice these CPU lists.
+-    mamba_track_seqlens_cpu: Optional[List[int]] = None
+-    mamba_prefill_track_mask_cpu: Optional[List[bool]] = None
+     mamba_track_mask_cpu: Optional[List[bool]] = None  # shape: [b]
+     mamba_track_mask_next_cpu: Optional[List[bool]] = None  # shape: [b]
+     mamba_decode_batch_idx_cpu: Optional[List[int]] = None  # shape: [b]
+@@ -2935,8 +2932,6 @@ class ScheduleBatch(ScheduleBatchDisaggregationDecodeMixin):
+         self.extend_input_logprob_token_ids = extend_input_logprob_token_ids
+ 
+         if get_exec().mamba.enable_mamba_extra_buffer:
+-            self.mamba_prefill_track_mask_cpu = mamba_track_mask_cpu
+-            self.mamba_track_seqlens_cpu = mamba_track_seqlens_cpu
+             self.mamba_track_indices = torch.tensor(
+                 mamba_track_indices_cpu,
+                 dtype=torch.int64,
+@@ -3503,8 +3498,6 @@ class ScheduleBatch(ScheduleBatchDisaggregationDecodeMixin):
+ 
+     def prepare_for_decode(self):
+         self.forward_mode = ForwardMode.DECODE
+-        self.mamba_track_seqlens_cpu = None
+-        self.mamba_prefill_track_mask_cpu = None
+         # Decode embeds the last output token via embed_tokens; clear the stale
+         # prefill-time tensor so it doesn't leak into ForwardBatch.
+         self.input_embeds = None
+@@ -3658,8 +3651,6 @@ class ScheduleBatch(ScheduleBatchDisaggregationDecodeMixin):
+         self.mamba_track_buffer_indices = None
+         self.mamba_track_mask = None
+         self.mamba_track_seqlens = None
+-        self.mamba_track_seqlens_cpu = None
+-        self.mamba_prefill_track_mask_cpu = None
+         self.mamba_track_mask_cpu = None
+         self.mamba_track_mask_next_cpu = None
+         self.mamba_decode_batch_idx_cpu = None
+@@ -3726,8 +3717,6 @@ class ScheduleBatch(ScheduleBatchDisaggregationDecodeMixin):
+         self.mamba_track_buffer_indices = None
+         self.mamba_track_mask = None
+         self.mamba_track_seqlens = None
+-        self.mamba_track_seqlens_cpu = None
+-        self.mamba_prefill_track_mask_cpu = None
+         self.mamba_track_mask_cpu = None
+         self.mamba_track_mask_next_cpu = None
+         self.mamba_decode_batch_idx_cpu = None
+@@ -3792,8 +3781,6 @@ class ScheduleBatch(ScheduleBatchDisaggregationDecodeMixin):
+             mamba_track_buffer_indices=self.mamba_track_buffer_indices,
+             mamba_track_mask=self.mamba_track_mask,
+             mamba_track_seqlens=self.mamba_track_seqlens,
+-            mamba_track_seqlens_cpu=self.mamba_track_seqlens_cpu,
+-            mamba_prefill_track_mask_cpu=self.mamba_prefill_track_mask_cpu,
+             mamba_track_mask_cpu=self.mamba_track_mask_cpu,
+             mamba_track_mask_next_cpu=self.mamba_track_mask_next_cpu,
+             mamba_decode_batch_idx_cpu=self.mamba_decode_batch_idx_cpu,
+diff --git a/python/sglang/srt/model_executor/forward_batch_info.py b/python/sglang/srt/model_executor/forward_batch_info.py
+index 998a788cba..0f2913fb5c 100644
+--- a/python/sglang/srt/model_executor/forward_batch_info.py
++++ b/python/sglang/srt/model_executor/forward_batch_info.py
+@@ -503,8 +503,6 @@ class ForwardBatch(ForwardBatchDeepSeekMHAMixin):
+     mamba_track_mask: Optional[torch.Tensor] = None  # shape: [b], bool
+     # The seqlens to track mamba state if masked, prefill only.
+     mamba_track_seqlens: Optional[torch.Tensor] = None  # shape: [b], int64
+-    mamba_prefill_track_mask_cpu: Optional[List[bool]] = None
+-    mamba_track_seqlens_cpu: Optional[List[int]] = None
+     # Deferred mamba init ops: COW pairs and clear indices (performed on forward stream)
+     mamba_cow_src_indices: Optional[torch.Tensor] = None
+     mamba_cow_dst_indices: Optional[torch.Tensor] = None
+@@ -921,16 +919,6 @@ class ForwardBatch(ForwardBatchDeepSeekMHAMixin):
+             mamba_track_indices=batch.mamba_track_indices,
+             mamba_track_mask=batch.mamba_track_mask,
+             mamba_track_seqlens=batch.mamba_track_seqlens,
+-            mamba_prefill_track_mask_cpu=(
+-                list(batch.mamba_prefill_track_mask_cpu)
+-                if batch.mamba_prefill_track_mask_cpu is not None
+-                else None
+-            ),
+-            mamba_track_seqlens_cpu=(
+-                list(batch.mamba_track_seqlens_cpu)
+-                if batch.mamba_track_seqlens_cpu is not None
+-                else None
+-            ),
+             mamba_cow_src_indices=batch.mamba_cow_src_indices,
+             mamba_cow_dst_indices=batch.mamba_cow_dst_indices,
+             mamba_clear_indices=batch.mamba_clear_indices,
+@@ -1054,8 +1042,8 @@ class ForwardBatch(ForwardBatchDeepSeekMHAMixin):
+                 ret.extend_prefix_lens = torch.tensor(
+                     extend_prefix_lens, dtype=torch.int32, pin_memory=pin_memory
+                 ).to(device, non_blocking=True)
+-                ret.extend_prefix_lens_cpu = list(extend_prefix_lens)
+-                ret.extend_seq_lens_cpu = list(extend_seq_lens)
++                ret.extend_prefix_lens_cpu = extend_prefix_lens
++                ret.extend_seq_lens_cpu = extend_seq_lens
+             else:
+                 # gpu_only: device tensors handed in directly; leave *_cpu unset.
+                 assert isinstance(extend_seq_lens, torch.Tensor)
+@@ -1712,14 +1700,6 @@ class ForwardBatch(ForwardBatchDeepSeekMHAMixin):
+             self.mamba_track_indices = self._pad_tensor_to_size(
+                 self.mamba_track_indices, bs
+             )
+-        if self.mamba_prefill_track_mask_cpu is not None:
+-            self.mamba_prefill_track_mask_cpu = self.mamba_prefill_track_mask_cpu + [
+-                False
+-            ] * (bs - len(self.mamba_prefill_track_mask_cpu))
+-        if self.mamba_track_seqlens_cpu is not None:
+-            self.mamba_track_seqlens_cpu = self.mamba_track_seqlens_cpu + [0] * (
+-                bs - len(self.mamba_track_seqlens_cpu)
+-            )
+         if self.mamba_track_mask is not None:
+             self.mamba_track_mask = self._pad_tensor_to_size(self.mamba_track_mask, bs)
+         if self.mamba_track_seqlens is not None:
+diff --git a/python/sglang/srt/models/glm5_next.py b/python/sglang/srt/models/glm5_next.py
+index 3538914fd4..4222da7192 100644
+--- a/python/sglang/srt/models/glm5_next.py
++++ b/python/sglang/srt/models/glm5_next.py
+@@ -35,7 +35,6 @@ from sglang.srt.layers.layernorm import RMSNorm
+ from sglang.srt.layers.linear import (
+     ColumnParallelBatchedLinear,
+     ColumnParallelLinear,
+-    LinearBase,
+     MergedColumnParallelLinear,
+     MergedColumnParallelRepeatedLinear,
+     QKVParallelLinear,
+@@ -49,7 +48,6 @@ from sglang.srt.layers.moe.utils import (
+     is_shared_experts_fusion_disabled,
+ )
+ from sglang.srt.layers.quantization.base_config import QuantizationConfig
+-from sglang.srt.layers.quantization.unquant import UnquantizedLinearMethod
+ from sglang.srt.layers.radix_linear_attention import RadixLinearAttention
+ from sglang.srt.layers.rotary_embedding import get_rope
+ from sglang.srt.layers.utils.common import PPMissingLayer
+@@ -104,13 +102,7 @@ from sglang.srt.multimodal.mm_utils import (
+     run_dp_presharded_mrope_vision_model,
+     run_dp_sharded_mrope_vision_model,
+ )
+-from sglang.srt.runtime_context import (
+-    get_forward,
+-    get_lora,
+-    get_mm,
+-    get_parallel,
+-    get_spec,
+-)
++from sglang.srt.runtime_context import get_forward, get_mm, get_parallel, get_spec
+ from sglang.srt.speculative.spec_info import SpeculativeAlgorithm
+ from sglang.srt.utils.common import (
+     BumpAllocator,
+@@ -324,55 +316,6 @@ class Glm5NextVisionModel(GlmOcrVisionModel):
+ 
+ 
+ class Glm5NextLinearAttention(nn.Module):
+-    _PACKED_MODULES_MAPPING = {
+-        "fused_qkvbfg_a_proj": [
+-            "q_proj",
+-            "k_proj",
+-            "v_proj",
+-            "b_proj",
+-            "f_a_proj",
+-            "g_a_proj",
+-        ],
+-        "fused_bfg_a_proj": ["b_proj", "f_a_proj", "g_a_proj"],
+-        "fused_fg_b_proj": ["f_b_proj", "g_b_proj"],
+-    }
+-
+-    @classmethod
+-    def _can_fuse_proj(
+-        cls,
+-        quant_config: Optional[QuantizationConfig],
+-        prefix: str,
+-        *fused_projs: str,
+-    ) -> bool:
+-        if get_lora().enable_lora or get_lora().lora_paths:
+-            return False
+-        if quant_config is None:
+-            return True
+-        if quant_config.get_name() not in {
+-            "fp8",
+-            "mxfp8",
+-            "modelopt_fp8",
+-            "modelopt_fp4",
+-            "modelopt_mixed",
+-        }:
+-            return False
+-
+-        probe = LinearBase(1, 1)
+-        source_projs = [
+-            proj
+-            for fused_proj in fused_projs
+-            for proj in cls._PACKED_MODULES_MAPPING[fused_proj]
+-        ]
+-        if "fused_qkvbfg_a_proj" in fused_projs:
+-            source_projs.append("qkv_proj")
+-        return all(
+-            isinstance(
+-                quant_config.get_quant_method(probe, prefix=f"{prefix}.{proj}"),
+-                UnquantizedLinearMethod,
+-            )
+-            for proj in source_projs
+-        )
+-
+     def __init__(
+         self,
+         layer_idx: int,
+@@ -406,12 +349,7 @@ class Glm5NextLinearAttention(nn.Module):
+         projection_size = self.head_dim * self.num_heads
+         self.conv_size = config.linear_attn_config["short_conv_kernel_size"]
+ 
+-        self.do_fuse_qkvbfg = self._can_fuse_proj(
+-            quant_config, prefix, "fused_qkvbfg_a_proj", "fused_fg_b_proj"
+-        )
+-        self.fuse_bfg = not self.do_fuse_qkvbfg and self._can_fuse_proj(
+-            quant_config, prefix, "fused_bfg_a_proj", "fused_fg_b_proj"
+-        )
++        self.do_fuse_qkvbfg = quant_config is None and head_shard_size == self.tp_size
+         if self.do_fuse_qkvbfg:
+             self.qkvb_sizes = [
+                 projection_size,
+@@ -425,23 +363,21 @@ class Glm5NextLinearAttention(nn.Module):
+                 self.hidden_size,
+                 self.qkvb_sizes,
+                 self.fg_sizes,
+-                quant_config=None,
++                quant_config=quant_config,
+                 prefix=f"{prefix}.fused_qkvbfg_a_proj",
+-                tp_rank=head_shard_rank,
+-                tp_size=head_shard_size,
+             )
+             self.split_sizes = [
+                 3 * projection_size // head_shard_size,
+                 self.num_heads // head_shard_size,
+                 2 * self.head_dim,
+             ]
++            fused_dtype = (
++                getattr(config, "dtype", None)
++                or getattr(config, "torch_dtype", None)
++                or torch.get_default_dtype()
++            )
+             self.fused_fg_b_proj = ColumnParallelBatchedLinear(
+-                2,
+-                self.head_dim,
+-                projection_size,
+-                dtype=self.fused_qkvbfg_a_proj.params_dtype,
+-                tp_rank=head_shard_rank,
+-                tp_size=head_shard_size,
++                2, self.head_dim, projection_size, dtype=fused_dtype
+             )
+         else:
+             self.qkv_proj = QKVParallelLinear(
+@@ -456,70 +392,50 @@ class Glm5NextLinearAttention(nn.Module):
+                 prefix=f"{prefix}.qkv_proj",
+             )
+ 
+-            if self.fuse_bfg:
+-                self.fused_bfg_a_proj = MergedColumnParallelRepeatedLinear(
+-                    self.hidden_size,
+-                    [self.num_heads],
+-                    [self.head_dim, self.head_dim],
+-                    quant_config=None,
+-                    prefix=f"{prefix}.fused_bfg_a_proj",
+-                    tp_rank=head_shard_rank,
+-                    tp_size=head_shard_size,
+-                )
+-                self.bfg_split_sizes = [self.local_num_heads, 2 * self.head_dim]
+-                self.fused_fg_b_proj = ColumnParallelBatchedLinear(
+-                    2,
+-                    self.head_dim,
+-                    projection_size,
+-                    dtype=self.fused_bfg_a_proj.params_dtype,
+-                    tp_rank=head_shard_rank,
+-                    tp_size=head_shard_size,
+-                )
+-            else:
+-                self.f_a_proj = ReplicatedLinear(
+-                    self.hidden_size,
+-                    self.head_dim,
+-                    bias=False,
+-                    quant_config=quant_config,
+-                    prefix=f"{prefix}.f_a_proj",
+-                )
++            self.f_a_proj = ReplicatedLinear(
++                self.hidden_size,
++                self.head_dim,
++                bias=False,
++                quant_config=quant_config,
++                prefix=f"{prefix}.f_a_proj",
++            )
+ 
+-                self.f_b_proj = ColumnParallelLinear(
+-                    self.head_dim,
+-                    projection_size,
+-                    bias=False,
+-                    quant_config=quant_config,
+-                    prefix=f"{prefix}.f_b_proj",
+-                    tp_rank=head_shard_rank,
+-                    tp_size=head_shard_size,
+-                )
++            self.f_b_proj = ColumnParallelLinear(
++                self.head_dim,
++                projection_size,
++                bias=False,
++                quant_config=quant_config,
++                prefix=f"{prefix}.f_b_proj",
++                tp_rank=head_shard_rank,
++                tp_size=head_shard_size,
++            )
+ 
+-                self.b_proj = ColumnParallelLinear(
+-                    self.hidden_size,
+-                    self.num_heads,
+-                    bias=False,
+-                    quant_config=quant_config,
+-                    prefix=f"{prefix}.b_proj",
+-                    tp_rank=head_shard_rank,
+-                    tp_size=head_shard_size,
+-                )
++            self.b_proj = ColumnParallelLinear(
++                self.hidden_size,
++                self.num_heads,
++                bias=False,
++                quant_config=quant_config,
++                prefix=f"{prefix}.b_proj",
++                tp_rank=head_shard_rank,
++                tp_size=head_shard_size,
++            )
+ 
+-                self.g_a_proj = ReplicatedLinear(
+-                    self.hidden_size,
+-                    self.head_dim,
+-                    bias=False,
+-                    quant_config=quant_config,
+-                    prefix=f"{prefix}.g_a_proj",
+-                )
+-                self.g_b_proj = ColumnParallelLinear(
+-                    self.head_dim,
+-                    projection_size,
+-                    bias=False,
+-                    quant_config=quant_config,
+-                    prefix=f"{prefix}.g_b_proj",
+-                    tp_rank=head_shard_rank,
+-                    tp_size=head_shard_size,
+-                )
++            self.g_a_proj = ReplicatedLinear(
++                self.hidden_size,
++                self.head_dim,
++                bias=False,
++                quant_config=quant_config,
++                prefix=f"{prefix}.g_a_proj",
++            )
++            self.g_b_proj = ColumnParallelLinear(
++                self.head_dim,
++                projection_size,
++                bias=False,
++                quant_config=quant_config,
++                prefix=f"{prefix}.g_b_proj",
++                tp_rank=head_shard_rank,
++                tp_size=head_shard_size,
++            )
+ 
+         self.dt_bias = nn.Parameter(
+             torch.empty(divide(projection_size, head_shard_size), dtype=torch.float32)
+@@ -587,16 +503,9 @@ class Glm5NextLinearAttention(nn.Module):
+     def forward_qkvbfg(self, hidden_states: torch.Tensor, forward_batch: ForwardBatch):
+         qkv, _ = self.qkv_proj(hidden_states)
+ 
+-        if self.fuse_bfg:
+-            fused_states = self.fused_bfg_a_proj(hidden_states)
+-            beta, fg_a_states = torch.split(fused_states, self.bfg_split_sizes, dim=-1)
+-            forget_gate, g_proj_states = self.fused_fg_b_proj(
+-                fg_a_states.view(-1, 2, self.head_dim).transpose(0, 1)
+-            )
+-        else:
+-            beta = self.b_proj(hidden_states)[0]
+-            forget_gate = self.f_b_proj(self.f_a_proj(hidden_states)[0])[0]
+-            g_proj_states = self.g_b_proj(self.g_a_proj(hidden_states)[0])[0]
++        beta = self.b_proj(hidden_states)[0]
++        forget_gate = self.f_b_proj(self.f_a_proj(hidden_states)[0])[0]
++        g_proj_states = self.g_b_proj(self.g_a_proj(hidden_states)[0])[0]
+ 
+         return (
+             qkv,
+@@ -1240,7 +1149,15 @@ class Glm5NextForConditionalGeneration(nn.Module):
+ 
+     packed_modules_mapping = {
+         "fused_qkv_a_proj_with_mqa": ["q_a_proj", "kv_a_proj_with_mqa"],
+-        **Glm5NextLinearAttention._PACKED_MODULES_MAPPING,
++        "fused_qkvbfg_a_proj": [
++            "q_proj",
++            "k_proj",
++            "v_proj",
++            "b_proj",
++            "f_a_proj",
++            "g_a_proj",
++        ],
++        "fused_fg_b_proj": ["f_b_proj", "g_b_proj"],
+         "qkv_proj": ["q_proj", "k_proj", "v_proj"],
+         "qkv_conv1d": ["q_conv1d", "k_conv1d", "v_conv1d"],
+         "gate_up_proj": ["gate_proj", "up_proj"],
+@@ -1534,9 +1451,6 @@ class Glm5NextForConditionalGeneration(nn.Module):
+             (".fused_qkvbfg_a_proj", ".g_a_proj", 5),
+             (".fused_fg_b_proj", ".f_b_proj", 0),
+             (".fused_fg_b_proj", ".g_b_proj", 1),
+-            (".fused_bfg_a_proj", ".b_proj", 0),
+-            (".fused_bfg_a_proj", ".f_a_proj", 1),
+-            (".fused_bfg_a_proj", ".g_a_proj", 2),
+             (".qkv_proj", ".q_proj", "q"),
+             (".qkv_proj", ".k_proj", "k"),
+             (".qkv_proj", ".v_proj", "v"),
+@@ -1637,7 +1551,6 @@ class Glm5NextForConditionalGeneration(nn.Module):
+                     param_name
+                     in {
+                         ".fused_qkvbfg_a_proj",
+-                        ".fused_bfg_a_proj",
+                         ".fused_fg_b_proj",
+                         ".qkv_proj",
+                         ".qkv_conv1d",
+diff --git a/python/sglang/srt/speculative/spec_utils.py b/python/sglang/srt/speculative/spec_utils.py
+index a94538c444..0dc7092a44 100644
+--- a/python/sglang/srt/speculative/spec_utils.py
++++ b/python/sglang/srt/speculative/spec_utils.py
+@@ -816,8 +816,6 @@ def prepare_mamba_track_for_verify(batch: ScheduleBatch) -> None:
+     set_mamba_track_indices_from_reqs(batch, track_positions)
+     batch.mamba_track_mask = None
+     batch.mamba_track_seqlens = None
+-    batch.mamba_prefill_track_mask_cpu = None
+-    batch.mamba_track_seqlens_cpu = None
+ 
+ 
+ def _verify_commit_step_indices(
