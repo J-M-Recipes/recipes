@@ -1,0 +1,16 @@
+# 2026-09-29 — Dockerfile.0922-revert39688 (git apply) vs the promoted overlay-built image, on the Station
+build rc=0
+python/sglang/srt/models/glm5_next.py: OK
+python/sglang/kernels/ops/attention/fla/kda.py: OK
+== glmf-sglang:0922-582389ce-revert39688-tf5.16.1   (promoted, COPY overlay, image ID c3d0643a49a3)
+6266d9f109bc750e4f8b82af33af811103c5e37fec0dcdcbe7bdcb45bdc662e3  -   # sha256 of sorted sha256sum over srt/**/*.py + kernels/**/*.py
+ls: cannot access 'srt/layers/attention/mamba/prefill_track_metadata.py': No such file or directory
+tokenizers==0.23.2
+torch==2.13.0+cu130
+transformers==5.16.1
+== glmf-sglang:0922-revert39688-tf5.16.1-fromdockerfile   (Dockerfile.0922-revert39688, git apply)
+6266d9f109bc750e4f8b82af33af811103c5e37fec0dcdcbe7bdcb45bdc662e3  -
+ls: cannot access 'srt/layers/attention/mamba/prefill_track_metadata.py': No such file or directory
+tokenizers==0.23.2
+torch==2.13.0+cu130
+transformers==5.16.1

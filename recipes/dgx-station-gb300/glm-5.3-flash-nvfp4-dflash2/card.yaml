@@ -1,9 +1,9 @@
 # card.yaml — at-a-glance card sidecar. Rendered by scripts/render_card.py; never hand-edit card.html.
 # Every number here traces to recipe.yaml metrics or a results/<run_id>/ bundle. Unknown = pending (renders amber).
 title: "GLM-5.3-Flash · 1× DGX Station GB300"
-subtitle: "NVIDIA first-party NVFP4 + SGLang v0.5.20 (transformers 5.16.1 for image input) + DFlash2 block-diffusion draft (block 7) — 1M context configured, one GPU, nothing offloaded"
-version: "v0.5.20 + tf 5.16.1 (2026-09-29 · SGLang 94602c9c · draft 7d74cdd8 · Round 7: drift = #39688; ReplaySSM candidate, not promoted)"
-run_id: 2026-09-28-round7-39688-revert (drift cause, ReplaySSM candidate, flood fixture) · 2026-09-27-round6-drift-bisect · 2026-09-27-round5-nightly-replayssm · 2026-09-24-tf5161-vision (image input, text parity) · 2026-09-23-cardE-gpqa-w3a (claim card, needle, GPQA, prefill, boot) · 2026-09-21-v0520-rebase (hero C1, rebase fidelity) · 2026-09-15-effort-drafter-nightly (acceptance, effort method) · 2026-09-11-nvidia-nvfp4-b7-1M (concurrency curve, TF vs FP8, Hermes) · 2026-09-01-flash-dflash2 (prefill)
+subtitle: "NVIDIA first-party NVFP4 + SGLang nightly 09-22 with #39688 reverted (transformers 5.16.1 for image input) + DFlash2 block-diffusion draft (block 7) + ReplaySSM — 1M context configured, one GPU, nothing offloaded"
+version: "nightly 09-22 582389ce − #39688 + ReplaySSM (2026-09-29 · draft 7d74cdd8 · promoted Round 8; v0.5.20 rollback kept)"
+run_id: 2026-09-29-round8-promote-replayssm (hero C1 code, KV pool, max-effort, promotion) · 2026-09-28-round7-39688-revert (drift cause, flood fixture) · 2026-09-27-round6-drift-bisect · 2026-09-27-round5-nightly-replayssm · 2026-09-24-tf5161-vision (image input, text parity) · 2026-09-23-cardE-gpqa-w3a (claim card, needle, GPQA, prefill, boot) · 2026-09-21-v0520-rebase (hero C1, rebase fidelity) · 2026-09-15-effort-drafter-nightly (acceptance, effort method) · 2026-09-11-nvidia-nvfp4-b7-1M (concurrency curve, TF vs FP8, Hermes) · 2026-09-01-flash-dflash2 (prefill)
 handles: "github.com/J-M-Recipes/recipes · al-engr.com · @jmeadlock"
 
 model:
@@ -13,11 +13,11 @@ model:
   active_params: "18B"
   checkpoint_gb: 204.5              # 204,475,659,764 B / 42 files byte-verified vs HF (digest gate)
   weights_short: "as shipped · NVFP4 routed experts (NVIDIA ModelOpt) · attn/shared/router/embeddings/lm_head unquantized"
-  engine_extra: "SGLang 0.5.20 (94602c9c) · glmf-sglang:0.5.20-tf5.16.1 (v0.5.20-cu130 + transformers 5.16.1, Dockerfile.tf5.16.1) · torch 2.13.0+cu130"
-  memory: "single GPU, nothing offloaded · KV pool 576K tok (fp8 DSA indexer + bf16 MLA KV) · 48 KDA state slots (9 running) · 1M ctx configured"
+  engine_extra: "SGLang main 582389ce (2026-09-22) − #39688 (patches/revert-39688-on-582389ce.patch, hash-gated every boot) · glmf-sglang:0922-582389ce-revert39688-tf5.16.1 (Dockerfile.0922-revert39688) · --enable-linear-replayssm-spec · torch 2.13.0+cu130"
+  memory: "single GPU, nothing offloaded · KV pool 857K tok (fp8 DSA indexer + bf16 MLA KV; 576K before ReplaySSM freed the 9.57 GB SSM state cache) · 48 KDA state slots (9 running) · 1M ctx configured"
 
 hero:
-  c1:      { value: 202, unit: tok/s, class: prose, note: "warm, T=0, 512 tok, history essay, answer-only (reasoning_effort low) · code 288 / shell 162 · same-window pinned-nightly control 193.3 (+4–5% on v0.5.20) · prose-heavy text ~150 (accept 17%) · thinking-counted max-effort reads 265 — a different ruler" }
+  c1:      { value: 197, unit: tok/s, class: prose, note: "warm, T=0, 512 tok, history essay, answer-only (reasoning_effort low), 2026-09-29 promoted image · code 319 (+11% vs v0.5.20 daily 287) / shell pending · max-effort thinking-counted 263 (= v0.5.20) · v0.5.20 daily same window 201 / 287 · prose-heavy text ~150 (accept 17%)" }
   c16:     { value: 1180, unit: tok/s, label: "C16 agg · 2026-09-11 curve", note: "DFlash2 1,180 agg / 86 per user · C8 743 (09-11) or 699 (v0.5.20) · C24 1,482 at the 120-slot cap — slot-capped · AR batch mode: C128 4,025 agg / 34 per user" }
   prefill: { value: 25.3–27.0K, unit: tok/s, note: "cold prefill, warm shapes, nonce-defeated cache, v0.5.20 daily config (2026-09-23) · 6,825 tok in 0.27 s → 109,516 tok in 4.13 s · round 1 image read 22.5–26.3K" }
 
@@ -43,7 +43,7 @@ secondary:
 fidelity:
   - { status: pass,    text: "Weights unchanged: 0 re-quantized bits, 204,475,659,764 B / 42 files byte-verified vs HF" }
   - { status: pass,    text: "Speculation is target-verified: every emitted token accepted by the full model. CORRECTED 2026-09-21: NOT byte-identical to AR decode (agree 1/20 at 200 tok, 0/8 at 2,500) — the earlier 'lossless' reading compared DFlash boots to a DFlash reference" }
-  - { status: pass,    text: "Greedy parity 20/20 vs the DFlash reference (20×200 tok) on both boots × both images · long greedy 8×2,500: DFlash-vs-AR divergence at identical offsets on both images — verify-path argmax tie-breaking, not a checkpoint miss" }
+  - { status: pass,    text: "Teacher-forced Δlogprob vs the v0.5.20 reference: 0.000 mean / 0.000 p99 over 2,857 tok on every reverted boot (7 boots, 2 nightlies) — the cross-image gate · greedy 20/20 self-repeat ×3 boots on the promoted image (same-image check) · greedy vs the v0.5.20 DFlash reference 1/20 = the instrument floor: v0.5.20 AR vs its own DFlash reference also 1/20 (verify-path tie-breaking, Round 8)" }
   - { status: pass,    text: "Image input: 361 image tokens, correct description, every boot of the derived image (6 server starts, 20 requests) · stock v0.5.20 gives 0 image tokens and a hallucinated answer · text on the derived image TF Δ 0.0 over 2,857 tok vs the v0.5.20 reference, greedy 20/20 · one earlier boot diverged and never reproduced" }
   - { status: pass,    text: "Tool calling 10/10 parsed on all four rebase boots · real Hermes agent harness 10/10 tool turns" }
   - { status: measured, text: "Teacher-forced Δlogprob vs zai-org FP8 original (40×128 greedy tokens): mean |Δ| 0.136, argmax differs 15.6% (LibertAI NVFP4 0.147 / 15.9%) — shared NVFP4 bias · instrument self-consistency 0.00000 · four-boot TF bit-identical across images × AR/DFlash (max Δ 0.0 over 2,857 tokens)" }
