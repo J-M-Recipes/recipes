@@ -10,7 +10,7 @@ summary: >
   (derived image, Dockerfile.tf5.16.1; reported by Paul Torruella).
 status: verified
 owners: [jmeadlock, milo]
-updated: "2026-09-29"
+updated: "2026-10-01"
 tags: [glm-5.3-flash, nvfp4, sglang, dflash2, speculative-decoding, single-gpu, interactive, high-concurrency, 1m-context, multimodal]
 
 model:
@@ -194,6 +194,7 @@ verification:
     performance: { how: "C1 recipe-method (EFFORT=low) median-of-3 within 3% of 202.7 after warmup; C48 AR within 5% of 2,214", last_pass_utc: "2026-09-16T02:06:00Z", run_id: 2026-09-15-effort-drafter-nightly }
 
 limits:
+  - "KDA snapshot-pool eviction (HelixML, 2026-09-26) does NOT reproduce on this daily (2026-10-01, results/2026-10-01-cardM-kda-snapshot-cap). Probe: 6x20K sessions primed, re-sent (0.21 s warm vs 0.78 s cold), one 300K prompt, re-sent again, 12-session LRU loop, branch at 70%. Stock (--mamba-max-states-per-path -1): every re-send warm after the 300K prompt, 12/12 loop hits. Cap 2: same, but branch-TTFT 0.52 -> 0.78 s (the cap prunes the interior snapshot the branch would resume from). Cap 4: no change either way. Knee C16 710/716/701 across arms (noise). Greedy 20/20, TF 0.000, tools 10/10 on all three. Why it differs from Helix: our pool is 48 fp32 slots with 9 running on one box vs their 28 slots / 4 running per TP2 replica; the flag exists in this image (#31230) if the lane ever serves many long sessions at once. Not adopted. Instrument caveat: cached_tokens is not returned in usage on this image unless the request sets return_cached_tokens_details, so hits were read from wall time (1-token requests)."
   - "CORRECTION to run 2026-09-01: 'DFlash2 loses to AR at C16+' was wrong. The cause was SGLang's default KDA state budget capping max_running_requests at 7; verification cost was not the issue. With slots raised, DFlash2 beats AR per running request through at least C24 (1,482 vs ~1,350 agg). What DFlash2 actually loses is memory: each slot carries 7 draft-token intermediate states in fp32 (bf16 SSM crashes the DFlash2 verify kernel on this image), so 120 slots cost 41 GB and leave a 134K KV pool. AR with bf16 state fits 640 slots in 43 GB. Pick DFlash2 for <=24 users, AR for more."
   - "NVFP4 costs ~16% token-level disagreement with the FP8 original regardless of who quantized it. nvidia's mixed-precision recipe is measurably closer than LibertAI's, by ~0.3 pp argmax agreement. If token fidelity matters more than speed, serve the FP8 original with offload; that is a different recipe."
   - "Concurrency is capped by KDA state slots, not compute: 5 slots per running request under the default radix strategy. Raise --max-mamba-cache-size (or --mamba-full-memory-ratio); the bytes come out of the KV pool one-for-one. --mamba-radix-cache-strategy no_buffer (3 slots/req) requires page_size 1 and is incompatible with this model's DSA page size."
