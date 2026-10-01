@@ -3,7 +3,7 @@
 # status measured = a number without a pass/fail verdict (renders blue ≈).
 title: "GLM-5.3 (full 744B) · 1× DGX Station GB300"
 subtitle: "The whole model on one Station: all 256 routed experts per layer pinned in Grace memory over NVLink-C2C, a per-layer HBM expert slot cache (7,360 slots, LRU) in front of them, one fused Triton hook, and the in-checkpoint MTP head at k=2 — 256K context, single user"
-version: "K2 + fused hook “DAILY” since 2026-09-14 (+7.25% C1 vs K1 stock hook) · K1 daily 2026-09-13 = rollback, kept · corrected 2026-09-15"
+version: "K2 + fused hook “DAILY” since 2026-09-14 (+7.25% C1) · K1 = rollback · corrected 09-15 · concurrency + FP8 KV closed 10-01"
 run_id: 2026-09-14-agent-remap-draftcorr-scalarfuse-k2 (hero C1, fused hook, K2 promotion, noninferiority vs V1, model identity; container glm53-big-sc13g-mtp2-ctx256k-K2fuse-DAILY-20260914) · corrections 2026-09-15 in recipe.yaml limits (LRU 0.719 was a T//8000 subsample → 0.802; MTP-draft prefetch claim false) · 2026-09-13-k2-fair-gate-needle-trace (needle ladder, prefill, K2 margins, trace) · 2026-09-13-k2-selfrepeat-quality (task ladder, acceptance) · 2026-09-13-context-slot-curve (256K/512K/1M) · 2026-09-05-v1-baseline (33.8 tok/s)
 handles: "github.com/J-M-Recipes/recipes · al-engr.com · @jmeadlock"
 
@@ -19,7 +19,7 @@ model:
 
 hero:
   c1:      { value: 54.7, unit: tok/s, class: "8-prompt mix", note: "C1 512-tok median of per-prompt medians, T=0, 3 scored reps, 256K profile, 2026-09-14 lane E · prose 51.5–54.8 · code 54.6–55.5 · reason 52.8–62.4 · list 62.1 · dialog 53.5 · vs K1 stock-hook control 51.40 same window: +7.25% paired [95% CI +4.33, +10.44], 8/8 wins · vs V1 offload-only baseline 33.8: +62% · relaunched from this recipe tree: 54.38" }
-  c16:     { value: pending, unit: tok/s, label: "Decode · batch", note: "daily lane is --max-num-seqs 1 (single user); batch >1 not validated on this profile · history, other profiles (2026-09-06, 65K ctx, no MTP, eager): sc13g C4 92.0 / C8 95.6 · V1 offload-only C4 57.7 · concurrency on the daily args is the next untested axis" }
+  c16:     { value: 58.2, unit: tok/s, label: "Decode · C2 aggregate", note: "MEASURED 2026-10-01 on the daily argv with --max-num-seqs 2: C2 58.2 agg = 29 tok/s per user, TTFT 17.1 s (C1 9.5 s) · --max-num-seqs 4: C4 26.4 agg (HALF of C1), 6.6 per user, TTFT 76.4 s · C1 flat across arms 54.6/54.6/54.3 · greedy 20/20, TF 0.0 · verdict: concurrency is not a lever here; daily stays single-user · older profiles (2026-09-06, 65K, no MTP, eager): sc13g C4 92.0 / C8 95.6" }
   prefill: { value: ~3.45K, unit: tok/s, note: "needle-ladder upper bound, random-word filler defeats prefix cache, K1-256K 2026-09-13: flat 3.30–3.55K from 28K to 211K prompt tokens · 211,289 tok in 61.2 s · 480,011-tok cold prompt on the 512K profile 142.7 s (3.36K) · prefill bypasses the slot cache above 16 tokens, so it does not grow with position" }
 
 guesser:
@@ -40,7 +40,7 @@ secondary:
     items:
       "C1 ladder, one box (profiles differ before 09-13)": "V1 offload-only 33.8 → sc13g slot cache 43.1 (65K, eager) → +MTP(1) 51.3 (256K) → +fused hook 53.5 (+4.58%, 20/20 greedy-identical) → +K2 54.7 (+7.25%)"
       "step budget at the floor (2026-09-15)": "~40 ms/step = 18 ms C2C miss bytes + 9.4 dense GEMM + 5.4 routed MoE + ~7 other · masked_row_copy at 87–105% of effective C2C peak · 4.27 ms per miss/layer-step (n=17, R² 0.953)"
-      "dead, measured": "DFlash2-over-UVA (accepted 1.57 vs 3.0 gate) · demand-fill DMA (−84% vs graphs) · offline slot reallocation (+0.0002 hit) · adjacent-layer predictor (precision 0.084) · agent-traffic remap (+0.002 hit, 96,504 steps) · MTP-draft prefetch (chance) · previous-step prefetch (0.000 miss coverage) · --max-num-batched-tokens 16384 (+0.19%)"
+      "dead, measured": "concurrency on the daily argv (C4 26.4 agg = half of C1, 2026-10-01) · uncalibrated FP8 KV, both dtypes (TF mean 0.185 / 0.538, HARD NO, 2026-09-30) · DFlash2-over-UVA (accepted 1.57 vs 3.0 gate) · demand-fill DMA (−84% vs graphs) · offline slot reallocation (+0.0002 hit) · adjacent-layer predictor (precision 0.084) · agent-traffic remap (+0.002 hit, 96,504 steps) · MTP-draft prefetch (chance) · previous-step prefetch (0.000 miss coverage) · --max-num-batched-tokens 16384 (+0.19%)"
       "not this recipe's job": "GLM-5.3-Flash NVFP4 all-in-HBM does ~219–252 tok/s C1 on the same box; the 744B's value is capability, not speed"
 
 fidelity:

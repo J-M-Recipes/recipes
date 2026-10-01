@@ -12,7 +12,7 @@ status: verified
 owners:
 - jmeadlock
 - milo
-updated: '2026-09-15'
+updated: '2026-10-01'
 tags:
 - glm-5.3
 - nvfp4
@@ -143,6 +143,33 @@ launch:
     option (container glm53-big-sc13g-mtp-ctx1m-keep-measured-20260913), not the default.'
   - Do not use /home/milo/gb300-big-v1/Dockerfile for this recipe; it is an unrelated SGLang Dockerfile.
 metrics:
+- name: Concurrency on the daily argv, 2 streams (--max-num-seqs 2), aggregate
+  value: 58.2
+  unit: tok/s
+  workload: C2, 8 distinct nonce-suffixed prompts x 512 tokens, T=0, 3 scored reps after 1 discarded warm rep; same argv as daily except --max-num-seqs 2
+  aggregation: median aggregate tok/s across reps; per-user = aggregate/2 = 29.1; TTFT median 17.1 s (C1 same arm 9.5 s); C1 same arm 53.7 agg
+  provenance:
+    run_id: 2026-10-01-cardN-concurrency
+    method: conc_bench.py (per-stream column in this run is broken - TTFT detector fired on an empty chunk; use aggregate/C)
+    raw: seqs2/seqs2-conc.json
+- name: Concurrency on the daily argv, 4 streams (--max-num-seqs 4), aggregate
+  value: 26.4
+  unit: tok/s
+  workload: C4, same instrument; C2 on the same arm 55.9, C1 52.5
+  aggregation: median aggregate across reps; per-user 6.6; TTFT median 76.4 s (C2 17.8 s, C1 9.8 s). Aggregate HALVES vs C1.
+  provenance:
+    run_id: 2026-10-01-cardN-concurrency
+    method: conc_bench.py
+    raw: seqs4/seqs4-conc.json
+- name: Single-stream decode, seqs1 control arm (2026-10-01, same instrument as the promoted row)
+  value: 54.6
+  unit: tok/s
+  workload: C1, 8 prompts x 512, n=3, daily argv; seqs2 arm 54.6, seqs4 arm 54.3 (max-num-seqs does not move C1)
+  aggregation: median of per-prompt medians
+  provenance:
+    run_id: 2026-10-01-cardN-concurrency
+    method: scripts/speed_reps.py
+    raw: seqs1/seqs1-speed.json
 - name: K2 + scalar-fuse daily single-stream decode (promoted 2026-09-14)
   value: 54.69
   unit: tok/s
@@ -433,7 +460,22 @@ limits:
 - 'Single-stream floor (2026-09-15 review): 40 ms/step = 18 ms C2C miss bytes + 9.4 ms dense GEMM + 5.4 ms routed MoE + ~7 ms other.
   Row copy is at 87-105% of effective C2C peak and LRU is at the workload locality ceiling; all prefetch/remap/reallocation levers
   are closed with receipts. Remaining C1 items are each <=5%. Untested next axes: max-num-seqs 4 concurrency (one boot) and
-  upstream vLLM expert offload (issue 38256) as a fork-retirement evaluation. Neither is authorized by this recipe.'
+  upstream vLLM expert offload (issue 38256) as a fork-retirement evaluation. Neither is authorized by this recipe.
+  CORRECTED 2026-10-01: concurrency is now MEASURED and CLOSED (next limit). The upstream-offload evaluation remains parked.'
+- 'Concurrency is not a lever on this lane (2026-10-01, results/2026-10-01-cardN-concurrency, one axis = --max-num-seqs, bf16 KV,
+  same argv otherwise). seqs2: C2 58.2 agg (+13% over C1) at 29 tok/s per user and TTFT 17.1 s vs 9.5 s. seqs4: C4 26.4 agg - HALF of C1 -
+  at 6.6 per user and TTFT 76.4 s. C1 is flat across arms (54.6/54.6/54.3). Quality unaffected (greedy 20/20 vs seqs1, TF max 0.0, as
+  expected: batch size does not touch numerics). Mechanism inferred, not logged: four distinct prompts route to four distinct expert sets,
+  so each decode step carries ~4x the C2C miss bytes over the same saturated link while the 8K-token prefill chunking queues the prompts;
+  the SLOT_CACHE STATS line captured in this run was the C1 window (HIT 0.812, 4.50 misses/layer-step), so the per-step miss inflation
+  under C4 is not in the receipts. The daily stays --max-num-seqs 1. A 2-user lane is a stated trade (+13% aggregate for -46% per user),
+  not a promotion.'
+- 'FP8 KV cache is a HARD NO on this checkpoint as shipped (2026-09-30 window 1, campaign glm53-big-opt-20260930; receipts on the box,
+  not yet in this tree). fp8_ds_mla: 1.72x KV tokens, teacher-forced mean |dlogp| 0.538, 16.2% of tokens shifted >1.0 nat. fp8_e4m3: 1.94x,
+  mean 0.185, 5.0% >1.0. Bars were mean <=0.02 and frac>1.0 = 0; hard-no at mean >0.10. Needle 8K/128K passed 6/6 on both, so this is
+  distribution drift, not retrieval loss. Both boots logged KV scaling factor 1.0 (checkpoint ships no k/v scales). A CALIBRATED fp8 KV
+  (generated scales) is a different candidate and is not closed by this result; its interesting use is spending the freed ~12 GiB on
+  ~800 more expert slots at the same 256K, not on more context.'
 - 'Single-user profile (max-num-seqs 1). Decode noninferiority vs V1 established 2026-09-14 by full-token teacher-forced logprobs
   (3,071 tokens, byte-identical); temperature>0 sampling and batch>1 are not covered by that instrument.'
 - sc13g-MTP is faster in raw throughput, but greedy mismatch (9/20) is only diagnostic. The frozen 2026-09-06 promotion
