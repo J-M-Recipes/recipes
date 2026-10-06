@@ -13,7 +13,7 @@ summary: >
   fits); a decode-vs-depth map shows decode flat to 425K tokens, so attention is not the lever on this box either.
 status: verified
 owners: [jmeadlock, milo]
-updated: "2026-09-27"
+updated: "2026-10-06"
 tags: [deepseek-v4.1-flash, mxfp4, vllm, uva-offload, dspark, speculative-decoding, 1m-context, single-gpu, agent]
 
 model:
@@ -95,6 +95,38 @@ metrics:
     workload: "e2c_parity.py, 18 E5 prompts, T=0, seed 42, 256 tok; 16 non-tool + 2 tool-call"
     aggregation: "CAND vs CTL1 16/16 non-tool, 17/18 all · CAND vs CTL2 16/16, 17/18 · CTL1 vs CTL2 16/16, 18/18. The one difference is agent-tool-1 (tool-call class, documented run-to-run jitter on this lane; controls agreed on it in this window — consistent with jitter, not proven by this window). Held-out BFCL sibling on v21: pending."
     provenance: { run_id: 2026-09-27-v21-fused-split, method: "e2c_parity.py", raw: receipts/parity/ }
+  - name: "llm-inference-bench T1 decode C1 ctx0 — v21 (baseline, filler prompt class)"
+    value: 203.5
+    unit: tok/s
+    workload: "C1, ctx 0; llm-inference-bench v0.7.7 synthetic filler (6.23 chars/tok), 30 s/cell, 3 s warmup, T=0; v21 container unchanged; client M4 over LAN"
+    aggregation: "single 30 s cell. Full matrix agg tok/s C1/C4/C8: ctx0 203.5/344.5/561.0 · 32K 173.7/367.7/572.1 · 128K 190.2/376.3/558.0; accept len C1 2.42-2.78, C4 2.33-2.45, C8 1.65-1.67"
+    label: "Filler text, not prose: not comparable to the 182.8 knee headline. Lane-level baseline for future --compare runs."
+    provenance: { run_id: 2026-10-05-lib-t1-v21, method: "llm_decode_bench.py --concurrency 1,4,8 --contexts 0,32768,131072 --duration 30", raw: t1-perf.json }
+  - name: "llm-inference-bench T1 decode C8 ctx128K — v21 (baseline, filler prompt class)"
+    value: 558.0
+    unit: tok/s
+    workload: "C8, ctx 131072; llm-inference-bench v0.7.7 synthetic filler (6.23 chars/tok), 30 s/cell, 3 s warmup, T=0; v21 container unchanged; client M4 over LAN"
+    aggregation: "single 30 s cell; engine log max Running 8 (no other clients)"
+    provenance: { run_id: 2026-10-05-lib-t1-v21, method: "llm_decode_bench.py T1 matrix", raw: t1-perf.json }
+  - name: "llm-inference-bench cold prefill 128K — v21"
+    value: 18549
+    unit: tok/s
+    workload: "128,520-token filler prompt, integrated decode scout, N=1; 8K 15,381 · 32K 15,534 · 64K 18,486 tok/s"
+    aggregation: "N=1 per size; TTFT 6.93 s at 128K"
+    provenance: { run_id: 2026-10-05-lib-t1-v21, method: "llm_decode_bench.py integrated prefill scouts", raw: t1-perf.json }
+  - name: "needle-checksum greedy numerics — v21"
+    value: 500
+    unit: "of 500 EXACT"
+    workload: "llm-inference-bench v0.7.7 needle-checksum: one 8K retrieval+arithmetic prompt, 500 identical T=0 requests, answer via tool call, C8"
+    aggregation: "EXACT 500 / FAIL 0; 0 hit max_tokens"
+    provenance: { run_id: 2026-10-05-lib-t1-v21, method: "llm_decode_bench.py --test-profile needle-checksum", raw: t2-needle.json }
+  - name: "GSM8K 200-item pinned subset — v21 (compare-baseline reference)"
+    value: 97.5
+    unit: "% correct"
+    workload: "llm-inference-bench v0.7.7 gsm8k, --profile-runs 200 (evenly spread deterministic slice of 1,319), T=0, bench C30 capped to 24 running by --max-num-seqs"
+    aggregation: "195/200, Wilson 95% 94.3-98.9; 0 truncated, 0 unparseable"
+    label: "Reference file for paired McNemar --compare-baseline on future engine/kernel/spec changes; not a leaderboard number"
+    provenance: { run_id: 2026-10-05-lib-t1-v21, method: "llm_decode_bench.py --test-profile gsm8k --profile-runs 200", raw: t2-gsm8k200.json }
   - name: single-stream decode (prose) — v20 Clean Nightly
     value: 180.6
     unit: tok/s
@@ -410,6 +442,7 @@ verification:
     performance: { how: "v18 Many Seat 2026-09-18: idle same-window knee v17 x2 then v18 x2: C1 165/165 -> 172/172, C8 641/659 -> 654/657, C16 878/950 -> 748/945; same-afternoon v15 control 153/153, 697/699, 943/944. Fund harness two windows (v18A/v18B) around a v17 control and a trailing v15 control: C24 warm p50 0.55 s (v15 27.3), C16 warm p95 1.86 s (v15 1.88; v15 morning run 8.54), cold 120K p95 9.2 s (v15 19.1), chat p95 13.0 (v15 17.2), prose p10 C16 15.75 (v15 16.5), tools 64/64 all. v15 Pin Hot Experts confirmed 2026-09-17 two same-window pairs (e2c v15a/v14/v15b, knee x2 each): knee prose C1 88.7→153.3 (+72.7%, four runs within 0.4), C8 305→704, C16 386-417→~955 (six of seven reps; one 667; four-run mean 920). Held-out math +41.4%; held-out JP/DE -1.55% (wash). E2b first pair: C1 89.3→153.1 (+71%), C8 308→701, C16 414→809 (cand runs 667/951); prose fixture 91.4→152.5 (in-domain); replay n=4 mean 197→339. Round 6 CORRECTED 2026-09-15: recorded-history shuffled proxy v14 171.1/174.1 vs v13 150.0/151.7; ordered proxy v14 232.6 first pass / 275.2 identical-request repeat, prefix-cache 71.3%/94.3%, TTFT p90 0.77/0.47 s. Different workloads; no causal cache-speedup, transferred ranking or production-capacity claim. Original bootstrap does not quantify wall-rate uncertainty. OFFGB=55 failed the 1M minimum-KV check (2.2 GiB needed, 0.65 available); 60 is lowest verified here, not a proven exact floor. v14 2026-09-15: [[1,4,5],[5,16,1]] same-window vs v13 and v12 controls, agent replay n=4 ×2 each, knee6, fixture; hash hit 9ac7b387. v13 2026-09-14: two same-window pairs, C16 430.8/427.1 vs v12 317.6/320.0, C1 91.2/90.2 vs 90.3/90.9; fixture wacc 0.596 both. Round 4 same night: C3/C6 +24/+25%; tool_json −7% was fixture ordering (identical on v12/v13 in every position); real-agent replay n=4 −12% (caveat in limits). v12: knee.sh C1 within 5% of 89.2 tok/s warm vs a same-window v11 control; confirm pair 2026-09-12: control 78.1 → v12 89.6 (+14.7%), C16 269.6 → 312.4. starve.py on v12: 4 shorts during a 480K prefill 0.81–1.09 s TTFT (unchanged from v11); cold prefill on v12 207K tokens 11.37 s / 18.2k tok/s (v11: 11.3 s). v20 promotion 2026-09-21: C1 180.9/171.8/180.3 pair mean +5.1% vs v18, C16 970 agg, C24 warm p50 0.55 s (results/2026-09-21-v20-promotion).", last_pass_utc: "2026-09-21T17:11:00Z", run_id: 2026-09-21-v20-promotion }
 
 limits:
+  - "Boot margin at the PIN_HOT host floor is ~0.3 GiB (2026-10-06). The hook aborts when MemAvailable < 10 GiB after re-homing layer 9. Six 2026-09-27 boots passed at 10.96-12.03 GiB; three 2026-10-05/06 boots aborted at 9.38-9.68 GiB; the 2026-10-06 boot passed at 10.29 GiB only after killing ~1.2 GB of stray host processes and drop_caches + compact_memory. ~1 GiB of drift since 09-27 is unexplained (same kernel, driver, hook, uptime). Before booting: stop other host workloads, drop caches. If it still aborts, OFFGB 54 is the known-good fallback variant (label results accordingly); do not lower the floor."
   - "Many-seat latency on this lane was a SCHEDULER problem, not prefill (2026-09-18). At --max-num-seqs 16 the 35-seat fund harness read warm agent-turn p95 8.5 s at C16 and p50 27 s at C24 while KV usage peaked at 16%; idle cold prefill is 22-23K tok/s from 26K to 207K tokens on v15/v17/v18 alike. Fix = --max-num-seqs 24 (v17/v18). The V1 scheduler in this build serves running requests FCFS with --long-prefill-token-threshold as a per-request per-step chunk cap; lowering it to 2048 (v16) let more prefills share a step but cost idle prefill -47% and C16 prose p10 -29% — do not. max_num_partial_prefills / max_long_partial_prefills do not exist in this build."
   - "--cudagraph-capture-sizes takes TOKEN counts. With DSpark k=1 at >=5 seqs a decode step is 2x seqs tokens; v17b's list 1 2 4 8 12 16 24 left every batch above 12 seqs uncaptured (C16 prose 9.6 tok/s per stream vs 21.8 captured) while looking healthy on TTFT. Default graphs for 24 seqs cost 2.33+1.78 GiB (KV 1.79M, v17); the v18 list 1 2 4 6 8 12 16 18 24 32 40 48 64 96 128 costs 1.30+1.10 GiB (KV 2.50M) with knee within noise of default. Cost of the 24-slot profiles vs v15 (16 slots): knee C8 -6% (698 -> 655, two same-afternoon controls; unexplained, new autotune hash suspected), C16 flat, C1 +12%. RESOLVED 2026-09-21 PM (Card G, results/2026-09-21-v20-promotion/receipts/cardG): it is the capture-size list, not the autotune. Same v20 image + hook, --cudagraph-capture-sizes omitted (engine default) vs the 15-size list, same window: C1 173 vs 180 (-4%), C4 443 vs 400 (+11%), C8 720 vs 657 (+9.6%), C16 1007 vs 969 (+4%); fund C16 warm agent p95 1.73 vs 1.68 s (flat) but fund C24 warm agent p95 9.5 vs 2.4 s (mean 2.7 vs 0.98 s) and C24 aggregate 249 vs 283 - because default graphs cost 0.7M KV tokens (pool 1.86M vs 2.55M) and at 24 seats the slot queue comes back. The list is a stated trade: -10% on the 4-8 stream knee for +4% C1, +0.7M KV and a 24-seat lane that stays warm. Kept. A 4-8 stream deployment that never runs 24 seats should drop the flag. Per-seat prose p10 at 16 streams is ~16 tok/s on every profile: a long-context and tool lane, not a 16-seat decode lane."
   - "Decode is C2C-bandwidth + kernel bound, not HBM bound. CORRECTED 2026-09-12: the v11 claim that offload 60 does not fit at 1M was measured at util 0.94; at util 0.97 it fits (KV 4.89 GiB) and gives +12% C1 in a same-window comparison. Measured fetch tax: k=0 step 11.1 ms vs 7.1 ms all-HBM (catid 2×Station PP2, rev dba1be0a) ≈ 4 ms ≈ 36% of the step. Slope ≈ 0.76 tok/s per GiB of experts moved Grace→HBM."

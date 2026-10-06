@@ -11,7 +11,7 @@ Every recipe lives at `recipes/<hardware-slug>/<recipe-slug>/` and contains:
 | `recipe.yaml` | machine-readable pin: model revision, image digest, hardware as **observed**, launch command, metrics with provenance, gates, limits, rollback. Validated by `schemas/recipe.schema.json` + `scripts/check_recipe.py` in CI. |
 | `README.md` | the human page. Current state only — no diary. Required sections: `What this runs`, `Hardware`, `Software`, `Launch`, `Verify`, `Results`, `Known limits`, `Rollback`. |
 | `scripts/` | the launch script the README shows, plus health wait, warmup, benchmark, rollback. What you ran, not a tidied version of it. |
-| `results/<run-id>/` | provenance bundle for every published number: `system.json` (from `scripts/collect_system_snapshot.sh`), image digest, model revision, exact launch command, the raw benchmark/quality output the number was read from, trimmed logs. |
+| `results/<run-id>/` | provenance bundle for every published number: `system.json` (from `scripts/collect_system_snapshot.sh`), image digest, model revision, exact launch command, the raw benchmark/quality output the number was read from, trimmed logs. | Standard-bench rows (T1 perf / T2 quality) use the pinned bench and tiers in [docs/benchmarking.md](docs/benchmarking.md).
 | `known-limits.md` (optional) | longer form of `limits:` when the tradeoffs need explaining. |
 | `research/` (optional) | ledgers, root-cause writeups, failed experiments. Encouraged — what didn't work is half the value. |
 | `patches/` (optional) | any code the recipe mounts into the container; each listed in `recipe.yaml` with its sha256. |

@@ -3,6 +3,23 @@
 **Serving on `:30006` since 2026-09-27 08:12 CDT: Fused Split, v21** (v18 launch on the 0909 image + hook v21 — `split_ids()` as one Triton kernel; **182.8 tok/s C1 prose, +6.2 % vs v18 bracketing controls 171.8 / 172.5**, C8 687 (+4.6 %), C16 993 (+4.0 %), non-tool greedy 16/16 vs both controls; held-out BFCL on v21 pending; see Round 12) · documented release **Clean Nightly, v20** (2026-09-21: vLLM nightly `2671fedf` — the last before the #56633 mHC-fold drift — + v15 hook + off54 + fp8_ds_mla + v18's 24-seat/cudagraph flags; **181 tok/s C1 prose (+5.1% pair mean vs v18)**, KV 2.55M tokens, C24 warm agent p95 2.4–2.8 s vs 3.4; **held-out BFCL live sibling 78.8% vs v18 78.9%**, dev 92.7–93.5%; tools 64/64 ×3; $0.008 per 1000 solved tasks; see Round 11b) · rollback **Many Seat, v18** (2026-09-18: v15 hook + `--max-num-seqs 24` + token-sized `--cudagraph-capture-sizes`; 172 tok/s C1 prose, KV 2.50M tokens, C24 warm agent turn 0.55 s p50; **BFCL v4 tool-call exact-match 93.3%**) · **v19 "Nightly" was promoted and reverted on 2026-09-20** (see Round 10) · previous **v15 Pin Hot Experts** (retired 2026-09-18) · **v14 Sixty-K Agent** (retired 2026-09-17) · Historical **v13: 90 tok/s single-stream prose · 140–160 tok/s on agent/code text · 429 agg tok/s at C16** (v12: 89 / 140–160 / 311 · v11: 82 / 130–150 / 287) · 972K-token prompt prefilled in 85 s · Hermes tool-calling 10/10
 
 
+## Standard bench baseline: llm-inference-bench on v21 (2026-10-06)
+
+Bundle: [`results/2026-10-05-lib-t1-v21/`](results/2026-10-05-lib-t1-v21/README.md). Method: [`docs/benchmarking.md`](../../../docs/benchmarking.md).
+
+This is the first run of the pinned third-party bench ([llm-inference-bench](https://github.com/local-inference-lab/llm-inference-bench) v0.7.7 @ `c71ec1f2`) against the unchanged v21 container. It does not replace the 182.8 headline. The bench decodes its own synthetic filler, and DSpark acceptance depends on content. What it adds is a repeatable lane baseline and a quality reference file for future A/B runs.
+
+| ctx \ conc (agg tok/s) | 1 | 4 | 8 |
+|---|---|---|---|
+| 0 | 203.5 | 344.5 | 561.0 |
+| 32K | 173.7 | 367.7 | 572.1 |
+| 128K | 190.2 | 376.3 | 558.0 |
+
+- **Prefill:** 15.4K tok/s at 8–32K and 18.5K at 64–128K (128K prompt → 6.93 s TTFT).
+- **needle-checksum:** EXACT 500/500 (identical greedy requests through a tool call). There is no numerics drift on this boot.
+- **GSM8K-200:** 97.5 % (195/200, Wilson 94.3–98.9). This file is the `--compare-baseline` reference for paired McNemar tests on the next engine or kernel change.
+- **Boot margin warning:** v21 aborted three times at the hook's 10 GiB host-memory floor before this boot passed at 10.29 GiB. Details are in the bundle and `limits`.
+
 ## Round 12 — the step profile after residency, huge pages closed, and one fused kernel worth +6 % (2026-09-27, 05:00–08:20)
 
 Bundle: [`results/2026-09-27-v21-fused-split/`](results/2026-09-27-v21-fused-split/README.md).
