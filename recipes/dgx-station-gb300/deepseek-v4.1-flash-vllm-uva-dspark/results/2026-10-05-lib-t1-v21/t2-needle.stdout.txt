@@ -1,0 +1,83 @@
+╭──────────────────────────── NVIDIA P2P Override ─────────────────────────────╮
+│ Effective: no                                                                │
+│ Configured file: no (/etc/modprobe.d/nvidia-p2p-override.conf)               │
+│ Runtime: ForceP2P=; RMForceP2PType=; RMPcieP2PType=;                         │
+│ GrdmaPciTopoCheckOverride=; EnableResizableBar=; DmaRemapPeerMmio=           │
+│ Suggested modprobe line:                                                     │
+│ options nvidia                                                               │
+│ NVreg_RegistryDwords="ForceP2P=0x11;RMForceP2PType=1;RMPcieP2PType=2;GrdmaPc │
+│ iTopoCheckOverride=1;EnableResizableBar=1"                                   │
+│ Apply requires NVIDIA module reload or reboot after stopping GPU workloads.  │
+╰──────────────────────────────────────────────────────────────────────────────╯
+╭─────────────────────────────── Configuration ────────────────────────────────╮
+│ Needle Checksum Stability Test                                               │
+│ Model: dsv41-flash-uva @ <station>:30006                                   │
+│ Prompt: profile:needle-checksum                                              │
+│ Concurrency: 8                                                               │
+│ Measured runs: 500 | Max tokens: 4096                                        │
+│ Scoring: EXACT / NEAR_MISS (3330) / WRONG_SUM / WRONG_FACTS / FAIL           │
+│ submit_context_check call (expected checksum 3332)                           │
+│ Sampling: temperature 0, top_p 0.95 | Watchdog: stall 600s, wall-clock off   │
+╰──────────────────────────────────────────────────────────────────────────────╯
+
+╭────────────────────────────── Completion Stats ──────────────────────────────╮
+│ Needle Checksum Stability Test                                               │
+│ The same 8K-token context-check prompt is sent N times at temperature 0. The │
+│ model must retrieve ALPHA, BETA and GAMMA from three CANONICAL FACT lines    │
+│ and submit CHECKSUM = ALPHA + 2*BETA + 3*GAMMA = 3332 in one                 │
+│ submit_context_check tool call. Greedy identical requests should all agree;  │
+│ wrong answers show how often the serving stack's numerics tip the model's    │
+│ near-tie on the last digit (NEAR_MISS = 3330). Built-in profile run at fixed │
+│ concurrency C=8.                                                             │
+╰──────────────────────────────────────────────────────────────────────────────╯
+Profile                                                        
+╭────────────────┬────────────────────────────────────────────╮
+│ field          │ value                                      │
+├────────────────┼────────────────────────────────────────────┤
+│ profile        │ needle-checksum                            │
+│ prompt         │ profile:needle-checksum                    │
+│ prompt chars   │ 17,397                                     │
+│ requested runs │ 500                                        │
+│ concurrency    │ 8                                          │
+│ max tokens     │ 4096                                       │
+│ scoring        │ needle_checksum                            │
+│ expected       │ alpha=478 beta=788 gamma=426 checksum=3332 │
+│ prompt sha256  │ 3a1eccf0ec1f2046                           │
+│ prefill scout  │ 7,557 prompt tok / 0.54s = 14,073 tok/s    │
+╰────────────────┴────────────────────────────────────────────╯
+Concurrency Results                                                             
+╭───┬───────┬─────────────┬──────┬─────────┬──────────┬──────────┬─────────┬───╮
+│ … │ done… │       score │ sta… │ output… │ output … │ aggrega… │ avg re… │ … │
+├───┼───────┼─────────────┼──────┼─────────┼──────────┼──────────┼─────────┼───┤
+│ 8 │ 500/… │ EXACT 500 … │ ★★★… │     213 │      215 │     43.5 │     5.8 │ … │
+╰───┴───────┴─────────────┴──────┴─────────┴──────────┴──────────┴─────────┴───╯
+Selected C=8                                       
+╭────────────────────────────┬────────────────────╮
+│ metric                     │              value │
+├────────────────────────────┼────────────────────┤
+│ completed                  │            500/500 │
+│ score                      │ EXACT 500 / FAIL 0 │
+│ stars                      │      ★★★★★★★★★★ 👍 │
+│ pass rate                  │   100.0% (500/500) │
+│ hit max_tokens             │                  0 │
+│ completion tokens avg      │                211 │
+│ completion tokens p50      │                213 │
+│ completion tokens p90      │                215 │
+│ completion tokens p99      │                235 │
+│ elapsed avg                │               5.8s │
+│ TTFT avg                   │              0.81s │
+│ aggregate gen tok/s        │               43.5 │
+│ mean per-request gen tok/s │               44.6 │
+╰────────────────────────────┴────────────────────╯
+Interpretation: EXACT means the single submit_context_check call carries alpha 
+478, beta 788, gamma 426 and checksum 3332. NEAR_MISS is the known last-digit 
+slip (3330) with the right facts; WRONG_SUM any other checksum with the right 
+facts; WRONG_FACTS a wrongly retrieved value; FAIL no call, several calls or 
+malformed arguments. Requests are greedy and identical, so any wrong answer is 
+the serving stack's numerics, not sampling. TRUNC/STALL/TIMEOUT (⊘) never 
+produced an answer. Private reasoning is never scored. Quality bar: ★=EXACT, 
+✕=wrong, ⊘=incomplete.
+
+Results saved to 
+recipes/dgx-station-gb300/deepsee
+k-v4.1-flash-vllm-uva-dspark/results/2026-10-05-lib-t1-v21/t2-needle.json

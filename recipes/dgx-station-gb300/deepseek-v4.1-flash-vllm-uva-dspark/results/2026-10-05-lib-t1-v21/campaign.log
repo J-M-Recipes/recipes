@@ -1,0 +1,28 @@
+2026-10-05 15:08:12 CDT watcher start; waiting for /models/drafter-train/data/completions/DONE (or supervisor exit)
+2026-10-05 15:25:41 CDT watcher start; waiting for /models/drafter-train/data/completions/DONE (or supervisor exit)
+2026-10-06 12:01:24 CDT P1 DONE
+{"ts": 1791305883.464206, "date": "2026-10-06T11:58:03-0500", "kept": 150000, "kept_by": {"structured": 15000, "agent": 45000, "chat": 60000, "code_stem": 30000}, "dropped": 25000, "drop_by": {"length_cap_think_off": 24992, "prompt_too_long": 8}, "errors": 0, "prompt_tok": 62280191, "compl_tok": 120043172, "sim_tok": 3299060, "elapsed_s": 83688.2, "p50_s": 57.454, "baseline_s": 13.40091347694397, "conc_limit": 64, "paused": false, "broken": false, "ended": true}
+2026-10-06 12:01:24 CDT stop P1 server (kept), drop caches, start v21
+p1-gen-30011
+MemAvailable:   482539520 kB
+    PID   RSS     ELAPSED COMMAND
+1556572 786880 1-03:31:27 python3 /models/drafter-train/p1/build_agent_structured.py
+1550056 419456 1-03:41:43 python3 /models/drafter-train/p1/build_agent_structured.py
+   3861 334016 19-12:30:24 /usr/bin/containerd
+dsv41-vllm-v21-fused-split-BOUND-REF
+(EngineCore pid=364) ERROR 10-06 17:05:50 [core.py:1385] RuntimeError: PIN_HOT abort layer 9 after: MemAvailable 9.38 GiB < 10 GiB
+(EngineCore pid=364)     raise RuntimeError(
+(EngineCore pid=364) RuntimeError: PIN_HOT abort layer 9 after: MemAvailable 9.38 GiB < 10 GiB
+(APIServer pid=1)     raise RuntimeError(
+(APIServer pid=1) RuntimeError: Engine core initialization failed. See root cause above. Failed core proc(s): {}
+2026-10-06 12:06:20 CDT STOP: v21 did not come up (boot log tail above). P1 server stays stopped; GPU idle.
+2026-10-06 15:03:12 CDT bench_now start (manual boot 14:57 after killing orphan P1 build_agent_structured.py x2; layer-9 host_avail 10.29 GiB)
+2026-10-06 15:03:14 CDT T0 chat ok
+2026-10-06 15:03:16 CDT T0 tool_calls ok
+2026-10-06 15:03:16 CDT run t1-perf
+2026-10-06 15:11:13 CDT t1-perf rc=0
+2026-10-06 15:11:13 CDT run t2-needle
+2026-10-06 15:17:21 CDT t2-needle rc=0
+2026-10-06 15:17:21 CDT run t2-gsm8k200
+2026-10-06 15:18:48 CDT t2-gsm8k200 rc=0
+2026-10-06 15:18:48 CDT CAMPAIGN DONE; v21 left serving on :30006
