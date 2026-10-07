@@ -1,0 +1,11 @@
+--- /home/milo/dsv41/cardX56893-2026-10-03/attention.py.orig	2026-10-03 05:21:16.222737552 -0500
++++ /home/milo/dsv41/cardX56893-2026-10-03/attention.py.patched	2026-10-03 05:21:16.422332099 -0500
+@@ -117,7 +117,7 @@
+ # kernels. Every other arch keeps the V4 record: 448 fp8 NoPE + 64 bf16 RoPE
+ # plus 7 UE8M0 scales of 64 dims and a pad byte (584 B, 576 B pages).
+ def _use_v41_mxfp8_kv_record() -> bool:
+-    return current_platform.is_device_capability_family(100)
++    return False  # vllm#58391 discriminator: force the pre-#56893 584 B fp8_ds_mla record
+ 
+ 
+ def _resolve_dsv4_kv_cache_dtype(
