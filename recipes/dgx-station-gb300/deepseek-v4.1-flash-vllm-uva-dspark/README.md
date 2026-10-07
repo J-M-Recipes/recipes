@@ -3,6 +3,21 @@
 **Serving on `:30006` since 2026-09-27 08:12 CDT: Fused Split, v21** (v18 launch on the 0909 image + hook v21 — `split_ids()` as one Triton kernel; **182.8 tok/s C1 prose, +6.2 % vs v18 bracketing controls 171.8 / 172.5**, C8 687 (+4.6 %), C16 993 (+4.0 %), non-tool greedy 16/16 vs both controls; held-out BFCL on v21 pending; see Round 12) · documented release **Clean Nightly, v20** (2026-09-21: vLLM nightly `2671fedf` — the last before the #56633 mHC-fold drift — + v15 hook + off54 + fp8_ds_mla + v18's 24-seat/cudagraph flags; **181 tok/s C1 prose (+5.1% pair mean vs v18)**, KV 2.55M tokens, C24 warm agent p95 2.4–2.8 s vs 3.4; **held-out BFCL live sibling 78.8% vs v18 78.9%**, dev 92.7–93.5%; tools 64/64 ×3; $0.008 per 1000 solved tasks; see Round 11b) · rollback **Many Seat, v18** (2026-09-18: v15 hook + `--max-num-seqs 24` + token-sized `--cudagraph-capture-sizes`; 172 tok/s C1 prose, KV 2.50M tokens, C24 warm agent turn 0.55 s p50; **BFCL v4 tool-call exact-match 93.3%**) · **v19 "Nightly" was promoted and reverted on 2026-09-20** (see Round 10) · previous **v15 Pin Hot Experts** (retired 2026-09-18) · **v14 Sixty-K Agent** (retired 2026-09-17) · Historical **v13: 90 tok/s single-stream prose · 140–160 tok/s on agent/code text · 429 agg tok/s at C16** (v12: 89 / 140–160 / 311 · v11: 82 / 130–150 / 287) · 972K-token prompt prefilled in 85 s · Hermes tool-calling 10/10
 
 
+## Standard bench T2/T3 on v21 (2026-10-06 evening)
+
+Bundle: [`results/2026-10-06-lib-t2t3-v21/`](results/2026-10-06-lib-t2t3-v21/README.md). Fresh host boot (the reboot recovered the PIN_HOT boot margin: 12.47 GiB at the layer-9 check).
+
+| Test | v21 |
+|---|---|
+| tool-eval-bench (leaderboard settings) | **92/100**: 81 pass · 7 partial · 4 fail, including **cross-tenant disclosure (TC-92)** and a **false "invoice paid" after a partial failure (TC-89)** |
+| GSM8K 1,319 | 96.9 % (same-config paired re-run vs the 200-item baseline: p = 0.5, this lane's noise floor) |
+| MMLU-Pro 1,000 | 87.1 % |
+| GPQA-Diamond 198 | 89.9 % |
+| needle-checksum | 500/500 EXACT |
+| Decode, filler, agg tok/s | C1 184–214 across 0–128K · C8 576–594 · C24 995–1022 (0–64K) |
+
+The bench's burst cells flag repetition loops in 16 of 29 cells. That is an artifact of the bench forcing generation past EOS (`ignore_eos`), not an answer-time loop. Details are in the bundle; a `--respect-eos` re-run is pending.
+
 ## Standard bench baseline: llm-inference-bench on v21 (2026-10-06)
 
 Bundle: [`results/2026-10-05-lib-t1-v21/`](results/2026-10-05-lib-t1-v21/README.md). Method: [`docs/benchmarking.md`](../../../docs/benchmarking.md).

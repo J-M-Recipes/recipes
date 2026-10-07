@@ -1,0 +1,6 @@
+LLM_BENCH_NO_UPDATE_CHECK=1 python3 llm_decode_bench.py --display-mode plain --host <station> --port 30006 --model dsv41-flash-uva --tool-eval --output t2-tooleval.json
+LLM_BENCH_NO_UPDATE_CHECK=1 python3 llm_decode_bench.py --display-mode plain --host <station> --port 30006 --model dsv41-flash-uva --test-profile needle-checksum --output t3-needle.json
+LLM_BENCH_NO_UPDATE_CHECK=1 python3 llm_decode_bench.py --display-mode plain --host <station> --port 30006 --model dsv41-flash-uva --test-profile gsm8k --compare-baseline recipes/dgx-station-gb300/deepseek-v4.1-flash-vllm-uva-dspark/results/2026-10-05-lib-t1-v21/t2-gsm8k200.json --output t3-gsm8k-full.json
+LLM_BENCH_NO_UPDATE_CHECK=1 python3 llm_decode_bench.py --display-mode plain --host <station> --port 30006 --model dsv41-flash-uva --test-profile mmlu-pro --output t3-mmlupro.json
+LLM_BENCH_NO_UPDATE_CHECK=1 python3 llm_decode_bench.py --display-mode plain --host <station> --port 30006 --model dsv41-flash-uva --test-profile gpqa-diamond --output t3-gpqa.json
+LLM_BENCH_NO_UPDATE_CHECK=1 python3 llm_decode_bench.py --display-mode plain --host <station> --port 30006 --model dsv41-flash-uva --concurrency 1,2,4,8,16,24 --contexts 0,16384,32768,65536,131072 --duration 30 --run-burst --output t3-perf-matrix.json
