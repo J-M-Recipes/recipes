@@ -1,0 +1,80 @@
+{
+  "row": {
+    "name": "probe_code0",
+    "regime": "think_on_t1",
+    "completion_tokens": 512,
+    "reasoning_tokens": null,
+    "wall": 19.393,
+    "tok_s": 26.401,
+    "drafts": 163.0,
+    "acceptance_length": 3.1411042944785277,
+    "accept_rate": 0.30499561787905344,
+    "per_pos": {
+      "0": 0.748,
+      "1": 0.534,
+      "2": 0.344,
+      "3": 0.239,
+      "4": 0.141,
+      "5": 0.074,
+      "6": 0.055
+    },
+    "finish": "length",
+    "has_reasoning": true,
+    "content_head": ""
+  },
+  "payload": {
+    "model": "glm-5.3-flash",
+    "messages": [
+      {
+        "role": "user",
+        "content": "Write a complete Python module implementing a thread-safe LRU cache with TTL expiry, type hints, docstrings, and tests. Output only code."
+      }
+    ],
+    "max_tokens": 512,
+    "stream": false,
+    "temperature": 1.0,
+    "top_p": 0.95,
+    "chat_template_kwargs": {
+      "enable_thinking": true
+    }
+  },
+  "body": {
+    "id": "chatcmpl-b50dd4f97ccc872c",
+    "object": "chat.completion",
+    "created": 1791168286,
+    "model": "glm-5.3-flash",
+    "choices": [
+      {
+        "index": 0,
+        "message": {
+          "role": "assistant",
+          "content": null,
+          "refusal": null,
+          "annotations": null,
+          "audio": null,
+          "function_call": null,
+          "reasoning": "The user wants a complete Python module implementing a thread-safe LRU cache with TTL expiry. Requirements:\n- Thread-safe\n- LRU (Least Recently Used) eviction\n- TTL (time-to-live) expiry\n- Type hints\n- Docstrings\n- Tests\n\nThey want only code output. Let me design this carefully.\n\nDesign:\n- Use `collections.OrderedDict` for LRU ordering\n- Use `threading.RLock` for thread safety (RLock allows reentrancy for methods that call other methods)\n- Each entry stores (value, expiry_time)\n- On `get`: check if expired, if so remove and return default/None; else move to end (most recently used)\n- On `put`/`set`: insert/update, move to end, evict oldest if over capacity\n- TTL can be per-item or global default. Let me support both: a default TTL at construction, and optional per-call TTL override.\n- Expiry should be checked lazily on access, but also we should purge expired items when evicting \u2014 important subtlety: when evicting, we shouldn't evict a live item if there are expired items. Best approach: purge expired items first before evicting, or at least check whether the LRU item is expired.\n- Also provide `__len__`, `__contains__`, `clear`, `delete`/`pop`, maybe `get_or_set` / decorator functionality. Keep it reasonably complete but not bloated.\n- `maxsize` and `ttl` parameters.\n- Should handle `maxsize=0` gracefully? Maybe raise ValueError for negative. Let's allow maxsize > 0 required, or handle None for unbounded? Keep simple: maxsize must be positive int. Actually supporting None as unlimited could be nice but adds complexity. I'll require a positive integer.\n\nFor type hints, use `Generic[K, V]`. Use `Optional[float]` for TTL (seconds).\n\nMonotonic clock: use `time.monotonic()` for expiry to avoid issues with system clock changes.\n\nThread safety: all public methods acquire the lock. Using `RLock` so internal calls are fine.\n\nImplementation details:\n\n```python\nfrom __future__ import annotations\n\nimport threading\nimport time\nfrom collections import OrderedDict\nfrom typing import Callable, Generic, Hashable, Optional, Tuple, TypeVar\n\nK = TypeVar(\"K\")\nV = TypeVar(\"V\")\n```\n\nActually `Hashable` isn't quite"
+        },
+        "logprobs": null,
+        "finish_reason": "length",
+        "stop_reason": null,
+        "token_ids": null,
+        "routed_experts": null
+      }
+    ],
+    "service_tier": null,
+    "system_fingerprint": "vllm-0.1.dev20051+g487ecf187-tp2-3737b693",
+    "usage": {
+      "prompt_tokens": 41,
+      "total_tokens": 553,
+      "completion_tokens": 512,
+      "prompt_tokens_details": null
+    },
+    "prompt_logprobs": null,
+    "prompt_token_ids": null,
+    "prompt_text": null,
+    "kv_transfer_params": null,
+    "ec_transfer_params": null,
+    "metrics": null
+  }
+}

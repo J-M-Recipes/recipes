@@ -1,0 +1,80 @@
+{
+  "row": {
+    "name": "probe_code1",
+    "regime": "think_on_t0",
+    "completion_tokens": 512,
+    "reasoning_tokens": null,
+    "wall": 21.071,
+    "tok_s": 24.299,
+    "drafts": 176.0,
+    "acceptance_length": 2.909090909090909,
+    "accept_rate": 0.2727272727272727,
+    "per_pos": {
+      "0": 0.716,
+      "1": 0.483,
+      "2": 0.318,
+      "3": 0.188,
+      "4": 0.108,
+      "5": 0.057,
+      "6": 0.04
+    },
+    "finish": "length",
+    "has_reasoning": true,
+    "content_head": ""
+  },
+  "payload": {
+    "model": "glm-5.3-flash",
+    "messages": [
+      {
+        "role": "user",
+        "content": "Write a complete Rust implementation of a bounded work queue with cancellation and unit tests. Output only code."
+      }
+    ],
+    "max_tokens": 512,
+    "stream": false,
+    "temperature": 0,
+    "top_p": 1,
+    "chat_template_kwargs": {
+      "enable_thinking": true
+    }
+  },
+  "body": {
+    "id": "chatcmpl-81b82a990b6474ba",
+    "object": "chat.completion",
+    "created": 1791168188,
+    "model": "glm-5.3-flash",
+    "choices": [
+      {
+        "index": 0,
+        "message": {
+          "role": "assistant",
+          "content": null,
+          "refusal": null,
+          "annotations": null,
+          "audio": null,
+          "function_call": null,
+          "reasoning": "The user wants a complete Rust implementation of a bounded work queue with cancellation and unit tests. They want only code output.\n\nLet me think about what a bounded work queue with cancellation needs:\n\n1. **Bounded queue**: A fixed-capacity queue where producers block when full\n2. **Work queue**: Producers submit work items, consumers take them\n3. **Cancellation**: Ability to cancel/shutdown the queue, waking up blocked producers and consumers\n\nDesign considerations:\n- Should I use std threads or async? The prompt doesn't specify. A std-based implementation with `Mutex` and `Condvar` is classic and testable. Let me go with std.\n- The queue should be bounded \u2014 producers block when full, consumers block when empty.\n- Cancellation: a `close()` method that prevents new submissions and wakes all waiting consumers (who then get `None` or an error). Also possibly a `cancel` that drops pending items.\n\nLet me design an API:\n\n```rust\npub struct BoundedQueue<T> {\n    inner: Arc<Inner<T>>,\n}\n\nstruct Inner<T> {\n    state: Mutex<State<T>>,\n    capacity: usize,\n    item_available: Condvar,  // signaled when item pushed or closed\n    space_available: Condvar, // signaled when item popped or closed\n}\n\nstruct State<T> {\n    items: VecDeque<T>,\n    closed: bool,\n}\n```\n\nMethods:\n- `new(capacity) -> Result<Self, ...>` or panic on zero capacity. Maybe return Result to be idiomatic. Or just assert. Let me return Result or just panic with assert. Actually, let me make `new` return `Self` and panic on zero capacity, or return a Result. Hmm, for a clean API, I'll do `new(capacity: usize) -> Self` with a debug_assert/panic. Actually a Result is nicer for tests. Let me think... Many implementations panic on invalid capacity. I'll do a `try_new` returning Result and `new` panicking? That might be overkill. Let me just make `new` panic with a clear message on zero capacity \u2014 simple and clear. Actually, returning `Result<Self, QueueError>` makes unit tests cleaner. Hmm, but then every use site needs unwrap. Let me keep it simple: `new` panics on 0 capacity (documented), since that's a programming error.\n\n- `send(&self, item: T) -> Result<(), SendError<T>>`: blocks while full"
+        },
+        "logprobs": null,
+        "finish_reason": "length",
+        "stop_reason": null,
+        "token_ids": null,
+        "routed_experts": null
+      }
+    ],
+    "service_tier": null,
+    "system_fingerprint": "vllm-0.1.dev20051+g487ecf187-tp2-3737b693",
+    "usage": {
+      "prompt_tokens": 32,
+      "total_tokens": 544,
+      "completion_tokens": 512,
+      "prompt_tokens_details": null
+    },
+    "prompt_logprobs": null,
+    "prompt_token_ids": null,
+    "prompt_text": null,
+    "kv_transfer_params": null,
+    "ec_transfer_params": null,
+    "metrics": null
+  }
+}

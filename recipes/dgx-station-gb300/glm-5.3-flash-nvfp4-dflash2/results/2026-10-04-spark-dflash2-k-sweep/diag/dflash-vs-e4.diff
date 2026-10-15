@@ -1,0 +1,13 @@
+--- ~/glm53-e4-e13-20261003/launch-dflash-rank-eager.sh	2026-10-03 23:23:31.636935981 -0500
++++ ~/glm53-diag-20261004/launch-dflash-rank-dflash.sh	2026-10-04 03:47:41.124642971 -0500
+@@ -13,8 +13,8 @@
+ target_host="~/models/GLM-5.3-Flash-NVFP4"
+ draft_host="~/models/GLM-5.3-Flash-DFlash2-7d74cdd"
+ template_host="~/glm53-tony-dflash2-ccc5a78e/chat_template_mm.jinja"
+-cache_host="~/.cache/glm53-e4-vllm"
+-name="glm53-e4-rank${rank}"
++cache_host="~/.cache/glm53-diag-vllm"
++name="glm53-diag-rank${rank}"
+ 
+ actual_image=$(docker image inspect "$image" --format '{{.Id}}')
+ [[ "$actual_image" == "$expected_image" ]]

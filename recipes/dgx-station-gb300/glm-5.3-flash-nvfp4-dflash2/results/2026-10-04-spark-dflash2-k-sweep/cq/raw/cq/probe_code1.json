@@ -1,0 +1,114 @@
+{
+  "fixture": "probe_code1",
+  "concurrency": 1,
+  "started_iso": "2026-10-04T21:38:11-05:00",
+  "ended_iso": "2026-10-04T21:38:32-05:00",
+  "batch_wall_seconds": 20.64,
+  "mean_wall_seconds": 20.638,
+  "completion_tokens_total": 512,
+  "aggregate_tok_s": 24.807,
+  "per_stream_tok_s": [
+    24.808
+  ],
+  "spec_metrics_present": true,
+  "metric_before": {
+    "drafts": 2982.0,
+    "draft_tokens": 20874.0,
+    "accepted_tokens": 7200.0
+  },
+  "metric_after": {
+    "drafts": 3152.0,
+    "draft_tokens": 22064.0,
+    "accepted_tokens": 7544.0
+  },
+  "metric_delta": {
+    "drafts": 170.0,
+    "draft_tokens": 1190.0,
+    "accepted_tokens": 344.0
+  },
+  "per_pos_accepted_delta": {
+    "0": 125.0,
+    "1": 86.0,
+    "2": 53.0,
+    "3": 31.0,
+    "4": 25.0,
+    "5": 14.0,
+    "6": 10.0
+  },
+  "per_pos_accept_prob": {
+    "0": 0.7352941176470589,
+    "1": 0.5058823529411764,
+    "2": 0.31176470588235294,
+    "3": 0.18235294117647058,
+    "4": 0.14705882352941177,
+    "5": 0.08235294117647059,
+    "6": 0.058823529411764705
+  },
+  "metric_series_seen_before": {
+    "drafts": 1,
+    "draft_tokens": 1,
+    "accepted_tokens": 1
+  },
+  "metric_series_seen_after": {
+    "drafts": 1,
+    "draft_tokens": 1,
+    "accepted_tokens": 1
+  },
+  "metric_lines_before": [
+    "vllm:spec_decode_num_drafts_total{engine=\"0\",model_name=\"glm-5.3-flash\"} 2982.0",
+    "vllm:spec_decode_num_draft_tokens_total{engine=\"0\",model_name=\"glm-5.3-flash\"} 20874.0",
+    "vllm:spec_decode_num_accepted_tokens_total{engine=\"0\",model_name=\"glm-5.3-flash\"} 7200.0"
+  ],
+  "metric_lines_after": [
+    "vllm:spec_decode_num_drafts_total{engine=\"0\",model_name=\"glm-5.3-flash\"} 3152.0",
+    "vllm:spec_decode_num_draft_tokens_total{engine=\"0\",model_name=\"glm-5.3-flash\"} 22064.0",
+    "vllm:spec_decode_num_accepted_tokens_total{engine=\"0\",model_name=\"glm-5.3-flash\"} 7544.0"
+  ],
+  "acceptance_length": 3.011764705882353,
+  "accept_rate": 0.28907563025210087,
+  "ar_tok_s_from_wall": null,
+  "response_kinds": [
+    "text"
+  ],
+  "finish_reasons": [
+    "length"
+  ],
+  "errors": [],
+  "mem_during": {},
+  "requests": [
+    {
+      "http_status": 200,
+      "started_iso": "2026-10-04T21:38:11-05:00",
+      "wall_seconds": 20.638,
+      "prompt_tokens": 33,
+      "completion_tokens": 512,
+      "reasoning_tokens": null,
+      "tok_s": 24.808,
+      "finish_reason": "length",
+      "response_kind": "text",
+      "content": "```rust\n//! A bounded work queue with cancellation support.\n//!\n//! The queue has a fixed capacity. Producers block when the queue is full,\n//! consumers block when the queue is empty. Cancellation is cooperative:\n//! a `CancellationToken` can be used to wake blocked producers/consumers so\n//! they return an error instead of waiting forever.\n\nuse std::collections::VecDeque;\nuse std::fmt;\nuse std::sync::{Arc, Condvar, Mutex};\n\n/// Error returned by queue operations.\n#[derive(Debug, Clone, Copy, PartialEq, Eq)]\npub enum QueueError {\n    /// The operation was cancelled before it could complete.\n    Cancelled,\n    /// The queue was shut down; no new work is accepted.\n    Closed,\n}\n\nimpl fmt::Display for QueueError {\n    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {\n        match self {\n            QueueError::Cancelled => write!(f, \"operation was cancelled\"),\n            QueueError::Closed => write!(f, \"queue is closed\"),\n        }\n    }\n}\n\nimpl std::error::Error for QueueError {}\n\n/// Shared state between the queue handle and the cancellation token.\n#[derive(Default)]\nstruct Shared {\n    cancelled: bool,\n}\n\n/// A handle used to cancel all pending operations on a queue.\n///\n/// Cheap to clone. `cancel` wakes all blocked producers and consumers.\n#[derive(Clone)]\npub struct CancellationToken {\n    shared: Arc<Mutex<Shared>>,\n    condvar: Arc<Condvar>,\n}\n\nimpl CancellationToken {\n    fn new() -> Self {\n        let shared = Arc::new(Mutex::new Shared::default());\n        let condvar = Arc::new(Condvar::new());\n        CancellationToken { shared, condvar }\n    }\n\n    fn new_pair() -> (CancellationToken, ...) {\n        ...\n    }\n}\n\nfn main() {\n    println!(\"placeholder\");\n}\n```\n\nWait \u2014 I need to reconsider the design. Let me restructure this properly.\n\n```rust\n//! A bounded work queue with cancellation support.\n```\n\nThe user asked for a complete implementation with unit tests, output only code. My first attempt had errors (`Mutex new Mutex<Shared>` missing `::new`, incomplete `new_pair`, a stray `main`). Let me write the final, correct, complete version now.\n\n```rust\n//! A bounded work queue with cancellation support.\n//!\n//! - Bounded capacity: `push` blocks while the queue is full.\n//! - Blocking `push`/`",
+      "reasoning": null,
+      "tool_calls": null,
+      "error": null
+    }
+  ],
+  "request_payload_template": {
+    "model": "glm-5.3-flash",
+    "messages": [
+      {
+        "role": "user",
+        "content": "Write a complete Rust implementation of a bounded work queue with cancellation and unit tests. Output only code."
+      }
+    ],
+    "temperature": 0,
+    "top_p": 1,
+    "max_tokens": 512,
+    "stream": false,
+    "chat_template_kwargs": {
+      "enable_thinking": false
+    }
+  },
+  "name": "probe_code1",
+  "rep": 1,
+  "mode": "dflash"
+}

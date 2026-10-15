@@ -1,0 +1,108 @@
+{
+  "fixture": "probe_prose1",
+  "concurrency": 1,
+  "started_iso": "2026-10-15T04:09:20-05:00",
+  "ended_iso": "2026-10-15T04:09:23-05:00",
+  "batch_wall_seconds": 2.866,
+  "mean_wall_seconds": 2.865,
+  "completion_tokens_total": 512,
+  "aggregate_tok_s": 178.661,
+  "per_stream_tok_s": [
+    178.705
+  ],
+  "spec_metrics_present": true,
+  "metric_before": {
+    "drafts": 6621.0,
+    "draft_tokens": 26484.0,
+    "accepted_tokens": 13196.0
+  },
+  "metric_after": {
+    "drafts": 6837.0,
+    "draft_tokens": 27348.0,
+    "accepted_tokens": 13491.0
+  },
+  "metric_delta": {
+    "drafts": 216.0,
+    "draft_tokens": 864.0,
+    "accepted_tokens": 295.0
+  },
+  "per_pos_accepted_delta": {
+    "0": 147.0,
+    "1": 82.0,
+    "2": 44.0,
+    "3": 22.0
+  },
+  "per_pos_accept_prob": {
+    "0": 0.6805555555555556,
+    "1": 0.37962962962962965,
+    "2": 0.2037037037037037,
+    "3": 0.10185185185185185
+  },
+  "metric_series_seen_before": {
+    "drafts": 1,
+    "draft_tokens": 1,
+    "accepted_tokens": 1
+  },
+  "metric_series_seen_after": {
+    "drafts": 1,
+    "draft_tokens": 1,
+    "accepted_tokens": 1
+  },
+  "metric_lines_before": [
+    "vllm:spec_decode_num_drafts_total{engine=\"0\",model_name=\"glm-5.3-flash\"} 6621.0",
+    "vllm:spec_decode_num_draft_tokens_total{engine=\"0\",model_name=\"glm-5.3-flash\"} 26484.0",
+    "vllm:spec_decode_num_accepted_tokens_total{engine=\"0\",model_name=\"glm-5.3-flash\"} 13196.0"
+  ],
+  "metric_lines_after": [
+    "vllm:spec_decode_num_drafts_total{engine=\"0\",model_name=\"glm-5.3-flash\"} 6837.0",
+    "vllm:spec_decode_num_draft_tokens_total{engine=\"0\",model_name=\"glm-5.3-flash\"} 27348.0",
+    "vllm:spec_decode_num_accepted_tokens_total{engine=\"0\",model_name=\"glm-5.3-flash\"} 13491.0"
+  ],
+  "acceptance_length": 2.3703703703703702,
+  "accept_rate": 0.3414351851851852,
+  "ar_tok_s_from_wall": null,
+  "response_kinds": [
+    "empty"
+  ],
+  "finish_reasons": [
+    "length"
+  ],
+  "errors": [],
+  "mem_during": {},
+  "requests": [
+    {
+      "http_status": 200,
+      "started_iso": "2026-10-15T04:09:20-05:00",
+      "wall_seconds": 2.865,
+      "prompt_tokens": 32,
+      "completion_tokens": 512,
+      "reasoning_tokens": 512,
+      "tok_s": 178.705,
+      "finish_reason": "length",
+      "response_kind": "empty",
+      "content": null,
+      "reasoning": "# Speculative Decoding: A Practical Guide\n\n## The Core Idea\n\nAutoregressive LLM inference is memory-bandwidth-bound: generating one token requires streaming all model weights from HBM, but the actual FLOPs are trivial. A 70B model at fp16 needs ~140GB of traffic per token while the GPU compute sits mostly idle. Speculative decoding exploits this by **batching multiple tokens into a single forward pass** \u2014 the memory traffic for verifying 5 tokens is nearly identical to generating 1.\n\nThe trick: a cheap **draft model** (or n-gram table, or EAGLE head) proposes K tokens, and the big **target model** verifies them in one parallel pass. Verification is cheap; generation is expensive. Same math, different cost structure.\n\n## The Algorithm\n\n1. Draft model autoregressively generates K candidate tokens (cheap, K sequential small passes).\n2. Target model runs **one forward pass** over the prompt + K drafted tokens, producing logits at each position.\n3. Accept/reject each drafted token sequentially. On first rejection, discard everything after it, resample the rejected position from a corrected distribution, continue.\n4. If all K accepted, sample one bonus token from the target's final position logits.\n\n## Why It's Lossless: The Math\n\nThis is the part that trips people up, so let's be precise. For a drafted token x sampled from draft distribution q, the acceptance probability is:\n\n**P(accept) = min(1, p(x)/q(x))**\n\nwhere p is the target distribution. If rejected, we resample from the **residual distribution**:\n\n**p'(x) = normalize(max(0, p(x) \u2212 q(x)))**\n\nThe theorem (Leviathan et al. 2023): the resulting token is distributed exactly according to p. Intuition: wherever the draft \"oversamples\" a token relative to the target (q > p), rejection probability removes exactly the excess; the residual distribution fills in exactly the deficit. The composed procedure is a perfect sample from the target, regardless of how bad the draft is. A terrible draft just means low acceptance, not wrong outputs.\n\n**Greedy case:** with argmax sampling, accept iff draft token == target's argmax. Also lossless for greedy decoding.\n\n## Acceptance Length\n\nThe key metric. Define \u03b1 = E[acceptance probability per token] (draft-target agreement rate under the current sampling temperature). The expected number of tokens emitted",
+      "tool_calls": null,
+      "error": null
+    }
+  ],
+  "request_payload_template": {
+    "model": "glm-5.3-flash",
+    "messages": [
+      {
+        "role": "user",
+        "content": "Explain speculative decoding to an inference engineer, including verification, acceptance length, and failure modes."
+      }
+    ],
+    "temperature": 0,
+    "top_p": 1,
+    "max_tokens": 512,
+    "stream": false,
+    "chat_template_kwargs": {
+      "enable_thinking": false
+    }
+  },
+  "name": "probe_prose1",
+  "rep": 1,
+  "mode": "dflash"
+}

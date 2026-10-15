@@ -1,0 +1,80 @@
+{
+  "row": {
+    "name": "probe_prose1",
+    "regime": "think_on_t1",
+    "completion_tokens": 512,
+    "reasoning_tokens": 512,
+    "wall": 2.895,
+    "tok_s": 176.852,
+    "drafts": 219.0,
+    "acceptance_length": 2.3378995433789953,
+    "accept_rate": 0.3344748858447489,
+    "per_pos": {
+      "0": 0.612,
+      "1": 0.374,
+      "2": 0.21,
+      "3": 0.142
+    },
+    "finish": "length",
+    "has_reasoning": true,
+    "content_head": ""
+  },
+  "payload": {
+    "model": "glm-5.3-flash",
+    "messages": [
+      {
+        "role": "user",
+        "content": "Explain speculative decoding to an inference engineer, including verification, acceptance length, and failure modes."
+      }
+    ],
+    "max_tokens": 512,
+    "stream": false,
+    "temperature": 1.0,
+    "top_p": 0.95,
+    "chat_template_kwargs": {
+      "enable_thinking": true
+    }
+  },
+  "body": {
+    "id": "chatcmpl-8224c917bf4f392c",
+    "object": "chat.completion",
+    "created": 1792068868,
+    "model": "glm-5.3-flash",
+    "choices": [
+      {
+        "index": 0,
+        "message": {
+          "role": "assistant",
+          "content": null,
+          "refusal": null,
+          "annotations": null,
+          "audio": null,
+          "function_call": null,
+          "reasoning": "The user is asking me to explain speculative decoding to an inference engineer. This is a technical audience \u2014 someone who works on LLM inference systems. They specifically want:\n1. Verification\n2. Acceptance length\n3. Failure modes\n\nLet me think about what a good explanation covers for this audience. An inference engineer already knows autoregressive decoding, KV caches, batching, memory bandwidth being the bottleneck for single-stream decoding, etc. So I don't need to explain transformer basics. I should be precise, technically dense, and focus on the mechanics and the math.\n\nLet me structure my thinking:\n\n**Core idea**\nSpeculative decoding exploits the fact that autoregressive LLM decoding is memory-bandwidth bound, not compute bound. A single forward pass generates one token but reads all the weights from HBM. If you can generate multiple tokens per weight-read, you win. The trick: use a cheap draft model (or self-drafting mechanism) to propose K tokens, then verify them in a single parallel forward pass of the target model. Since transformers are dense-ish in the sense that a forward pass over K positions costs the same as one pass over 1 position in terms of weight reads (KV computation is extra but small relative to weights for long contexts and modest K), you get K tokens for roughly the price of one.\n\n**Verification \u2014 the crucial part**\nThe verification must be exact, i.e., preserve the target model's output distribution exactly. The standard scheme (Leviathan et al. 2023, Chen et al. 2023) uses a modified rejection sampling:\n\n- Draft model q samples tokens x1..xK autoregressively.\n- Target model p runs on prefix + drafted tokens in one forward pass, producing distributions p(x | ...) at each position.\n- Accept draft token xi with probability min(1, p(xi)/q(xi)).\n- If rejected at position i, resample from the residual distribution: norm(max(0, p \u2212 q)) = (p \u2212 q)+ / ||(p \u2212 q)||_1.\n- Crucially, if a token is rejected, you must discard all subsequent draft tokens and re-sample from the residual \u2014 the residual distribution conditioned on the prefix gives you a valid token for the next position, so you never \"waste\" the target forward pass entirely: you always emit at least one token per verification pass.\n\nWhy does this preserve the distribution? The proof: the acceptance probability plus rejection-resampling combined distribution equals p exactly. For each token,"
+        },
+        "logprobs": null,
+        "finish_reason": "length",
+        "stop_reason": null,
+        "token_ids": null,
+        "routed_experts": null
+      }
+    ],
+    "service_tier": null,
+    "system_fingerprint": "vllm-0.30.1rc1.dev493+gac9126e58-d153f83c",
+    "usage": {
+      "prompt_tokens": 31,
+      "total_tokens": 543,
+      "completion_tokens": 512,
+      "prompt_tokens_details": null,
+      "completion_tokens_details": {
+        "reasoning_tokens": 512
+      }
+    },
+    "prompt_logprobs": null,
+    "prompt_token_ids": null,
+    "prompt_text": null,
+    "kv_transfer_params": null,
+    "ec_transfer_params": null,
+    "metrics": null
+  }
+}

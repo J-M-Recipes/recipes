@@ -1,0 +1,80 @@
+{
+  "row": {
+    "name": "probe_code1",
+    "regime": "think_off_t0",
+    "completion_tokens": 512,
+    "reasoning_tokens": 512,
+    "wall": 2.519,
+    "tok_s": 203.217,
+    "drafts": 186.0,
+    "acceptance_length": 2.752688172043011,
+    "accept_rate": 0.43951612903225806,
+    "per_pos": {
+      "0": 0.731,
+      "1": 0.484,
+      "2": 0.323,
+      "3": 0.22
+    },
+    "finish": "length",
+    "has_reasoning": true,
+    "content_head": ""
+  },
+  "payload": {
+    "model": "glm-5.3-flash",
+    "messages": [
+      {
+        "role": "user",
+        "content": "Write a complete Rust implementation of a bounded work queue with cancellation and unit tests. Output only code."
+      }
+    ],
+    "max_tokens": 512,
+    "stream": false,
+    "temperature": 0,
+    "top_p": 1,
+    "chat_template_kwargs": {
+      "enable_thinking": false
+    }
+  },
+  "body": {
+    "id": "chatcmpl-ac7f8b32e6ae292a",
+    "object": "chat.completion",
+    "created": 1792068823,
+    "model": "glm-5.3-flash",
+    "choices": [
+      {
+        "index": 0,
+        "message": {
+          "role": "assistant",
+          "content": null,
+          "refusal": null,
+          "annotations": null,
+          "audio": null,
+          "function_call": null,
+          "reasoning": "```rust\n//! A bounded work queue with cancellation support.\n//!\n//! The queue has a fixed capacity. Producers submit work items; consumers\n//! (workers) pull items and execute them. Dropping the queue's handle\n//! cancels outstanding work, and each item can also be cancelled\n//! cooperatively via a `CancellationToken`-like flag checked by the work\n//! closure itself.\n\nuse std::collections::VecDeque;\nuse std::fmt;\nuse std::sync::{Arc, Condvar, Mutex};\nuse std::thread;\nuse std::time::Duration;\n\n/// Cooperative cancellation flag shared with work items.\n#[derive(Clone, Default)]\npub struct CancellationToken {\n    inner: Arc<CancellationInner>,\n}\n\n#[derive(Default)]\nstruct CancellationInner {\n    cancelled: Mutex<bool>,\n    condvar: Condvar,\n}\n\nimpl CancellationToken {\n    pub fn new() -> Self {\n        Self::default()\n    }\n\n    /// Signal cancellation to all holders of clones of this token.\n    pub fn cancel(&self) {\n        let mut guard = self.inner.cancelled.lock().unwrap();\n        *guard = true;\n        self.inner.condvar.notify_all();\n    }\n\n    /// Whether cancellation has been signalled.\n    pub fn is_cancelled(&self) -> bool {\n        *self.inner.cancelled.lock().unwrap()\n    }\n\n    /// Block until cancellation is signalled.\n    pub fn wait(&self) {\n        let mut guard = self.inner.cancelled.lock().unsafe_lock();\n        while !*guard {\n            guard = self.inner.condvar.wait(guard).unwrap();\n        }\n    }\n\n    /// Block until cancellation is signalled or the timeout elapses.\n    pub fn wait_timeout(&self, timeout: Duration) -> bool {\n        let mut guard = self.inner.cancelled.lock().unwrap();\n        while !*wait_timeout_placeholder() {}\n        guard = self.inner.condvar.wait_timeout(guard, timeout).unwrap().0;\n        *guard\n    }\n}\n\nstruct CancellationInner2; // placeholder to satisfy nothing; remove\n\nstruct CancellationInner2b; // placeholder to satisfy nothing; remove\n\n/// A bounded work queue.\npub struct WorkQueue<F: FnMut() + Send> generic_placeholder {\n    inner: Arc<Inner<F>>,\n    capacity: usize,\n}\n\nstruct Inner<F: FnMut() + Send> generic_placeholder {\n    queue: Mutex<VecDeque<Job<F>>>,\n    not_full: Condvar,\n    not_empty: Condvar,\n    closed: bool,\n    cancelled: bool,"
+        },
+        "logprobs": null,
+        "finish_reason": "length",
+        "stop_reason": null,
+        "token_ids": null,
+        "routed_experts": null
+      }
+    ],
+    "service_tier": null,
+    "system_fingerprint": "vllm-0.30.1rc1.dev493+gac9126e58-d153f83c",
+    "usage": {
+      "prompt_tokens": 33,
+      "total_tokens": 545,
+      "completion_tokens": 512,
+      "prompt_tokens_details": null,
+      "completion_tokens_details": {
+        "reasoning_tokens": 512
+      }
+    },
+    "prompt_logprobs": null,
+    "prompt_token_ids": null,
+    "prompt_text": null,
+    "kv_transfer_params": null,
+    "ec_transfer_params": null,
+    "metrics": null
+  }
+}

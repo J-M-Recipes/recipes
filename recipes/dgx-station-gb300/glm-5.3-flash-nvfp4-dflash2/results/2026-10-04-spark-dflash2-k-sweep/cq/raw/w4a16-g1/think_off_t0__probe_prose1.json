@@ -1,0 +1,80 @@
+{
+  "row": {
+    "name": "probe_prose1",
+    "regime": "think_off_t0",
+    "completion_tokens": 512,
+    "reasoning_tokens": null,
+    "wall": 23.387,
+    "tok_s": 21.892,
+    "drafts": 204.0,
+    "acceptance_length": 2.5098039215686274,
+    "accept_rate": 0.21498599439775912,
+    "per_pos": {
+      "0": 0.632,
+      "1": 0.412,
+      "2": 0.24,
+      "3": 0.127,
+      "4": 0.059,
+      "5": 0.029,
+      "6": 0.005
+    },
+    "finish": "length",
+    "has_reasoning": false,
+    "content_head": "# Speculative Decoding: A Practical Guide\n\n## The Core Idea\n\nAutoregressive decoding is memory-bandwidth bound: each for"
+  },
+  "payload": {
+    "model": "glm-5.3-flash",
+    "messages": [
+      {
+        "role": "user",
+        "content": "Explain speculative decoding to an inference engineer, including verification, acceptance length, and failure modes."
+      }
+    ],
+    "max_tokens": 512,
+    "stream": false,
+    "temperature": 0,
+    "top_p": 1,
+    "chat_template_kwargs": {
+      "enable_thinking": false
+    }
+  },
+  "body": {
+    "id": "chatcmpl-9a9ae1b442afccc4",
+    "object": "chat.completion",
+    "created": 1791196751,
+    "model": "glm-5.3-flash",
+    "choices": [
+      {
+        "index": 0,
+        "message": {
+          "role": "assistant",
+          "content": "# Speculative Decoding: A Practical Guide\n\n## The Core Idea\n\nAutoregressive decoding is memory-bandwidth bound: each forward pass loads all model weights to produce **one token**. The arithmetic intensity is terrible \u2014 you're doing billions of FLOPs but the bottleneck is streaming weights from HBM. Speculative decoding attacks this by getting **multiple tokens verified per weight-load**, without changing the output distribution.\n\nThe key insight: **verification is parallel, generation is sequential.** A target model can check whether 5 drafted tokens are correct in roughly the time it takes to generate 1. So you let a cheap drafter guess ahead, and the expensive model grades the homework.\n\n## The Algorithm\n\n1. **Draft phase:** A small model (or n-gram table, or EAGLE head) autoregressively generates \u03b3 candidate tokens, e.g., \u03b3 = 4\u20138.\n2. **Verify phase:** Run the target model once on the draft tokens (plus the prompt context) in a single forward pass. Because of causal masking, you get logits for *all* positions simultaneously.\n3. **Accept/reject:** Walk through the draft left to right. Accept token *i* if it's consistent with the target's distribution; on the first rejection, resample from a corrected distribution and discard everything after it.\n4. **Bonus token:** If *all* \u03b3 tokens are accepted, the target's forward pass also produced logits for the next position \u2014 sample one extra token for free.\n\n## Verification: Why It's Not Just Argmax\n\nThe elegant part is the **rejection sampling scheme** that guarantees the output distribution is *exactly* what the target model would have produced \u2014 this is lossless speculation.\n\nGiven draft token x with draft probability q(x) and target probability p(x):\n\n- Accept with probability min(1, p(x)/q(x)).\n- If rejected, resample from the **residual distribution**: norm(max(0, p \u2212 q)).\n\nThis is provably correct: the accepted/resampled token is distributed exactly according to p. Two important consequences:\n\n- **Greedy decoding is a special case:** with argmax, you accept iff the target's argmax matches the draft. No distribution subtleties.\n- **You can verify with a weaker criterion** (e.g., accept if target's top-k contains the draft token) for higher throughput at the cost of exactness \u2014 some systems do this deliberately.\n\n## Acceptance Length\n\nThe single number that determines",
+          "refusal": null,
+          "annotations": null,
+          "audio": null,
+          "function_call": null,
+          "reasoning": null
+        },
+        "logprobs": null,
+        "finish_reason": "length",
+        "stop_reason": null,
+        "token_ids": null,
+        "routed_experts": null
+      }
+    ],
+    "service_tier": null,
+    "system_fingerprint": "vllm-0.1.dev20051+g487ecf187-tp2-815c380c",
+    "usage": {
+      "prompt_tokens": 32,
+      "total_tokens": 544,
+      "completion_tokens": 512,
+      "prompt_tokens_details": null
+    },
+    "prompt_logprobs": null,
+    "prompt_token_ids": null,
+    "prompt_text": null,
+    "kv_transfer_params": null,
+    "ec_transfer_params": null,
+    "metrics": null
+  }
+}

@@ -1,0 +1,80 @@
+{
+  "row": {
+    "name": "probe_code0",
+    "regime": "reason_low_t0",
+    "completion_tokens": 512,
+    "reasoning_tokens": null,
+    "wall": 13.852,
+    "tok_s": 36.963,
+    "drafts": 114.0,
+    "acceptance_length": 4.491228070175438,
+    "accept_rate": 0.4974937343358396,
+    "per_pos": {
+      "0": 0.851,
+      "1": 0.64,
+      "2": 0.518,
+      "3": 0.474,
+      "4": 0.412,
+      "5": 0.333,
+      "6": 0.254
+    },
+    "finish": "length",
+    "has_reasoning": false,
+    "content_head": "```python\n\"\"\"Thread-safe LRU cache with per-entry TTL expiry.\"\"\"\n\nfrom __future__ import annotations\n\nimport threading\ni"
+  },
+  "payload": {
+    "model": "glm-5.3-flash",
+    "messages": [
+      {
+        "role": "user",
+        "content": "Write a complete Python module implementing a thread-safe LRU cache with TTL expiry, type hints, docstrings, and tests. Output only code."
+      }
+    ],
+    "max_tokens": 512,
+    "stream": false,
+    "temperature": 0,
+    "top_p": 1,
+    "chat_template_kwargs": {
+      "reasoning_effort": "low"
+    }
+  },
+  "body": {
+    "id": "chatcmpl-869b747960a84bd3",
+    "object": "chat.completion",
+    "created": 1791168075,
+    "model": "glm-5.3-flash",
+    "choices": [
+      {
+        "index": 0,
+        "message": {
+          "role": "assistant",
+          "content": "```python\n\"\"\"Thread-safe LRU cache with per-entry TTL expiry.\"\"\"\n\nfrom __future__ import annotations\n\nimport threading\nimport time\nfrom collections import OrderedDict\nfrom typing import Any, Callable, Hashable, Optional\n\n\nclass LRUCache:\n    \"\"\"A thread-safe LRU cache with per-entry time-to-live (TTL) expiry.\n\n    Args:\n        maxsize: Maximum number of entries. Must be positive.\n        default_ttl: Default time-to-live in seconds for entries\n            (None means entries never expire unless a TTL is given on put).\n        timer: Callable returning current time in seconds. Defaults to\n            time.monotonic. Useful for testing.\n    \"\"\"\n\n    def __init__(\n        self,\n        maxsize: int = 128,\n        default_ttl: Optional[float] = None,\n        timer: Callable[[], float] = time.monotonic,\n    ) -> None:\n        if maxsize <= 0:\n            raise ValueError(\"maxsize must be positive\")\n        if default_ttl is not None and default_ttl <= 0:\n            raise ValueError(\"default_ttl must be positive\")\n        self._maxsize = maxsize\n        self._default_ttl = default_ttl\n        self._timer = timer\n        self._lock = threading.RLock()\n        # key -> (value, expiry_time or None)\n        self._store: \"OrderedDict[Hashable, tuple[Any, Optional[float]]]\" = OrderedDict()\n        self._hits = 0\n        self._misses = 0\n\n    def put(self, key: Hashable, value: Any, ttl: Optional[float] = None) -> None:\n        \"\"\"Insert or update a key. Uses default_ttl if ttl is None.\"\"\"\n        if ttl is not None and ttl <= 0:\n            raise ValueError(\"ttl must be positive\")\n        with self._lock:\n            expiry = self._timer() + ttl if ttl is not None else (\n                self._timer() + self._default_ttl if self._default_ttl is not None else None\n            )\n            self._store[key] = (value, expiry)\n            self._store.move_to_end(key)\n            self._evict_expired()\n            while len(self._store) > self._maxsize:\n                self._store.popitem(last=False)\n\n    def get(self, key: Hashable, default: Any = None) -> Any:\n        \"\"\"Return the value for key if present and not expired, else default.\"\"\"\n        with self._lock:\n            entry",
+          "refusal": null,
+          "annotations": null,
+          "audio": null,
+          "function_call": null,
+          "reasoning": null
+        },
+        "logprobs": null,
+        "finish_reason": "length",
+        "stop_reason": null,
+        "token_ids": null,
+        "routed_experts": null
+      }
+    ],
+    "service_tier": null,
+    "system_fingerprint": "vllm-0.1.dev20051+g487ecf187-tp2-3737b693",
+    "usage": {
+      "prompt_tokens": 42,
+      "total_tokens": 554,
+      "completion_tokens": 512,
+      "prompt_tokens_details": null
+    },
+    "prompt_logprobs": null,
+    "prompt_token_ids": null,
+    "prompt_text": null,
+    "kv_transfer_params": null,
+    "ec_transfer_params": null,
+    "metrics": null
+  }
+}

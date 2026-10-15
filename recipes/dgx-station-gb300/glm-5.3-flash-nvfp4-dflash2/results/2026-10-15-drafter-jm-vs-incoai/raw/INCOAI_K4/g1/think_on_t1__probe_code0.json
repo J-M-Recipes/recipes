@@ -1,0 +1,80 @@
+{
+  "row": {
+    "name": "probe_code0",
+    "regime": "think_on_t1",
+    "completion_tokens": 512,
+    "reasoning_tokens": 512,
+    "wall": 2.328,
+    "tok_s": 219.906,
+    "drafts": 174.0,
+    "acceptance_length": 2.942528735632184,
+    "accept_rate": 0.48419540229885055,
+    "per_pos": {
+      "0": 0.759,
+      "1": 0.534,
+      "2": 0.391,
+      "3": 0.253
+    },
+    "finish": "length",
+    "has_reasoning": true,
+    "content_head": ""
+  },
+  "payload": {
+    "model": "glm-5.3-flash",
+    "messages": [
+      {
+        "role": "user",
+        "content": "Write a complete Python module implementing a thread-safe LRU cache with TTL expiry, type hints, docstrings, and tests. Output only code."
+      }
+    ],
+    "max_tokens": 512,
+    "stream": false,
+    "temperature": 1.0,
+    "top_p": 0.95,
+    "chat_template_kwargs": {
+      "enable_thinking": true
+    }
+  },
+  "body": {
+    "id": "chatcmpl-875ed47001d0590a",
+    "object": "chat.completion",
+    "created": 1792057754,
+    "model": "glm-5.3-flash",
+    "choices": [
+      {
+        "index": 0,
+        "message": {
+          "role": "assistant",
+          "content": null,
+          "refusal": null,
+          "annotations": null,
+          "audio": null,
+          "function_call": null,
+          "reasoning": "The user wants a complete Python module implementing a thread-safe LRU cache with TTL expiry, type hints, docstrings, and tests. They want only code as output.\n\nLet me design this carefully:\n\n1. **LRU Cache with TTL**: \n   - LRU = Least Recently Used eviction when capacity is exceeded\n   - TTL = Time To Live \u2014 entries expire after a certain duration\n   - Thread-safe = need locking (use `threading.RLock` or `Lock`)\n   - Type hints = use `typing` module generics\n   - Docstrings = document everything\n   - Tests = unittest or pytest style tests\n\n2. **Design considerations**:\n   - Use `OrderedDict` for O(1) LRU operations, or a doubly linked list. `OrderedDict` with `move_to_end` is the standard approach.\n   - For TTL: store `(value, expiry_time)` tuples. On access, check expiry.\n   - Lazy expiry on access + optional background cleanup or purge on operations.\n   - Thread safety: wrap all public methods with a lock.\n   - Support `get`, `set`/`put`, `delete`, `clear`, `__len__`, `__contains__`, maybe a decorator.\n   - Use `time.monotonic()` for TTL to avoid issues with system clock changes.\n   - Generic typing: `Generic[K, V]`.\n\n3. **Implementation details**:\n   - `__init__(self, maxsize: int = 128, ttl: float | None = None)` \u2014 if ttl is None, entries never expire.\n   - `get(key, default=None)` \u2014 return value or default; update recency if found and not expired.\n   - `put(key, value)` \u2014 insert/update; move to end; evict LRU if over maxsize.\n   - `pop(key, default)` \u2014 remove and return.\n   - `delete(key)` \u2014 remove.\n   - `clear()` \u2014 remove all.\n   - `expired_count` / `purge()` \u2014 remove expired entries.\n   - `__len__` \u2014 count of non-expired entries (purge first).\n   - `__contains__` \u2014 check without updating recency? Or with? Typically `in` should not count as use, but for a cache it often does. I'll make `__contains__` a non-recency-updating check, and document it. Actually, to keep semantics simple and consistent, maybe `__contains__` should just"
+        },
+        "logprobs": null,
+        "finish_reason": "length",
+        "stop_reason": null,
+        "token_ids": null,
+        "routed_experts": null
+      }
+    ],
+    "service_tier": null,
+    "system_fingerprint": "vllm-0.30.1rc1.dev493+gac9126e58-6a2df9e8",
+    "usage": {
+      "prompt_tokens": 41,
+      "total_tokens": 553,
+      "completion_tokens": 512,
+      "prompt_tokens_details": null,
+      "completion_tokens_details": {
+        "reasoning_tokens": 512
+      }
+    },
+    "prompt_logprobs": null,
+    "prompt_token_ids": null,
+    "prompt_text": null,
+    "kv_transfer_params": null,
+    "ec_transfer_params": null,
+    "metrics": null
+  }
+}

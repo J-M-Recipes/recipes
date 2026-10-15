@@ -1,0 +1,80 @@
+{
+  "row": {
+    "name": "probe_prose1",
+    "regime": "think_off_t0",
+    "completion_tokens": 512,
+    "reasoning_tokens": null,
+    "wall": 22.585,
+    "tok_s": 22.67,
+    "drafts": 191.0,
+    "acceptance_length": 2.680628272251309,
+    "accept_rate": 0.24158563949139866,
+    "per_pos": {
+      "0": 0.717,
+      "1": 0.435,
+      "2": 0.283,
+      "3": 0.152,
+      "4": 0.063,
+      "5": 0.031,
+      "6": 0.01
+    },
+    "finish": "length",
+    "has_reasoning": false,
+    "content_head": "# Speculative Decoding: A Practical Guide\n\n## The Core Idea\n\nAutoregressive LLM inference is memory-bandwidth bound: gen"
+  },
+  "payload": {
+    "model": "glm-5.3-flash",
+    "messages": [
+      {
+        "role": "user",
+        "content": "Explain speculative decoding to an inference engineer, including verification, acceptance length, and failure modes."
+      }
+    ],
+    "max_tokens": 512,
+    "stream": false,
+    "temperature": 0,
+    "top_p": 1,
+    "chat_template_kwargs": {
+      "enable_thinking": false
+    }
+  },
+  "body": {
+    "id": "chatcmpl-bd17c47458e7546d",
+    "object": "chat.completion",
+    "created": 1791125879,
+    "model": "glm-5.3-flash",
+    "choices": [
+      {
+        "index": 0,
+        "message": {
+          "role": "assistant",
+          "content": "# Speculative Decoding: A Practical Guide\n\n## The Core Idea\n\nAutoregressive LLM inference is memory-bandwidth bound: generating one token requires streaming all model weights from HBM, but the compute to process that token is tiny relative to the hardware's capability. Speculative decoding exploits this by using cheap \"draft\" tokens to make each target-model forward pass do more useful work.\n\nThe key insight: **verification of *k* tokens in parallel costs roughly the same as generating one token** (for memory-bound models), so if you can guess tokens that are likely correct, you win.\n\n## The Algorithm\n\n1. **Draft phase**: A small draft model (or other proposal mechanism) generates *k* candidate tokens autoregressively.\n2. **Verification phase**: The target model runs a single forward pass over the prompt + all *k* draft tokens. Because of the causal mask, this pass yields the target's distributions at every position simultaneously.\n3. **Accept/reject**: Walk through positions left to right. At each position, accept or resample the draft token according to a scheme that guarantees the output distribution is *exactly* the target model's distribution.\n4. **On first rejection**: Discard everything after it, resample from a corrected distribution, and return to drafting.\n\nThe standard acceptance test (Leviathan et al. 2023): draft proposes token from distribution *q*, target has distribution *p*. Accept if you draw *u ~ Uniform(0,1)* and *u \u2264 p(x)/q(x)*. If rejected, sample from *norm(max(0, p \u2212 q))* \u2014 this residual distribution provably makes the final output identical to sampling from *p* alone. **This is lossless**: the output is distributionally indistinguishable from the target model generating alone.\n\n## Acceptance Length\n\nThe expected number of tokens emitted per verification pass, often called **\u03c4 (tau)** or the acceptance length. This is the metric that determines your speedup.\n\n- If \u03b1 is the per-token acceptance rate, expected tokens per cycle \u2248 (1 \u2212 \u03b1^(k+1))/(1 \u2212 \u03b1).\n- With \u03b1 = 0.8 and k = 4, you get ~3.4 tokens per target forward pass \u2014 but wall-clock speedup is less because drafting isn't free and verification on *k+1* tokens is somewhat more expensive than on 1.\n\nKey dynamics:\n\n- **\u03b1 is sequence-dependent**: acceptance is high for boilerplate,",
+          "refusal": null,
+          "annotations": null,
+          "audio": null,
+          "function_call": null,
+          "reasoning": null
+        },
+        "logprobs": null,
+        "finish_reason": "length",
+        "stop_reason": null,
+        "token_ids": null,
+        "routed_experts": null
+      }
+    ],
+    "service_tier": null,
+    "system_fingerprint": "vllm-0.1.dev20051+g487ecf187-tp2-3737b693",
+    "usage": {
+      "prompt_tokens": 32,
+      "total_tokens": 544,
+      "completion_tokens": 512,
+      "prompt_tokens_details": null
+    },
+    "prompt_logprobs": null,
+    "prompt_token_ids": null,
+    "prompt_text": null,
+    "kv_transfer_params": null,
+    "ec_transfer_params": null,
+    "metrics": null
+  }
+}

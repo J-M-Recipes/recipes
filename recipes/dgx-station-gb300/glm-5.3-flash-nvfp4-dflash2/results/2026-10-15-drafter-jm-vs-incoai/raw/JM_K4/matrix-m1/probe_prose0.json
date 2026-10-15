@@ -1,0 +1,108 @@
+{
+  "fixture": "probe_prose0",
+  "concurrency": 1,
+  "started_iso": "2026-10-15T03:12:37-05:00",
+  "ended_iso": "2026-10-15T03:12:40-05:00",
+  "batch_wall_seconds": 3.578,
+  "mean_wall_seconds": 3.577,
+  "completion_tokens_total": 512,
+  "aggregate_tok_s": 143.117,
+  "per_stream_tok_s": [
+    143.151
+  ],
+  "spec_metrics_present": true,
+  "metric_before": {
+    "drafts": 3209.0,
+    "draft_tokens": 12836.0,
+    "accepted_tokens": 5408.0
+  },
+  "metric_after": {
+    "drafts": 3486.0,
+    "draft_tokens": 13944.0,
+    "accepted_tokens": 5644.0
+  },
+  "metric_delta": {
+    "drafts": 277.0,
+    "draft_tokens": 1108.0,
+    "accepted_tokens": 236.0
+  },
+  "per_pos_accepted_delta": {
+    "0": 143.0,
+    "1": 65.0,
+    "2": 23.0,
+    "3": 5.0
+  },
+  "per_pos_accept_prob": {
+    "0": 0.516245487364621,
+    "1": 0.23465703971119134,
+    "2": 0.08303249097472924,
+    "3": 0.018050541516245487
+  },
+  "metric_series_seen_before": {
+    "drafts": 1,
+    "draft_tokens": 1,
+    "accepted_tokens": 1
+  },
+  "metric_series_seen_after": {
+    "drafts": 1,
+    "draft_tokens": 1,
+    "accepted_tokens": 1
+  },
+  "metric_lines_before": [
+    "vllm:spec_decode_num_drafts_total{engine=\"0\",model_name=\"glm-5.3-flash\"} 3209.0",
+    "vllm:spec_decode_num_draft_tokens_total{engine=\"0\",model_name=\"glm-5.3-flash\"} 12836.0",
+    "vllm:spec_decode_num_accepted_tokens_total{engine=\"0\",model_name=\"glm-5.3-flash\"} 5408.0"
+  ],
+  "metric_lines_after": [
+    "vllm:spec_decode_num_drafts_total{engine=\"0\",model_name=\"glm-5.3-flash\"} 3486.0",
+    "vllm:spec_decode_num_draft_tokens_total{engine=\"0\",model_name=\"glm-5.3-flash\"} 13944.0",
+    "vllm:spec_decode_num_accepted_tokens_total{engine=\"0\",model_name=\"glm-5.3-flash\"} 5644.0"
+  ],
+  "acceptance_length": 1.848375451263538,
+  "accept_rate": 0.21299638989169675,
+  "ar_tok_s_from_wall": null,
+  "response_kinds": [
+    "empty"
+  ],
+  "finish_reasons": [
+    "length"
+  ],
+  "errors": [],
+  "mem_during": {},
+  "requests": [
+    {
+      "http_status": 200,
+      "started_iso": "2026-10-15T03:12:37-05:00",
+      "wall_seconds": 3.577,
+      "prompt_tokens": 32,
+      "completion_tokens": 512,
+      "reasoning_tokens": 512,
+      "tok_s": 143.151,
+      "finish_reason": "length",
+      "response_kind": "empty",
+      "content": null,
+      "reasoning": "# Roman Aqueducts: Engineering Gradient and Purity\n\nThe Roman aqueduct system represents one of antiquity's most sophisticated hydraulic achievements, supplying millions of gallons of water daily to Rome and other cities across the empire. Two challenges dominated aqueduct engineering: maintaining a precise, gentle gradient over long distances, and preserving water quality from source to city. Roman engineers solved both problems with remarkable ingenuity, combining mathematical precision with practical construction techniques.\n\n## Maintaining the Gradient\n\nThe fundamental challenge of aqueduct design was that water flows only downhill, yet sources often lay at similar elevations to the cities they served. Roman engineers therefore needed to sustain an extremely shallow but consistent slope\u2014often just 0.15 to 0.3 percent\u2014across dozens of miles of varied terrain. The Anio Novus, for example, dropped only about 245 meters over its 87-kilometer course.\n\nTo achieve this, surveyors used instruments including the *chorobates* (a long wooden bench with a water channel for leveling), the *groma* for establishing right angles, and the *dioptra* for measuring angles. These tools allowed crews working from both ends of a planned route to meet accurately in the middle, sometimes after years of surveying.\n\nThe solution to maintaining gradient varied by landscape. Across open countryside, engineers built the iconic arched arcades, which held the water channel at a constant height while allowing roads and valleys to pass beneath. When terrain descended too steeply, aqueducts used cascades and stepped channels to dissipate energy safely. Where valleys were too deep to bridge, Romans employed two brilliant alternatives: inverted siphons, which used the principle of communicating vessels to push water downhill through lead or terracotta pipes and up the other side, or tunnels driven directly through mountains.\n\nTunneling was perhaps the most impressive gradient-preserving technique. The Anio Novus and other aqueducts ran through shafts up to 50 meters deep, with vertical access shafts every 30\u201350 meters for construction and maintenance. Some tunnels, like those of the Anio Vetus, required extraordinary precision to keep the gradient consistent underground.\n\n## Preserving Water Quality\n\nWater quality management began at the source. Romans preferred spring water, which they considered superior to river water because natural filtration through rock and soil provided initial purification. Intake structures (*capta*) included grates and settling basins to exclude debris, gravel, and aquatic life.\n\nAlong the route, the water channel\u2014the *specus*",
+      "tool_calls": null,
+      "error": null
+    }
+  ],
+  "request_payload_template": {
+    "model": "glm-5.3-flash",
+    "messages": [
+      {
+        "role": "user",
+        "content": "Write a detailed 700-word explanation of how Roman aqueducts maintained gradient and water quality."
+      }
+    ],
+    "temperature": 0,
+    "top_p": 1,
+    "max_tokens": 512,
+    "stream": false,
+    "chat_template_kwargs": {
+      "enable_thinking": false
+    }
+  },
+  "name": "probe_prose0",
+  "rep": 1,
+  "mode": "dflash"
+}

@@ -1,0 +1,114 @@
+{
+  "fixture": "probe_code1",
+  "concurrency": 1,
+  "started_iso": "2026-10-15T05:00:50-05:00",
+  "ended_iso": "2026-10-15T05:00:53-05:00",
+  "batch_wall_seconds": 3.166,
+  "mean_wall_seconds": 3.165,
+  "completion_tokens_total": 512,
+  "aggregate_tok_s": 161.718,
+  "per_stream_tok_s": [
+    161.758
+  ],
+  "spec_metrics_present": true,
+  "metric_before": {
+    "drafts": 11625.0,
+    "draft_tokens": 81375.0,
+    "accepted_tokens": 19876.0
+  },
+  "metric_after": {
+    "drafts": 11827.0,
+    "draft_tokens": 82789.0,
+    "accepted_tokens": 20190.0
+  },
+  "metric_delta": {
+    "drafts": 202.0,
+    "draft_tokens": 1414.0,
+    "accepted_tokens": 314.0
+  },
+  "per_pos_accepted_delta": {
+    "0": 139.0,
+    "1": 79.0,
+    "2": 50.0,
+    "3": 23.0,
+    "4": 13.0,
+    "5": 8.0,
+    "6": 2.0
+  },
+  "per_pos_accept_prob": {
+    "0": 0.6881188118811881,
+    "1": 0.3910891089108911,
+    "2": 0.24752475247524752,
+    "3": 0.11386138613861387,
+    "4": 0.06435643564356436,
+    "5": 0.039603960396039604,
+    "6": 0.009900990099009901
+  },
+  "metric_series_seen_before": {
+    "drafts": 1,
+    "draft_tokens": 1,
+    "accepted_tokens": 1
+  },
+  "metric_series_seen_after": {
+    "drafts": 1,
+    "draft_tokens": 1,
+    "accepted_tokens": 1
+  },
+  "metric_lines_before": [
+    "vllm:spec_decode_num_drafts_total{engine=\"0\",model_name=\"glm-5.3-flash\"} 11625.0",
+    "vllm:spec_decode_num_draft_tokens_total{engine=\"0\",model_name=\"glm-5.3-flash\"} 81375.0",
+    "vllm:spec_decode_num_accepted_tokens_total{engine=\"0\",model_name=\"glm-5.3-flash\"} 19876.0"
+  ],
+  "metric_lines_after": [
+    "vllm:spec_decode_num_drafts_total{engine=\"0\",model_name=\"glm-5.3-flash\"} 11827.0",
+    "vllm:spec_decode_num_draft_tokens_total{engine=\"0\",model_name=\"glm-5.3-flash\"} 82789.0",
+    "vllm:spec_decode_num_accepted_tokens_total{engine=\"0\",model_name=\"glm-5.3-flash\"} 20190.0"
+  ],
+  "acceptance_length": 2.5346534653465347,
+  "accept_rate": 0.22206506364922207,
+  "ar_tok_s_from_wall": null,
+  "response_kinds": [
+    "empty"
+  ],
+  "finish_reasons": [
+    "length"
+  ],
+  "errors": [],
+  "mem_during": {},
+  "requests": [
+    {
+      "http_status": 200,
+      "started_iso": "2026-10-15T05:00:50-05:00",
+      "wall_seconds": 3.165,
+      "prompt_tokens": 33,
+      "completion_tokens": 512,
+      "reasoning_tokens": 512,
+      "tok_s": 161.758,
+      "finish_reason": "length",
+      "response_kind": "empty",
+      "content": null,
+      "reasoning": "```rust\n//! A bounded work queue with cancellation support.\n//!\n//! The queue has a fixed capacity. Producers block when the queue is full,\n//! consumers block when the queue is empty. A cancellation flag causes all\n//! waiting producers and consumers to be released with an error, and any\n//! task submitted after cancellation is rejected.\n\nuse std::collections::VecDeque;\nuse std::error::Error;\nuse std::fmt;\nuse std::sync::{Arc, Condvar, Mutex};\n\n/// Errors returned by queue operations.\n#[derive(Debug, Clone, Copy, PartialEq, Eq)]\npub enum QueueError {\n    /// The queue was cancelled before or during the operation.\n    Cancelled,\n    /// The queue was dropped while waiting for space or an item.\n    Closed,\n}\n\nimpl fmt::Display for QueueError {\n    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {\n        match self {\n            QueueError::Cancelled => write!(f, \"queue is cancelled\"),\n            QueueError::Closed => write!(f, \"queue is closed\"),\n        }\n    }\n}\n\nimpl Error for QueueError {}\n\n/// A bounded, thread-safe work queue with cancellation.\npub struct WorkQueue<T> {\n    inner: Arc<Inner<T>>,\n}\n\nstruct Inner<T> {\n    state: Mutex<State<T>>,\n    space_available: Condvar,\n    item_available: Condvar,\n    capacity: usize,\n}\n\nstruct State<T> {\n    items: VecDeque<T>,\n    cancelled: bool,\n    /// Number of waiters on `space_available` (producers).\n    waiting_producers: usize,\n    /// Number of waiters on `item_available` (consumers).\n    waiting_consumers: waiter_count::WaiterCount,\n}\n\nmod waiter_count {\n    /// Tracks the number of waiters so we can wake everyone on cancel/close.\n    #[derive(Default)]\n    pub struct WaiterCount {\n        count: usize,\n    }\n\n    impl WaiterCount\n        where\n    {}\n    impl WaiterCount {\n        pub fn new() -> Self {\n            Self { count: 0 }\n        }\n        pub fn add(&mut self, n: usize) {\n            self.count += n;\n        }\n        under\n    }\n}\n\nfn main() {}\n```\n\nWait, I need to reconsider \u2014 I left some stray fragments in that draft. Let me write the complete, correct implementation:\n\n```rust\n//! A bounded work queue with cancellation support.\n//!\n//! The queue has a fixed capacity.",
+      "tool_calls": null,
+      "error": null
+    }
+  ],
+  "request_payload_template": {
+    "model": "glm-5.3-flash",
+    "messages": [
+      {
+        "role": "user",
+        "content": "Write a complete Rust implementation of a bounded work queue with cancellation and unit tests. Output only code."
+      }
+    ],
+    "temperature": 0,
+    "top_p": 1,
+    "max_tokens": 512,
+    "stream": false,
+    "chat_template_kwargs": {
+      "enable_thinking": false
+    }
+  },
+  "name": "probe_code1",
+  "rep": 1,
+  "mode": "dflash"
+}

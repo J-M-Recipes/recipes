@@ -1,0 +1,80 @@
+{
+  "row": {
+    "name": "probe_code1",
+    "regime": "think_off_t0",
+    "completion_tokens": 512,
+    "reasoning_tokens": null,
+    "wall": 16.882,
+    "tok_s": 30.329,
+    "drafts": 144.0,
+    "acceptance_length": 3.5555555555555554,
+    "accept_rate": 0.36507936507936506,
+    "per_pos": {
+      "0": 0.806,
+      "1": 0.569,
+      "2": 0.431,
+      "3": 0.306,
+      "4": 0.215,
+      "5": 0.146,
+      "6": 0.083
+    },
+    "finish": "length",
+    "has_reasoning": false,
+    "content_head": "```rust\n//! A bounded work queue with cancellation support.\n//!\n//! - Fixed capacity: `push` blocks when the queue is fu"
+  },
+  "payload": {
+    "model": "glm-5.3-flash",
+    "messages": [
+      {
+        "role": "user",
+        "content": "Write a complete Rust implementation of a bounded work queue with cancellation and unit tests. Output only code."
+      }
+    ],
+    "max_tokens": 512,
+    "stream": false,
+    "temperature": 0,
+    "top_p": 1,
+    "chat_template_kwargs": {
+      "enable_thinking": false
+    }
+  },
+  "body": {
+    "id": "chatcmpl-858312afca8f5b46",
+    "object": "chat.completion",
+    "created": 1791196794,
+    "model": "glm-5.3-flash",
+    "choices": [
+      {
+        "index": 0,
+        "message": {
+          "role": "assistant",
+          "content": "```rust\n//! A bounded work queue with cancellation support.\n//!\n//! - Fixed capacity: `push` blocks when the queue is full.\n//! - Cancellation: a `CancellationToken` shared by producers and consumers\n//!   aborts blocked operations and prevents new work from being accepted.\n//! - Graceful close: `close()` lets consumers drain remaining items, then\n//!   signals end-of-stream via `try_pop` / `pop`.\n\nuse std::collections::VecDeque;\nuse std::sync::{Arc, Condvar, Mutex};\n\n/// Token used to signal cancellation to queue producers and consumers.\n#[derive(Clone, Default)]\npub struct CancellationToken {\n    inner: Arc<CancellationInner>,\n}\n\n#[derive(Default)]\nstruct CancellationInner {\n    cancelled: Mutex<bool>,\n    condvar: Condvar,\n}\n\nimpl CancellationToken {\n    pub fn new() -> Self {\n        Self::default()\n    }\n\n    /// Signal cancellation. Wakes all waiters. Idempotent.\n    pub fn cancel(&self) {\n        let mut cancelled = self.inner.cancelled.lock().unwrap();\n        *cancelled = true;\n        self.inner.condvar.notify_all();\n    }\n\n    /// Returns true if cancellation has been signalled.\n    pub fn is_cancelled(&self) -> bool {\n        *self.inner.cancelled.lock().unwrap()\n    }\n\n    /// Blocks until cancellation is signalled.\n    OS: pub fn wait(&self) {\n        let mut cancelled = self.wait_inner();\n        while !*cancelled {\n            cancelled = self.inner.condvar.wait(cancelled).unwrap();\n        }\n    }\n\n    /// Blocks until cancellation is signalled or the timeout elapses.\n    /// Returns true if cancelled, false on timeout.\n    pub fn wait_timeout(&self, timeout: std::time::Duration) -> bool {\n        let mut cancelled = self.inner.cancelled.lock().unwrap();\n        while !*cancelled {\n            let (guard, timeout_result) = self\n                .inner\n                .condvar\n                .wait_timeout(cancelled, timeout)\n                .unwrap();\n            cancelled = guard;\n            if timeout_result.timed_out() {\n                return false;\n            }\n        }\n        true\n    }\n}\n\nimpl CancellationToken::wait_inner {\n    // placeholder\n}\n```\n\nWait, I made a mistake in the code above \u2014 I accidentally wrote `OS:` before `pub fn wait` and left a bogus `impl` block at the end. Let me rewrite the whole thing cleanly.\n\n```rust\n//! A bounded work queue with cancellation support.\n",
+          "refusal": null,
+          "annotations": null,
+          "audio": null,
+          "function_call": null,
+          "reasoning": null
+        },
+        "logprobs": null,
+        "finish_reason": "length",
+        "stop_reason": null,
+        "token_ids": null,
+        "routed_experts": null
+      }
+    ],
+    "service_tier": null,
+    "system_fingerprint": "vllm-0.1.dev20051+g487ecf187-tp2-815c380c",
+    "usage": {
+      "prompt_tokens": 33,
+      "total_tokens": 545,
+      "completion_tokens": 512,
+      "prompt_tokens_details": null
+    },
+    "prompt_logprobs": null,
+    "prompt_token_ids": null,
+    "prompt_text": null,
+    "kv_transfer_params": null,
+    "ec_transfer_params": null,
+    "metrics": null
+  }
+}

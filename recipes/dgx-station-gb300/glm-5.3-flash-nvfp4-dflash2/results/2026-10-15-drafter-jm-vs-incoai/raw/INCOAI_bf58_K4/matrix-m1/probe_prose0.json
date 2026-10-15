@@ -1,0 +1,108 @@
+{
+  "fixture": "probe_prose0",
+  "concurrency": 1,
+  "started_iso": "2026-10-15T07:13:40-05:00",
+  "ended_iso": "2026-10-15T07:13:44-05:00",
+  "batch_wall_seconds": 3.33,
+  "mean_wall_seconds": 3.329,
+  "completion_tokens_total": 512,
+  "aggregate_tok_s": 153.759,
+  "per_stream_tok_s": [
+    153.795
+  ],
+  "spec_metrics_present": true,
+  "metric_before": {
+    "drafts": 2765.0,
+    "draft_tokens": 11060.0,
+    "accepted_tokens": 5881.0
+  },
+  "metric_after": {
+    "drafts": 3023.0,
+    "draft_tokens": 12092.0,
+    "accepted_tokens": 6134.0
+  },
+  "metric_delta": {
+    "drafts": 258.0,
+    "draft_tokens": 1032.0,
+    "accepted_tokens": 253.0
+  },
+  "per_pos_accepted_delta": {
+    "0": 140.0,
+    "1": 68.0,
+    "2": 31.0,
+    "3": 14.0
+  },
+  "per_pos_accept_prob": {
+    "0": 0.5426356589147286,
+    "1": 0.26356589147286824,
+    "2": 0.12015503875968993,
+    "3": 0.05426356589147287
+  },
+  "metric_series_seen_before": {
+    "drafts": 1,
+    "draft_tokens": 1,
+    "accepted_tokens": 1
+  },
+  "metric_series_seen_after": {
+    "drafts": 1,
+    "draft_tokens": 1,
+    "accepted_tokens": 1
+  },
+  "metric_lines_before": [
+    "vllm:spec_decode_num_drafts_total{engine=\"0\",model_name=\"glm-5.3-flash\"} 2765.0",
+    "vllm:spec_decode_num_draft_tokens_total{engine=\"0\",model_name=\"glm-5.3-flash\"} 11060.0",
+    "vllm:spec_decode_num_accepted_tokens_total{engine=\"0\",model_name=\"glm-5.3-flash\"} 5881.0"
+  ],
+  "metric_lines_after": [
+    "vllm:spec_decode_num_drafts_total{engine=\"0\",model_name=\"glm-5.3-flash\"} 3023.0",
+    "vllm:spec_decode_num_draft_tokens_total{engine=\"0\",model_name=\"glm-5.3-flash\"} 12092.0",
+    "vllm:spec_decode_num_accepted_tokens_total{engine=\"0\",model_name=\"glm-5.3-flash\"} 6134.0"
+  ],
+  "acceptance_length": 1.9844961240310077,
+  "accept_rate": 0.2451550387596899,
+  "ar_tok_s_from_wall": null,
+  "response_kinds": [
+    "empty"
+  ],
+  "finish_reasons": [
+    "length"
+  ],
+  "errors": [],
+  "mem_during": {},
+  "requests": [
+    {
+      "http_status": 200,
+      "started_iso": "2026-10-15T07:13:40-05:00",
+      "wall_seconds": 3.329,
+      "prompt_tokens": 32,
+      "completion_tokens": 512,
+      "reasoning_tokens": 512,
+      "tok_s": 153.795,
+      "finish_reason": "length",
+      "response_kind": "empty",
+      "content": null,
+      "reasoning": "# Roman Aqueducts: Engineering Gradient and Purity\n\nThe Roman aqueduct system represents one of antiquity's most sophisticated hydraulic achievements, supplying millions of gallons of water daily to Rome and other cities across the empire. Two challenges dominated aqueduct engineering: maintaining a precise, gentle gradient over long distances, and preserving water quality from source to city. Roman engineers solved both problems through remarkable surveying skill, empirical understanding of hydraulics, and systematic maintenance practices.\n\n## Maintaining Gradient: The Surveying Revolution\n\nRoman aqueducts typically dropped only about 0.3 to 0.5 meters per kilometer\u2014a gradient so gentle that a modern engineer might struggle to achieve it without instruments. The Romans accomplished this through careful surveying using three primary tools: the *chorobates*, a long wooden bench with a water trough for establishing level; the *groma*, used for right angles and alignment; and the *dioptra*, an ancestor of the theodolite that could measure horizontal angles.\n\nThe *chorobates*, described by Vitruvius in his first-century BCE treatise *De Architectura*, was particularly crucial. This twenty-foot instrument allowed surveyors to establish level lines even in windy conditions that would disturb the plumb lines of other devices. Using these tools, surveyors traced routes across challenging terrain, sometimes taking years to plot a single channel's path.\n\nThe engineering solutions to terrain challenges were equally impressive. Where possible, aqueducts ran in open channels on arched bridges or embankments. When hills obstructed the route, engineers tunneled through\u2014over 2.5 kilometers of the Anio Novus ran underground. Deep valleys posed greater problems: the Romans occasionally built spectacular siphons, using lead pipes to carry water down one slope and up another, relying on the principle that water in connected pipes seeks its own level. The siphon at Lyon (Lugdunum) descended over 100 meters.\n\n## Settling Basins and Filtration\n\nWater quality management began at the source. Engineers selected springs and rivers carefully, often preferring elevated spring water for its clarity. At the intake, and at intervals along the route, builders constructed *piscinae*\u2014settling basins or castella aquae\u2014that slowed the water dramatically, allowing sediment to sink. The piscina at the Aqua Virgo and the large settling tank at the Anio Novus near Tivoli demonstrate this practice. These basins also served as access points for cleaning and as",
+      "tool_calls": null,
+      "error": null
+    }
+  ],
+  "request_payload_template": {
+    "model": "glm-5.3-flash",
+    "messages": [
+      {
+        "role": "user",
+        "content": "Write a detailed 700-word explanation of how Roman aqueducts maintained gradient and water quality."
+      }
+    ],
+    "temperature": 0,
+    "top_p": 1,
+    "max_tokens": 512,
+    "stream": false,
+    "chat_template_kwargs": {
+      "enable_thinking": false
+    }
+  },
+  "name": "probe_prose0",
+  "rep": 1,
+  "mode": "dflash"
+}

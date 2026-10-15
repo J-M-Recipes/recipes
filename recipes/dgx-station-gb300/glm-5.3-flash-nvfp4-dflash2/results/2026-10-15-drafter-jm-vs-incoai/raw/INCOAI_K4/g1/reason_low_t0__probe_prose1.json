@@ -1,0 +1,80 @@
+{
+  "row": {
+    "name": "probe_prose1",
+    "regime": "reason_low_t0",
+    "completion_tokens": 512,
+    "reasoning_tokens": 512,
+    "wall": 2.469,
+    "tok_s": 207.344,
+    "drafts": 187.0,
+    "acceptance_length": 2.7379679144385025,
+    "accept_rate": 0.43315508021390375,
+    "per_pos": {
+      "0": 0.743,
+      "1": 0.449,
+      "2": 0.326,
+      "3": 0.214
+    },
+    "finish": "length",
+    "has_reasoning": true,
+    "content_head": ""
+  },
+  "payload": {
+    "model": "glm-5.3-flash",
+    "messages": [
+      {
+        "role": "user",
+        "content": "Explain speculative decoding to an inference engineer, including verification, acceptance length, and failure modes."
+      }
+    ],
+    "max_tokens": 512,
+    "stream": false,
+    "temperature": 0,
+    "top_p": 1,
+    "chat_template_kwargs": {
+      "reasoning_effort": "low"
+    }
+  },
+  "body": {
+    "id": "chatcmpl-a190b58f0c1eebc3",
+    "object": "chat.completion",
+    "created": 1792057717,
+    "model": "glm-5.3-flash",
+    "choices": [
+      {
+        "index": 0,
+        "message": {
+          "role": "assistant",
+          "content": null,
+          "refusal": null,
+          "annotations": null,
+          "audio": null,
+          "function_call": null,
+          "reasoning": "# Speculative Decoding\n\n## Core Idea\n\nAutoregressive LLM inference is memory-bandwidth bound: generating one token requires reading all model weights, but the compute is trivially parallel per token. Speculative decoding exploits this by using a cheap draft model to guess multiple future tokens, then verifying them **in parallel** with the big model \u2014 turning K sequential forward passes into one batched pass.\n\n## The Algorithm\n\n1. **Draft phase**: The small draft model (e.g., a 1B model paired with a 70B target) autoregressively generates K candidate tokens, \u03b3 of them typically.\n2. **Verification phase**: Run the target model **once** on the full draft sequence (prompt + \u03b3 draft tokens). Because attention is causal, this single forward pass yields the target's distribution at every position simultaneously.\n3. **Accept/reject**: Walk through draft tokens left to right. For each position, accept token `t` with probability:\n\n$$p(\\text{accept}) = \\min\\left(1, \\frac{p_{\\text{target}}(t)}{p_{\\text{draft}}(t)}\\right)$$\n\n4. **Resample on rejection**: If a token is rejected, sample from the normalized residual distribution:\n\n$$\\text{sample from } \\max(0, p_{\\text{target}} - p_{\\text{draft}})$$\n\nthen stop. This guarantees the output distribution is **exactly identical** to sampling from the target model alone \u2014 it's a lossless speedup, not an approximation.\n\n5. **Bonus token**: On rejection (or after accepting all \u03b3), the target model gives you one extra token for free from its own distribution at that position.\n\n## Acceptance Length\n\nThe expected number of tokens emitted per target forward pass. If \u03b1 = E[acceptance rate per token] under the draft:\n\n$$E[\\text{tokens per step}] = \\frac{1 - \\alpha^{\\gamma+1}}{1 - \\alpha}$$\n\nKey properties:\n- With \u03b1 = 0.9 and \u03b3 = 4, you get ~4.6 tokens per target pass.\n- **Longer \u03b3 isn't always better**: as \u03b1^\u03b3 shrinks, extra draft tokens are wasted work. Optimal \u03b3 depends on \u03b1 and the draft/target cost ratio (roughly \u03b3 \u2248 1/\u221a(cost ratio) territory; tune empirically).\n- \u03b1 depends on how well draft"
+        },
+        "logprobs": null,
+        "finish_reason": "length",
+        "stop_reason": null,
+        "token_ids": null,
+        "routed_experts": null
+      }
+    ],
+    "service_tier": null,
+    "system_fingerprint": "vllm-0.30.1rc1.dev493+gac9126e58-6a2df9e8",
+    "usage": {
+      "prompt_tokens": 32,
+      "total_tokens": 544,
+      "completion_tokens": 512,
+      "prompt_tokens_details": null,
+      "completion_tokens_details": {
+        "reasoning_tokens": 512
+      }
+    },
+    "prompt_logprobs": null,
+    "prompt_token_ids": null,
+    "prompt_text": null,
+    "kv_transfer_params": null,
+    "ec_transfer_params": null,
+    "metrics": null
+  }
+}

@@ -1,0 +1,145 @@
+{
+  "fixture": "agent",
+  "concurrency": 1,
+  "started_iso": "2026-10-15T06:13:00-05:00",
+  "ended_iso": "2026-10-15T06:13:00-05:00",
+  "batch_wall_seconds": 0.108,
+  "mean_wall_seconds": 0.107,
+  "completion_tokens_total": 13,
+  "aggregate_tok_s": 120.397,
+  "per_stream_tok_s": [
+    121.227
+  ],
+  "spec_metrics_present": true,
+  "metric_before": {
+    "drafts": 5553.0,
+    "draft_tokens": 38871.0,
+    "accepted_tokens": 13651.0
+  },
+  "metric_after": {
+    "drafts": 5555.0,
+    "draft_tokens": 38885.0,
+    "accepted_tokens": 13661.0
+  },
+  "metric_delta": {
+    "drafts": 2.0,
+    "draft_tokens": 14.0,
+    "accepted_tokens": 10.0
+  },
+  "per_pos_accepted_delta": {
+    "0": 2.0,
+    "1": 2.0,
+    "2": 2.0,
+    "3": 1.0,
+    "4": 1.0,
+    "5": 1.0,
+    "6": 1.0
+  },
+  "per_pos_accept_prob": {
+    "0": 1.0,
+    "1": 1.0,
+    "2": 1.0,
+    "3": 0.5,
+    "4": 0.5,
+    "5": 0.5,
+    "6": 0.5
+  },
+  "metric_series_seen_before": {
+    "drafts": 1,
+    "draft_tokens": 1,
+    "accepted_tokens": 1
+  },
+  "metric_series_seen_after": {
+    "drafts": 1,
+    "draft_tokens": 1,
+    "accepted_tokens": 1
+  },
+  "metric_lines_before": [
+    "vllm:spec_decode_num_drafts_total{engine=\"0\",model_name=\"glm-5.3-flash\"} 5553.0",
+    "vllm:spec_decode_num_draft_tokens_total{engine=\"0\",model_name=\"glm-5.3-flash\"} 38871.0",
+    "vllm:spec_decode_num_accepted_tokens_total{engine=\"0\",model_name=\"glm-5.3-flash\"} 13651.0"
+  ],
+  "metric_lines_after": [
+    "vllm:spec_decode_num_drafts_total{engine=\"0\",model_name=\"glm-5.3-flash\"} 5555.0",
+    "vllm:spec_decode_num_draft_tokens_total{engine=\"0\",model_name=\"glm-5.3-flash\"} 38885.0",
+    "vllm:spec_decode_num_accepted_tokens_total{engine=\"0\",model_name=\"glm-5.3-flash\"} 13661.0"
+  ],
+  "acceptance_length": 6.5,
+  "accept_rate": 0.7142857142857143,
+  "ar_tok_s_from_wall": null,
+  "response_kinds": [
+    "tool_call"
+  ],
+  "finish_reasons": [
+    "tool_calls"
+  ],
+  "errors": [],
+  "mem_during": {},
+  "requests": [
+    {
+      "http_status": 200,
+      "started_iso": "2026-10-15T06:13:00-05:00",
+      "wall_seconds": 0.107,
+      "prompt_tokens": 193,
+      "completion_tokens": 13,
+      "reasoning_tokens": 0,
+      "tok_s": 121.227,
+      "finish_reason": "tool_calls",
+      "response_kind": "tool_call",
+      "content": null,
+      "reasoning": null,
+      "tool_calls": [
+        {
+          "id": "chatcmpl-tool-b432be312eea6b70",
+          "type": "function",
+          "function": {
+            "name": "read_file",
+            "arguments": "{\"path\": \"/etc/hosts\"}"
+          }
+        }
+      ],
+      "error": null
+    }
+  ],
+  "request_payload_template": {
+    "model": "glm-5.3-flash",
+    "messages": [
+      {
+        "role": "user",
+        "content": "Use the read_file tool to read /etc/hosts and then summarize what you found."
+      }
+    ],
+    "temperature": 0,
+    "top_p": 1,
+    "max_tokens": 300,
+    "stream": false,
+    "chat_template_kwargs": {
+      "enable_thinking": false
+    },
+    "tools": [
+      {
+        "type": "function",
+        "function": {
+          "name": "read_file",
+          "description": "Read a UTF-8 text file from the local filesystem and return its contents.",
+          "parameters": {
+            "type": "object",
+            "properties": {
+              "path": {
+                "type": "string",
+                "description": "Absolute filesystem path to read"
+              }
+            },
+            "required": [
+              "path"
+            ]
+          }
+        }
+      }
+    ],
+    "tool_choice": "auto"
+  },
+  "name": "agent_c1",
+  "rep": 1,
+  "mode": "dflash"
+}

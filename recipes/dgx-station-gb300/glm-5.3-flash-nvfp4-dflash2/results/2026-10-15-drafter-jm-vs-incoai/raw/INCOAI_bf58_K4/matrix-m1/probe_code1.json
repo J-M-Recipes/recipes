@@ -1,0 +1,108 @@
+{
+  "fixture": "probe_code1",
+  "concurrency": 1,
+  "started_iso": "2026-10-15T07:13:51-05:00",
+  "ended_iso": "2026-10-15T07:13:54-05:00",
+  "batch_wall_seconds": 2.48,
+  "mean_wall_seconds": 2.479,
+  "completion_tokens_total": 512,
+  "aggregate_tok_s": 206.491,
+  "per_stream_tok_s": [
+    206.549
+  ],
+  "spec_metrics_present": true,
+  "metric_before": {
+    "drafts": 3363.0,
+    "draft_tokens": 13452.0,
+    "accepted_tokens": 6816.0
+  },
+  "metric_after": {
+    "drafts": 3546.0,
+    "draft_tokens": 14184.0,
+    "accepted_tokens": 7145.0
+  },
+  "metric_delta": {
+    "drafts": 183.0,
+    "draft_tokens": 732.0,
+    "accepted_tokens": 329.0
+  },
+  "per_pos_accepted_delta": {
+    "0": 133.0,
+    "1": 94.0,
+    "2": 63.0,
+    "3": 39.0
+  },
+  "per_pos_accept_prob": {
+    "0": 0.726775956284153,
+    "1": 0.5136612021857924,
+    "2": 0.3442622950819672,
+    "3": 0.21311475409836064
+  },
+  "metric_series_seen_before": {
+    "drafts": 1,
+    "draft_tokens": 1,
+    "accepted_tokens": 1
+  },
+  "metric_series_seen_after": {
+    "drafts": 1,
+    "draft_tokens": 1,
+    "accepted_tokens": 1
+  },
+  "metric_lines_before": [
+    "vllm:spec_decode_num_drafts_total{engine=\"0\",model_name=\"glm-5.3-flash\"} 3363.0",
+    "vllm:spec_decode_num_draft_tokens_total{engine=\"0\",model_name=\"glm-5.3-flash\"} 13452.0",
+    "vllm:spec_decode_num_accepted_tokens_total{engine=\"0\",model_name=\"glm-5.3-flash\"} 6816.0"
+  ],
+  "metric_lines_after": [
+    "vllm:spec_decode_num_drafts_total{engine=\"0\",model_name=\"glm-5.3-flash\"} 3546.0",
+    "vllm:spec_decode_num_draft_tokens_total{engine=\"0\",model_name=\"glm-5.3-flash\"} 14184.0",
+    "vllm:spec_decode_num_accepted_tokens_total{engine=\"0\",model_name=\"glm-5.3-flash\"} 7145.0"
+  ],
+  "acceptance_length": 2.797814207650273,
+  "accept_rate": 0.4494535519125683,
+  "ar_tok_s_from_wall": null,
+  "response_kinds": [
+    "empty"
+  ],
+  "finish_reasons": [
+    "length"
+  ],
+  "errors": [],
+  "mem_during": {},
+  "requests": [
+    {
+      "http_status": 200,
+      "started_iso": "2026-10-15T07:13:51-05:00",
+      "wall_seconds": 2.479,
+      "prompt_tokens": 33,
+      "completion_tokens": 512,
+      "reasoning_tokens": 512,
+      "tok_s": 206.549,
+      "finish_reason": "length",
+      "response_kind": "empty",
+      "content": null,
+      "reasoning": "```rust\n//! A bounded work queue with cancellation support.\n//!\n//! The queue has a fixed capacity. Producers submit work items; consumers\n//! (workers) pull items and execute them. Dropping the queue's handle\n//! cancels outstanding work, and each item can also be cancelled while\n//! queued (before a worker picks it up) via a per-item `CancellationToken`.\n\nuse std::collections::VecDeque;\nuse std::fmt;\nuse std::sync::atomic::{AtomicUsize, Ordering};\nuse std::sync::{Arc, Condvar, Mutex};\n\n// ---------------------------------------------------------------------------\n// Cancellation token\n// ---------------------------------------------------------------------------\n\n/// A handle used to cancel a queued work item before a worker starts it.\n#[derive(Clone, Default)]\npub struct CancellationToken {\n    inner: Arc<CancelInner>,\n}\n\n#[derive(Default)]\nstruct CancelInner {\n    cancelled: std::sync::atomic::AtomicBool,\n}\n\nimpl CancellationToken {\n    pub fn new() -> Self {\n        Self::default()\n    }\n\n    /// Mark the token as cancelled.\n    pub fn cancel(&self) {\n        self.inner.cancelled.store(true, Ordering::SeqCst);\n    }\n\n    /// Whether the token has been cancelled.\n    pub fn is_cancelled(&self) -> bool {\n        self.inner.cancelled.load(Ordering::SeqCst)\n    }\n}\n\nimpl fmt::Debug for CancellationToken {\n    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {\n        f.debug_struct(\"CancellationToken\")\n            .field(\"cancelled\", &self.is_cancelled())\n            .finish()\n    }\n}\n\n// ---------------------------------------------------------------------------\n// Work queue\n// ---------------------------------------------------------------------------\n\n/// Error returned when submitting to a full or closed queue.\n#[derive(Debug, Clone, Copy, PartialEq, Eq)]\npub enum SubmitError {\n    /// The queue is at capacity.\n    Full,\n    /// The queue has been closed; no new work is accepted.\n    Closed,\n}\n\nimpl fmt::Display for SubmitError {\n    fn fmt(&self, f: &mut fmt::mut fmt::Formatter<'_>) -> fmt::Result {\n        write!(f, \"queue is {}\", match self {\n            SubmitError::Full => \"full\",\n            SubmitError::Closed => \"closed\",\n        })\n    }\n}\n\nimpl std::error::Error for SubmitError {}\n\n/// A bounded work queue with cancellation support.\npub struct WorkQueue<T> {\n    shared: Arc<Shared<T>>,\n}\n\nstruct Shared<T> {\n    state: Mutex<State<T>>,\n    space_available: Condvar",
+      "tool_calls": null,
+      "error": null
+    }
+  ],
+  "request_payload_template": {
+    "model": "glm-5.3-flash",
+    "messages": [
+      {
+        "role": "user",
+        "content": "Write a complete Rust implementation of a bounded work queue with cancellation and unit tests. Output only code."
+      }
+    ],
+    "temperature": 0,
+    "top_p": 1,
+    "max_tokens": 512,
+    "stream": false,
+    "chat_template_kwargs": {
+      "enable_thinking": false
+    }
+  },
+  "name": "probe_code1",
+  "rep": 1,
+  "mode": "dflash"
+}

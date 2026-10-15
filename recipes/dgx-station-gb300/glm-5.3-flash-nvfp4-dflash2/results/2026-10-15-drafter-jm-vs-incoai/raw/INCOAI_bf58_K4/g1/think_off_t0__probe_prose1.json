@@ -1,0 +1,80 @@
+{
+  "row": {
+    "name": "probe_prose1",
+    "regime": "think_off_t0",
+    "completion_tokens": 512,
+    "reasoning_tokens": 512,
+    "wall": 2.796,
+    "tok_s": 183.092,
+    "drafts": 211.0,
+    "acceptance_length": 2.4265402843601898,
+    "accept_rate": 0.35545023696682465,
+    "per_pos": {
+      "0": 0.72,
+      "1": 0.374,
+      "2": 0.213,
+      "3": 0.114
+    },
+    "finish": "length",
+    "has_reasoning": true,
+    "content_head": ""
+  },
+  "payload": {
+    "model": "glm-5.3-flash",
+    "messages": [
+      {
+        "role": "user",
+        "content": "Explain speculative decoding to an inference engineer, including verification, acceptance length, and failure modes."
+      }
+    ],
+    "max_tokens": 512,
+    "stream": false,
+    "temperature": 0,
+    "top_p": 1,
+    "chat_template_kwargs": {
+      "enable_thinking": false
+    }
+  },
+  "body": {
+    "id": "chatcmpl-93dfc492e8e6a95d",
+    "object": "chat.completion",
+    "created": 1792068816,
+    "model": "glm-5.3-flash",
+    "choices": [
+      {
+        "index": 0,
+        "message": {
+          "role": "assistant",
+          "content": null,
+          "refusal": null,
+          "annotations": null,
+          "audio": null,
+          "function_call": null,
+          "reasoning": "# Speculative Decoding: A Practical Guide\n\n## The Core Idea\n\nAutoregressive LLM inference is memory-bandwidth bound: generating one token requires streaming all model weights from HBM, but the actual compute per token is tiny relative to what the hardware could do. Speculative decoding exploits this by **drafting multiple tokens cheaply, then verifying them in parallel with the big model** \u2014 turning k sequential forward passes into one batched pass.\n\nThe key insight: verification of k tokens in one forward pass costs roughly the same as generating one token (same weight-streaming), so if the draft model is good, you get multiple tokens per big-model forward pass.\n\n## The Algorithm\n\n1. **Draft phase**: The small draft model generates \u03b3 tokens autoregressively (\u03b3 = 3\u20138 typically).\n2. **Verification phase**: Run the target model once on `[prompt + draft tokens]` to get logits at all positions simultaneously (this is just standard parallel scoring \u2014 each position's logits are independent given the prefix).\n3. **Accept/reject**: Walk through draft tokens left to right. For each, accept or reject using a resampling rule.\n4. **Residual**: If all \u03b3 tokens accepted, sample one bonus token from the target model's distribution at the next position. You always make progress of at least one token per verification pass.\n\n## The Acceptance Rule (and why it's correct)\n\nThe standard scheme (Leviathan et al. 2023) guarantees the output is **distributed identically to sampling from the target model alone**. For draft token x with target probs p(x) and draft probs q(x):\n\n- If p(x) \u2265 q(x): **accept**.\n- Else: accept with probability p(x)/q(x). If rejected, **resample** from the normalized residual `norm(max(p \u2212 q, 0))`.\n\nThis is rejection sampling against the target distribution. The correctness proof: the acceptance probability plus the residual distribution reconstruct p(x) exactly, regardless of how bad q is. This means **speculative decoding is lossless in distribution** \u2014 same output distribution as vanilla sampling, including with temperature, top-p, etc. (you apply those transforms to both models' distributions before the accept test).\n\nGreedy decoding is the degenerate case: accept iff draft token == target argmax.\n\n## Acceptance Length\n\nThe expected number of tokens emitted per verification pass. If \u03b1 is the per-token acceptance rate and \u03b3 is draft length:\n\n**E[tokens per cycle"
+        },
+        "logprobs": null,
+        "finish_reason": "length",
+        "stop_reason": null,
+        "token_ids": null,
+        "routed_experts": null
+      }
+    ],
+    "service_tier": null,
+    "system_fingerprint": "vllm-0.30.1rc1.dev493+gac9126e58-d153f83c",
+    "usage": {
+      "prompt_tokens": 32,
+      "total_tokens": 544,
+      "completion_tokens": 512,
+      "prompt_tokens_details": null,
+      "completion_tokens_details": {
+        "reasoning_tokens": 512
+      }
+    },
+    "prompt_logprobs": null,
+    "prompt_token_ids": null,
+    "prompt_text": null,
+    "kv_transfer_params": null,
+    "ec_transfer_params": null,
+    "metrics": null
+  }
+}

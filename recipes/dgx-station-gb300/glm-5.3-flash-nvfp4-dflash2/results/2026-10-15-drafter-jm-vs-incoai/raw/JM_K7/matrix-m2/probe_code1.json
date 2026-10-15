@@ -1,0 +1,114 @@
+{
+  "fixture": "probe_code1",
+  "concurrency": 1,
+  "started_iso": "2026-10-15T04:59:43-05:00",
+  "ended_iso": "2026-10-15T04:59:46-05:00",
+  "batch_wall_seconds": 3.332,
+  "mean_wall_seconds": 3.332,
+  "completion_tokens_total": 512,
+  "aggregate_tok_s": 153.65,
+  "per_stream_tok_s": [
+    153.683
+  ],
+  "spec_metrics_present": true,
+  "metric_before": {
+    "drafts": 7653.0,
+    "draft_tokens": 53571.0,
+    "accepted_tokens": 13180.0
+  },
+  "metric_after": {
+    "drafts": 7865.0,
+    "draft_tokens": 55055.0,
+    "accepted_tokens": 13480.0
+  },
+  "metric_delta": {
+    "drafts": 212.0,
+    "draft_tokens": 1484.0,
+    "accepted_tokens": 300.0
+  },
+  "per_pos_accepted_delta": {
+    "0": 143.0,
+    "1": 83.0,
+    "2": 42.0,
+    "3": 21.0,
+    "4": 7.0,
+    "5": 4.0,
+    "6": 0.0
+  },
+  "per_pos_accept_prob": {
+    "0": 0.6745283018867925,
+    "1": 0.3915094339622642,
+    "2": 0.19811320754716982,
+    "3": 0.09905660377358491,
+    "4": 0.0330188679245283,
+    "5": 0.018867924528301886,
+    "6": 0.0
+  },
+  "metric_series_seen_before": {
+    "drafts": 1,
+    "draft_tokens": 1,
+    "accepted_tokens": 1
+  },
+  "metric_series_seen_after": {
+    "drafts": 1,
+    "draft_tokens": 1,
+    "accepted_tokens": 1
+  },
+  "metric_lines_before": [
+    "vllm:spec_decode_num_drafts_total{engine=\"0\",model_name=\"glm-5.3-flash\"} 7653.0",
+    "vllm:spec_decode_num_draft_tokens_total{engine=\"0\",model_name=\"glm-5.3-flash\"} 53571.0",
+    "vllm:spec_decode_num_accepted_tokens_total{engine=\"0\",model_name=\"glm-5.3-flash\"} 13180.0"
+  ],
+  "metric_lines_after": [
+    "vllm:spec_decode_num_drafts_total{engine=\"0\",model_name=\"glm-5.3-flash\"} 7865.0",
+    "vllm:spec_decode_num_draft_tokens_total{engine=\"0\",model_name=\"glm-5.3-flash\"} 55055.0",
+    "vllm:spec_decode_num_accepted_tokens_total{engine=\"0\",model_name=\"glm-5.3-flash\"} 13480.0"
+  ],
+  "acceptance_length": 2.4150943396226414,
+  "accept_rate": 0.20215633423180593,
+  "ar_tok_s_from_wall": null,
+  "response_kinds": [
+    "empty"
+  ],
+  "finish_reasons": [
+    "length"
+  ],
+  "errors": [],
+  "mem_during": {},
+  "requests": [
+    {
+      "http_status": 200,
+      "started_iso": "2026-10-15T04:59:43-05:00",
+      "wall_seconds": 3.332,
+      "prompt_tokens": 33,
+      "completion_tokens": 512,
+      "reasoning_tokens": 512,
+      "tok_s": 153.683,
+      "finish_reason": "length",
+      "response_kind": "empty",
+      "content": null,
+      "reasoning": "```rust\n//! A bounded work queue with cancellation support.\n//!\n//! The queue has a fixed capacity. Producers submit work items; consumers\n//! (workers) pull items and execute them. A shared `CancellationToken`-style\n//! flag lets any thread cancel all pending work. Workers drain the queue\n//! and exit when cancelled or when the queue is closed and empty.\n\nuse std::collections::VecDeque;\nuse std::fmt;\nuse std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};\nuse std::sync::{Arc, Condvar, Mutex};\nuse std::thread;\nuse std::time::Duration;\n\n/// Error returned when submitting to a closed queue.\n#[derive(Debug, PartialEq, Eq)]\npub struct ClosedError;\n\nimpl fmt::Display for ClosedError {\n    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {\n        write!(f, \"queue is closed\")\n    }\n}\n\nimpl std::error::Error for ClosedError {}\n\n/// Error returned when a worker's task panics.\n#[derive(Debug)]\npub struct TaskPanicError {\n    pub payload: Box<dyn std::any::Any + Send>,\n}\n\nimpl fmt::Display for TaskPanicError {\n    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {\n        write!(f, \"task panicked\")\n    }\n}\n\nimpl std::Error for TaskPanicError {}\n\nimpl std::error::Error for TaskPanicError {}\n\nimpl std::error::Error for TaskPanicError {}\n\n/// A handle used to cancel all pending work on a queue.\n#[derive(Clone)]\npub struct CancellationToken {\n    state: Arc<CancelState>,\n}\n\nstruct CancelState {\n    flag: AtomicBool,\n    generation: AtomicUsize,\n}\n\nimpl CancellationToken {\n    fn new() -> Self {\n        CancellationToken {\n            state: Arc::new(CancelState {\n                flag: AtomicBool::submit_flag(),\n                flag2: AtomicBool::new(false),\n                generation: AtomicUsize::new(0),\n            }),\n        }\n    }\n\n    /// Returns true if cancellation has been requested.\n    pub fn is_cancelled(&self) -> bool {\n        self.state.flag.load(Ordering::SeqCst)\n    }\n\n    /// Requests cancellation of all work on the queue.\n    pub fn cancel(&self) {\n        self.state.flag.store(true, Ordering::SeqCst);\n        self.state.generation.fetch_add(1, Ordering::SeqCst);\n        self",
+      "tool_calls": null,
+      "error": null
+    }
+  ],
+  "request_payload_template": {
+    "model": "glm-5.3-flash",
+    "messages": [
+      {
+        "role": "user",
+        "content": "Write a complete Rust implementation of a bounded work queue with cancellation and unit tests. Output only code."
+      }
+    ],
+    "temperature": 0,
+    "top_p": 1,
+    "max_tokens": 512,
+    "stream": false,
+    "chat_template_kwargs": {
+      "enable_thinking": false
+    }
+  },
+  "name": "probe_code1",
+  "rep": 1,
+  "mode": "dflash"
+}

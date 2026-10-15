@@ -1,0 +1,340 @@
+{
+  "fixture": "agent",
+  "concurrency": 8,
+  "started_iso": "2026-10-15T04:59:22-05:00",
+  "ended_iso": "2026-10-15T04:59:23-05:00",
+  "batch_wall_seconds": 0.669,
+  "mean_wall_seconds": 0.446,
+  "completion_tokens_total": 104,
+  "aggregate_tok_s": 155.532,
+  "per_stream_tok_s": [
+    57.326,
+    46.606,
+    46.612,
+    25.637,
+    28.556,
+    25.666,
+    20.106,
+    19.516
+  ],
+  "spec_metrics_present": true,
+  "metric_before": {
+    "drafts": 6895.0,
+    "draft_tokens": 48265.0,
+    "accepted_tokens": 12301.0
+  },
+  "metric_after": {
+    "drafts": 6911.0,
+    "draft_tokens": 48377.0,
+    "accepted_tokens": 12389.0
+  },
+  "metric_delta": {
+    "drafts": 16.0,
+    "draft_tokens": 112.0,
+    "accepted_tokens": 88.0
+  },
+  "per_pos_accepted_delta": {
+    "0": 16.0,
+    "1": 16.0,
+    "2": 16.0,
+    "3": 16.0,
+    "4": 16.0,
+    "5": 8.0,
+    "6": 0.0
+  },
+  "per_pos_accept_prob": {
+    "0": 1.0,
+    "1": 1.0,
+    "2": 1.0,
+    "3": 1.0,
+    "4": 1.0,
+    "5": 0.5,
+    "6": 0.0
+  },
+  "metric_series_seen_before": {
+    "drafts": 1,
+    "draft_tokens": 1,
+    "accepted_tokens": 1
+  },
+  "metric_series_seen_after": {
+    "drafts": 1,
+    "draft_tokens": 1,
+    "accepted_tokens": 1
+  },
+  "metric_lines_before": [
+    "vllm:spec_decode_num_drafts_total{engine=\"0\",model_name=\"glm-5.3-flash\"} 6895.0",
+    "vllm:spec_decode_num_draft_tokens_total{engine=\"0\",model_name=\"glm-5.3-flash\"} 48265.0",
+    "vllm:spec_decode_num_accepted_tokens_total{engine=\"0\",model_name=\"glm-5.3-flash\"} 12301.0"
+  ],
+  "metric_lines_after": [
+    "vllm:spec_decode_num_drafts_total{engine=\"0\",model_name=\"glm-5.3-flash\"} 6911.0",
+    "vllm:spec_decode_num_draft_tokens_total{engine=\"0\",model_name=\"glm-5.3-flash\"} 48377.0",
+    "vllm:spec_decode_num_accepted_tokens_total{engine=\"0\",model_name=\"glm-5.3-flash\"} 12389.0"
+  ],
+  "acceptance_length": 6.5,
+  "accept_rate": 0.7857142857142857,
+  "ar_tok_s_from_wall": null,
+  "response_kinds": [
+    "tool_call",
+    "tool_call",
+    "tool_call",
+    "tool_call",
+    "tool_call",
+    "tool_call",
+    "tool_call",
+    "tool_call"
+  ],
+  "finish_reasons": [
+    "tool_calls",
+    "tool_calls",
+    "tool_calls",
+    "tool_calls",
+    "tool_calls",
+    "tool_calls",
+    "tool_calls",
+    "tool_calls"
+  ],
+  "errors": [],
+  "mem_during": {
+    "during": {
+      "head_kB": 463685184,
+      "gpu1_hbm_used_MiB": 211010
+    },
+    "during_iso": "2026-10-15T04:59:27-05:00"
+  },
+  "requests": [
+    {
+      "http_status": 200,
+      "started_iso": "2026-10-15T04:59:22-05:00",
+      "wall_seconds": 0.227,
+      "prompt_tokens": 193,
+      "completion_tokens": 13,
+      "reasoning_tokens": 0,
+      "tok_s": 57.326,
+      "finish_reason": "tool_calls",
+      "response_kind": "tool_call",
+      "content": null,
+      "reasoning": null,
+      "tool_calls": [
+        {
+          "id": "chatcmpl-tool-8454e4469e2faa8b",
+          "type": "function",
+          "function": {
+            "name": "read_file",
+            "arguments": "{\"path\": \"/etc/hosts\"}"
+          }
+        }
+      ],
+      "error": null
+    },
+    {
+      "http_status": 200,
+      "started_iso": "2026-10-15T04:59:22-05:00",
+      "wall_seconds": 0.279,
+      "prompt_tokens": 193,
+      "completion_tokens": 13,
+      "reasoning_tokens": 0,
+      "tok_s": 46.606,
+      "finish_reason": "tool_calls",
+      "response_kind": "tool_call",
+      "content": null,
+      "reasoning": null,
+      "tool_calls": [
+        {
+          "id": "chatcmpl-tool-9a6926faac76ce6a",
+          "type": "function",
+          "function": {
+            "name": "read_file",
+            "arguments": "{\"path\": \"/etc/hosts\"}"
+          }
+        }
+      ],
+      "error": null
+    },
+    {
+      "http_status": 200,
+      "started_iso": "2026-10-15T04:59:22-05:00",
+      "wall_seconds": 0.279,
+      "prompt_tokens": 193,
+      "completion_tokens": 13,
+      "reasoning_tokens": 0,
+      "tok_s": 46.612,
+      "finish_reason": "tool_calls",
+      "response_kind": "tool_call",
+      "content": null,
+      "reasoning": null,
+      "tool_calls": [
+        {
+          "id": "chatcmpl-tool-a4db1b0a6b6d5603",
+          "type": "function",
+          "function": {
+            "name": "read_file",
+            "arguments": "{\"path\": \"/etc/hosts\"}"
+          }
+        }
+      ],
+      "error": null
+    },
+    {
+      "http_status": 200,
+      "started_iso": "2026-10-15T04:59:22-05:00",
+      "wall_seconds": 0.507,
+      "prompt_tokens": 193,
+      "completion_tokens": 13,
+      "reasoning_tokens": 0,
+      "tok_s": 25.637,
+      "finish_reason": "tool_calls",
+      "response_kind": "tool_call",
+      "content": null,
+      "reasoning": null,
+      "tool_calls": [
+        {
+          "id": "chatcmpl-tool-8a1535206f27214c",
+          "type": "function",
+          "function": {
+            "name": "read_file",
+            "arguments": "{\"path\": \"/etc/hosts\"}"
+          }
+        }
+      ],
+      "error": null
+    },
+    {
+      "http_status": 200,
+      "started_iso": "2026-10-15T04:59:22-05:00",
+      "wall_seconds": 0.455,
+      "prompt_tokens": 193,
+      "completion_tokens": 13,
+      "reasoning_tokens": 0,
+      "tok_s": 28.556,
+      "finish_reason": "tool_calls",
+      "response_kind": "tool_call",
+      "content": null,
+      "reasoning": null,
+      "tool_calls": [
+        {
+          "id": "chatcmpl-tool-85d5c6f69539fdf8",
+          "type": "function",
+          "function": {
+            "name": "read_file",
+            "arguments": "{\"path\": \"/etc/hosts\"}"
+          }
+        }
+      ],
+      "error": null
+    },
+    {
+      "http_status": 200,
+      "started_iso": "2026-10-15T04:59:22-05:00",
+      "wall_seconds": 0.507,
+      "prompt_tokens": 193,
+      "completion_tokens": 13,
+      "reasoning_tokens": 0,
+      "tok_s": 25.666,
+      "finish_reason": "tool_calls",
+      "response_kind": "tool_call",
+      "content": null,
+      "reasoning": null,
+      "tool_calls": [
+        {
+          "id": "chatcmpl-tool-a9a198286ce22b4f",
+          "type": "function",
+          "function": {
+            "name": "read_file",
+            "arguments": "{\"path\": \"/etc/hosts\"}"
+          }
+        }
+      ],
+      "error": null
+    },
+    {
+      "http_status": 200,
+      "started_iso": "2026-10-15T04:59:22-05:00",
+      "wall_seconds": 0.647,
+      "prompt_tokens": 193,
+      "completion_tokens": 13,
+      "reasoning_tokens": 0,
+      "tok_s": 20.106,
+      "finish_reason": "tool_calls",
+      "response_kind": "tool_call",
+      "content": null,
+      "reasoning": null,
+      "tool_calls": [
+        {
+          "id": "chatcmpl-tool-be9d782b49ee736e",
+          "type": "function",
+          "function": {
+            "name": "read_file",
+            "arguments": "{\"path\": \"/etc/hosts\"}"
+          }
+        }
+      ],
+      "error": null
+    },
+    {
+      "http_status": 200,
+      "started_iso": "2026-10-15T04:59:22-05:00",
+      "wall_seconds": 0.666,
+      "prompt_tokens": 193,
+      "completion_tokens": 13,
+      "reasoning_tokens": 0,
+      "tok_s": 19.516,
+      "finish_reason": "tool_calls",
+      "response_kind": "tool_call",
+      "content": null,
+      "reasoning": null,
+      "tool_calls": [
+        {
+          "id": "chatcmpl-tool-9040663a758a7cc7",
+          "type": "function",
+          "function": {
+            "name": "read_file",
+            "arguments": "{\"path\": \"/etc/hosts\"}"
+          }
+        }
+      ],
+      "error": null
+    }
+  ],
+  "request_payload_template": {
+    "model": "glm-5.3-flash",
+    "messages": [
+      {
+        "role": "user",
+        "content": "Use the read_file tool to read /etc/hosts and then summarize what you found."
+      }
+    ],
+    "temperature": 0,
+    "top_p": 1,
+    "max_tokens": 300,
+    "stream": false,
+    "chat_template_kwargs": {
+      "enable_thinking": false
+    },
+    "tools": [
+      {
+        "type": "function",
+        "function": {
+          "name": "read_file",
+          "description": "Read a UTF-8 text file from the local filesystem and return its contents.",
+          "parameters": {
+            "type": "object",
+            "properties": {
+              "path": {
+                "type": "string",
+                "description": "Absolute filesystem path to read"
+              }
+            },
+            "required": [
+              "path"
+            ]
+          }
+        }
+      }
+    ],
+    "tool_choice": "auto"
+  },
+  "name": "agent_c8",
+  "rep": 1,
+  "mode": "dflash"
+}

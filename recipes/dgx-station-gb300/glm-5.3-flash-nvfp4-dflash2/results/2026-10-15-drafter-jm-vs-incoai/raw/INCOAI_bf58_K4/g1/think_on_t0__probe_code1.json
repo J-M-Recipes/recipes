@@ -1,0 +1,80 @@
+{
+  "row": {
+    "name": "probe_code1",
+    "regime": "think_on_t0",
+    "completion_tokens": 512,
+    "reasoning_tokens": 512,
+    "wall": 2.21,
+    "tok_s": 231.724,
+    "drafts": 166.0,
+    "acceptance_length": 3.0843373493975905,
+    "accept_rate": 0.5210843373493976,
+    "per_pos": {
+      "0": 0.783,
+      "1": 0.596,
+      "2": 0.404,
+      "3": 0.301
+    },
+    "finish": "length",
+    "has_reasoning": true,
+    "content_head": ""
+  },
+  "payload": {
+    "model": "glm-5.3-flash",
+    "messages": [
+      {
+        "role": "user",
+        "content": "Write a complete Rust implementation of a bounded work queue with cancellation and unit tests. Output only code."
+      }
+    ],
+    "max_tokens": 512,
+    "stream": false,
+    "temperature": 0,
+    "top_p": 1,
+    "chat_template_kwargs": {
+      "enable_thinking": true
+    }
+  },
+  "body": {
+    "id": "chatcmpl-a7aeb061370e54f7",
+    "object": "chat.completion",
+    "created": 1792068857,
+    "model": "glm-5.3-flash",
+    "choices": [
+      {
+        "index": 0,
+        "message": {
+          "role": "assistant",
+          "content": null,
+          "refusal": null,
+          "annotations": null,
+          "audio": null,
+          "function_call": null,
+          "reasoning": "The user wants a complete Rust implementation of a bounded work queue with cancellation and unit tests. They want only code output.\n\nLet me think about what a bounded work queue with cancellation needs:\n\n1. **Bounded queue**: A fixed-capacity queue where producers block when full\n2. **Work queue**: Tasks can be submitted and workers can pull them\n3. **Cancellation**: Ability to cancel/shutdown the queue, waking up blocked producers and consumers\n\nDesign considerations:\n- Use `std::sync::Mutex` and `Condvar` for synchronization (no external crates needed, so it's self-contained and testable)\n- The queue should have a `send`/`submit` method that blocks when full\n- A `recv`/`receive` method that blocks when empty\n- A `close`/`cancel` method that signals shutdown\n- Maybe support cancelling pending tasks (draining the queue)\n- Should handle the case where senders/receivers are woken up during cancellation\n\nLet me design the API:\n\n```rust\npub struct BoundedWorkQueue<T> {\n    inner: Arc<Inner<T>>,\n}\n\nstruct Inner<T> {\n    state: Mutex<State<T>>,\n    item_available: Condvar,   // signaled when an item is added or queue closed\n    space_available: Condvar,  // signaled when an item is removed or queue closed\n    capacity: usize,\n}\n\nstruct State<T> {\n    items: VecDeque<T>,\n    closed: bool,  // no more sends accepted\n    cancelled: bool, // pending items dropped\n}\n```\n\nActually, let me think about semantics:\n\n- `send(item)`: blocks until there's space. Returns `Err(item)` if the queue is closed/cancelled.\n- `receive()`: blocks until an item is available. Returns `None` when queue is closed and drained.\n- `close()`: prevents new sends; receivers drain remaining items then get `None`.\n- `cancel()`: prevents new sends AND drops pending items; receivers immediately get an error/None; blocked senders get their items back.\n\nMaybe also:\n- `try_send`: non-blocking version\n- `try_receive`: non-blocking version\n- `len`, `is_empty`, `capacity`\n\nFor cancellation, a common pattern: `cancel()` sets cancelled flag, clears the queue, notifies all. Blocked senders wake up and get `Err(item)` back. Blocked receivers wake up and get `None` (or an error indicating cancellation).\n\nLet me also"
+        },
+        "logprobs": null,
+        "finish_reason": "length",
+        "stop_reason": null,
+        "token_ids": null,
+        "routed_experts": null
+      }
+    ],
+    "service_tier": null,
+    "system_fingerprint": "vllm-0.30.1rc1.dev493+gac9126e58-d153f83c",
+    "usage": {
+      "prompt_tokens": 32,
+      "total_tokens": 544,
+      "completion_tokens": 512,
+      "prompt_tokens_details": null,
+      "completion_tokens_details": {
+        "reasoning_tokens": 512
+      }
+    },
+    "prompt_logprobs": null,
+    "prompt_token_ids": null,
+    "prompt_text": null,
+    "kv_transfer_params": null,
+    "ec_transfer_params": null,
+    "metrics": null
+  }
+}

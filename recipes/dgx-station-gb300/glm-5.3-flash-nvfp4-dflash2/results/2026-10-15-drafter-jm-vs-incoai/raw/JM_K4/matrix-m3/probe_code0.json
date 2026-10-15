@@ -1,0 +1,108 @@
+{
+  "fixture": "probe_code0",
+  "concurrency": 1,
+  "started_iso": "2026-10-15T03:14:39-05:00",
+  "ended_iso": "2026-10-15T03:14:42-05:00",
+  "batch_wall_seconds": 2.526,
+  "mean_wall_seconds": 2.525,
+  "completion_tokens_total": 512,
+  "aggregate_tok_s": 202.678,
+  "per_stream_tok_s": [
+    202.756
+  ],
+  "spec_metrics_present": true,
+  "metric_before": {
+    "drafts": 11944.0,
+    "draft_tokens": 47776.0,
+    "accepted_tokens": 19057.0
+  },
+  "metric_after": {
+    "drafts": 12132.0,
+    "draft_tokens": 48528.0,
+    "accepted_tokens": 19381.0
+  },
+  "metric_delta": {
+    "drafts": 188.0,
+    "draft_tokens": 752.0,
+    "accepted_tokens": 324.0
+  },
+  "per_pos_accepted_delta": {
+    "0": 140.0,
+    "1": 93.0,
+    "2": 57.0,
+    "3": 34.0
+  },
+  "per_pos_accept_prob": {
+    "0": 0.7446808510638298,
+    "1": 0.4946808510638298,
+    "2": 0.30319148936170215,
+    "3": 0.18085106382978725
+  },
+  "metric_series_seen_before": {
+    "drafts": 1,
+    "draft_tokens": 1,
+    "accepted_tokens": 1
+  },
+  "metric_series_seen_after": {
+    "drafts": 1,
+    "draft_tokens": 1,
+    "accepted_tokens": 1
+  },
+  "metric_lines_before": [
+    "vllm:spec_decode_num_drafts_total{engine=\"0\",model_name=\"glm-5.3-flash\"} 11944.0",
+    "vllm:spec_decode_num_draft_tokens_total{engine=\"0\",model_name=\"glm-5.3-flash\"} 47776.0",
+    "vllm:spec_decode_num_accepted_tokens_total{engine=\"0\",model_name=\"glm-5.3-flash\"} 19057.0"
+  ],
+  "metric_lines_after": [
+    "vllm:spec_decode_num_drafts_total{engine=\"0\",model_name=\"glm-5.3-flash\"} 12132.0",
+    "vllm:spec_decode_num_draft_tokens_total{engine=\"0\",model_name=\"glm-5.3-flash\"} 48528.0",
+    "vllm:spec_decode_num_accepted_tokens_total{engine=\"0\",model_name=\"glm-5.3-flash\"} 19381.0"
+  ],
+  "acceptance_length": 2.723404255319149,
+  "accept_rate": 0.4308510638297872,
+  "ar_tok_s_from_wall": null,
+  "response_kinds": [
+    "empty"
+  ],
+  "finish_reasons": [
+    "length"
+  ],
+  "errors": [],
+  "mem_during": {},
+  "requests": [
+    {
+      "http_status": 200,
+      "started_iso": "2026-10-15T03:14:39-05:00",
+      "wall_seconds": 2.525,
+      "prompt_tokens": 42,
+      "completion_tokens": 512,
+      "reasoning_tokens": 512,
+      "tok_s": 202.756,
+      "finish_reason": "length",
+      "response_kind": "empty",
+      "content": null,
+      "reasoning": "```python\n\"\"\"\nlru_cache.py\n\nA thread-safe LRU cache with TTL (time-to-live) expiry.\n\nFeatures:\n    - Thread-safe via a re-entrant lock (RLock).\n    - LRU eviction when max_size is reached.\n    - Per-entry TTL expiry (entries expire after `ttl` seconds).\n    - Optional per-call TTL override.\n    - Statistics tracking (hits, misses, evictions, expiries).\n    - Full type hints and docstrings.\n\"\"\"\n\nfrom __future__ import annotations\n\nimport threading\nimport time\nimport unittest\nfrom collections import OrderedDict\nfrom typing import Any, Callable, Generic, Hashable, Optional, Tuple\n\n\nclass LRUCache(Generic[Hashable, Any]):\n    \"\"\"A thread-safe LRU cache with per-entry TTL expiry.\n\n    Entries are evicted when the cache exceeds `max_size` (least recently\n    used first) or when their TTL elapses (checked lazily on access and\n    eagerly during `purge_expired`).\n\n    Type Parameters:\n        K: Key type, must be hashable.\n        V: Value type, any object.\n\n    Args:\n        max_size: Maximum number of entries. Must be >= 1.\n        ttl: Default time-to-live in seconds for each entry. If None,\n            entries never expire by time (only by LRU eviction).\n        clock: Time function used for expiry calculations. Defaults to\n            `time.monotonic`. Useful for testing (inject a fake clock).\n\n    Raises:\n        ValueError: If `max_size` < 1 or `ttl` is not None and <= 0.\n    \"\"\"\n\n    def __init__(\n        self,\n        max_size: int = 128,\n        ttl: Optional[float] = None,\n        clock: Callable[[], float] = time.monotonic,\n    ) -> None:\n        if max_size < 1:\n            raise ValueError(\"max_size must be >= 1\")\n        if ttl is not None and ttl <= 0:\n            raise ValueError(\"ttl must be positive or None\")\n\n        self._max_size: int = max_size\n        self._default_ttl: Optional[float] = ttl\n        self._clock: Callable[[], float] = clock\n        self._lock = threading.RLock()\n        # OrderedDict preserves insertion order; we treat the END as most\n        # recently used and the FRONT as least recently used.\n        self._store: \"OrderedDict[Hashable, Tuple[Any, Optional[float]]",
+      "tool_calls": null,
+      "error": null
+    }
+  ],
+  "request_payload_template": {
+    "model": "glm-5.3-flash",
+    "messages": [
+      {
+        "role": "user",
+        "content": "Write a complete Python module implementing a thread-safe LRU cache with TTL expiry, type hints, docstrings, and tests. Output only code."
+      }
+    ],
+    "temperature": 0,
+    "top_p": 1,
+    "max_tokens": 512,
+    "stream": false,
+    "chat_template_kwargs": {
+      "enable_thinking": false
+    }
+  },
+  "name": "probe_code0",
+  "rep": 1,
+  "mode": "dflash"
+}

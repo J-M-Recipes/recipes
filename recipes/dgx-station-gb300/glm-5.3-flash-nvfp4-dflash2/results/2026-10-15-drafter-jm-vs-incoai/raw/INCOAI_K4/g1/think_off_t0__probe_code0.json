@@ -1,0 +1,80 @@
+{
+  "row": {
+    "name": "probe_code0",
+    "regime": "think_off_t0",
+    "completion_tokens": 512,
+    "reasoning_tokens": 512,
+    "wall": 2.137,
+    "tok_s": 239.615,
+    "drafts": 158.0,
+    "acceptance_length": 3.240506329113924,
+    "accept_rate": 0.5617088607594937,
+    "per_pos": {
+      "0": 0.823,
+      "1": 0.601,
+      "2": 0.475,
+      "3": 0.348
+    },
+    "finish": "length",
+    "has_reasoning": true,
+    "content_head": ""
+  },
+  "payload": {
+    "model": "glm-5.3-flash",
+    "messages": [
+      {
+        "role": "user",
+        "content": "Write a complete Python module implementing a thread-safe LRU cache with TTL expiry, type hints, docstrings, and tests. Output only code."
+      }
+    ],
+    "max_tokens": 512,
+    "stream": false,
+    "temperature": 0,
+    "top_p": 1,
+    "chat_template_kwargs": {
+      "enable_thinking": false
+    }
+  },
+  "body": {
+    "id": "chatcmpl-8709ae1f1176b115",
+    "object": "chat.completion",
+    "created": 1792057703,
+    "model": "glm-5.3-flash",
+    "choices": [
+      {
+        "index": 0,
+        "message": {
+          "role": "assistant",
+          "content": null,
+          "refusal": null,
+          "annotations": null,
+          "audio": null,
+          "function_call": null,
+          "reasoning": "```python\n\"\"\"\nthread_safe_lru_cache.py\n\nA thread-safe LRU cache with per-entry TTL (time-to-live) expiry.\n\nFeatures\n--------\n- Thread-safe via a re-entrant lock (RLock) so re-entrant calls are safe.\n- LRU eviction: least-recently-used entries are evicted when capacity is hit.\n- Per-entry TTL: each entry can have its own TTL, or a default TTL is used.\n- Type hints throughout, generic over key/value types.\n- Statistics: hits, misses, evictions, expiries.\n- `get`/`put`/`get_or_put`/`__len__`/`__contains__`/`clear`/`stats` API.\n\nExample\n-------\n>>> cache: LRUCache[str, int] = LRUCache(maxsize=2, default_ttl=60.0)\n>>> cache.put(\"a\", 1)\n>>> cache.get(\"a\")\n1\n>>> \"a\" in cache\nTrue\n\"\"\"\n\nfrom __future__ import annotations\n\nimport functools\nimport itertools\nimport threading\nimport time\nfrom collections import OrderedDict\nfrom dataclasses import dataclass, field\nfrom typing import (\n    Any,\n    Callable,\n    Dict,\n    Generic,\n    Hashable,\n    Optional,\n    Tuple,\n    TypeVar,\n)\n\n__all__ = [\"LRUCache\", \"CacheStats\"]\n\nK = TypeVar(\"K\", bound=Hashable)\nV = TypeVar(\"V\")\n\n_MISSING = object()  # Sentinel for \"no value\"\n\n\n@dataclass(frozen=True)\nclass CacheStats:\n    \"\"\"Immutable snapshot of cache statistics.\"\"\"\n\n    hits: int = 0\n    misses: int = 0\n    evictions: int = 0\n    expiries: int =  unittest\n    size: int = 0\n    maxsize: int = 0\n\n    def as_dict(self) -> Dict[str, int]:\n        \"\"\"Return stats as a plain dict.\"\"\"\n        return {\n            \"hits\": self.hits,\n            \"misses\": self.missed\n        }\n\n\nclass LRUCache(Generic[K, V]):\n    \"\"\"\n    A thread-safe LRU cache with per-entry TTL expiry.\n\n    Parameters\n    ----------\n    maxsize : int\n        Maximum number of entries. Must be >= 1.\n    default_ttl : float, optional\n        Default time-to-live in seconds for entries inserted without an\n        explicit TTL. If None, entries never expire by default."
+        },
+        "logprobs": null,
+        "finish_reason": "length",
+        "stop_reason": null,
+        "token_ids": null,
+        "routed_experts": null
+      }
+    ],
+    "service_tier": null,
+    "system_fingerprint": "vllm-0.30.1rc1.dev493+gac9126e58-6a2df9e8",
+    "usage": {
+      "prompt_tokens": 42,
+      "total_tokens": 554,
+      "completion_tokens": 512,
+      "prompt_tokens_details": null,
+      "completion_tokens_details": {
+        "reasoning_tokens": 512
+      }
+    },
+    "prompt_logprobs": null,
+    "prompt_token_ids": null,
+    "prompt_text": null,
+    "kv_transfer_params": null,
+    "ec_transfer_params": null,
+    "metrics": null
+  }
+}

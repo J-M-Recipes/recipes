@@ -1,0 +1,80 @@
+{
+  "row": {
+    "name": "probe_code0",
+    "regime": "think_off_t0",
+    "completion_tokens": 512,
+    "reasoning_tokens": null,
+    "wall": 17.269,
+    "tok_s": 29.649,
+    "drafts": 150.0,
+    "acceptance_length": 3.4133333333333336,
+    "accept_rate": 0.3476190476190476,
+    "per_pos": {
+      "0": 0.78,
+      "1": 0.52,
+      "2": 0.38,
+      "3": 0.28,
+      "4": 0.2,
+      "5": 0.153,
+      "6": 0.12
+    },
+    "finish": "length",
+    "has_reasoning": false,
+    "content_head": "```python\n\"\"\"\nthreaded_lru_cache.py\n\nA thread-safe LRU cache with per-entry TTL (time-to-live) expiry.\n\nFeatures\n-------"
+  },
+  "payload": {
+    "model": "glm-5.3-flash",
+    "messages": [
+      {
+        "role": "user",
+        "content": "Write a complete Python module implementing a thread-safe LRU cache with TTL expiry, type hints, docstrings, and tests. Output only code."
+      }
+    ],
+    "max_tokens": 512,
+    "stream": false,
+    "temperature": 0,
+    "top_p": 1,
+    "chat_template_kwargs": {
+      "enable_thinking": false
+    }
+  },
+  "body": {
+    "id": "chatcmpl-8bfab0dbe3310e1f",
+    "object": "chat.completion",
+    "created": 1791196775,
+    "model": "glm-5.3-flash",
+    "choices": [
+      {
+        "index": 0,
+        "message": {
+          "role": "assistant",
+          "content": "```python\n\"\"\"\nthreaded_lru_cache.py\n\nA thread-safe LRU cache with per-entry TTL (time-to-live) expiry.\n\nFeatures\n--------\n- Thread-safe via a re-entrant lock (safe for nested operations).\n- LRU eviction when maxsize is exceeded.\n- Per-entry TTL expiry (entries expire individually based on insertion time).\n- Optional per-call TTL override.\n- Full type hints and docstrings.\n- Statistics tracking (hits, misses, evictions, expirations).\n- `get`, `set`, `delete`, `clear`, `contains`, `size` operations.\n- Decorator factory `lru_cache_with_ttl` mirroring functools.lru_cache usage.\n\nRequires Python 3.9+ (uses dict ordering and modern typing).\n\"\"\"\n\nfrom __future__ import annotations\n\nimport functools\nimport threading\nimport time\nimport unittest\nfrom collections import OrderedDict\nfrom typing import Any, Callable, Generic, Hashable, Optional, Tuple, TypeVar\n\n__all__ = [\"TTLRUCache\", \"lru_cache_with_ttl\"]\n\nK = TypeVar(\"K\")\nV = TypeVar(\"V\")\n\n\nclass TTLRUCache(Generic[K, V]):\n    \"\"\"A thread-safe LRU cache with per-entry TTL expiry.\n\n    The cache combines least-recently-used eviction with time-based\n    expiry. Each entry stores an absolute expiration timestamp; expired\n    entries are treated as absent on access and purged lazily.\n\n    All public methods are safe to call from multiple threads\n    concurrently. Internal state is guarded by a re-entrant lock.\n\n    Type Parameters:\n        K: The key type. Must be hashable.\n        V: The value type.\n\n    Attributes:\n        maxsize: Maximum number of entries before LRU eviction occurs.\n        default_ttl: Default time-to-live in seconds for new entries.\n    \"\"\"\n\n    def __init__(self, maxsize: int = 128, default_ttl: float = 300.0) -> None:\n        \"\"\"Initialize the cache.\n\n        Args:\n            maxsize: Maximum number of entries. Must be >= 1. When the\n                cache is full, the least recently used entry is evicted.\n            default_ttl: Default time-to-live in seconds for entries\n                that do not specify one. Must be > 0.\n\n        Raises:\n            ValueError: If maxsize < 1 or default_ttl <= 0.\n        \"\"\"\n        if maxsize < 1:\n            raise ValueError(\"maxsize must be >=",
+          "refusal": null,
+          "annotations": null,
+          "audio": null,
+          "function_call": null,
+          "reasoning": null
+        },
+        "logprobs": null,
+        "finish_reason": "length",
+        "stop_reason": null,
+        "token_ids": null,
+        "routed_experts": null
+      }
+    ],
+    "service_tier": null,
+    "system_fingerprint": "vllm-0.1.dev20051+g487ecf187-tp2-815c380c",
+    "usage": {
+      "prompt_tokens": 42,
+      "total_tokens": 554,
+      "completion_tokens": 512,
+      "prompt_tokens_details": null
+    },
+    "prompt_logprobs": null,
+    "prompt_token_ids": null,
+    "prompt_text": null,
+    "kv_transfer_params": null,
+    "ec_transfer_params": null,
+    "metrics": null
+  }
+}

@@ -1,0 +1,108 @@
+{
+  "fixture": "probe_prose1",
+  "concurrency": 1,
+  "started_iso": "2026-10-15T03:13:38-05:00",
+  "ended_iso": "2026-10-15T03:13:41-05:00",
+  "batch_wall_seconds": 2.751,
+  "mean_wall_seconds": 2.75,
+  "completion_tokens_total": 512,
+  "aggregate_tok_s": 186.1,
+  "per_stream_tok_s": [
+    186.163
+  ],
+  "spec_metrics_present": true,
+  "metric_before": {
+    "drafts": 7625.0,
+    "draft_tokens": 30500.0,
+    "accepted_tokens": 12190.0
+  },
+  "metric_after": {
+    "drafts": 7832.0,
+    "draft_tokens": 31328.0,
+    "accepted_tokens": 12497.0
+  },
+  "metric_delta": {
+    "drafts": 207.0,
+    "draft_tokens": 828.0,
+    "accepted_tokens": 307.0
+  },
+  "per_pos_accepted_delta": {
+    "0": 146.0,
+    "1": 86.0,
+    "2": 49.0,
+    "3": 26.0
+  },
+  "per_pos_accept_prob": {
+    "0": 0.7053140096618358,
+    "1": 0.41545893719806765,
+    "2": 0.23671497584541062,
+    "3": 0.12560386473429952
+  },
+  "metric_series_seen_before": {
+    "drafts": 1,
+    "draft_tokens": 1,
+    "accepted_tokens": 1
+  },
+  "metric_series_seen_after": {
+    "drafts": 1,
+    "draft_tokens": 1,
+    "accepted_tokens": 1
+  },
+  "metric_lines_before": [
+    "vllm:spec_decode_num_drafts_total{engine=\"0\",model_name=\"glm-5.3-flash\"} 7625.0",
+    "vllm:spec_decode_num_draft_tokens_total{engine=\"0\",model_name=\"glm-5.3-flash\"} 30500.0",
+    "vllm:spec_decode_num_accepted_tokens_total{engine=\"0\",model_name=\"glm-5.3-flash\"} 12190.0"
+  ],
+  "metric_lines_after": [
+    "vllm:spec_decode_num_drafts_total{engine=\"0\",model_name=\"glm-5.3-flash\"} 7832.0",
+    "vllm:spec_decode_num_draft_tokens_total{engine=\"0\",model_name=\"glm-5.3-flash\"} 31328.0",
+    "vllm:spec_decode_num_accepted_tokens_total{engine=\"0\",model_name=\"glm-5.3-flash\"} 12497.0"
+  ],
+  "acceptance_length": 2.473429951690821,
+  "accept_rate": 0.37077294685990336,
+  "ar_tok_s_from_wall": null,
+  "response_kinds": [
+    "empty"
+  ],
+  "finish_reasons": [
+    "length"
+  ],
+  "errors": [],
+  "mem_during": {},
+  "requests": [
+    {
+      "http_status": 200,
+      "started_iso": "2026-10-15T03:13:38-05:00",
+      "wall_seconds": 2.75,
+      "prompt_tokens": 32,
+      "completion_tokens": 512,
+      "reasoning_tokens": 512,
+      "tok_s": 186.163,
+      "finish_reason": "length",
+      "response_kind": "empty",
+      "content": null,
+      "reasoning": "# Speculative Decoding: A Practical Guide\n\n## The Core Idea\n\nAutoregressive LLM inference is memory-bandwidth bound: generating one token requires streaming all model weights from HBM, but the actual compute per token is tiny relative to what the hardware could do. Speculative decoding exploits this by **using spare compute to amortize memory traffic** \u2014 draft several tokens cheaply, then verify them in parallel with the big model for roughly the cost of one forward pass.\n\nThe critical property: with a correct verification scheme, the output distribution is **exactly identical** to sampling from the target model alone. It's a lossless speedup, not an approximation.\n\n## The Algorithm\n\n1. **Draft**: A small model `q` (or a draft head, n-gram table, etc.) autoregressively generates `k` candidate tokens.\n2. **Verify**: The target model `p` runs a single forward pass over the prompt + all `k` draft tokens in parallel (causal masking makes this one batched pass, not `k` sequential ones).\n3. **Accept/reject**: Walk through draft tokens; accept or reject each based on agreement between `p` and `q`.\n4. **Resample on rejection**: If a token is rejected, sample a corrected token from a residual distribution. If all `k` are accepted, sample one bonus token from `p`.\n\n## Verification: Why It's Exactly Correct\n\nThe naive approach \u2014 \"accept if the draft token is in the target model's top-k\" \u2014 is biased. The correct scheme (Leviathan et al. 2023, Chen et al. 2023) is:\n\nFor a draft token `x ~ q(x)`, accept with probability:\n\n```\nmin(1, p(x) / q(x))\n```\n\nIf rejected, sample the correction token from the normalized residual:\n\n```\nnorm(max(p(x) - q(x), 0))\n```\n\n**Proof sketch**: The probability of emitting token `x` through this procedure is `q(x)\u00b7min(1, p/q) + max(p(x) \u2212 q(x), 0) = min(p(x), q(x)) + max(p(x) \u2212 q(x), 0)`. If `p(x) \u2265 q(x)`, this is `q(x) + p(x) \u2212 q(x) = p(x)`. If `p(x) < q(x)`, it's `p(x) + 0 = p(x",
+      "tool_calls": null,
+      "error": null
+    }
+  ],
+  "request_payload_template": {
+    "model": "glm-5.3-flash",
+    "messages": [
+      {
+        "role": "user",
+        "content": "Explain speculative decoding to an inference engineer, including verification, acceptance length, and failure modes."
+      }
+    ],
+    "temperature": 0,
+    "top_p": 1,
+    "max_tokens": 512,
+    "stream": false,
+    "chat_template_kwargs": {
+      "enable_thinking": false
+    }
+  },
+  "name": "probe_prose1",
+  "rep": 1,
+  "mode": "dflash"
+}

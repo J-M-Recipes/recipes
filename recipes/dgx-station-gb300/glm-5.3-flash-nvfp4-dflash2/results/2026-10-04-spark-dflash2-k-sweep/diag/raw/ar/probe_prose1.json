@@ -1,0 +1,90 @@
+{
+  "fixture": "probe_prose1",
+  "concurrency": 1,
+  "started_iso": "2026-10-04T04:10:08-05:00",
+  "ended_iso": "2026-10-04T04:10:42-05:00",
+  "batch_wall_seconds": 33.686,
+  "mean_wall_seconds": 33.685,
+  "completion_tokens_total": 512,
+  "aggregate_tok_s": 15.199,
+  "per_stream_tok_s": [
+    15.2
+  ],
+  "spec_metrics_present": false,
+  "metric_before": {
+    "drafts": 0.0,
+    "draft_tokens": 0.0,
+    "accepted_tokens": 0.0
+  },
+  "metric_after": {
+    "drafts": 0.0,
+    "draft_tokens": 0.0,
+    "accepted_tokens": 0.0
+  },
+  "metric_delta": {
+    "drafts": null,
+    "draft_tokens": null,
+    "accepted_tokens": null
+  },
+  "per_pos_accepted_delta": {},
+  "per_pos_accept_prob": null,
+  "metric_series_seen_before": {
+    "drafts": 0,
+    "draft_tokens": 0,
+    "accepted_tokens": 0
+  },
+  "metric_series_seen_after": {
+    "drafts": 0,
+    "draft_tokens": 0,
+    "accepted_tokens": 0
+  },
+  "metric_lines_before": [],
+  "metric_lines_after": [],
+  "acceptance_length": null,
+  "accept_rate": null,
+  "ar_tok_s_from_wall": 15.199,
+  "response_kinds": [
+    "text"
+  ],
+  "finish_reasons": [
+    "length"
+  ],
+  "errors": [],
+  "mem_during": {},
+  "requests": [
+    {
+      "http_status": 200,
+      "started_iso": "2026-10-04T04:10:08-05:00",
+      "wall_seconds": 33.685,
+      "prompt_tokens": 32,
+      "completion_tokens": 512,
+      "reasoning_tokens": null,
+      "tok_s": 15.2,
+      "finish_reason": "length",
+      "response_kind": "text",
+      "content": "# Speculative Decoding: A Practical Guide\n\n## The Core Idea\n\nAutoregressive LLM inference is memory-bandwidth bound: generating one token requires streaming all model weights from HBM, but the compute to actually process that token is tiny relative to what the hardware could do. Speculative decoding exploits this by **drafting multiple tokens cheaply, then verifying them in parallel at near-zero marginal cost**.\n\nThe key insight: a forward pass over *k* tokens costs roughly the same as a forward pass over 1 token (until you saturate compute), because the weights dominate the memory traffic either way.\n\n## The Algorithm\n\n1. **Draft phase**: A small draft model (e.g., 1B params against a 70B target) autoregressively generates *k* candidate tokens.\n2. **Verification phase**: The target model runs a **single forward pass** over the prompt + all *k* draft tokens in parallel (causal masking makes this possible).\n3. **Accept/reject**: Walk through the draft tokens left to right. Accept token *i* if it's consistent with the target's distribution; on the first rejection, resample from a corrected distribution and stop.\n4. **Repeat**: The accepted tokens + the correction token become the new context.\n\n## Verification: Why It's Exact\n\nThis is the part that trips people up. Verification isn't \"check if the draft model agrees with the target.\" It's a **statistical test on the target's own distribution**.\n\nFor each position, you have the draft's sample $x \\sim q(x)$ and the target's distribution $p(x)$. The standard acceptance rule (Leviathan et al. 2023):\n\n$$\\text{accept } x \\text{ with probability } \\min\\left(1, \\frac{p(x)}{q(x)}\\right)$$\n\nOn rejection, resample from the residual:\n\n$$\\text{norm}(max(0, p(x) - q(x)))$$\n\n**The output distribution is provably identical to sampling from the target model alone.** This is the critical property: speculative decoding is a *lossless* acceleration. Your eval scores don't move. (Contrast with self-speculative or early-exit variants that change the distribution \u2014 more below.)\n\nThe proof sketch: for any token, the probability of it being emitted is $q(x) \\cdot \\min(1, p/q) + \\max(0, p(x) -",
+      "reasoning": null,
+      "tool_calls": null,
+      "error": null
+    }
+  ],
+  "request_payload_template": {
+    "model": "glm-5.3-flash",
+    "messages": [
+      {
+        "role": "user",
+        "content": "Explain speculative decoding to an inference engineer, including verification, acceptance length, and failure modes."
+      }
+    ],
+    "temperature": 0,
+    "top_p": 1,
+    "max_tokens": 512,
+    "stream": false,
+    "chat_template_kwargs": {
+      "enable_thinking": false
+    }
+  },
+  "name": "probe_prose1",
+  "rep": 1,
+  "mode": "ar"
+}

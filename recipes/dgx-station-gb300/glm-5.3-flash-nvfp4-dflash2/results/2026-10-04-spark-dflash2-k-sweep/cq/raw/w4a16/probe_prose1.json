@@ -1,0 +1,114 @@
+{
+  "fixture": "probe_prose1",
+  "concurrency": 1,
+  "started_iso": "2026-10-05T05:37:43-05:00",
+  "ended_iso": "2026-10-05T05:38:05-05:00",
+  "batch_wall_seconds": 21.927,
+  "mean_wall_seconds": 21.925,
+  "completion_tokens_total": 512,
+  "aggregate_tok_s": 23.35,
+  "per_stream_tok_s": [
+    23.352
+  ],
+  "spec_metrics_present": true,
+  "metric_before": {
+    "drafts": 2796.0,
+    "draft_tokens": 19572.0,
+    "accepted_tokens": 6346.0
+  },
+  "metric_after": {
+    "drafts": 2987.0,
+    "draft_tokens": 20909.0,
+    "accepted_tokens": 6667.0
+  },
+  "metric_delta": {
+    "drafts": 191.0,
+    "draft_tokens": 1337.0,
+    "accepted_tokens": 321.0
+  },
+  "per_pos_accepted_delta": {
+    "0": 129.0,
+    "1": 89.0,
+    "2": 53.0,
+    "3": 29.0,
+    "4": 12.0,
+    "5": 5.0,
+    "6": 4.0
+  },
+  "per_pos_accept_prob": {
+    "0": 0.675392670157068,
+    "1": 0.46596858638743455,
+    "2": 0.2774869109947644,
+    "3": 0.1518324607329843,
+    "4": 0.06282722513089005,
+    "5": 0.02617801047120419,
+    "6": 0.020942408376963352
+  },
+  "metric_series_seen_before": {
+    "drafts": 1,
+    "draft_tokens": 1,
+    "accepted_tokens": 1
+  },
+  "metric_series_seen_after": {
+    "drafts": 1,
+    "draft_tokens": 1,
+    "accepted_tokens": 1
+  },
+  "metric_lines_before": [
+    "vllm:spec_decode_num_drafts_total{engine=\"0\",model_name=\"glm-5.3-flash\"} 2796.0",
+    "vllm:spec_decode_num_draft_tokens_total{engine=\"0\",model_name=\"glm-5.3-flash\"} 19572.0",
+    "vllm:spec_decode_num_accepted_tokens_total{engine=\"0\",model_name=\"glm-5.3-flash\"} 6346.0"
+  ],
+  "metric_lines_after": [
+    "vllm:spec_decode_num_drafts_total{engine=\"0\",model_name=\"glm-5.3-flash\"} 2987.0",
+    "vllm:spec_decode_num_draft_tokens_total{engine=\"0\",model_name=\"glm-5.3-flash\"} 20909.0",
+    "vllm:spec_decode_num_accepted_tokens_total{engine=\"0\",model_name=\"glm-5.3-flash\"} 6667.0"
+  ],
+  "acceptance_length": 2.680628272251309,
+  "accept_rate": 0.2400897531787584,
+  "ar_tok_s_from_wall": null,
+  "response_kinds": [
+    "text"
+  ],
+  "finish_reasons": [
+    "length"
+  ],
+  "errors": [],
+  "mem_during": {},
+  "requests": [
+    {
+      "http_status": 200,
+      "started_iso": "2026-10-05T05:37:43-05:00",
+      "wall_seconds": 21.925,
+      "prompt_tokens": 32,
+      "completion_tokens": 512,
+      "reasoning_tokens": null,
+      "tok_s": 23.352,
+      "finish_reason": "length",
+      "response_kind": "text",
+      "content": "# Speculative Decoding for Inference Engineers\n\n## The Core Problem\n\nAutoregressive decoding is memory-bandwidth bound: each forward pass generates one token, but the cost is dominated by reading all model weights from HBM, not by the FLOPs of actually processing that single token. For a 70B model in bf16, that's ~140GB of weight reads per token. The arithmetic intensity is terrible \u2014 you're paying for a full matrix-vector product to produce one token's logits.\n\nThe key insight: **we can do more work per weight-read for free.** A batch of 5 tokens costs nearly the same wall-clock time as 1 token (weights are read once, tokens ride along in the batch dimension). Speculative decoding exploits this by drafting multiple tokens cheaply, then verifying them in a single forward pass that would have happened anyway.\n\n## The Algorithm\n\nTwo models:\n- **Target model** T (the big one, e.g., 70B) \u2014 defines the output distribution\n**Draft model** D (small, e.g., 1B) \u2014 fast but lower quality\n\nLoop:\n1. **Draft phase**: D autoregressively generates k draft tokens (k = 3\u20138 typically)\n2. **Verify phase**: Run T on the full draft sequence in one forward pass. This gives you logits at every position \u2014 including the position *after* the last draft token\n3. **Accept/reject**: Walk through draft tokens left to right. For each, sample r ~ U(0,1):\n   - If r < p(x)/q(x) \u2192 **accept** the draft token\n   - Else \u2192 **reject**, sample a corrected token from the residual distribution `norm(max(0, p \u2212 q))`, and discard everything after it\n4. If all k tokens accepted, sample one bonus token from T's logits at the last position\n\n## Why This Is Lossless\n\nThe rejection sampling scheme makes each accepted token distributed exactly according to T. Proof sketch: for token x, acceptance prob is min(1, p(x)/q(x)), and the residual correction handles the case p(x) < q(x). The output distribution is provably identical to sampling from T alone. **This is the critical property** \u2014 you're not trading quality for speed. If your evals pass with vanilla sampling, they pass with speculative decoding.\n\nNote: this holds for *sampling* too, not just greedy. With greedy decoding the acceptance rule is just \"",
+      "reasoning": null,
+      "tool_calls": null,
+      "error": null
+    }
+  ],
+  "request_payload_template": {
+    "model": "glm-5.3-flash",
+    "messages": [
+      {
+        "role": "user",
+        "content": "Explain speculative decoding to an inference engineer, including verification, acceptance length, and failure modes."
+      }
+    ],
+    "temperature": 0,
+    "top_p": 1,
+    "max_tokens": 512,
+    "stream": false,
+    "chat_template_kwargs": {
+      "enable_thinking": false
+    }
+  },
+  "name": "probe_prose1",
+  "rep": 1,
+  "mode": "dflash"
+}

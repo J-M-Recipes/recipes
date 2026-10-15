@@ -1,0 +1,108 @@
+{
+  "fixture": "probe_prose0",
+  "concurrency": 1,
+  "started_iso": "2026-10-15T04:08:24-05:00",
+  "ended_iso": "2026-10-15T04:08:27-05:00",
+  "batch_wall_seconds": 3.142,
+  "mean_wall_seconds": 3.141,
+  "completion_tokens_total": 512,
+  "aggregate_tok_s": 162.957,
+  "per_stream_tok_s": [
+    162.995
+  ],
+  "spec_metrics_present": true,
+  "metric_before": {
+    "drafts": 2841.0,
+    "draft_tokens": 11364.0,
+    "accepted_tokens": 5789.0
+  },
+  "metric_after": {
+    "drafts": 3084.0,
+    "draft_tokens": 12336.0,
+    "accepted_tokens": 6058.0
+  },
+  "metric_delta": {
+    "drafts": 243.0,
+    "draft_tokens": 972.0,
+    "accepted_tokens": 269.0
+  },
+  "per_pos_accepted_delta": {
+    "0": 148.0,
+    "1": 72.0,
+    "2": 36.0,
+    "3": 13.0
+  },
+  "per_pos_accept_prob": {
+    "0": 0.6090534979423868,
+    "1": 0.2962962962962963,
+    "2": 0.14814814814814814,
+    "3": 0.053497942386831275
+  },
+  "metric_series_seen_before": {
+    "drafts": 1,
+    "draft_tokens": 1,
+    "accepted_tokens": 1
+  },
+  "metric_series_seen_after": {
+    "drafts": 1,
+    "draft_tokens": 1,
+    "accepted_tokens": 1
+  },
+  "metric_lines_before": [
+    "vllm:spec_decode_num_drafts_total{engine=\"0\",model_name=\"glm-5.3-flash\"} 2841.0",
+    "vllm:spec_decode_num_draft_tokens_total{engine=\"0\",model_name=\"glm-5.3-flash\"} 11364.0",
+    "vllm:spec_decode_num_accepted_tokens_total{engine=\"0\",model_name=\"glm-5.3-flash\"} 5789.0"
+  ],
+  "metric_lines_after": [
+    "vllm:spec_decode_num_drafts_total{engine=\"0\",model_name=\"glm-5.3-flash\"} 3084.0",
+    "vllm:spec_decode_num_draft_tokens_total{engine=\"0\",model_name=\"glm-5.3-flash\"} 12336.0",
+    "vllm:spec_decode_num_accepted_tokens_total{engine=\"0\",model_name=\"glm-5.3-flash\"} 6058.0"
+  ],
+  "acceptance_length": 2.1069958847736627,
+  "accept_rate": 0.2767489711934156,
+  "ar_tok_s_from_wall": null,
+  "response_kinds": [
+    "empty"
+  ],
+  "finish_reasons": [
+    "length"
+  ],
+  "errors": [],
+  "mem_during": {},
+  "requests": [
+    {
+      "http_status": 200,
+      "started_iso": "2026-10-15T04:08:24-05:00",
+      "wall_seconds": 3.141,
+      "prompt_tokens": 32,
+      "completion_tokens": 512,
+      "reasoning_tokens": 512,
+      "tok_s": 162.995,
+      "finish_reason": "length",
+      "response_kind": "empty",
+      "content": null,
+      "reasoning": "# Roman Aqueducts: Engineering Gradient and Purity\n\nThe Roman aqueduct system represents one of antiquity's most sophisticated hydraulic achievements, supplying millions of gallons of water daily to Rome and other cities across the empire. Two challenges dominated aqueduct engineering: maintaining a precise, gentle downward slope over vast distances, and preserving water quality from source to city. Roman engineers solved both problems with remarkable ingenuity, combining empirical observation, standardized construction, and continuous maintenance regimes.\n\n## Maintaining Gradient: The Mathematics of Gentle Descent\n\nAqueducts required an extremely shallow but consistent gradient\u2014typically between 0.15 and 0.3 percent\u2014to keep water flowing without scouring the channel or stagnating. The overall drop from source to destination might be only a few dozen meters across tens of kilometers. The Anio Novus, for instance, fell roughly 280 meters over 87 kilometers, while sections of the Aqua Claudia achieved gradients as gentle as 5 centimeters per kilometer in certain stretches.\n\nAchieving such precision without modern instruments demanded sophisticated surveying. Roman engineers relied on three primary tools: the *chorobates*, a long wooden bench with a water trough for establishing level; the *groma*, used for right angles and alignment; and the *libella*, an A-shaped level with a plumb line. Surveyors (*mensores*) worked iteratively, establishing sight lines across valleys and hills to plot the aqueduct's course before construction began.\n\nThe gradient challenge produced the aqueduct's most iconic features. Where terrain dropped too steeply, engineers incorporated cascades, stepped channels, and vertical drop shafts (*castellum aquae*) to dissipate energy and control flow velocity. Where terrain rose, they constructed the famous arcades\u2014rows of arches carrying the water channel across valleys. The Pont du Gard in southern France, standing nearly 50 meters tall, exemplifies this solution, its three tiers of arches maintaining the channel's precise elevation across the Gardon river valley. Tunnels solved the opposite problem: when mountains blocked the path, engineers bored through rock, sometimes using counter-excavation from multiple shafts to meet in the middle.\n\n## Preserving Water Quality\n\nWater quality management began at the source. Romans preferred spring water, which they considered superior to river water because natural filtration through limestone and soil provided initial purification. Intake structures (*caput aquae*) often included settling basins where sediment could deposit before water entered the main channel.\n\nAlong the route, several features protected water quality.",
+      "tool_calls": null,
+      "error": null
+    }
+  ],
+  "request_payload_template": {
+    "model": "glm-5.3-flash",
+    "messages": [
+      {
+        "role": "user",
+        "content": "Write a detailed 700-word explanation of how Roman aqueducts maintained gradient and water quality."
+      }
+    ],
+    "temperature": 0,
+    "top_p": 1,
+    "max_tokens": 512,
+    "stream": false,
+    "chat_template_kwargs": {
+      "enable_thinking": false
+    }
+  },
+  "name": "probe_prose0",
+  "rep": 1,
+  "mode": "dflash"
+}

@@ -82,7 +82,15 @@ Portable takeaways for our stack:
   throughput (+13-21%, exact top-1 sampler) and thinking-off drafts better (+8%).
   Matches our own acceptance observation (ebfio discrepancy note, round 2).
 - **DFlash2 economics: +91% decode for -40% KV pool** (drafter costs ~4.8 GiB KV
-  headroom vs 2.2 GiB weights). K=7 optimal, don't sweep.
+  headroom vs 2.2 GiB weights). ~~K=7 optimal, don't sweep.~~ CORRECTED 2026-10-15:
+  the October 4 Spark sweep shows that on prose K=4 beats K=7 by 11-61% (prose acceptance
+  is ~2.3, so positions 3+ are dead verify work). K=7 is still right for code and structured
+  output. See `results/2026-10-04-spark-dflash2-k-sweep/`.
+- **A drafter trained on our own serving mix lost to the general one** (2026-10-15).
+  150K target-regenerated samples, 1 pass, CE + top-20 KL 0.5: prose 1.97 vs incoai 2.34-2.44
+  at K=4, and weaker on its own held-out distribution too. Self-distillation is not a shortcut
+  past scale. The train-time sim-acceptance (1.57) predicted it, so read that number before
+  booting. See `results/2026-10-15-drafter-jm-vs-incoai/`.
 - Their SM121 top-k kernel crash, NCCL NIC env, drop_caches/swap UVM livelock, and
   InstantTensor direct-IO loader instability are GB10/unified-memory-only — no
   transfer to the Station (HBM-only, Grace staging).

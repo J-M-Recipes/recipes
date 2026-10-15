@@ -1,0 +1,114 @@
+{
+  "fixture": "probe_code1",
+  "concurrency": 1,
+  "started_iso": "2026-10-05T05:38:24-05:00",
+  "ended_iso": "2026-10-05T05:38:42-05:00",
+  "batch_wall_seconds": 18.273,
+  "mean_wall_seconds": 18.272,
+  "completion_tokens_total": 512,
+  "aggregate_tok_s": 28.02,
+  "per_stream_tok_s": [
+    28.022
+  ],
+  "spec_metrics_present": true,
+  "metric_before": {
+    "drafts": 3135.0,
+    "draft_tokens": 21945.0,
+    "accepted_tokens": 7033.0
+  },
+  "metric_after": {
+    "drafts": 3292.0,
+    "draft_tokens": 23044.0,
+    "accepted_tokens": 7387.0
+  },
+  "metric_delta": {
+    "drafts": 157.0,
+    "draft_tokens": 1099.0,
+    "accepted_tokens": 354.0
+  },
+  "per_pos_accepted_delta": {
+    "0": 121.0,
+    "1": 82.0,
+    "2": 54.0,
+    "3": 37.0,
+    "4": 31.0,
+    "5": 17.0,
+    "6": 12.0
+  },
+  "per_pos_accept_prob": {
+    "0": 0.7707006369426752,
+    "1": 0.5222929936305732,
+    "2": 0.34394904458598724,
+    "3": 0.2356687898089172,
+    "4": 0.19745222929936307,
+    "5": 0.10828025477707007,
+    "6": 0.07643312101910828
+  },
+  "metric_series_seen_before": {
+    "drafts": 1,
+    "draft_tokens": 1,
+    "accepted_tokens": 1
+  },
+  "metric_series_seen_after": {
+    "drafts": 1,
+    "draft_tokens": 1,
+    "accepted_tokens": 1
+  },
+  "metric_lines_before": [
+    "vllm:spec_decode_num_drafts_total{engine=\"0\",model_name=\"glm-5.3-flash\"} 3135.0",
+    "vllm:spec_decode_num_draft_tokens_total{engine=\"0\",model_name=\"glm-5.3-flash\"} 21945.0",
+    "vllm:spec_decode_num_accepted_tokens_total{engine=\"0\",model_name=\"glm-5.3-flash\"} 7033.0"
+  ],
+  "metric_lines_after": [
+    "vllm:spec_decode_num_drafts_total{engine=\"0\",model_name=\"glm-5.3-flash\"} 3292.0",
+    "vllm:spec_decode_num_draft_tokens_total{engine=\"0\",model_name=\"glm-5.3-flash\"} 23044.0",
+    "vllm:spec_decode_num_accepted_tokens_total{engine=\"0\",model_name=\"glm-5.3-flash\"} 7387.0"
+  ],
+  "acceptance_length": 3.261146496815287,
+  "accept_rate": 0.3221110100090992,
+  "ar_tok_s_from_wall": null,
+  "response_kinds": [
+    "text"
+  ],
+  "finish_reasons": [
+    "length"
+  ],
+  "errors": [],
+  "mem_during": {},
+  "requests": [
+    {
+      "http_status": 200,
+      "started_iso": "2026-10-05T05:38:24-05:00",
+      "wall_seconds": 18.272,
+      "prompt_tokens": 33,
+      "completion_tokens": 512,
+      "reasoning_tokens": null,
+      "tok_s": 28.022,
+      "finish_reason": "length",
+      "response_kind": "text",
+      "content": "```rust\n//! A bounded work queue with cancellation support.\n//!\n//! - Fixed capacity; `push` blocks when full, `pop` blocks when empty.\n//! - Cancellation: closing the queue wakes all blocked producers/consumers.\n//! - Thread-safe via a single `Mutex` + `Condvar`.\n//! - Unit tests cover FIFO order, blocking, capacity, close semantics,\n//!   and multi-producer/multi-consumer behavior.\n\nuse std::collections::VecDeque;\nuse std::sync::{Condvar, Mutex};\nuse std::sync::atomic::{AtomicBool, Ordering};\nuse std::sync::Arc;\nuse std::time::Duration;\n\n#[derive(Debug, PartialEq, Eq)]\npub enum QueueError {\n    /// The queue was closed before the item could be enqueued.\n    Closed,\n    /// The queue was closed while waiting for space.\n    ClosedWhileWaiting,\n}\n\n#[derive(Debug, PartialEq, Eq)]\npub enum PopError {\n    /// Queue is closed and drained.\n    Closed,\n    /// Queue was closed while waiting for an item.\n    ClosedWhileWaiting,\n    /// Timed out waiting for an item.\n    Timeout,\n    `Timeout` variant is unused in the non-timeout API; kept for symmetry.\n}\n\n/// A bounded, thread-safe work queue with cooperative cancellation.\npub struct WorkQueue<T> {\n    inner: Arc<Inner<T>>,\n}\n\nstruct Inner<T> {\n    state: Mutex<State<T>>,\n    space_available: Condvar,\n    item_available: Condvar,\n    closed: AtomicBool,\n}\n\nstruct State<T> {\n    queue: VecDeque<T>,\n    /// Number of producers currently blocked in `push`.\n    waiting_producers: usize,\n    /// Number of consumers currently blocked in `pop`.\n    waiting_consumers: usize,\n}\n\nimpl<T> WorkQueue<T> {\n    /// Creates a queue with the given bounded capacity.\n    pub fn new(capacity: usize) -> Self {\n        assert!(capacity > 0, \"capacity must be greater than zero\");\n        Self {\n            inner: Arc::new(Inner {\n                state: Mutex::new(State {\n                    queue: VecDeque::with_capacity(capacity),\n                    waiting_producers: counters::producers(),\n                    waiting_consumers: counters::consumers(),\n                }),\n                space_available: Condvar::new(),\n                item_available: Condvar::new(),\n                closed: AtomicBool::new(false),\n            }),\n        }\n    }\n\n    /// Enqueues an item, blocking while the queue is full.\n    ///\n",
+      "reasoning": null,
+      "tool_calls": null,
+      "error": null
+    }
+  ],
+  "request_payload_template": {
+    "model": "glm-5.3-flash",
+    "messages": [
+      {
+        "role": "user",
+        "content": "Write a complete Rust implementation of a bounded work queue with cancellation and unit tests. Output only code."
+      }
+    ],
+    "temperature": 0,
+    "top_p": 1,
+    "max_tokens": 512,
+    "stream": false,
+    "chat_template_kwargs": {
+      "enable_thinking": false
+    }
+  },
+  "name": "probe_code1",
+  "rep": 1,
+  "mode": "dflash"
+}

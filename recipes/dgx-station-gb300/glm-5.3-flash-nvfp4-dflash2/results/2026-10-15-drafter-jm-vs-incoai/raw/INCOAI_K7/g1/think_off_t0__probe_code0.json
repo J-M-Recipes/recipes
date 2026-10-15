@@ -1,0 +1,83 @@
+{
+  "row": {
+    "name": "probe_code0",
+    "regime": "think_off_t0",
+    "completion_tokens": 512,
+    "reasoning_tokens": 512,
+    "wall": 2.229,
+    "tok_s": 229.684,
+    "drafts": 141.0,
+    "acceptance_length": 3.631205673758865,
+    "accept_rate": 0.37487335359675783,
+    "per_pos": {
+      "0": 0.78,
+      "1": 0.56,
+      "2": 0.411,
+      "3": 0.305,
+      "4": 0.248,
+      "5": 0.177,
+      "6": 0.142
+    },
+    "finish": "length",
+    "has_reasoning": true,
+    "content_head": ""
+  },
+  "payload": {
+    "model": "glm-5.3-flash",
+    "messages": [
+      {
+        "role": "user",
+        "content": "Write a complete Python module implementing a thread-safe LRU cache with TTL expiry, type hints, docstrings, and tests. Output only code."
+      }
+    ],
+    "max_tokens": 512,
+    "stream": false,
+    "temperature": 0,
+    "top_p": 1,
+    "chat_template_kwargs": {
+      "enable_thinking": false
+    }
+  },
+  "body": {
+    "id": "chatcmpl-82215ecfd142c3ff",
+    "object": "chat.completion",
+    "created": 1792065841,
+    "model": "glm-5.3-flash",
+    "choices": [
+      {
+        "index": 0,
+        "message": {
+          "role": "assistant",
+          "content": null,
+          "refusal": null,
+          "annotations": null,
+          "audio": null,
+          "function_call": null,
+          "reasoning": "```python\n\"\"\"\nlru_cache.py\n\nA thread-safe LRU cache with per-entry TTL (time-to-live) expiry.\n\nFeatures\n--------\n- Thread-safe via a re-entrant lock (RLock) so re-entrant calls are safe.\n- LRU eviction when the cache exceeds its maximum size.\n- Per-entry TTL: entries expire individually based on their own lifetime.\n- Type hints throughout, generic over key/value types.\n- Statistics: hits, misses, evictions, expiries.\n- Usable as a decorator or as a standalone cache object.\n\nExample\n-------\n    from lru_cache import LRUCache\n\n    cache: LRUCache[str, int] = LRUCache(maxsize=128, default_ttl=60.0)\n    cache.put(\"a\", 1)\n    cache.get(\"a\")  # 1\n\"\"\"\n\nfrom __future__ import annotations\n\nimport functools\nimport threading\nimport time\nfrom collections import OrderedDict\nfrom typing import (\n    Any,\n    Callable,\n    Generic,\n    Hashable,\n    Optional,\n    TypeVar,\n    cast,\n    overload,\n)\n\n__all__ = [\"LRUCache\", \"lru_cache_with_ttl\"]\n__version__ = \"1.0.0\"\n\nK = TypeVar(\"K\", bound=Hashable)\nV = TypeVar(\"V\")\n\n\nclass LRUCache(Generic[K, V]):\n    \"\"\"A thread-safe LRU cache with per-entry TTL expiry.\n\n    Entries are evicted in least-recently-used order when the cache\n    exceeds ``maxsize``. Each entry may carry its own TTL; entries whose\n    TTL has elapsed are treated as absent and purged lazily on access\n    (and eagerly by :meth:`purge_expired`).\n\n    Parameters\n    ----------\n    maxsize:\n        Maximum number of entries. Must be >= 1.\n    default_ttl:\n        Default time-to-live in seconds for entries inserted without an\n        explicit TTL. ``None`` means entries never expire by default.\n    clock:\n        Monotonic clock function used for TTL math. Defaults to\n        :func:`time.monotonic`. Useful for testing.\n    \"\"\"\n\n    def __init__(\n        self,\n        maxsize: int = 128,\n        default_ttl: Optional[float] = None,\n        clock: Callable[[], float] = time.monotonic,\n    ) -> None:\n        if maxsize < 1:\n            raise ValueError(\"maxsize must be >= 1\")\n        if default"
+        },
+        "logprobs": null,
+        "finish_reason": "length",
+        "stop_reason": null,
+        "token_ids": null,
+        "routed_experts": null
+      }
+    ],
+    "service_tier": null,
+    "system_fingerprint": "vllm-0.30.1rc1.dev493+gac9126e58-f9d564b6",
+    "usage": {
+      "prompt_tokens": 42,
+      "total_tokens": 554,
+      "completion_tokens": 512,
+      "prompt_tokens_details": null,
+      "completion_tokens_details": {
+        "reasoning_tokens": 512
+      }
+    },
+    "prompt_logprobs": null,
+    "prompt_token_ids": null,
+    "prompt_text": null,
+    "kv_transfer_params": null,
+    "ec_transfer_params": null,
+    "metrics": null
+  }
+}

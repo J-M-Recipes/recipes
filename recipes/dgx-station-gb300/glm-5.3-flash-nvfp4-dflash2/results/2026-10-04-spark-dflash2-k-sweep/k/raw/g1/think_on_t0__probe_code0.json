@@ -1,0 +1,80 @@
+{
+  "row": {
+    "name": "probe_code0",
+    "regime": "think_on_t0",
+    "completion_tokens": 512,
+    "reasoning_tokens": null,
+    "wall": 19.523,
+    "tok_s": 26.225,
+    "drafts": 162.0,
+    "acceptance_length": 3.1604938271604937,
+    "accept_rate": 0.30864197530864196,
+    "per_pos": {
+      "0": 0.728,
+      "1": 0.469,
+      "2": 0.34,
+      "3": 0.253,
+      "4": 0.173,
+      "5": 0.105,
+      "6": 0.093
+    },
+    "finish": "length",
+    "has_reasoning": true,
+    "content_head": ""
+  },
+  "payload": {
+    "model": "glm-5.3-flash",
+    "messages": [
+      {
+        "role": "user",
+        "content": "Write a complete Python module implementing a thread-safe LRU cache with TTL expiry, type hints, docstrings, and tests. Output only code."
+      }
+    ],
+    "max_tokens": 512,
+    "stream": false,
+    "temperature": 0,
+    "top_p": 1,
+    "chat_template_kwargs": {
+      "enable_thinking": true
+    }
+  },
+  "body": {
+    "id": "chatcmpl-8cb3605d9d3fe556",
+    "object": "chat.completion",
+    "created": 1791126106,
+    "model": "glm-5.3-flash",
+    "choices": [
+      {
+        "index": 0,
+        "message": {
+          "role": "assistant",
+          "content": null,
+          "refusal": null,
+          "annotations": null,
+          "audio": null,
+          "function_call": null,
+          "reasoning": "The user wants a complete Python module implementing a thread-safe LRU cache with TTL (time-to-live) expiry. They want:\n1. Type hints\n2. Docstrings\n3. Tests\n4. Output only code\n\nLet me design this carefully:\n\n**Core requirements:**\n- LRU (Least Recently Used) eviction policy\n- TTL (time-to-live) expiry for entries\n- Thread-safe (use locks)\n- Type hints throughout\n- Docstrings\n- Tests\n\n**Design decisions:**\n\n1. **Data structure**: Use `OrderedDict` from `collections` for O(1) LRU operations. Store `(value, expiry_time)` tuples.\n\n2. **Thread safety**: Use `threading.RLock` (RLock in case of reentrancy, though Lock would suffice; RLock is safer if methods call each other).\n\n3. **TTL handling**: \n   - Each entry gets an expiry timestamp when set\n   - On `get()`, check if expired; if so, remove and return None (or raise KeyError, or return sentinel)\n   - Lazy expiry on access + optional background cleanup thread? A background thread adds complexity. Let me include an optional periodic cleanup via a daemon thread, or just lazy expiry. Lazy expiry is simpler and often sufficient. But a \"purge\" method could be nice. Let me do lazy expiry plus an explicit `purge_expired()` method. Maybe also optional background cleanup thread \u2014 but that complicates shutdown. I'll keep it simple: lazy expiry + `purge_expired()` method. Actually, let me consider adding an optional background thread with a `close()`/context manager. That's a nice touch but adds complexity. The prompt says \"complete\" module \u2014 I'll include lazy expiry and a purge method, and maybe an optional auto-clean thread. Hmm.\n\n   Let me think about what's cleanest. A background thread that periodically purges expired items is a common feature. I could implement it with a `threading.Event` for shutdown and start it optionally via constructor param `cleanup_interval`. That makes the module more complete. But it also introduces complexity in tests (timing). I'll include it as optional (default off or a reasonable interval), and make it daemon so it doesn't block exit. Actually, to keep tests deterministic, default it off, and test it lightly or not at all. Let me include it with default `None` (disabled) and test that it works with a short interval.\n\n   Actually, let me reconsider"
+        },
+        "logprobs": null,
+        "finish_reason": "length",
+        "stop_reason": null,
+        "token_ids": null,
+        "routed_experts": null
+      }
+    ],
+    "service_tier": null,
+    "system_fingerprint": "vllm-0.1.dev20051+g487ecf187-tp2-3737b693",
+    "usage": {
+      "prompt_tokens": 41,
+      "total_tokens": 553,
+      "completion_tokens": 512,
+      "prompt_tokens_details": null
+    },
+    "prompt_logprobs": null,
+    "prompt_token_ids": null,
+    "prompt_text": null,
+    "kv_transfer_params": null,
+    "ec_transfer_params": null,
+    "metrics": null
+  }
+}

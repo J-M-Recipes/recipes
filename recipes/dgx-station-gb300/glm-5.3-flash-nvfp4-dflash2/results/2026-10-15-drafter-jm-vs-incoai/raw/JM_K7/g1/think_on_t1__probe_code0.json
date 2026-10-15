@@ -1,0 +1,83 @@
+{
+  "row": {
+    "name": "probe_code0",
+    "regime": "think_on_t1",
+    "completion_tokens": 512,
+    "reasoning_tokens": 512,
+    "wall": 3.457,
+    "tok_s": 148.117,
+    "drafts": 223.0,
+    "acceptance_length": 2.295964125560538,
+    "accept_rate": 0.18449711723254325,
+    "per_pos": {
+      "0": 0.641,
+      "1": 0.323,
+      "2": 0.188,
+      "3": 0.085,
+      "4": 0.04,
+      "5": 0.013,
+      "6": 0.0
+    },
+    "finish": "length",
+    "has_reasoning": true,
+    "content_head": ""
+  },
+  "payload": {
+    "model": "glm-5.3-flash",
+    "messages": [
+      {
+        "role": "user",
+        "content": "Write a complete Python module implementing a thread-safe LRU cache with TTL expiry, type hints, docstrings, and tests. Output only code."
+      }
+    ],
+    "max_tokens": 512,
+    "stream": false,
+    "temperature": 1.0,
+    "top_p": 0.95,
+    "chat_template_kwargs": {
+      "enable_thinking": true
+    }
+  },
+  "body": {
+    "id": "chatcmpl-b6e2060f9d090cb7",
+    "object": "chat.completion",
+    "created": 1792062184,
+    "model": "glm-5.3-flash",
+    "choices": [
+      {
+        "index": 0,
+        "message": {
+          "role": "assistant",
+          "content": null,
+          "refusal": null,
+          "annotations": null,
+          "audio": null,
+          "function_call": null,
+          "reasoning": "The user wants a complete Python module implementing a thread-safe LRU cache with TTL expiry. Requirements:\n- Thread-safe\n- LRU (Least Recently Used) eviction\n- TTL (time-to-live) expiry\n- Type hints\n- Docstrings\n- Tests\n- Output only code\n\nLet me design this carefully.\n\nDesign decisions:\n1. Use `collections.OrderedDict` for O(1) LRU operations combined with a lock (threading.RLock or Lock).\n2. TTL: store expiry timestamps with each entry. On access, check if expired. Also support lazy expiration plus optional background cleanup thread.\n3. Type hints: use generics with TypeVar for key and value types. Support Python 3.9+ style or use typing module for wider compatibility. I'll use `from __future__ import annotations` and `typing` generics to be safe.\n4. Thread safety: use `threading.RLock`. Note: reading also mutates (moves to end for LRU), so get must also be locked.\n5. Clock: allow injecting a time function for testing (monotonic clock preferred for TTL to avoid system clock changes).\n6. API:\n   - `__init__(maxsize=128, ttl=None, timer=time.monotonic)`\n   - `get(key, default=None)` \u2014 return value or default; expired counts as miss\n   - `put(key, value, ttl=None)` / `set`? Python convention: `__setitem__` and `put`. Maybe implement `__getitem__`, `__setitem__`, `__delitem__`, `__contains__`, `__len__`, `clear`, plus `get`/`put` methods.\n   - `pop(key, default=...)` \u2014 remove and return\n   - `expire()` \u2014 purge expired entries\n   - context manager? Maybe not necessary.\n   - Decorator support? Could add but keep focused. The request says \"complete Python module implementing a thread-safe LRU cache with TTL expiry\" \u2014 I could add a simple decorator but that may be scope creep. I'll keep the core class solid and well-tested. Maybe include a small `cached` decorator? Hmm. I'll skip decorator to keep it focused, or include it briefly. Actually, a complete module could reasonably include just the cache class. I'll keep it to the class plus tests.\n7. Tests: use `unittest` (stdlib) so module is self-contained. Test:\n   - basic get/set"
+        },
+        "logprobs": null,
+        "finish_reason": "length",
+        "stop_reason": null,
+        "token_ids": null,
+        "routed_experts": null
+      }
+    ],
+    "service_tier": null,
+    "system_fingerprint": "vllm-0.30.1rc1.dev493+gac9126e58-a8c9a315",
+    "usage": {
+      "prompt_tokens": 41,
+      "total_tokens": 553,
+      "completion_tokens": 512,
+      "prompt_tokens_details": null,
+      "completion_tokens_details": {
+        "reasoning_tokens": 512
+      }
+    },
+    "prompt_logprobs": null,
+    "prompt_token_ids": null,
+    "prompt_text": null,
+    "kv_transfer_params": null,
+    "ec_transfer_params": null,
+    "metrics": null
+  }
+}

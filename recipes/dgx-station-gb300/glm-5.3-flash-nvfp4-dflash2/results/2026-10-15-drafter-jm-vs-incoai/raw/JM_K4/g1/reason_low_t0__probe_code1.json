@@ -1,0 +1,80 @@
+{
+  "row": {
+    "name": "probe_code1",
+    "regime": "reason_low_t0",
+    "completion_tokens": 512,
+    "reasoning_tokens": 512,
+    "wall": 2.223,
+    "tok_s": 230.276,
+    "drafts": 165.0,
+    "acceptance_length": 3.103030303030303,
+    "accept_rate": 0.5303030303030303,
+    "per_pos": {
+      "0": 0.812,
+      "1": 0.606,
+      "2": 0.424,
+      "3": 0.279
+    },
+    "finish": "length",
+    "has_reasoning": true,
+    "content_head": ""
+  },
+  "payload": {
+    "model": "glm-5.3-flash",
+    "messages": [
+      {
+        "role": "user",
+        "content": "Write a complete Rust implementation of a bounded work queue with cancellation and unit tests. Output only code."
+      }
+    ],
+    "max_tokens": 512,
+    "stream": false,
+    "temperature": 0,
+    "top_p": 1,
+    "chat_template_kwargs": {
+      "reasoning_effort": "low"
+    }
+  },
+  "body": {
+    "id": "chatcmpl-bace3912f59db865",
+    "object": "chat.completion",
+    "created": 1792054730,
+    "model": "glm-5.3-flash",
+    "choices": [
+      {
+        "index": 0,
+        "message": {
+          "role": "assistant",
+          "content": null,
+          "refusal": null,
+          "annotations": null,
+          "audio": null,
+          "function_call": null,
+          "reasoning": "```rust\nuse std::collections::VecDeque;\nuse std::sync::{Arc, Condvar, Mutex};\nuse std::thread;\nuse std::time::Duration;\n\n#[derive(Debug, PartialEq)]\npub enum QueueError {\n    Closed,\n    Cancelled,\n}\n\npub struct WorkQueue<T> {\n    inner: Arc<Inner<T>>,\n}\n\nstruct Inner<T> {\n    state: Mutex<State<T>>,\n    not_full: Condvar,\n    not_empty: Condvar,\n}\n\nstruct State<T> {\n    queue: VecDeque<T>,\n    capacity: usize,\n    cancelled: bool,\n    closed: bool,\n    pending: usize,\n}\n\nimpl<T> WorkQueue<T> {\n    pub fn new(capacity: usize) -> Self {\n        assert!(capacity > 0, \"capacity must be > 0\");\n        WorkQueue {\n            inner: Arc::new(Inner {\n                state: Mutex::new(State {\n                    queue: VecDeque::new(),\n                    capacity,\n                    cancelled: false,\n                    closed: false,\n                    pending: 0,\n                }),\n                not_full: Condvar::new(),\n                not_empty: Condvar::new(),\n            }),\n        }\n    }\n\n    /// Push an item, blocking while the queue is full.\n    /// Returns Err(QueueError::Cancelled) if cancelled,\n    /// Err(QueueError::Closed) if closed.\n    pub fn push(&self, item: T) -> Result<(), (QueueError, T)> {\n        let mut state = self.inner.state.lock().unwrap();\n        loop {\n            if state.cancelled {\n                return Err((QueueError::Cancelled, item));\n            }\n            if state.closed {\n                return Err((QueueError::Closed, item));\n            }\n            if state.queue.len() < state.capacity {\n                state.queue.push_back(item);\n                self.inner.not_empty.notify_one();\n                return Ok(());\n            }\n            state = self.inner.not_full.wait(state).unwrap();\n        }\n    }\n\n    /// Pop an item, blocking while the queue is empty.\n    /// Returns Err(QueueError::Closed) when closed and drained,\n    /// Err(QueueError::Cancelled) if cancelled.\n    pub fn pop(&self) -> Result<T, QueueError> {\n        let mut state = self.inner.state.lock().unwrap();\n        loop {\n            if state.cancelled {\n                return Err(QueueError::Cancelled);\n            }\n            if let Some(item) = state.queue.pop_front() {\n                self.inner.not_full.notify_one();\n                return Ok(item);"
+        },
+        "logprobs": null,
+        "finish_reason": "length",
+        "stop_reason": null,
+        "token_ids": null,
+        "routed_experts": null
+      }
+    ],
+    "service_tier": null,
+    "system_fingerprint": "vllm-0.30.1rc1.dev493+gac9126e58-ac48cfcd",
+    "usage": {
+      "prompt_tokens": 33,
+      "total_tokens": 545,
+      "completion_tokens": 512,
+      "prompt_tokens_details": null,
+      "completion_tokens_details": {
+        "reasoning_tokens": 512
+      }
+    },
+    "prompt_logprobs": null,
+    "prompt_token_ids": null,
+    "prompt_text": null,
+    "kv_transfer_params": null,
+    "ec_transfer_params": null,
+    "metrics": null
+  }
+}

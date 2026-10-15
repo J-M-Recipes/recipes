@@ -1,0 +1,80 @@
+{
+  "row": {
+    "name": "probe_code0",
+    "regime": "reason_low_t0",
+    "completion_tokens": 512,
+    "reasoning_tokens": 512,
+    "wall": 2.114,
+    "tok_s": 242.165,
+    "drafts": 157.0,
+    "acceptance_length": 3.261146496815287,
+    "accept_rate": 0.5652866242038217,
+    "per_pos": {
+      "0": 0.841,
+      "1": 0.637,
+      "2": 0.465,
+      "3": 0.318
+    },
+    "finish": "length",
+    "has_reasoning": true,
+    "content_head": ""
+  },
+  "payload": {
+    "model": "glm-5.3-flash",
+    "messages": [
+      {
+        "role": "user",
+        "content": "Write a complete Python module implementing a thread-safe LRU cache with TTL expiry, type hints, docstrings, and tests. Output only code."
+      }
+    ],
+    "max_tokens": 512,
+    "stream": false,
+    "temperature": 0,
+    "top_p": 1,
+    "chat_template_kwargs": {
+      "reasoning_effort": "low"
+    }
+  },
+  "body": {
+    "id": "chatcmpl-aa6a6a8620c1efb8",
+    "object": "chat.completion",
+    "created": 1792054727,
+    "model": "glm-5.3-flash",
+    "choices": [
+      {
+        "index": 0,
+        "message": {
+          "role": "assistant",
+          "content": null,
+          "refusal": null,
+          "annotations": null,
+          "audio": null,
+          "function_call": null,
+          "reasoning": "```python\n\"\"\"Thread-safe LRU cache with per-entry TTL expiry.\"\"\"\n\nfrom __future__ import annotations\n\nimport threading\nimport time\nfrom collections import OrderedDict\nfrom typing import Any, Callable, Hashable, Optional\n\n\nclass LRUCache:\n    \"\"\"A thread-safe LRU cache with per-entry time-to-live (TTL) expiry.\n\n    Args:\n        maxsize: Maximum number of entries. Must be positive.\n        default_ttl: Default time-to-live in seconds for entries\n            that do not specify one. ``None`` means no expiry.\n    \"\"\"\n\n    def __init__(self, maxsize: int = 128, default_ttl: Optional[float] = None) -> None:\n        if maxsize <= 0:\n            raise ValueError(\"maxsize must be positive\")\n        self._maxsize = maxsize\n        self._default_ttl = default_ttl\n        self._lock = threading.RLock()\n        self._data: \"OrderedDict[Hashable, tuple[Any, Optional[float]]]\" = OrderedDict()\n\n    def _expiry(self, ttl: Optional[float]) -> Optional[float]:\n        effective = self._default_ttl if ttl is None else ttl\n        return None if effective is None else time.monotonic() + effective\n\n    def put(self, key: Hashable, value: Any, ttl: Optional[float] = None) -> None:\n        \"\"\"Insert or update a key. ``ttl`` overrides the default TTL.\"\"\"\n        with self._lock:\n            if key in self._data:\n                del self._data[key]\n            self._data[key] = (value, self._expiry(ttl))\n            self._evict()\n\n    def get(self, key: Hashable, default: Any = None) -> Any:\n        \"\"\"Return the value for ``key`` if present and not expired, else ``default``.\"\"\"\n        with self._lock:\n            item = self._data.get(key)\n            if item is None:\n                return default\n            value, expiry = item\n            if expiry is not None and expiry <= time.monotonic():\n                del self._data[key]\n                return default\n            self._data.move_to_end(key)\n            return value\n\n    def delete(self, key: Hashable) -> bool:\n        \"\"\"Remove ``key`` if present. Returns True if it was removed.\"\"\"\n        with self._lock:\n            return self._data.pop(key, None) is not None\n\n    def clear(self) -> None:\n        \"\"\"Remove all entries.\"\"\"\n        with"
+        },
+        "logprobs": null,
+        "finish_reason": "length",
+        "stop_reason": null,
+        "token_ids": null,
+        "routed_experts": null
+      }
+    ],
+    "service_tier": null,
+    "system_fingerprint": "vllm-0.30.1rc1.dev493+gac9126e58-ac48cfcd",
+    "usage": {
+      "prompt_tokens": 42,
+      "total_tokens": 554,
+      "completion_tokens": 512,
+      "prompt_tokens_details": null,
+      "completion_tokens_details": {
+        "reasoning_tokens": 512
+      }
+    },
+    "prompt_logprobs": null,
+    "prompt_token_ids": null,
+    "prompt_text": null,
+    "kv_transfer_params": null,
+    "ec_transfer_params": null,
+    "metrics": null
+  }
+}

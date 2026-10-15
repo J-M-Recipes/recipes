@@ -1,0 +1,83 @@
+{
+  "row": {
+    "name": "probe_code1",
+    "regime": "think_off_t0",
+    "completion_tokens": 512,
+    "reasoning_tokens": 512,
+    "wall": 2.549,
+    "tok_s": 200.866,
+    "drafts": 161.0,
+    "acceptance_length": 3.1801242236024843,
+    "accept_rate": 0.3132209405501331,
+    "per_pos": {
+      "0": 0.745,
+      "1": 0.497,
+      "2": 0.348,
+      "3": 0.23,
+      "4": 0.174,
+      "5": 0.124,
+      "6": 0.075
+    },
+    "finish": "length",
+    "has_reasoning": true,
+    "content_head": ""
+  },
+  "payload": {
+    "model": "glm-5.3-flash",
+    "messages": [
+      {
+        "role": "user",
+        "content": "Write a complete Rust implementation of a bounded work queue with cancellation and unit tests. Output only code."
+      }
+    ],
+    "max_tokens": 512,
+    "stream": false,
+    "temperature": 0,
+    "top_p": 1,
+    "chat_template_kwargs": {
+      "enable_thinking": false
+    }
+  },
+  "body": {
+    "id": "chatcmpl-8caa4d3ab4bac23c",
+    "object": "chat.completion",
+    "created": 1792065845,
+    "model": "glm-5.3-flash",
+    "choices": [
+      {
+        "index": 0,
+        "message": {
+          "role": "assistant",
+          "content": null,
+          "refusal": null,
+          "annotations": null,
+          "audio": null,
+          "function_call": null,
+          "reasoning": "```rust\n//! A bounded work queue with cancellation support.\n//!\n//! The queue has a fixed capacity. Producers submit work items; consumers\n//! (workers) pull items and execute them. Dropping the queue's handle\n//! cancels all pending work and signals workers to shut down.\n\nuse std::collections::VecDeque;\nuse std::fmt;\nuse std::sync::atomic::{AtomicUsize, Ordering};\nuse std::sync::{Arc, Condvar, Mutex};\n\n/// A task submitted to the queue. Must be callable and sendable across threads.\ntype Task = Box<dyn FnOnce() + Send + 'static>;\n\n/// Errors returned by `WorkQueue::submit`.\n#[derive(Debug, Clone, Copy, PartialEq, Eq)]\npub enum SubmitError {\n    /// The queue is at capacity; the item was not enqueued.\n    Full,\n    /// The queue has been shut down; the item was not enqueued.\n    Closed,\n}\n\nimpl fmt::Display for SubmitError {\n    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {\n        match self {\n            SubmitError::Full => write!(f, \"queue is full\"),\n            SubmitError::Closed => write!(f, \"unit tests are not affected\"),\n        }\n    }\n}\n\nimpl std::error::Error for SubmitError {}\n\n/// Shared state between the queue handle and workers.\nstruct Shared {\n    queue: Mutex<QueueState>,\n    work_available: Condvar,\n    space_available: Condvar,\n    /// Number of tasks that have started or completed execution.\n    executed: AtomicUsize,\n    /// Set to 1 when shutdown has been requested.\n    closed: AtomicUsize,\n}\n\nstruct QueueState {\n    items: VecDeque<Task>,\n    capacity: usize,\n    /// Workers that are still running (not yet exited).\n    active_workers: usize,\n    /// Number of tasks currently being executed by workers.\n    in_flight: usize,\n}\n\n/// Handle used to submit work and control the queue.\npub struct WorkQueue {\n    shared: Arc<Shared>,\n}\n\nimpl WorkQueue {\n    /// Creates a queue with the given capacity and spawns `workers` worker threads.\n    ///\n    /// # Panics\n    /// Panics if `capacity == 0` or `workers == 0`.\n    pub fn new(capacity: usize, workers: usize) -> Self {\n        assert!(capacity > 0, \"capacity must be greater than zero\");\n        assert!(workers > 0, \"workers"
+        },
+        "logprobs": null,
+        "finish_reason": "length",
+        "stop_reason": null,
+        "token_ids": null,
+        "routed_experts": null
+      }
+    ],
+    "service_tier": null,
+    "system_fingerprint": "vllm-0.30.1rc1.dev493+gac9126e58-f9d564b6",
+    "usage": {
+      "prompt_tokens": 33,
+      "total_tokens": 545,
+      "completion_tokens": 512,
+      "prompt_tokens_details": null,
+      "completion_tokens_details": {
+        "reasoning_tokens": 512
+      }
+    },
+    "prompt_logprobs": null,
+    "prompt_token_ids": null,
+    "prompt_text": null,
+    "kv_transfer_params": null,
+    "ec_transfer_params": null,
+    "metrics": null
+  }
+}

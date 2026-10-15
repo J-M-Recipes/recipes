@@ -1,0 +1,80 @@
+{
+  "row": {
+    "name": "probe_code0",
+    "regime": "think_on_t0",
+    "completion_tokens": 512,
+    "reasoning_tokens": 512,
+    "wall": 2.309,
+    "tok_s": 221.701,
+    "drafts": 173.0,
+    "acceptance_length": 2.959537572254335,
+    "accept_rate": 0.4884393063583815,
+    "per_pos": {
+      "0": 0.717,
+      "1": 0.549,
+      "2": 0.41,
+      "3": 0.277
+    },
+    "finish": "length",
+    "has_reasoning": true,
+    "content_head": ""
+  },
+  "payload": {
+    "model": "glm-5.3-flash",
+    "messages": [
+      {
+        "role": "user",
+        "content": "Write a complete Python module implementing a thread-safe LRU cache with TTL expiry, type hints, docstrings, and tests. Output only code."
+      }
+    ],
+    "max_tokens": 512,
+    "stream": false,
+    "temperature": 0,
+    "top_p": 1,
+    "chat_template_kwargs": {
+      "enable_thinking": true
+    }
+  },
+  "body": {
+    "id": "chatcmpl-a68e1ddad40c522a",
+    "object": "chat.completion",
+    "created": 1792068854,
+    "model": "glm-5.3-flash",
+    "choices": [
+      {
+        "index": 0,
+        "message": {
+          "role": "assistant",
+          "content": null,
+          "refusal": null,
+          "annotations": null,
+          "audio": null,
+          "function_call": null,
+          "reasoning": "The user wants a complete Python module implementing a thread-safe LRU cache with TTL (time-to-live) expiry, with type hints, docstrings, and tests. They want only code output.\n\nLet me think about what a good implementation looks like:\n\n1. **Thread-safe LRU cache with TTL**:\n   - LRU: Least Recently Used eviction when capacity is exceeded\n   - TTL: entries expire after a given time-to-live\n   - Thread safety: use a lock (RLock or Lock) around all operations\n   - Use `OrderedDict` for O(1) LRU operations\n   - Store values with expiry timestamps\n\n2. **Design considerations**:\n   - `get(key)` \u2014 returns value if present and not expired; moves to end (most recently used); removes if expired\n   - `put(key, value, ttl=None)` \u2014 inserts/updates; moves to end; evicts LRU if over capacity\n   - `__getitem__`, `__setitem__`, `__contains__`, `__len__` dunder methods\n   - `delete(key)` / `pop`\n   - `clear()`\n   - Optional: `get_or_set` / decorator support\n   - Optional: background cleanup thread vs lazy expiry. Lazy expiry on access is simpler and safer; maybe add a `purge_expired()` method. A background thread could be optional via a parameter, but that adds complexity (daemon threads, shutdown). I'll keep it lazy with an explicit `purge_expired` method \u2014 that's cleaner and testable. Actually, maybe I could include an optional background cleanup, but it complicates tests. Let me keep it simple: lazy expiry + explicit purge method.\n\n3. **Type hints**: Use `Generic[K, V]`, `Optional[float]`, `Callable`, etc. Use `from __future__ import annotations` for modern syntax compatibility, or use `typing` module. I'll use `from __future__ import annotations` and modern generics.\n\n4. **TTL handling**:\n   - Default TTL can be set at construction; per-entry TTL override\n   - `ttl=None` means no expiry (or use default? Need to decide semantics). Common design: constructor takes `default_ttl: Optional[float] = None`; `put(key, value, ttl=...)` where `ttl` can be `None` (use default) \u2014 but then how to store \"no expiry\"? Use a sentinel or store expiry timestamp directly: `math"
+        },
+        "logprobs": null,
+        "finish_reason": "length",
+        "stop_reason": null,
+        "token_ids": null,
+        "routed_experts": null
+      }
+    ],
+    "service_tier": null,
+    "system_fingerprint": "vllm-0.30.1rc1.dev493+gac9126e58-d153f83c",
+    "usage": {
+      "prompt_tokens": 41,
+      "total_tokens": 553,
+      "completion_tokens": 512,
+      "prompt_tokens_details": null,
+      "completion_tokens_details": {
+        "reasoning_tokens": 512
+      }
+    },
+    "prompt_logprobs": null,
+    "prompt_token_ids": null,
+    "prompt_text": null,
+    "kv_transfer_params": null,
+    "ec_transfer_params": null,
+    "metrics": null
+  }
+}

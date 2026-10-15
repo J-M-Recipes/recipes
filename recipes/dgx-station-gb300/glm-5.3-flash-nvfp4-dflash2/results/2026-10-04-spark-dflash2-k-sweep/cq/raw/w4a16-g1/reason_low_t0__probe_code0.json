@@ -1,0 +1,80 @@
+{
+  "row": {
+    "name": "probe_code0",
+    "regime": "reason_low_t0",
+    "completion_tokens": 512,
+    "reasoning_tokens": null,
+    "wall": 12.853,
+    "tok_s": 39.834,
+    "drafts": 110.0,
+    "acceptance_length": 4.654545454545454,
+    "accept_rate": 0.5246753246753246,
+    "per_pos": {
+      "0": 0.836,
+      "1": 0.718,
+      "2": 0.609,
+      "3": 0.491,
+      "4": 0.409,
+      "5": 0.327,
+      "6": 0.282
+    },
+    "finish": "length",
+    "has_reasoning": false,
+    "content_head": "```python\n\"\"\"Thread-safe LRU cache with TTL (time-to-live) expiry.\"\"\"\n\nfrom __future__ import annotations\n\nimport thread"
+  },
+  "payload": {
+    "model": "glm-5.3-flash",
+    "messages": [
+      {
+        "role": "user",
+        "content": "Write a complete Python module implementing a thread-safe LRU cache with TTL expiry, type hints, docstrings, and tests. Output only code."
+      }
+    ],
+    "max_tokens": 512,
+    "stream": false,
+    "temperature": 0,
+    "top_p": 1,
+    "chat_template_kwargs": {
+      "reasoning_effort": "low"
+    }
+  },
+  "body": {
+    "id": "chatcmpl-bc15699236470c20",
+    "object": "chat.completion",
+    "created": 1791196880,
+    "model": "glm-5.3-flash",
+    "choices": [
+      {
+        "index": 0,
+        "message": {
+          "role": "assistant",
+          "content": "```python\n\"\"\"Thread-safe LRU cache with TTL (time-to-live) expiry.\"\"\"\n\nfrom __future__ import annotations\n\nimport threading\nimport time\nfrom collections import OrderedDict\nfrom typing import Any, Callable, Generic, Hashable, Optional, Tuple, TypeVar\n\nK = TypeVar(\"K\", bound=Hashable)\nV = TypeVar(\"V\")\n\n\nclass LRUCache(Generic[K, V]):\n    \"\"\"A thread-safe LRU cache with per-entry TTL expiry.\n\n    Args:\n        maxsize: Maximum number of entries. Must be positive.\n        default_ttl: Default time-to-live in seconds for entries.\n            If None, entries never expire unless a per-call TTL is given.\n    \"\"\"\n\n    def __init__(self, maxsize: int = 128, default_ttl: Optional[float] = None) -> None:\n        if maxsize <= 0:\n            raise ValueError(\"maxsize must be positive\")\n        if default_ttl is not None and default_ttl <= 0:\n            raise ValueError(\"default_ttl must be positive\")\n        self._maxsize = maxsize\n        self._default_ttl = default_ttl\n        self._store: \"OrderedDict[K, Tuple[V, Optional[float]]]\" = OrderedDict()\n        self._lock = threading.Lock()\n        self._hits = 0\n        self._misses = 0\n        self._evictions = 0\n\n    def get(self, key: K, default: Optional[V] = None) -> Optional[V]:\n        \"\"\"Return the value for key if present and not expired, else default.\"\"\"\n        now = time.monotonic()\n        with self._lock:\n            item = self._store.get(key)\n            if item is None:\n                self._misses += 1\n                return default\n            value, expires_at = item\n            if expires_at is not None and expires_at <= now:\n                del self._store[key]\n                self._misses += 1\n                return default\n            self._store.move_to_end(key)\n            self._hits += 1\n            return value\n\n    def put(self, key: K, value: V, ttl: Optional[float] = None) -> None:\n        \"\"\"Insert or update key with value.\n\n        Args:\n            key: Cache key.\n            value: Value to store.\n            ttl: Per-entry TTL in seconds; overrides default_ttl.\n                None means use default_ttl (which may itself be None = no expiry).\n        \"\"\"\n        if ttl is not None",
+          "refusal": null,
+          "annotations": null,
+          "audio": null,
+          "function_call": null,
+          "reasoning": null
+        },
+        "logprobs": null,
+        "finish_reason": "length",
+        "stop_reason": null,
+        "token_ids": null,
+        "routed_experts": null
+      }
+    ],
+    "service_tier": null,
+    "system_fingerprint": "vllm-0.1.dev20051+g487ecf187-tp2-815c380c",
+    "usage": {
+      "prompt_tokens": 42,
+      "total_tokens": 554,
+      "completion_tokens": 512,
+      "prompt_tokens_details": null
+    },
+    "prompt_logprobs": null,
+    "prompt_token_ids": null,
+    "prompt_text": null,
+    "kv_transfer_params": null,
+    "ec_transfer_params": null,
+    "metrics": null
+  }
+}

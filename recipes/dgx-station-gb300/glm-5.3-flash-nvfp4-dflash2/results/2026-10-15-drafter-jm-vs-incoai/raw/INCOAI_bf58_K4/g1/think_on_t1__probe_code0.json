@@ -1,0 +1,80 @@
+{
+  "row": {
+    "name": "probe_code0",
+    "regime": "think_on_t1",
+    "completion_tokens": 512,
+    "reasoning_tokens": 512,
+    "wall": 2.256,
+    "tok_s": 226.961,
+    "drafts": 169.0,
+    "acceptance_length": 3.029585798816568,
+    "accept_rate": 0.5103550295857988,
+    "per_pos": {
+      "0": 0.769,
+      "1": 0.562,
+      "2": 0.408,
+      "3": 0.302
+    },
+    "finish": "length",
+    "has_reasoning": true,
+    "content_head": ""
+  },
+  "payload": {
+    "model": "glm-5.3-flash",
+    "messages": [
+      {
+        "role": "user",
+        "content": "Write a complete Python module implementing a thread-safe LRU cache with TTL expiry, type hints, docstrings, and tests. Output only code."
+      }
+    ],
+    "max_tokens": 512,
+    "stream": false,
+    "temperature": 1.0,
+    "top_p": 0.95,
+    "chat_template_kwargs": {
+      "enable_thinking": true
+    }
+  },
+  "body": {
+    "id": "chatcmpl-889b74566f729827",
+    "object": "chat.completion",
+    "created": 1792068872,
+    "model": "glm-5.3-flash",
+    "choices": [
+      {
+        "index": 0,
+        "message": {
+          "role": "assistant",
+          "content": null,
+          "refusal": null,
+          "annotations": null,
+          "audio": null,
+          "function_call": null,
+          "reasoning": "The user wants a complete Python module implementing a thread-safe LRU cache with TTL expiry, type hints, docstrings, and tests. They want only code as output.\n\nLet me design this carefully:\n\n1. **LRU Cache with TTL**: \n   - LRU = Least Recently Used eviction when capacity is exceeded\n   - TTL = Time To Live \u2014 entries expire after a certain duration\n   - Thread-safe = need locking (threading.RLock or Lock)\n\n2. **Design considerations**:\n   - Use `collections.OrderedDict` for O(1) LRU operations (move_to_end, popitem)\n   - Use `time.monotonic()` for TTL to avoid issues with system clock changes\n   - Use a lock (threading.Lock or RLock) around all operations\n   - Type hints: use generics with TypeVar for key/value types\n   - Support `get`, `put`/`__setitem__`, `__getitem__`, `__contains__`, `__len__`, `delete`, `clear`, `expire` (purge expired entries)\n   - Maybe a decorator-like usage or just a class\n   - Handle expiry on access: lazy expiry (check TTL on get) plus optional periodic purge\n   - `get` with default value like dict.get\n   - Maybe `get_or_set` / `memoize` decorator as a bonus\n\n3. **Implementation details**:\n   - Store values as tuples `(value, expiry_time)` where expiry_time is None if no TTL, or monotonic time\n   - On `get`: check lock, if key exists, check expiry; if expired, delete and return default; else move_to_end and return value\n   - On `set`: if key exists, update and move to end; else if at capacity, evict LRU (popitem(last=False)); but before evicting, maybe first try to purge expired entries so we don't evict live entries unnecessarily. Actually a good approach: when capacity is exceeded, first purge expired entries; if still full, evict LRU.\n   - `__len__`: count of non-expired entries (purge first or lazily count)\n   - Use `time.monotonic()` for TTL to avoid issues with system clock changes\n\n4. **Type hints**:\n   - `from __future__ import annotations` for modern syntax\n   - Generic class: `class LRUCache(Generic[K, V])` or use TypeVar"
+        },
+        "logprobs": null,
+        "finish_reason": "length",
+        "stop_reason": null,
+        "token_ids": null,
+        "routed_experts": null
+      }
+    ],
+    "service_tier": null,
+    "system_fingerprint": "vllm-0.30.1rc1.dev493+gac9126e58-d153f83c",
+    "usage": {
+      "prompt_tokens": 41,
+      "total_tokens": 553,
+      "completion_tokens": 512,
+      "prompt_tokens_details": null,
+      "completion_tokens_details": {
+        "reasoning_tokens": 512
+      }
+    },
+    "prompt_logprobs": null,
+    "prompt_token_ids": null,
+    "prompt_text": null,
+    "kv_transfer_params": null,
+    "ec_transfer_params": null,
+    "metrics": null
+  }
+}

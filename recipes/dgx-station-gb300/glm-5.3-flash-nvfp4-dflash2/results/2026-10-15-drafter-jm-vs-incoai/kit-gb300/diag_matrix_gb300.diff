@@ -1,0 +1,23 @@
+69a70,71
+>     # P3 GB300 single-GPU lane: there is no rank1 worker (the Spark version ssh'd milo@<rdma-peer-2>).
+>     # Record host MemAvailable and GB300 (GPU index 1) HBM used instead.
+77c79
+<     worker = int(
+---
+>     hbm = int(
+79,87c81
+<             [
+<                 "ssh",
+<                 "-o",
+<                 "BatchMode=yes",
+<                 "-o",
+<                 "ConnectTimeout=8",
+<                 "milo@<rdma-peer-2>",
+<                 "awk '/MemAvailable:/ {print $2}' /proc/meminfo",
+<             ],
+---
+>             ["nvidia-smi", "--query-gpu=memory.used", "--format=csv,noheader,nounits", "-i", "1"],
+92c86
+<     return {"head_kB": head, "worker_kB": worker}
+---
+>     return {"head_kB": head, "gpu1_hbm_used_MiB": hbm}

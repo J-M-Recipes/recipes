@@ -1,0 +1,83 @@
+{
+  "row": {
+    "name": "probe_code1",
+    "regime": "think_on_t1",
+    "completion_tokens": 512,
+    "reasoning_tokens": 512,
+    "wall": 3.186,
+    "tok_s": 160.727,
+    "drafts": 204.0,
+    "acceptance_length": 2.5098039215686274,
+    "accept_rate": 0.21498599439775912,
+    "per_pos": {
+      "0": 0.574,
+      "1": 0.358,
+      "2": 0.235,
+      "3": 0.147,
+      "4": 0.088,
+      "5": 0.059,
+      "6": 0.044
+    },
+    "finish": "length",
+    "has_reasoning": true,
+    "content_head": ""
+  },
+  "payload": {
+    "model": "glm-5.3-flash",
+    "messages": [
+      {
+        "role": "user",
+        "content": "Write a complete Rust implementation of a bounded work queue with cancellation and unit tests. Output only code."
+      }
+    ],
+    "max_tokens": 512,
+    "stream": false,
+    "temperature": 1.0,
+    "top_p": 0.95,
+    "chat_template_kwargs": {
+      "enable_thinking": true
+    }
+  },
+  "body": {
+    "id": "chatcmpl-a9c2d7f731f05aa5",
+    "object": "chat.completion",
+    "created": 1792065898,
+    "model": "glm-5.3-flash",
+    "choices": [
+      {
+        "index": 0,
+        "message": {
+          "role": "assistant",
+          "content": null,
+          "refusal": null,
+          "annotations": null,
+          "audio": null,
+          "function_call": null,
+          "reasoning": "The user wants a complete Rust implementation of a bounded work queue with cancellation and unit tests. They want only code as output.\n\nLet me think about what a bounded work queue with cancellation needs:\n\n1. **Bounded queue**: A fixed-capacity queue where producers block when full\n2. **Work queue**: Items are tasks/work items \u2014 could be closures or generic items\n3. **Cancellation**: Ability to shut down / cancel \u2014 typically:\n   - Producers should fail or stop when queue is closed\n   - Consumers should drain remaining items then stop, or stop immediately\n   - Could use atomic bool flag + condition variables, or channel-like semantics\n\nClassic implementation: use `Mutex<VecDeque<T>>` + `Condvar`, with a `closed` flag. \n\nDesign decisions:\n- `send(item)` \u2014 blocks when full; returns `Err(item)` or error if closed\n- `try_send(item)` \u2014 non-blocking\n- `recv()` \u2014 blocks when empty; returns `None` when closed AND empty\n- `close()` \u2014 idempotent; wakes all waiters\n- Maybe `cancel()` \u2014 clear pending items and wake everyone? Cancellation could mean: after cancel, recv returns None immediately even if items remain (drop them). Let me include both close (graceful: drain remaining) and cancel (immediate: drop remaining).\n\nAlso could implement:\n- `len()`, `is_empty()`, `capacity()`\n- Clone for shared handle (Arc internally)\n\nShould it be generic over `T`? A \"work queue\" could be a queue of closures: `Queue<Task>` where `Task = Box<dyn FnOnce() + Send>`. But generic is more flexible. Maybe make it generic `BoundedQueue<T>` and demonstrate with a worker pool in tests. Or make it a work queue specifically with boxed closures. The prompt says \"bounded work queue\" \u2014 I'll make it generic over the work item type, which supports closures too. Actually, let me think... A \"work queue\" often implies producers submit jobs, workers consume. Generic `T` with `Send` bound is fine.\n\nAlternatively provide a typed `WorkQueue<T>` and a convenience `Job = Box<dyn FnOnce() + Send>` alias? Keep it focused: generic bounded queue with cancellation semantics.\n\nLet me write the implementation:\n\n```rust\nuse std::collections::VecDeque;\nuse std::fmt;\nuse std::sync::{Arc, Condvar, Mutex, PoisonError};\nuse std::time::{"
+        },
+        "logprobs": null,
+        "finish_reason": "length",
+        "stop_reason": null,
+        "token_ids": null,
+        "routed_experts": null
+      }
+    ],
+    "service_tier": null,
+    "system_fingerprint": "vllm-0.30.1rc1.dev493+gac9126e58-f9d564b6",
+    "usage": {
+      "prompt_tokens": 32,
+      "total_tokens": 544,
+      "completion_tokens": 512,
+      "prompt_tokens_details": null,
+      "completion_tokens_details": {
+        "reasoning_tokens": 512
+      }
+    },
+    "prompt_logprobs": null,
+    "prompt_token_ids": null,
+    "prompt_text": null,
+    "kv_transfer_params": null,
+    "ec_transfer_params": null,
+    "metrics": null
+  }
+}

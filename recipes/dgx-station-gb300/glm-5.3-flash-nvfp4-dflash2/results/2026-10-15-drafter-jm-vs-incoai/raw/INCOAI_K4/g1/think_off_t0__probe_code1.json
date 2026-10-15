@@ -1,0 +1,80 @@
+{
+  "row": {
+    "name": "probe_code1",
+    "regime": "think_off_t0",
+    "completion_tokens": 512,
+    "reasoning_tokens": 512,
+    "wall": 2.473,
+    "tok_s": 207.043,
+    "drafts": 183.0,
+    "acceptance_length": 2.797814207650273,
+    "accept_rate": 0.4494535519125683,
+    "per_pos": {
+      "0": 0.738,
+      "1": 0.508,
+      "2": 0.35,
+      "3": 0.202
+    },
+    "finish": "length",
+    "has_reasoning": true,
+    "content_head": ""
+  },
+  "payload": {
+    "model": "glm-5.3-flash",
+    "messages": [
+      {
+        "role": "user",
+        "content": "Write a complete Rust implementation of a bounded work queue with cancellation and unit tests. Output only code."
+      }
+    ],
+    "max_tokens": 512,
+    "stream": false,
+    "temperature": 0,
+    "top_p": 1,
+    "chat_template_kwargs": {
+      "enable_thinking": false
+    }
+  },
+  "body": {
+    "id": "chatcmpl-8a2daff3ae062cd0",
+    "object": "chat.completion",
+    "created": 1792057706,
+    "model": "glm-5.3-flash",
+    "choices": [
+      {
+        "index": 0,
+        "message": {
+          "role": "assistant",
+          "content": null,
+          "refusal": null,
+          "annotations": null,
+          "audio": null,
+          "function_call": null,
+          "reasoning": "```rust\n//! A bounded work queue with cancellation support.\n//!\n//! The queue has a fixed capacity. Producers submit work items; consumers\n//! (workers) pull items and execute them. Dropping the queue's handles\n//! cancels outstanding work, and each item can also be cancelled\n//! cooperatively via a `CancellationToken`-like flag.\n\nuse std::collections::VecDeque;\nuse std::fmt;\nuse std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};\nuse std::sync::{Arc, Condvar, Mutex};\nuse std::thread;\nuse std::time::Duration;\n\n/// Cooperative cancellation flag shared with a queued task.\n#[derive(Debug, Default)]\npub struct CancelToken {\n    cancelled: AtomicBool,\n}\n\nimpl CancelToken {\n    pub fn new() -> Self {\n        Self::default()\n    }\n\n    pub fn cancel(&self) {\n        self.cancelled.store(true, Ordering::Release);\n    }\n\n    pub fn is_cancelled(&self) -> bool {\n        self.cancelled.load(Ordering::Acquire)\n    }\n}\n\n/// Error returned when submitting to a full or closed queue.\n#[derive(Debug, Clone, Copy, PartialEq, Eq)]\npub enum SubmitError {\n    /// The queue is at capacity.\n    Full(Task),\n    /// The queue has been shut down; no new work is accepted.\n    Closed(Task),\n}\n\nimpl fmt::Display for SubmitError::Full {\n    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {\n        write!(f, \"queue is full\")\n    }\n}\n\nimpl fmt::Display for SubmitError::Closed {\n    fn fmt(&c, f: &mut fmt::Formatter<'_>) -> fmt::Result {\n        try f\n    }\n}\n\n/// A bounded work queue with worker threads and cancellation.\npub struct WorkQueue {\n    inner: Arc<Shared>,\n    worker_handles: Vec<thread::JoinHandle<()>>,\n    next_task_id: AtomicUsize,\n}\n\nstruct Shared {\n    state: Mutex<QueueState>,\n    work_available: Condvar,\n    space_available: Condvar,\n    capacity: usize,\n}\n\nstruct QueueState {\n    queue: VecDeque<Job>,\n    closed: bool,\n    active_jobs: usize,\n    idle_workers: usize,\n    waiting_producers: usize,\n    shutdown: bool,\n}\n\nstruct Job {\n    id: usize,\n    task: Box<dyn FnOnce(&CancelToken) + Send>,\n    token: Arc<CancelToken>,"
+        },
+        "logprobs": null,
+        "finish_reason": "length",
+        "stop_reason": null,
+        "token_ids": null,
+        "routed_experts": null
+      }
+    ],
+    "service_tier": null,
+    "system_fingerprint": "vllm-0.30.1rc1.dev493+gac9126e58-6a2df9e8",
+    "usage": {
+      "prompt_tokens": 33,
+      "total_tokens": 545,
+      "completion_tokens": 512,
+      "prompt_tokens_details": null,
+      "completion_tokens_details": {
+        "reasoning_tokens": 512
+      }
+    },
+    "prompt_logprobs": null,
+    "prompt_token_ids": null,
+    "prompt_text": null,
+    "kv_transfer_params": null,
+    "ec_transfer_params": null,
+    "metrics": null
+  }
+}

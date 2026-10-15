@@ -1,0 +1,80 @@
+{
+  "row": {
+    "name": "probe_code0",
+    "regime": "think_off_t0",
+    "completion_tokens": 512,
+    "reasoning_tokens": null,
+    "wall": 17.233,
+    "tok_s": 29.71,
+    "drafts": 141.0,
+    "acceptance_length": 3.631205673758865,
+    "accept_rate": 0.37487335359675783,
+    "per_pos": {
+      "0": 0.752,
+      "1": 0.582,
+      "2": 0.404,
+      "3": 0.305,
+      "4": 0.234,
+      "5": 0.191,
+      "6": 0.156
+    },
+    "finish": "length",
+    "has_reasoning": false,
+    "content_head": "```python\n\"\"\"\nlru_cache.py\n\nA thread-safe LRU cache with TTL (time-to-live) expiry.\n\nFeatures:\n    - Thread-safe via a r"
+  },
+  "payload": {
+    "model": "glm-5.3-flash",
+    "messages": [
+      {
+        "role": "user",
+        "content": "Write a complete Python module implementing a thread-safe LRU cache with TTL expiry, type hints, docstrings, and tests. Output only code."
+      }
+    ],
+    "max_tokens": 512,
+    "stream": false,
+    "temperature": 0,
+    "top_p": 1,
+    "chat_template_kwargs": {
+      "enable_thinking": false
+    }
+  },
+  "body": {
+    "id": "chatcmpl-b57c6990c55217b9",
+    "object": "chat.completion",
+    "created": 1791125903,
+    "model": "glm-5.3-flash",
+    "choices": [
+      {
+        "index": 0,
+        "message": {
+          "role": "assistant",
+          "content": "```python\n\"\"\"\nlru_cache.py\n\nA thread-safe LRU cache with TTL (time-to-live) expiry.\n\nFeatures:\n    - Thread-safe via a re-entrant lock (RLock), so methods may call\n      other locked methods internally.\n    - LRU eviction: least-recently-used entries are evicted first when\n      the cache exceeds its maximum size.\n    - TTL expiry: entries expire after a configurable number of seconds.\n      Expired entries are purged lazily on access and eagerly on demand.\n    - Full type hints and docstrings.\n    - Optional per-entry TTL override at set-time.\n\nClasses:\n    LRUCache - the cache itself.\n    CacheEntry - internal record for a single cached value.\n\nExample:\n    >>> cache = LRUCache(max_size=2, default_ttl=60)\n    >>> cache.set(\"a\", 1)\n    >>> cache.get(\"a\")\n    1\n    >>> import time\n    >>> cache.set(\"b\", 2, ttl=0.1)\n    >>> time.sleep(0.2)\n    >>> cache.get(\"b\") is None\n    True\n\"\"\"\n\nfrom __future__ import annotations\n\nimport threading\nimport time\nfrom collections import OrderedDict\nfrom typing import Any, Callable, Generic, Hashable, Optional, Tuple, TypeVar\n\nV = TypeVar(\"V\")\n\n__all__ = [\"LRUCache\", \"CacheEntry\"]\n__version__ = \"1.0.0\"\n\n\nclass CacheEntry(Generic[V]):\n    \"\"\"Internal container for a single cached value and its expiry time.\"\"\"\n\n    __slots__ = (\"value\", \"expires_at\")\n\n    def __init__(self, value: V, expires_at: Optional[float]) -> None:\n        \"\"\"\n        Initialize a cache entry.\n\n        Args:\n            value: The cached value.\n            expires_at: Absolute monotonic timestamp of expiry, or None\n                if the entry never expires.\n        \"\"\"\n        self.value = value\n        self.expires_at = expires_at\n\n    def is_expired(self, now: Optional[float] = None) -> bool:\n        \"\"\"\n        Return True if this entry has expired.\n\n        Args:\n            now: Current monotonic time; computed if not supplied.\n\n        Returns:\n            True if the entry's expiry time has passed (or if it was\n            created with no expiry and this is somehow checked \u2014 entries\n            with ``expires_at=None`` never expire).\n        \"\"\"\n        if self.expires_at is None:\n            return False\n        if",
+          "refusal": null,
+          "annotations": null,
+          "audio": null,
+          "function_call": null,
+          "reasoning": null
+        },
+        "logprobs": null,
+        "finish_reason": "length",
+        "stop_reason": null,
+        "token_ids": null,
+        "routed_experts": null
+      }
+    ],
+    "service_tier": null,
+    "system_fingerprint": "vllm-0.1.dev20051+g487ecf187-tp2-3737b693",
+    "usage": {
+      "prompt_tokens": 42,
+      "total_tokens": 554,
+      "completion_tokens": 512,
+      "prompt_tokens_details": null
+    },
+    "prompt_logprobs": null,
+    "prompt_token_ids": null,
+    "prompt_text": null,
+    "kv_transfer_params": null,
+    "ec_transfer_params": null,
+    "metrics": null
+  }
+}

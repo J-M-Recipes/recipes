@@ -1,0 +1,114 @@
+{
+  "fixture": "probe_code0",
+  "concurrency": 1,
+  "started_iso": "2026-10-15T06:13:17-05:00",
+  "ended_iso": "2026-10-15T06:13:19-05:00",
+  "batch_wall_seconds": 1.804,
+  "mean_wall_seconds": 1.804,
+  "completion_tokens_total": 512,
+  "aggregate_tok_s": 283.759,
+  "per_stream_tok_s": [
+    283.874
+  ],
+  "spec_metrics_present": true,
+  "metric_before": {
+    "drafts": 6003.0,
+    "draft_tokens": 42021.0,
+    "accepted_tokens": 14379.0
+  },
+  "metric_after": {
+    "drafts": 6115.0,
+    "draft_tokens": 42805.0,
+    "accepted_tokens": 14785.0
+  },
+  "metric_delta": {
+    "drafts": 112.0,
+    "draft_tokens": 784.0,
+    "accepted_tokens": 406.0
+  },
+  "per_pos_accepted_delta": {
+    "0": 95.0,
+    "1": 76.0,
+    "2": 66.0,
+    "3": 53.0,
+    "4": 43.0,
+    "5": 39.0,
+    "6": 34.0
+  },
+  "per_pos_accept_prob": {
+    "0": 0.8482142857142857,
+    "1": 0.6785714285714286,
+    "2": 0.5892857142857143,
+    "3": 0.4732142857142857,
+    "4": 0.38392857142857145,
+    "5": 0.3482142857142857,
+    "6": 0.30357142857142855
+  },
+  "metric_series_seen_before": {
+    "drafts": 1,
+    "draft_tokens": 1,
+    "accepted_tokens": 1
+  },
+  "metric_series_seen_after": {
+    "drafts": 1,
+    "draft_tokens": 1,
+    "accepted_tokens": 1
+  },
+  "metric_lines_before": [
+    "vllm:spec_decode_num_drafts_total{engine=\"0\",model_name=\"glm-5.3-flash\"} 6003.0",
+    "vllm:spec_decode_num_draft_tokens_total{engine=\"0\",model_name=\"glm-5.3-flash\"} 42021.0",
+    "vllm:spec_decode_num_accepted_tokens_total{engine=\"0\",model_name=\"glm-5.3-flash\"} 14379.0"
+  ],
+  "metric_lines_after": [
+    "vllm:spec_decode_num_drafts_total{engine=\"0\",model_name=\"glm-5.3-flash\"} 6115.0",
+    "vllm:spec_decode_num_draft_tokens_total{engine=\"0\",model_name=\"glm-5.3-flash\"} 42805.0",
+    "vllm:spec_decode_num_accepted_tokens_total{engine=\"0\",model_name=\"glm-5.3-flash\"} 14785.0"
+  ],
+  "acceptance_length": 4.571428571428571,
+  "accept_rate": 0.5178571428571429,
+  "ar_tok_s_from_wall": null,
+  "response_kinds": [
+    "empty"
+  ],
+  "finish_reasons": [
+    "length"
+  ],
+  "errors": [],
+  "mem_during": {},
+  "requests": [
+    {
+      "http_status": 200,
+      "started_iso": "2026-10-15T06:13:17-05:00",
+      "wall_seconds": 1.804,
+      "prompt_tokens": 42,
+      "completion_tokens": 512,
+      "reasoning_tokens": 512,
+      "tok_s": 283.874,
+      "finish_reason": "length",
+      "response_kind": "empty",
+      "content": null,
+      "reasoning": "```python\n\"\"\"\nlru_cache.py\n\nA thread-safe LRU cache with TTL (time-to-live) expiry.\n\nFeatures:\n    - Thread-safe operations using a re-entrant lock (RLock).\n    - LRU eviction when the maximum size is exceeded.\n    - Per-entry TTL expiry (entries expire after a configurable\n      number of seconds).\n    - Full type hints and docstrings.\n    - Optional statistics tracking (hits, misses, evictions, expiries).\n\nClasses:\n    LRUCache - The main cache implementation.\n\nExample:\n    >>> cache = LRUCache(max_size=2, default_ttl=60)\n    >>> cache.put(\"a\", 1)\n    >>> cache.get(\"a\")\n    1\n    >>> import time\n    >>> cache.put(\"b\", 2, ttl=0.1)\n    >>> time.sleep(0.2)\n    >>> cache.get(\"b\") is None\n    True\n\"\"\"\n\nfrom __future__ import annotations\n\nimport threading\nimport time\nfrom collections import OrderedDict\nfrom dataclasses import dataclass, field\nfrom typing import Any, Callable, Generic, Optional, Tuple, TypeVar\n\n__all__ = [\"LRUCache\", \"CacheStats\"]\n\nK = TypeVar(\"K\")\nV = TypeVar(\"V\")\n\n\n@dataclass\nclass CacheStats:\n    \"\"\"Counters describing cache performance.\n\n    Attributes:\n        hits: Number of successful lookups.\n        misses: Number of failed lookups (missing or expired).\n        evictions: Number of entries removed due to LRU eviction.\n        expiries: Number of entries removed due to TTL expiry.\n    \"\"\"\n\n    hits: int = 0\n    misses: int = 0\n    evictions: int = 0\n    expiries: int 0\n    expiries: int = 0\n    expiries: int = 0\n    expiries: int = 0\n    expiries: int = 0\n    expiries: int = 0\n    expiries: int = 0\n    exp implementation\n    expiries: int = 0\n    expiries: [int] = 0\n    expiries: int = 0\n    expiries: int = 0\n    expiries: int doctest\n    expiries: int = 0\n    expiries: int =  user\n    expiries: int = 0",
+      "tool_calls": null,
+      "error": null
+    }
+  ],
+  "request_payload_template": {
+    "model": "glm-5.3-flash",
+    "messages": [
+      {
+        "role": "user",
+        "content": "Write a complete Python module implementing a thread-safe LRU cache with TTL expiry, type hints, docstrings, and tests. Output only code."
+      }
+    ],
+    "temperature": 0,
+    "top_p": 1,
+    "max_tokens": 512,
+    "stream": false,
+    "chat_template_kwargs": {
+      "enable_thinking": false
+    }
+  },
+  "name": "probe_code0",
+  "rep": 1,
+  "mode": "dflash"
+}

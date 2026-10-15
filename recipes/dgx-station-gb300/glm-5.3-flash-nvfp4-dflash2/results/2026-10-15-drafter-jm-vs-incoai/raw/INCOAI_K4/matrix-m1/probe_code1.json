@@ -1,0 +1,108 @@
+{
+  "fixture": "probe_code1",
+  "concurrency": 1,
+  "started_iso": "2026-10-15T04:08:34-05:00",
+  "ended_iso": "2026-10-15T04:08:37-05:00",
+  "batch_wall_seconds": 2.336,
+  "mean_wall_seconds": 2.336,
+  "completion_tokens_total": 512,
+  "aggregate_tok_s": 219.137,
+  "per_stream_tok_s": [
+    219.2
+  ],
+  "spec_metrics_present": true,
+  "metric_before": {
+    "drafts": 3445.0,
+    "draft_tokens": 13780.0,
+    "accepted_tokens": 6719.0
+  },
+  "metric_after": {
+    "drafts": 3618.0,
+    "draft_tokens": 14472.0,
+    "accepted_tokens": 7060.0
+  },
+  "metric_delta": {
+    "drafts": 173.0,
+    "draft_tokens": 692.0,
+    "accepted_tokens": 341.0
+  },
+  "per_pos_accepted_delta": {
+    "0": 133.0,
+    "1": 91.0,
+    "2": 66.0,
+    "3": 51.0
+  },
+  "per_pos_accept_prob": {
+    "0": 0.7687861271676301,
+    "1": 0.5260115606936416,
+    "2": 0.3815028901734104,
+    "3": 0.2947976878612717
+  },
+  "metric_series_seen_before": {
+    "drafts": 1,
+    "draft_tokens": 1,
+    "accepted_tokens": 1
+  },
+  "metric_series_seen_after": {
+    "drafts": 1,
+    "draft_tokens": 1,
+    "accepted_tokens": 1
+  },
+  "metric_lines_before": [
+    "vllm:spec_decode_num_drafts_total{engine=\"0\",model_name=\"glm-5.3-flash\"} 3445.0",
+    "vllm:spec_decode_num_draft_tokens_total{engine=\"0\",model_name=\"glm-5.3-flash\"} 13780.0",
+    "vllm:spec_decode_num_accepted_tokens_total{engine=\"0\",model_name=\"glm-5.3-flash\"} 6719.0"
+  ],
+  "metric_lines_after": [
+    "vllm:spec_decode_num_drafts_total{engine=\"0\",model_name=\"glm-5.3-flash\"} 3618.0",
+    "vllm:spec_decode_num_draft_tokens_total{engine=\"0\",model_name=\"glm-5.3-flash\"} 14472.0",
+    "vllm:spec_decode_num_accepted_tokens_total{engine=\"0\",model_name=\"glm-5.3-flash\"} 7060.0"
+  ],
+  "acceptance_length": 2.959537572254335,
+  "accept_rate": 0.49277456647398843,
+  "ar_tok_s_from_wall": null,
+  "response_kinds": [
+    "empty"
+  ],
+  "finish_reasons": [
+    "length"
+  ],
+  "errors": [],
+  "mem_during": {},
+  "requests": [
+    {
+      "http_status": 200,
+      "started_iso": "2026-10-15T04:08:34-05:00",
+      "wall_seconds": 2.336,
+      "prompt_tokens": 33,
+      "completion_tokens": 512,
+      "reasoning_tokens": 512,
+      "tok_s": 219.2,
+      "finish_reason": "length",
+      "response_kind": "empty",
+      "content": null,
+      "reasoning": "```rust\n//! A bounded work queue with cancellation support.\n//!\n//! The queue has a fixed capacity. Producers submit work items; consumers\n//! (workers) pull items and execute them. Dropping the queue's handle\n//! cancels all pending work and signals workers to shut down.\n\nuse std::collections::VecDeque;\nuse std::fmt;\nuse std::sync::atomic::{AtomicUsize, Ordering};\nuse std::sync::{Arc, Condvar, Mutex};\nuse std::thread;\nuse std::time::Duration;\n\n/// Error returned when submitting to a queue that is closed or full.\n#[derive(Debug, Clone, Copy, PartialEq, Eq)]\npub enum SubmitError {\n    /// The queue has been shut down; no more work will be accepted.\n    Closed,\n    /// The queue is at capacity.\n    Full(T),\n}\n\nimpl<T> fmt::Display for SubmitError<T> {\n    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {\n        match self {\n            SubmitError::Closed => write!(f, \"queue is closed\"),\n            SubmitError::Full(_) => write!(f, \"queue is full\"),\n        }\n    }\n}\n\nimpl<T: fmt::Debug> std::error::Error for SubmitError<T>\nwhere\n    T: fmt::Debug,\nwhere\n    T: fmt:: request_debug_helpers,\n{\n    fmt:: request_debug_helpers();\n}\n```\n\nWait \u2014 I need to stop and correct myself. I made errors in that last block. Let me restart the implementation cleanly and carefully.\n\n```rust\n//! A bounded work queue with cancellation support.\n//!\n//! The queue has a fixed capacity. Producers submit work items; consumers\n//! (workers) pull items and execute them. Dropping the queue's handle\n//! cancels all pending work and signals workers to shut down.\n\nuse std::collections::VecDeque;\nuse std::fmt;\nuse std::sync::atomic::{AtomicUsize, Ordering};\nuse std::sync::{Arc, Condvar, Mutex};\nuse std::thread;\nuse std::idle_timeout_placeholder;\n```\n\nHmm, that import is wrong too. Let me be systematic. I'll write the whole thing in one careful pass.\n\n```rust\n//! A bounded work queue with cancellation features.\n```\n\nI keep fumbling. The honest answer: I'm having trouble producing this code reliably in this session. Rather than emit something that looks plausible but is riddled with errors \u2014 like the `std::idle_timeout",
+      "tool_calls": null,
+      "error": null
+    }
+  ],
+  "request_payload_template": {
+    "model": "glm-5.3-flash",
+    "messages": [
+      {
+        "role": "user",
+        "content": "Write a complete Rust implementation of a bounded work queue with cancellation and unit tests. Output only code."
+      }
+    ],
+    "temperature": 0,
+    "top_p": 1,
+    "max_tokens": 512,
+    "stream": false,
+    "chat_template_kwargs": {
+      "enable_thinking": false
+    }
+  },
+  "name": "probe_code1",
+  "rep": 1,
+  "mode": "dflash"
+}

@@ -1,0 +1,108 @@
+{
+  "fixture": "probe_code1",
+  "concurrency": 1,
+  "started_iso": "2026-10-15T03:14:43-05:00",
+  "ended_iso": "2026-10-15T03:14:46-05:00",
+  "batch_wall_seconds": 2.807,
+  "mean_wall_seconds": 2.806,
+  "completion_tokens_total": 512,
+  "aggregate_tok_s": 182.418,
+  "per_stream_tok_s": [
+    182.477
+  ],
+  "spec_metrics_present": true,
+  "metric_before": {
+    "drafts": 12132.0,
+    "draft_tokens": 48528.0,
+    "accepted_tokens": 19381.0
+  },
+  "metric_after": {
+    "drafts": 12340.0,
+    "draft_tokens": 49360.0,
+    "accepted_tokens": 19688.0
+  },
+  "metric_delta": {
+    "drafts": 208.0,
+    "draft_tokens": 832.0,
+    "accepted_tokens": 307.0
+  },
+  "per_pos_accepted_delta": {
+    "0": 149.0,
+    "1": 86.0,
+    "2": 44.0,
+    "3": 28.0
+  },
+  "per_pos_accept_prob": {
+    "0": 0.7163461538461539,
+    "1": 0.41346153846153844,
+    "2": 0.21153846153846154,
+    "3": 0.1346153846153846
+  },
+  "metric_series_seen_before": {
+    "drafts": 1,
+    "draft_tokens": 1,
+    "accepted_tokens": 1
+  },
+  "metric_series_seen_after": {
+    "drafts": 1,
+    "draft_tokens": 1,
+    "accepted_tokens": 1
+  },
+  "metric_lines_before": [
+    "vllm:spec_decode_num_drafts_total{engine=\"0\",model_name=\"glm-5.3-flash\"} 12132.0",
+    "vllm:spec_decode_num_draft_tokens_total{engine=\"0\",model_name=\"glm-5.3-flash\"} 48528.0",
+    "vllm:spec_decode_num_accepted_tokens_total{engine=\"0\",model_name=\"glm-5.3-flash\"} 19381.0"
+  ],
+  "metric_lines_after": [
+    "vllm:spec_decode_num_drafts_total{engine=\"0\",model_name=\"glm-5.3-flash\"} 12340.0",
+    "vllm:spec_decode_num_draft_tokens_total{engine=\"0\",model_name=\"glm-5.3-flash\"} 49360.0",
+    "vllm:spec_decode_num_accepted_tokens_total{engine=\"0\",model_name=\"glm-5.3-flash\"} 19688.0"
+  ],
+  "acceptance_length": 2.4615384615384617,
+  "accept_rate": 0.36899038461538464,
+  "ar_tok_s_from_wall": null,
+  "response_kinds": [
+    "empty"
+  ],
+  "finish_reasons": [
+    "length"
+  ],
+  "errors": [],
+  "mem_during": {},
+  "requests": [
+    {
+      "http_status": 200,
+      "started_iso": "2026-10-15T03:14:43-05:00",
+      "wall_seconds": 2.806,
+      "prompt_tokens": 33,
+      "completion_tokens": 512,
+      "reasoning_tokens": 512,
+      "tok_s": 182.477,
+      "finish_reason": "length",
+      "response_kind": "empty",
+      "content": null,
+      "reasoning": "```rust\n//! A bounded work queue with cancellation support.\n//!\n//! `BoundedWorkQueue` allows producers to submit work items and consumers to\n//! receive them, with a hard cap on the number of items that may be buffered\n//! at any time. Producers block (async) when the queue is full; consumers\n//! block when the queue is empty. The queue can be closed to signal that no\n//! more items will be sent, and it can be cancelled to immediately wake all\n//! pending producers and consumers with a `Cancelled` error.\n\nuse std::collections::VecDeque;\nuse std::fmt;\nuse std::sync::{Arc, Mutex};\n\n/// Error returned when a queue operation fails.\n#[derive(Debug, Clone, Copy, PartialEq, Eq)]\npub enum QueueError {\n    /// The queue was closed; no more items can be sent.\n    Closed,\n    /// The queue was cancelled; all pending and future operations fail.\n    Cancelled,\n}\n\nimpl fmt::Display for QueueError::Closed {\n    fn fmt(&self, self_: &mut fmt::Formatter<'_>) -> fmt::Result {\n        self_.write_str(\"queue closed\")\n    }\n}\n\nimpl fmt::Display for QueueError::Enum {\n    fn fmt(&-self, self_: &mut fmt::Formatter<'_>) -> fmt:: compileError\n}\n```\n\nThe code above is intentionally broken/incomplete \u2014 I need to write the full thing properly. Here is the complete implementation:\n\n```rust\n//! A bounded work queue with cancellation support.\n\nuse std::collections::VecDeque;\nuse std::fmt;\nuse std::sync::{Arc, Condvar, Mutex};\nuse std::sync::atomic::{AtomicBool, Ordering};\n\n/// Error returned when a queue operation fails.\n#[derive(Debug, Clone, Copy, PartialEq, Eq)]\npub enum QueueError {\n    /// The queue was closed; no more items can be sent.\n    Closed,\n    Receivers,\n}\n\n/// A bounded work queue with cancellation.\npub struct BoundedWorkQueue<T> {\n    inner: Arc<Inner<T>>,\n}\n\nstruct Inner<T> {\n    state: Mutex<State<T>>,\n    // Condvars for producers (queue full) and consumers (queue empty).\n    not_full: Condvar,\n    not_empty: Condvar,\n    closed: AtomicBool,\n    cancelled: AtomicBool,\n}\n\nstruct State<T> {\n    queue: VecDeque<T>,\n    capacity: Bounded,\n    senders_waiting: usize,\n    receivers_waiting: usize,\n```",
+      "tool_calls": null,
+      "error": null
+    }
+  ],
+  "request_payload_template": {
+    "model": "glm-5.3-flash",
+    "messages": [
+      {
+        "role": "user",
+        "content": "Write a complete Rust implementation of a bounded work queue with cancellation and unit tests. Output only code."
+      }
+    ],
+    "temperature": 0,
+    "top_p": 1,
+    "max_tokens": 512,
+    "stream": false,
+    "chat_template_kwargs": {
+      "enable_thinking": false
+    }
+  },
+  "name": "probe_code1",
+  "rep": 1,
+  "mode": "dflash"
+}

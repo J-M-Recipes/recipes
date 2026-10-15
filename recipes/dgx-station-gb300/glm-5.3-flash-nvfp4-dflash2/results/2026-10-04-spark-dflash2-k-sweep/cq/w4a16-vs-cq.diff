@@ -1,0 +1,19 @@
+--- launch-dflash-rank-cq.sh	2026-10-04 21:08:48.654651195 -0500
++++ launch-dflash-rank-w4a16.sh	2026-10-05 05:18:13.840372979 -0500
+@@ -10,7 +10,7 @@
+ 
+ image="ghcr.io/canada-quant/vllm-glm53-flash-sm121:v2-w4a16-dflash2e"
+ expected_image="sha256:f42a8a52e70a7b6337accb5eadea8f9b30eb27efc257c5406100d2d2a604d3d1"
+-target_host="~/models/GLM-5.3-Flash-NVFP4"
++target_host="~/models/GLM-5.3-Flash-W4A16-MTP-5681f7c"
+ draft_host="~/models/GLM-5.3-Flash-DFlash2-7d74cdd"
+ template_host="~/glm53-tony-dflash2-ccc5a78e/chat_template_mm.jinja"
+ cache_host="~/.cache/glm53-cq-vllm"
+@@ -64,7 +64,6 @@
+   --max-model-len 262144 \
+   --max-num-seqs 6 \
+   --block-size 2304 \
+-  --moe-backend marlin \
+   --speculative-config '{"method":"dflash","model":"/models/dflash2-draft","num_speculative_tokens":7}' \
+   --kv-cache-dtype fp8_e4m3 \
+   --kv-cache-memory 3221225472 \

@@ -1,0 +1,90 @@
+{
+  "fixture": "probe_code0",
+  "concurrency": 1,
+  "started_iso": "2026-10-04T04:10:43-05:00",
+  "ended_iso": "2026-10-04T04:11:16-05:00",
+  "batch_wall_seconds": 33.735,
+  "mean_wall_seconds": 33.734,
+  "completion_tokens_total": 512,
+  "aggregate_tok_s": 15.177,
+  "per_stream_tok_s": [
+    15.178
+  ],
+  "spec_metrics_present": false,
+  "metric_before": {
+    "drafts": 0.0,
+    "draft_tokens": 0.0,
+    "accepted_tokens": 0.0
+  },
+  "metric_after": {
+    "drafts": 0.0,
+    "draft_tokens": 0.0,
+    "accepted_tokens": 0.0
+  },
+  "metric_delta": {
+    "drafts": null,
+    "draft_tokens": null,
+    "accepted_tokens": null
+  },
+  "per_pos_accepted_delta": {},
+  "per_pos_accept_prob": null,
+  "metric_series_seen_before": {
+    "drafts": 0,
+    "draft_tokens": 0,
+    "accepted_tokens": 0
+  },
+  "metric_series_seen_after": {
+    "drafts": 0,
+    "draft_tokens": 0,
+    "accepted_tokens": 0
+  },
+  "metric_lines_before": [],
+  "metric_lines_after": [],
+  "acceptance_length": null,
+  "accept_rate": null,
+  "ar_tok_s_from_wall": 15.177,
+  "response_kinds": [
+    "text"
+  ],
+  "finish_reasons": [
+    "length"
+  ],
+  "errors": [],
+  "mem_during": {},
+  "requests": [
+    {
+      "http_status": 200,
+      "started_iso": "2026-10-04T04:10:43-05:00",
+      "wall_seconds": 33.734,
+      "prompt_tokens": 42,
+      "completion_tokens": 512,
+      "reasoning_tokens": null,
+      "tok_s": 15.178,
+      "finish_reason": "length",
+      "response_kind": "text",
+      "content": "```python\n\"\"\"\nlru_cache.py\n\nA thread-safe LRU cache with per-entry TTL (time-to-live) expiry.\n\nFeatures\n--------\n- Thread-safe via a single re-entrant lock (safe for re-entrant calls).\n- LRU eviction: least-recently-used entries are evicted when capacity\n  is exceeded.\n- Per-entry TTL: each entry may have its own time-to-live; entries are\n  lazily expired on access and proactively purged by a background\n  sweeper thread (optional).\n- Type hints throughout, generic over key and value types.\n- Zero external dependencies (standard library only).\n\nExample\n-------\n    from lru_cache import LRUCache\n\n    cache: LRUCache[str, int] = LRUCache(maxsize=128, default_ttl=60.0)\n    cache.put(\"answer\", 42)\n    cache.get(\"answer\")  # 42\n\"\"\"\n\nfrom __future__ import annotations\n\nimport threading\nimport time\nimport uuid\nfrom collections import OrderedDict\nfrom typing import Callable, Generic, Iterator, Optional, Tuple, TypeVar\n\n__all__ = [\"LRUCache\", \"CacheEntry\"]\n\nK = TypeVar(\"K\")\nV = TypeVar(\"V\")\n\n_MISSING = object()  # Sentinel distinguishing \"no value\" from None.\n\n\nclass CacheEntry(Generic[K, V]):\n    \"\"\"A single cache entry: value plus absolute expiry timestamp.\"\"\"\n\n    __slots__ = (\"value\", \"expires_at\")\n\n    def __init__(self, value: V, expires_at: Optional[float]) -> None:\n        self.value = value\n        recency: Optional[float] = None\n        self.expires_at = expires_at\n\n    def is_expired(self, now: Optional[float] = None) -> bool:\n        \"\"\"Return True if this entry has expired.\"\"\"\n        if self.expires_at is None:\n            return False\n        if now is None:\n            now = time.monotonic()\n        return now >= self.expires_at\n\n    def __repr__(self) -> str:\n        return (\n            f\"CacheEntry(value={self.value!r}, \"\n            f\"expires_at={self.expires_at!r})\"\n        )\n\n\nclass LRUCache(Generic[K, V]):\n    \"\"\"\n    Thread-safe LRU cache with per-entry TTL expiry.\n\n    Parameters\n    ----------\n    maxsize : int\n        Maximum number of entries. Must be >= 1.\n    default_ttl : float or None\n        Default time-to-live in seconds for entries inserted",
+      "reasoning": null,
+      "tool_calls": null,
+      "error": null
+    }
+  ],
+  "request_payload_template": {
+    "model": "glm-5.3-flash",
+    "messages": [
+      {
+        "role": "user",
+        "content": "Write a complete Python module implementing a thread-safe LRU cache with TTL expiry, type hints, docstrings, and tests. Output only code."
+      }
+    ],
+    "temperature": 0,
+    "top_p": 1,
+    "max_tokens": 512,
+    "stream": false,
+    "chat_template_kwargs": {
+      "enable_thinking": false
+    }
+  },
+  "name": "probe_code0",
+  "rep": 1,
+  "mode": "ar"
+}
