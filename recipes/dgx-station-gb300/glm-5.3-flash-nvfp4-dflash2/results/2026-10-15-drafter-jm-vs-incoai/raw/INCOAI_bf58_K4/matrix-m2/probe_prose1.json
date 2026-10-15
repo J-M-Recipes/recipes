@@ -1,0 +1,108 @@
+{
+  "fixture": "probe_prose1",
+  "concurrency": 1,
+  "started_iso": "2026-10-15T07:14:36-05:00",
+  "ended_iso": "2026-10-15T07:14:39-05:00",
+  "batch_wall_seconds": 2.716,
+  "mean_wall_seconds": 2.715,
+  "completion_tokens_total": 512,
+  "aggregate_tok_s": 188.528,
+  "per_stream_tok_s": [
+    188.578
+  ],
+  "spec_metrics_present": true,
+  "metric_before": {
+    "drafts": 6548.0,
+    "draft_tokens": 26192.0,
+    "accepted_tokens": 13299.0
+  },
+  "metric_after": {
+    "drafts": 6753.0,
+    "draft_tokens": 27012.0,
+    "accepted_tokens": 13607.0
+  },
+  "metric_delta": {
+    "drafts": 205.0,
+    "draft_tokens": 820.0,
+    "accepted_tokens": 308.0
+  },
+  "per_pos_accepted_delta": {
+    "0": 146.0,
+    "1": 83.0,
+    "2": 51.0,
+    "3": 28.0
+  },
+  "per_pos_accept_prob": {
+    "0": 0.7121951219512195,
+    "1": 0.40487804878048783,
+    "2": 0.24878048780487805,
+    "3": 0.13658536585365855
+  },
+  "metric_series_seen_before": {
+    "drafts": 1,
+    "draft_tokens": 1,
+    "accepted_tokens": 1
+  },
+  "metric_series_seen_after": {
+    "drafts": 1,
+    "draft_tokens": 1,
+    "accepted_tokens": 1
+  },
+  "metric_lines_before": [
+    "vllm:spec_decode_num_drafts_total{engine=\"0\",model_name=\"glm-5.3-flash\"} 6548.0",
+    "vllm:spec_decode_num_draft_tokens_total{engine=\"0\",model_name=\"glm-5.3-flash\"} 26192.0",
+    "vllm:spec_decode_num_accepted_tokens_total{engine=\"0\",model_name=\"glm-5.3-flash\"} 13299.0"
+  ],
+  "metric_lines_after": [
+    "vllm:spec_decode_num_drafts_total{engine=\"0\",model_name=\"glm-5.3-flash\"} 6753.0",
+    "vllm:spec_decode_num_draft_tokens_total{engine=\"0\",model_name=\"glm-5.3-flash\"} 27012.0",
+    "vllm:spec_decode_num_accepted_tokens_total{engine=\"0\",model_name=\"glm-5.3-flash\"} 13607.0"
+  ],
+  "acceptance_length": 2.497560975609756,
+  "accept_rate": 0.375609756097561,
+  "ar_tok_s_from_wall": null,
+  "response_kinds": [
+    "empty"
+  ],
+  "finish_reasons": [
+    "length"
+  ],
+  "errors": [],
+  "mem_during": {},
+  "requests": [
+    {
+      "http_status": 200,
+      "started_iso": "2026-10-15T07:14:36-05:00",
+      "wall_seconds": 2.715,
+      "prompt_tokens": 32,
+      "completion_tokens": 512,
+      "reasoning_tokens": 512,
+      "tok_s": 188.578,
+      "finish_reason": "length",
+      "response_kind": "empty",
+      "content": null,
+      "reasoning": "# Speculative Decoding: A Practical Guide\n\n## The Core Idea\n\nAutoregressive LLM inference is memory-bandwidth bound: generating one token requires streaming all model weights from HBM, but the actual compute per token is tiny relative to what the hardware could do. Speculative decoding exploits this by **drafting multiple tokens cheaply, then verifying them in parallel with the big model** \u2014 turning k sequential passes into one batched pass.\n\nThe key insight: verification of k tokens costs roughly the same as generating 1 token (same weight-streaming), so if the draft model is even modestly accurate, you win.\n\n## The Algorithm\n\n1. **Draft phase**: A small model (e.g., 1B params vs. 70B target) autoregressively generates \u03b3 candidate tokens.\n2. **Verification phase**: The target model runs a single forward pass over the prompt + \u03b3 drafted tokens. Because of the causal mask, this gives you the target distribution at *every* position in one pass.\n3. **Accept/reject**: Walk through drafted tokens left to right. Accept or reject each based on a stochastic test comparing draft and target distributions.\n4. **On first rejection**: Discard everything after it, resample from a corrected distribution, and you've still made progress (the corrected token).\n\n## The Acceptance Test (Why It's Correct)\n\nThe standard test (Leviathan et al. 2023) accepts token x if:\n\n```\naccept if  q(x) \u2265 p(x)      [where p = target, q = draft]\notherwise accept with probability p(x) / q(x)\n```\n\nOn rejection, sample from the **residual distribution** `norm(max(0, p \u2212 q))`. This guarantees the output distribution is *exactly* the target distribution \u2014 speculative decoding is **lossless**. This is the property that distinguishes it from most inference tricks: no perplexity degradation, no quality tax, bit-for-bit the same distribution as vanilla sampling.\n\n(There are variants \u2014 greedy acceptance just checks `argmax p == argmax q`, which is lossless only under greedy decoding, but often used in practice because it's simpler and users can't distinguish sampling anyway.)\n\n## Acceptance Length\n\nThe metric that matters is **E[\u03c4]**, the expected number of tokens emitted per verification pass (drafted tokens accepted + 1 for the corrected/next token). Speedup is approximately:\n\n```\nSpeedup \u2248 E[\u03c4] \u00b7 c /",
+      "tool_calls": null,
+      "error": null
+    }
+  ],
+  "request_payload_template": {
+    "model": "glm-5.3-flash",
+    "messages": [
+      {
+        "role": "user",
+        "content": "Explain speculative decoding to an inference engineer, including verification, acceptance length, and failure modes."
+      }
+    ],
+    "temperature": 0,
+    "top_p": 1,
+    "max_tokens": 512,
+    "stream": false,
+    "chat_template_kwargs": {
+      "enable_thinking": false
+    }
+  },
+  "name": "probe_prose1",
+  "rep": 1,
+  "mode": "dflash"
+}

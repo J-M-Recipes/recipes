@@ -1,0 +1,80 @@
+{
+  "row": {
+    "name": "probe_code1",
+    "regime": "reason_low_t0",
+    "completion_tokens": 512,
+    "reasoning_tokens": null,
+    "wall": 12.392,
+    "tok_s": 41.316,
+    "drafts": 102.0,
+    "acceptance_length": 5.019607843137255,
+    "accept_rate": 0.5742296918767507,
+    "per_pos": {
+      "0": 0.922,
+      "1": 0.824,
+      "2": 0.676,
+      "3": 0.559,
+      "4": 0.422,
+      "5": 0.353,
+      "6": 0.265
+    },
+    "finish": "length",
+    "has_reasoning": false,
+    "content_head": "```rust\nuse std::collections::VecDeque;\nuse std::sync::{Arc, Condvar, Mutex};\nuse std::thread;\nuse std::time::Duration;\n"
+  },
+  "payload": {
+    "model": "glm-5.3-flash",
+    "messages": [
+      {
+        "role": "user",
+        "content": "Write a complete Rust implementation of a bounded work queue with cancellation and unit tests. Output only code."
+      }
+    ],
+    "max_tokens": 512,
+    "stream": false,
+    "temperature": 0,
+    "top_p": 1,
+    "chat_template_kwargs": {
+      "reasoning_effort": "low"
+    }
+  },
+  "body": {
+    "id": "chatcmpl-be21e3019e22a114",
+    "object": "chat.completion",
+    "created": 1791126025,
+    "model": "glm-5.3-flash",
+    "choices": [
+      {
+        "index": 0,
+        "message": {
+          "role": "assistant",
+          "content": "```rust\nuse std::collections::VecDeque;\nuse std::sync::{Arc, Condvar, Mutex};\nuse std::thread;\nuse std::time::Duration;\n\n/// A bounded work queue supporting cancellation.\n///\n/// - `push` blocks when the queue is full.\n/// - `pop` blocks when the queue is empty.\n/// - After `close()`, `push` fails and `pop` drains remaining items then returns `None`.\npub struct BoundedQueue<T> {\n    inner: Arc<Shared<T>>,\n}\n\nstruct Shared<T> {\n    state: Mutex<State<T>>,\n    not_empty: Condvar,\n    not_full: Condvar,\n}\n\nstruct State<T> {\n    items: VecDeque<T>,\n    capacity: usize,\n    closed: bool,\n}\n\nimpl<T> BoundedQueue<T> {\n    pub fn new(capacity: usize) -> Self {\n        assert!(capacity > 0, \"capacity must be greater than zero\");\n        BoundedQueue {\n            inner: Arc::new(Shared {\n                state: Mutex::new(State {\n                    items: VecDeque::with_capacity(capacity),\n                    capacity,\n                    closed: false,\n                }),\n                not_empty: Condvar::new(),\n                not_full: Condvar::new(),\n            }),\n        }\n    }\n\n    /// Push an item, blocking while the queue is full.\n    /// Returns `Err(item)` if the queue is closed.\n    pub fn push(&self, item: T) -> Result<(), T> {\n        let mut state = self.inner.state.lock().unwrap();\n        loop {\n            if state.closed {\n                return Err(item);\n            }\n            if state.items.len() < state.capacity {\n                state.items.push_back(item);\n                self.inner.not_empty.notify_one();\n                return Ok(());\n            }\n            state = self.inner.not_full.wait(state).unwrap();\n        }\n    }\n\n    /// Pop an item, blocking while the queue is empty.\n    /// Returns `None` when the queue is closed and drained.\n    pub fn pop(&self) -> Option<T> {\n        let mut state = self.inner.state.lock().unwrap();\n        loop {\n            match state.items.pop_front() {\n                Some(item) => {\n                    self.inner.not_full.notify_one();\n                    return Some(item);\n                }\n                None => {\n                    if state.closed {\n                        return None;\n                    }\n                    state = self.inner.not_empty.wait(state).unwrap();\n                }\n            }\n        }\n    }\n\n    /// Try to push without blocking. Returns `Err(item)` if",
+          "refusal": null,
+          "annotations": null,
+          "audio": null,
+          "function_call": null,
+          "reasoning": null
+        },
+        "logprobs": null,
+        "finish_reason": "length",
+        "stop_reason": null,
+        "token_ids": null,
+        "routed_experts": null
+      }
+    ],
+    "service_tier": null,
+    "system_fingerprint": "vllm-0.1.dev20051+g487ecf187-tp2-3737b693",
+    "usage": {
+      "prompt_tokens": 33,
+      "total_tokens": 545,
+      "completion_tokens": 512,
+      "prompt_tokens_details": null
+    },
+    "prompt_logprobs": null,
+    "prompt_token_ids": null,
+    "prompt_text": null,
+    "kv_transfer_params": null,
+    "ec_transfer_params": null,
+    "metrics": null
+  }
+}

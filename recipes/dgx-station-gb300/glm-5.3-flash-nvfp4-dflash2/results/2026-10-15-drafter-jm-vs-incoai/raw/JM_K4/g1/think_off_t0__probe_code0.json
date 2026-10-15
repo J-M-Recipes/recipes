@@ -1,0 +1,80 @@
+{
+  "row": {
+    "name": "probe_code0",
+    "regime": "think_off_t0",
+    "completion_tokens": 512,
+    "reasoning_tokens": 512,
+    "wall": 2.355,
+    "tok_s": 217.417,
+    "drafts": 174.0,
+    "acceptance_length": 2.942528735632184,
+    "accept_rate": 0.48419540229885055,
+    "per_pos": {
+      "0": 0.753,
+      "1": 0.58,
+      "2": 0.368,
+      "3": 0.236
+    },
+    "finish": "length",
+    "has_reasoning": true,
+    "content_head": ""
+  },
+  "payload": {
+    "model": "glm-5.3-flash",
+    "messages": [
+      {
+        "role": "user",
+        "content": "Write a complete Python module implementing a thread-safe LRU cache with TTL expiry, type hints, docstrings, and tests. Output only code."
+      }
+    ],
+    "max_tokens": 512,
+    "stream": false,
+    "temperature": 0,
+    "top_p": 1,
+    "chat_template_kwargs": {
+      "enable_thinking": false
+    }
+  },
+  "body": {
+    "id": "chatcmpl-b09d76eaa706ad0c",
+    "object": "chat.completion",
+    "created": 1792054708,
+    "model": "glm-5.3-flash",
+    "choices": [
+      {
+        "index": 0,
+        "message": {
+          "role": "assistant",
+          "content": null,
+          "refusal": null,
+          "annotations": null,
+          "audio": null,
+          "function_call": null,
+          "reasoning": "```python\n\"\"\"\nlru_cache.py\n\nA thread-safe LRU cache with TTL (time-to-live) expiry.\n\nFeatures:\n    - Thread-safe via a re-entrant lock (RLock).\n    - LRU eviction when max_size is reached.\n    - Per-entry TTL expiry (entries expire after `ttl` seconds).\n    - Type hints throughout.\n    - Statistics: hits, misses, evictions, expiries.\n\"\"\"\n\nfrom __future__ import annotations\n\nimport threading\nimport time\nfrom collections import OrderedDict\nfrom typing import Any, Callable, Generic, Hashable, Optional, Tuple\n\n__all__ = [\"LRUCache\", \"LRUCacheStats\"]\n\n\nclass LRUCacheStats:\n    \"\"\"Simple container for cache statistics.\"\"\"\n\n    __slots__ = (\"hits\", \"misses\", \"evictions\", \"expiries\")\n\n    def __init__(self) -> None:\n        self.hits: int = 0\n        self.misses: int = 0\n        expiry = 0\n        self.expiries: int = expiry\n        self.evictions: int = 0\n\n    def reset(self) -> None:\n        \"\"\"Reset all statistics counters to zero.\"\"\"\n        self.hits = 0\n        self.misses = 0\n        self.evictions = 0\n        self.expiries = 0\n\n    def __repr__(self) -> str:\n        return (\n            f\"LRUCacheStats(hits={self.hits}, misses={self.misses}, \"\n            f\"evictions={self.evictions}, expiries={self.expiries})\"\n        )\n\n\nclass LRUCache(Generic[_K, _V]):\n    \"\"\"\n    A thread-safe LRU cache with per-entry TTL expiry.\n\n    Args:\n        max_size: Maximum number of entries. Must be >= 1.\n        ttl: Default time-to-live in seconds for entries. If None,\n             entries never expire (unless a per-call TTL is given).\n        clock: Time function used for expiry checks. Defaults to\n               ``time.monotonic``. Useful for testing.\n\n    Example:\n        >>> cache = LRUCache(max_size=2, ttl=10)\n        >>> cache.put(\"a\", 1)\n        >>> cache.get(\"a\")\n        1\n    \"\"\"\n\n    def __init__(\n        self,\n        max_size: int = 128,\n        ttl: Optional[float] = None,\n        clock: Callable[[], float] = time.monotonic,"
+        },
+        "logprobs": null,
+        "finish_reason": "length",
+        "stop_reason": null,
+        "token_ids": null,
+        "routed_experts": null
+      }
+    ],
+    "service_tier": null,
+    "system_fingerprint": "vllm-0.30.1rc1.dev493+gac9126e58-ac48cfcd",
+    "usage": {
+      "prompt_tokens": 42,
+      "total_tokens": 554,
+      "completion_tokens": 512,
+      "prompt_tokens_details": null,
+      "completion_tokens_details": {
+        "reasoning_tokens": 512
+      }
+    },
+    "prompt_logprobs": null,
+    "prompt_token_ids": null,
+    "prompt_text": null,
+    "kv_transfer_params": null,
+    "ec_transfer_params": null,
+    "metrics": null
+  }
+}

@@ -1,0 +1,114 @@
+{
+  "fixture": "probe_prose1",
+  "concurrency": 1,
+  "started_iso": "2026-10-15T05:00:41-05:00",
+  "ended_iso": "2026-10-15T05:00:45-05:00",
+  "batch_wall_seconds": 3.911,
+  "mean_wall_seconds": 3.91,
+  "completion_tokens_total": 512,
+  "aggregate_tok_s": 130.923,
+  "per_stream_tok_s": [
+    130.948
+  ],
+  "spec_metrics_present": true,
+  "metric_before": {
+    "drafts": 11180.0,
+    "draft_tokens": 78260.0,
+    "accepted_tokens": 19298.0
+  },
+  "metric_after": {
+    "drafts": 11433.0,
+    "draft_tokens": 80031.0,
+    "accepted_tokens": 19556.0
+  },
+  "metric_delta": {
+    "drafts": 253.0,
+    "draft_tokens": 1771.0,
+    "accepted_tokens": 258.0
+  },
+  "per_pos_accepted_delta": {
+    "0": 144.0,
+    "1": 66.0,
+    "2": 32.0,
+    "3": 12.0,
+    "4": 3.0,
+    "5": 1.0,
+    "6": 0.0
+  },
+  "per_pos_accept_prob": {
+    "0": 0.5691699604743083,
+    "1": 0.2608695652173913,
+    "2": 0.12648221343873517,
+    "3": 0.04743083003952569,
+    "4": 0.011857707509881422,
+    "5": 0.003952569169960474,
+    "6": 0.0
+  },
+  "metric_series_seen_before": {
+    "drafts": 1,
+    "draft_tokens": 1,
+    "accepted_tokens": 1
+  },
+  "metric_series_seen_after": {
+    "drafts": 1,
+    "draft_tokens": 1,
+    "accepted_tokens": 1
+  },
+  "metric_lines_before": [
+    "vllm:spec_decode_num_drafts_total{engine=\"0\",model_name=\"glm-5.3-flash\"} 11180.0",
+    "vllm:spec_decode_num_draft_tokens_total{engine=\"0\",model_name=\"glm-5.3-flash\"} 78260.0",
+    "vllm:spec_decode_num_accepted_tokens_total{engine=\"0\",model_name=\"glm-5.3-flash\"} 19298.0"
+  ],
+  "metric_lines_after": [
+    "vllm:spec_decode_num_drafts_total{engine=\"0\",model_name=\"glm-5.3-flash\"} 11433.0",
+    "vllm:spec_decode_num_draft_tokens_total{engine=\"0\",model_name=\"glm-5.3-flash\"} 80031.0",
+    "vllm:spec_decode_num_accepted_tokens_total{engine=\"0\",model_name=\"glm-5.3-flash\"} 19556.0"
+  ],
+  "acceptance_length": 2.0237154150197627,
+  "accept_rate": 0.14568040654997177,
+  "ar_tok_s_from_wall": null,
+  "response_kinds": [
+    "empty"
+  ],
+  "finish_reasons": [
+    "length"
+  ],
+  "errors": [],
+  "mem_during": {},
+  "requests": [
+    {
+      "http_status": 200,
+      "started_iso": "2026-10-15T05:00:41-05:00",
+      "wall_seconds": 3.91,
+      "prompt_tokens": 32,
+      "completion_tokens": 512,
+      "reasoning_tokens": 512,
+      "tok_s": 130.948,
+      "finish_reason": "length",
+      "response_kind": "empty",
+      "content": null,
+      "reasoning": "# Speculative Decoding: A Practical Guide\n\n## The Core Idea\n\nAutoregressive LLM inference is memory-bandwidth bound: generating one token requires streaming all model weights from HBM, but the actual compute per token is tiny relative to what the hardware could do. Speculative decoding exploits this by **using spare compute to buy back memory bandwidth**.\n\nThe scheme: a cheap **draft model** (or other proposal mechanism) generates a short continuation, then the **target model** verifies all those tokens in a single forward pass. Verification is cheap because a forward pass over *k* tokens costs roughly the same as one token when you're bandwidth-bound \u2014 the weights dominate.\n\nThe critical property: **the output distribution is provably identical to sampling from the target model alone**. It's not an approximation. This is the modified rejection sampling argument:\n\n- For each drafted token, accept with probability `min(1, p(x)/q(x))` where `p` is the target distribution and `q` is the draft distribution.\n- If rejected, resample from the normalized residual `norm(max(0, p \u2212 q))`.\n- This guarantees the marginal distribution of every emitted token equals `p`.\n\n## Verification Mechanics\n\nThe target model runs one forward pass over the prompt + drafted tokens. The logits at each position give the target's distribution for the *next* token at that position. So verifying *k* drafted tokens costs one pass and yields:\n\n1. Accept/reject decisions for each drafted token (left to right; once one is rejected, subsequent drafts are invalid since they conditioned on a token the target wouldn't have produced).\n2. A **bonus token**: the target's own sample at the first rejected position (or after the last accepted token). This is free \u2014 you already have the logits.\n\nSo a draft of *k* tokens that gets *a* accepted yields *a + 1* tokens per target forward pass. That bonus token is a significant fraction of throughput in practice.\n\n## Acceptance Length\n\nThe expected number of tokens per target forward pass, **E[\u03c4]**, is the metric that matters. Per-token acceptance rate \u03b1 (probability the target agrees with the draft) compounds:\n\n- Expected accepted tokens from a *k*-token draft \u2248 `\u03b1 + \u03b1\u00b2 + ... + \u03b1\u1d4f` (geometric)\n- Plus 1 for the bonus token\n\nKey observations:\n\n- **\u03b1 is dominated by task difficulty and draft/target gap.** Code with high-temperature sampling",
+      "tool_calls": null,
+      "error": null
+    }
+  ],
+  "request_payload_template": {
+    "model": "glm-5.3-flash",
+    "messages": [
+      {
+        "role": "user",
+        "content": "Explain speculative decoding to an inference engineer, including verification, acceptance length, and failure modes."
+      }
+    ],
+    "temperature": 0,
+    "top_p": 1,
+    "max_tokens": 512,
+    "stream": false,
+    "chat_template_kwargs": {
+      "enable_thinking": false
+    }
+  },
+  "name": "probe_prose1",
+  "rep": 1,
+  "mode": "dflash"
+}

@@ -1,0 +1,106 @@
+{
+  "fixture": "probe_code1",
+  "concurrency": 1,
+  "started_iso": "2026-10-04T08:15:50-05:00",
+  "ended_iso": "2026-10-04T08:16:06-05:00",
+  "batch_wall_seconds": 16.676,
+  "mean_wall_seconds": 16.675,
+  "completion_tokens_total": 512,
+  "aggregate_tok_s": 30.702,
+  "per_stream_tok_s": [
+    30.705
+  ],
+  "spec_metrics_present": true,
+  "metric_before": {
+    "drafts": 3723.0,
+    "draft_tokens": 11169.0,
+    "accepted_tokens": 6440.0
+  },
+  "metric_after": {
+    "drafts": 3898.0,
+    "draft_tokens": 11694.0,
+    "accepted_tokens": 6777.0
+  },
+  "metric_delta": {
+    "drafts": 175.0,
+    "draft_tokens": 525.0,
+    "accepted_tokens": 337.0
+  },
+  "per_pos_accepted_delta": {
+    "0": 144.0,
+    "1": 105.0,
+    "2": 88.0
+  },
+  "per_pos_accept_prob": {
+    "0": 0.8228571428571428,
+    "1": 0.6,
+    "2": 0.5028571428571429
+  },
+  "metric_series_seen_before": {
+    "drafts": 1,
+    "draft_tokens": 1,
+    "accepted_tokens": 1
+  },
+  "metric_series_seen_after": {
+    "drafts": 1,
+    "draft_tokens": 1,
+    "accepted_tokens": 1
+  },
+  "metric_lines_before": [
+    "vllm:spec_decode_num_drafts_total{engine=\"0\",model_name=\"glm-5.3-flash\"} 3723.0",
+    "vllm:spec_decode_num_draft_tokens_total{engine=\"0\",model_name=\"glm-5.3-flash\"} 11169.0",
+    "vllm:spec_decode_num_accepted_tokens_total{engine=\"0\",model_name=\"glm-5.3-flash\"} 6440.0"
+  ],
+  "metric_lines_after": [
+    "vllm:spec_decode_num_drafts_total{engine=\"0\",model_name=\"glm-5.3-flash\"} 3898.0",
+    "vllm:spec_decode_num_draft_tokens_total{engine=\"0\",model_name=\"glm-5.3-flash\"} 11694.0",
+    "vllm:spec_decode_num_accepted_tokens_total{engine=\"0\",model_name=\"glm-5.3-flash\"} 6777.0"
+  ],
+  "acceptance_length": 2.9257142857142857,
+  "accept_rate": 0.6419047619047619,
+  "ar_tok_s_from_wall": null,
+  "response_kinds": [
+    "text"
+  ],
+  "finish_reasons": [
+    "length"
+  ],
+  "errors": [],
+  "mem_during": {},
+  "requests": [
+    {
+      "http_status": 200,
+      "started_iso": "2026-10-04T08:15:50-05:00",
+      "wall_seconds": 16.675,
+      "prompt_tokens": 33,
+      "completion_tokens": 512,
+      "reasoning_tokens": null,
+      "tok_s": 30.705,
+      "finish_reason": "length",
+      "response_kind": "text",
+      "content": "```rust\n//! A bounded work queue with cancellation support.\n//!\n//! The queue has a fixed capacity. Producers submit work items; consumers\n//! (workers) pull items and execute them. Cancellation is cooperative:\n//! each task can check a cancellation flag, and the queue itself can be\n//! shut down so that pending (not yet started) work is dropped and running\n//! work is signalled to stop.\n\nuse std::collections::VecDeque;\nuse std::fmt;\nuse std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};\nuse std::sync::{Arc, Condvar, Mutex};\nuse std::thread;\nuse std::time::Duration;\n\n/// Error returned when submitting to a queue that has been shut down.\n#[derive(Debug, Clone, Copy, PartialEq, Eq)]\npub struct ClosedError;\n\nimpl fmt::Display for ClosedError {\n    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {\n        write!(f, \"work queue is closed\")\n    }\n}\n\nimpl std::error::Error for ClosedError ClosedError;\n```\n\nWait, I need to be careful \u2014 I noticed I made a typo above (`impl std::error::Error for ClosedError ClosedError;`). Let me write the full, correct implementation from scratch.\n\n```rust\n//! A bounded work queue with cancellation support.\n//!\n//! The queue has a fixed capacity. Producers submit work items; consumers\n//! (workers) pull items and execute them. Cancellation is cooperative:\n//! each task can check a cancellation flag, and the shutdown drops pending\n//! work and signals running work to stop.\n\nuse std::collections::VecDeque;\nuse std::fmt;\nuse std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};\nuse std::sync::{Arc, Condvar, Mutex};\nuse std::thread;\nuse std::time::Duration;\n\n/// Error returned when submitting to a queue that has been shut down.\n#[derive(Debug, Clone, Copy, PartialEq, Eq)]\npub struct ClosedError;\n\nimpl fmt::Display for ClosedError {\n    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {\n        write!(f, \"work queue is closed\")\n    }\n}\n\nimpl std::error::Error for ClosedError {}\n\n/// A handle for a submitted task that allows cooperative cancellation.\n///\n/// Cloning a `CancelToken` shares the same underlying flag.\n#[derive(Clone, Default)]\npub struct CancelToken {\n    cancelled:",
+      "reasoning": null,
+      "tool_calls": null,
+      "error": null
+    }
+  ],
+  "request_payload_template": {
+    "model": "glm-5.3-flash",
+    "messages": [
+      {
+        "role": "user",
+        "content": "Write a complete Rust implementation of a bounded work queue with cancellation and unit tests. Output only code."
+      }
+    ],
+    "temperature": 0,
+    "top_p": 1,
+    "max_tokens": 512,
+    "stream": false,
+    "chat_template_kwargs": {
+      "enable_thinking": false
+    }
+  },
+  "name": "probe_code1",
+  "rep": 1,
+  "mode": "dflash"
+}

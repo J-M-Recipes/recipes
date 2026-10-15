@@ -1,0 +1,83 @@
+{
+  "row": {
+    "name": "probe_prose1",
+    "regime": "think_on_t1",
+    "completion_tokens": 512,
+    "reasoning_tokens": 512,
+    "wall": 2.843,
+    "tok_s": 180.114,
+    "drafts": 184.0,
+    "acceptance_length": 2.782608695652174,
+    "accept_rate": 0.25388198757763975,
+    "per_pos": {
+      "0": 0.69,
+      "1": 0.473,
+      "2": 0.266,
+      "3": 0.19,
+      "4": 0.098,
+      "5": 0.043,
+      "6": 0.016
+    },
+    "finish": "length",
+    "has_reasoning": true,
+    "content_head": ""
+  },
+  "payload": {
+    "model": "glm-5.3-flash",
+    "messages": [
+      {
+        "role": "user",
+        "content": "Explain speculative decoding to an inference engineer, including verification, acceptance length, and failure modes."
+      }
+    ],
+    "max_tokens": 512,
+    "stream": false,
+    "temperature": 1.0,
+    "top_p": 0.95,
+    "chat_template_kwargs": {
+      "enable_thinking": true
+    }
+  },
+  "body": {
+    "id": "chatcmpl-936c7de41ea8774a",
+    "object": "chat.completion",
+    "created": 1792065891,
+    "model": "glm-5.3-flash",
+    "choices": [
+      {
+        "index": 0,
+        "message": {
+          "role": "assistant",
+          "content": null,
+          "refusal": null,
+          "annotations": null,
+          "audio": null,
+          "function_call": null,
+          "reasoning": "The user is asking me to explain speculative decoding to an inference engineer. This is a technical topic in LLM inference optimization. Let me think about what an inference engineer would already know and what they'd want to know.\n\nAn inference engineer already knows:\n- Autoregressive LLM decoding\n- KV caches\n- Batching, memory bandwidth considerations\n- The fact that decode is memory-bound (arithmetic intensity)\n- Token-by-token generation latency issues\n\nWhat they need:\n1. **Core idea**: Speculative decoding uses a cheap \"draft\" model (or other draft mechanism) to propose multiple tokens ahead, then verifies them in parallel with the target model. The key insight is that verifying k tokens in one forward pass is roughly as expensive as generating one token (memory-bandwidth bound, so the weights load dominates), so you can get multiple tokens per forward pass.\n\n2. **Why it works**: LLM decode is memory-bandwidth bound. A forward pass costs ~ time to read all weights from HBM regardless of whether you process 1 token or k tokens (until you hit compute-bound regime). So verifying multiple draft tokens in parallel is nearly free compared to sequential decoding.\n\n3. **The algorithm (standard/draft-model speculative decoding)**:\n   - Draft model generates \u03b3 tokens autoregressively (cheap, small model)\n   - Target model runs a single forward pass on the prompt + \u03b3 draft tokens, producing logits/distributions at each position\n   - Verification: accept/reject each draft token in sequence using a rejection sampling scheme that guarantees the output distribution is *exactly* the same as sampling from the target model\n   - The acceptance criterion: for draft token from distribution q, accept with probability min(1, p(x)/q(x)) where p is target distribution\n   - If rejected, resample from the residual distribution: norm(max(0, p - q)) \u2014 this is the key correctness trick\n   - Rejection at position i means all subsequent draft tokens are discarded, and you sample one corrected token from the residual distribution, so you always make progress\n\n4. **Acceptance rate and expected length**:\n   - \u03b1 = E[min(1, p/q)] per-token acceptance rate\n   - Expected tokens per target forward pass: E[\u03b3 + 1 something]... Let me recall the math. With \u03b3 draft tokens and acceptance rate \u03b1, expected accepted tokens is \u03b3\u03b1... actually the expected number of tokens emitted per cycle is (1 - \u03b1^(\u03b3+1))/(1 -"
+        },
+        "logprobs": null,
+        "finish_reason": "length",
+        "stop_reason": null,
+        "token_ids": null,
+        "routed_experts": null
+      }
+    ],
+    "service_tier": null,
+    "system_fingerprint": "vllm-0.30.1rc1.dev493+gac9126e58-f9d564b6",
+    "usage": {
+      "prompt_tokens": 31,
+      "total_tokens": 543,
+      "completion_tokens": 512,
+      "prompt_tokens_details": null,
+      "completion_tokens_details": {
+        "reasoning_tokens": 512
+      }
+    },
+    "prompt_logprobs": null,
+    "prompt_token_ids": null,
+    "prompt_text": null,
+    "kv_transfer_params": null,
+    "ec_transfer_params": null,
+    "metrics": null
+  }
+}

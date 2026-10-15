@@ -1,0 +1,108 @@
+{
+  "fixture": "prose",
+  "concurrency": 1,
+  "started_iso": "2026-10-15T07:14:47-05:00",
+  "ended_iso": "2026-10-15T07:14:49-05:00",
+  "batch_wall_seconds": 1.71,
+  "mean_wall_seconds": 1.709,
+  "completion_tokens_total": 300,
+  "aggregate_tok_s": 175.442,
+  "per_stream_tok_s": [
+    175.535
+  ],
+  "spec_metrics_present": true,
+  "metric_before": {
+    "drafts": 7107.0,
+    "draft_tokens": 28428.0,
+    "accepted_tokens": 14336.0
+  },
+  "metric_after": {
+    "drafts": 7237.0,
+    "draft_tokens": 28948.0,
+    "accepted_tokens": 14507.0
+  },
+  "metric_delta": {
+    "drafts": 130.0,
+    "draft_tokens": 520.0,
+    "accepted_tokens": 171.0
+  },
+  "per_pos_accepted_delta": {
+    "0": 88.0,
+    "1": 49.0,
+    "2": 24.0,
+    "3": 10.0
+  },
+  "per_pos_accept_prob": {
+    "0": 0.676923076923077,
+    "1": 0.3769230769230769,
+    "2": 0.18461538461538463,
+    "3": 0.07692307692307693
+  },
+  "metric_series_seen_before": {
+    "drafts": 1,
+    "draft_tokens": 1,
+    "accepted_tokens": 1
+  },
+  "metric_series_seen_after": {
+    "drafts": 1,
+    "draft_tokens": 1,
+    "accepted_tokens": 1
+  },
+  "metric_lines_before": [
+    "vllm:spec_decode_num_drafts_total{engine=\"0\",model_name=\"glm-5.3-flash\"} 7107.0",
+    "vllm:spec_decode_num_draft_tokens_total{engine=\"0\",model_name=\"glm-5.3-flash\"} 28428.0",
+    "vllm:spec_decode_num_accepted_tokens_total{engine=\"0\",model_name=\"glm-5.3-flash\"} 14336.0"
+  ],
+  "metric_lines_after": [
+    "vllm:spec_decode_num_drafts_total{engine=\"0\",model_name=\"glm-5.3-flash\"} 7237.0",
+    "vllm:spec_decode_num_draft_tokens_total{engine=\"0\",model_name=\"glm-5.3-flash\"} 28948.0",
+    "vllm:spec_decode_num_accepted_tokens_total{engine=\"0\",model_name=\"glm-5.3-flash\"} 14507.0"
+  ],
+  "acceptance_length": 2.3076923076923075,
+  "accept_rate": 0.32884615384615384,
+  "ar_tok_s_from_wall": null,
+  "response_kinds": [
+    "empty"
+  ],
+  "finish_reasons": [
+    "length"
+  ],
+  "errors": [],
+  "mem_during": {},
+  "requests": [
+    {
+      "http_status": 200,
+      "started_iso": "2026-10-15T07:14:47-05:00",
+      "wall_seconds": 1.709,
+      "prompt_tokens": 27,
+      "completion_tokens": 300,
+      "reasoning_tokens": 300,
+      "tok_s": 175.535,
+      "finish_reason": "length",
+      "response_kind": "empty",
+      "content": null,
+      "reasoning": "# Tidal Locking and Its Profound Influence on Planetary Climates\n\nTidal locking occurs when a planet's orbital period matches its rotational period, causing one hemisphere to permanently face its star. This phenomenon, common among exoplanets orbiting close to red dwarf stars, creates some of the most extreme and fascinating climates in the universe.\n\nThe most dramatic consequence is the stark temperature contrast between hemispheres. The dayside, bathed in perpetual starlight, can reach scorching temperatures of hundreds of degrees, while the nightside plunges to frigid extremes where atmospheres might freeze out entirely. On a hypothetical tidally locked Earth, the dayside could exceed 100\u00b0C while the nightside drops below -60\u00b0C.\n\nHowever, atmospheres and oceans act as powerful climate equalizers. Winds transport heat from the dayside to the nightside, moderating both extremes. Climate models suggest that planets with thick atmospheres or deep oceans can maintain habitable conditions across much of their surface, with the terminator\u2014the twilight zone between day and night\u2014offering potentially ideal temperatures for life.\n\nWater cycle dynamics also differ dramatically from Earth's. Evaporation concentrates on the dayside, and prevailing winds often push moisture toward the nightside, where it can become trapped as ice. This creates the risk of atmospheric collapse if volatile materials permanently freeze on the dark side. Conversely, some models predict permanent dayside oceans surrounded by nightside ice sheets, with a narrow habitable ring at the terminator",
+      "tool_calls": null,
+      "error": null
+    }
+  ],
+  "request_payload_template": {
+    "model": "glm-5.3-flash",
+    "messages": [
+      {
+        "role": "user",
+        "content": "Write a 300-word essay on how tidal locking shapes planetary climates."
+      }
+    ],
+    "temperature": 0,
+    "top_p": 1,
+    "max_tokens": 300,
+    "stream": false,
+    "chat_template_kwargs": {
+      "enable_thinking": false
+    }
+  },
+  "name": "prose_c1_r1",
+  "rep": 1,
+  "mode": "dflash"
+}

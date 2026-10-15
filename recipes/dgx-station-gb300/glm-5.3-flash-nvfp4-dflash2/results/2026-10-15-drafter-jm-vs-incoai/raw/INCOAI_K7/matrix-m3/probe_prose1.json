@@ -1,0 +1,114 @@
+{
+  "fixture": "probe_prose1",
+  "concurrency": 1,
+  "started_iso": "2026-10-15T06:14:11-05:00",
+  "ended_iso": "2026-10-15T06:14:14-05:00",
+  "batch_wall_seconds": 2.8,
+  "mean_wall_seconds": 2.799,
+  "completion_tokens_total": 512,
+  "aggregate_tok_s": 182.889,
+  "per_stream_tok_s": [
+    182.939
+  ],
+  "spec_metrics_present": true,
+  "metric_before": {
+    "drafts": 8901.0,
+    "draft_tokens": 62307.0,
+    "accepted_tokens": 21668.0
+  },
+  "metric_after": {
+    "drafts": 9081.0,
+    "draft_tokens": 63567.0,
+    "accepted_tokens": 22001.0
+  },
+  "metric_delta": {
+    "drafts": 180.0,
+    "draft_tokens": 1260.0,
+    "accepted_tokens": 333.0
+  },
+  "per_pos_accepted_delta": {
+    "0": 135.0,
+    "1": 84.0,
+    "2": 48.0,
+    "3": 32.0,
+    "4": 18.0,
+    "5": 10.0,
+    "6": 6.0
+  },
+  "per_pos_accept_prob": {
+    "0": 0.75,
+    "1": 0.4666666666666667,
+    "2": 0.26666666666666666,
+    "3": 0.17777777777777778,
+    "4": 0.1,
+    "5": 0.05555555555555555,
+    "6": 0.03333333333333333
+  },
+  "metric_series_seen_before": {
+    "drafts": 1,
+    "draft_tokens": 1,
+    "accepted_tokens": 1
+  },
+  "metric_series_seen_after": {
+    "drafts": 1,
+    "draft_tokens": 1,
+    "accepted_tokens": 1
+  },
+  "metric_lines_before": [
+    "vllm:spec_decode_num_drafts_total{engine=\"0\",model_name=\"glm-5.3-flash\"} 8901.0",
+    "vllm:spec_decode_num_draft_tokens_total{engine=\"0\",model_name=\"glm-5.3-flash\"} 62307.0",
+    "vllm:spec_decode_num_accepted_tokens_total{engine=\"0\",model_name=\"glm-5.3-flash\"} 21668.0"
+  ],
+  "metric_lines_after": [
+    "vllm:spec_decode_num_drafts_total{engine=\"0\",model_name=\"glm-5.3-flash\"} 9081.0",
+    "vllm:spec_decode_num_draft_tokens_total{engine=\"0\",model_name=\"glm-5.3-flash\"} 63567.0",
+    "vllm:spec_decode_num_accepted_tokens_total{engine=\"0\",model_name=\"glm-5.3-flash\"} 22001.0"
+  ],
+  "acceptance_length": 2.8444444444444446,
+  "accept_rate": 0.2642857142857143,
+  "ar_tok_s_from_wall": null,
+  "response_kinds": [
+    "empty"
+  ],
+  "finish_reasons": [
+    "length"
+  ],
+  "errors": [],
+  "mem_during": {},
+  "requests": [
+    {
+      "http_status": 200,
+      "started_iso": "2026-10-15T06:14:11-05:00",
+      "wall_seconds": 2.799,
+      "prompt_tokens": 32,
+      "completion_tokens": 512,
+      "reasoning_tokens": 512,
+      "tok_s": 182.939,
+      "finish_reason": "length",
+      "response_kind": "empty",
+      "content": null,
+      "reasoning": "# Speculative Decoding: A Practical Guide\n\n## The Core Idea\n\nAutoregressive LLM inference is memory-bandwidth bound: generating one token requires streaming all model weights from HBM, but the actual compute per token is tiny relative to what the hardware could do. Speculative decoding exploits this by **drafting multiple tokens cheaply, then verifying them in parallel with the big model** \u2014 turning k sequential passes into one batched pass.\n\nThe key insight: verification of k tokens costs roughly the same as generating 1 token (same weight-streaming), so if the draft model is even 5-10x smaller, you win on latency.\n\n## How It Works\n\n**1. Draft phase:** A small draft model (e.g., 1B params against a 70B target) autoregressively generates \u03b3 tokens (the draft length, typically 3-8).\n\n**2. Verification phase:** The target model runs a single forward pass over the prompt + all \u03b3 draft tokens. Because of the causal mask, this gives you the target's distribution at every position simultaneously \u2014 one pass, \u03b3+1 positions scored.\n\n**3. Accept/reject:** Walk through draft tokens left to right. For each position i, accept token d_i with probability:\n\n```\nmin(1, p_target(d_i) / p_draft(d_i))\n```\n\nwhere p_target is the target model's probability of that token at that position, p_draft is the draft model's probability. This is the same acceptance criterion as rejection sampling, which is why the scheme is **lossless**: the output distribution is provably identical to sampling from the target model alone.\n\n**4. Residual sampling:** On the first rejection (or after all \u03b3 accept), sample one bonus token from the *adjusted* residual distribution:\n\n```\nmax(0, p_target - p_draft), renormalized\n```\n\nThis guarantees you always make forward progress of at least one token per cycle, even if every draft token is rejected.\n\n## Acceptance Length\n\nThe metric that matters is **E[\u03c4]**, the expected number of tokens accepted per verification cycle (including the bonus token). Speedup is approximately:\n\n```\nspeedup \u2248 E[\u03c4] \u00b7 c_draft / (c_draft + \u03b3 \u00b7 c_target_relative...)\n```\n\nmore precisely, if a draft token costs t_d and a target token costs t_T:\n\n```\nspeedup \u2248 (1 + E[\u03c4]) \u00b7 t_d / (t_d + \u03b3 \u00b7 t_T",
+      "tool_calls": null,
+      "error": null
+    }
+  ],
+  "request_payload_template": {
+    "model": "glm-5.3-flash",
+    "messages": [
+      {
+        "role": "user",
+        "content": "Explain speculative decoding to an inference engineer, including verification, acceptance length, and failure modes."
+      }
+    ],
+    "temperature": 0,
+    "top_p": 1,
+    "max_tokens": 512,
+    "stream": false,
+    "chat_template_kwargs": {
+      "enable_thinking": false
+    }
+  },
+  "name": "probe_prose1",
+  "rep": 1,
+  "mode": "dflash"
+}

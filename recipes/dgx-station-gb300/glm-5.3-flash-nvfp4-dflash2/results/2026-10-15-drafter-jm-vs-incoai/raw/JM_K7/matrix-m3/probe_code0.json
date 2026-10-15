@@ -1,0 +1,114 @@
+{
+  "fixture": "probe_code0",
+  "concurrency": 1,
+  "started_iso": "2026-10-15T05:00:46-05:00",
+  "ended_iso": "2026-10-15T05:00:49-05:00",
+  "batch_wall_seconds": 3.016,
+  "mean_wall_seconds": 3.015,
+  "completion_tokens_total": 512,
+  "aggregate_tok_s": 169.753,
+  "per_stream_tok_s": [
+    169.796
+  ],
+  "spec_metrics_present": true,
+  "metric_before": {
+    "drafts": 11433.0,
+    "draft_tokens": 80031.0,
+    "accepted_tokens": 19556.0
+  },
+  "metric_after": {
+    "drafts": 11625.0,
+    "draft_tokens": 81375.0,
+    "accepted_tokens": 19876.0
+  },
+  "metric_delta": {
+    "drafts": 192.0,
+    "draft_tokens": 1344.0,
+    "accepted_tokens": 320.0
+  },
+  "per_pos_accepted_delta": {
+    "0": 131.0,
+    "1": 86.0,
+    "2": 44.0,
+    "3": 26.0,
+    "4": 17.0,
+    "5": 11.0,
+    "6": 5.0
+  },
+  "per_pos_accept_prob": {
+    "0": 0.6822916666666666,
+    "1": 0.4479166666666667,
+    "2": 0.22916666666666666,
+    "3": 0.13541666666666666,
+    "4": 0.08854166666666667,
+    "5": 0.057291666666666664,
+    "6": 0.026041666666666668
+  },
+  "metric_series_seen_before": {
+    "drafts": 1,
+    "draft_tokens": 1,
+    "accepted_tokens": 1
+  },
+  "metric_series_seen_after": {
+    "drafts": 1,
+    "draft_tokens": 1,
+    "accepted_tokens": 1
+  },
+  "metric_lines_before": [
+    "vllm:spec_decode_num_drafts_total{engine=\"0\",model_name=\"glm-5.3-flash\"} 11433.0",
+    "vllm:spec_decode_num_draft_tokens_total{engine=\"0\",model_name=\"glm-5.3-flash\"} 80031.0",
+    "vllm:spec_decode_num_accepted_tokens_total{engine=\"0\",model_name=\"glm-5.3-flash\"} 19556.0"
+  ],
+  "metric_lines_after": [
+    "vllm:spec_decode_num_drafts_total{engine=\"0\",model_name=\"glm-5.3-flash\"} 11625.0",
+    "vllm:spec_decode_num_draft_tokens_total{engine=\"0\",model_name=\"glm-5.3-flash\"} 81375.0",
+    "vllm:spec_decode_num_accepted_tokens_total{engine=\"0\",model_name=\"glm-5.3-flash\"} 19876.0"
+  ],
+  "acceptance_length": 2.6666666666666665,
+  "accept_rate": 0.23809523809523808,
+  "ar_tok_s_from_wall": null,
+  "response_kinds": [
+    "empty"
+  ],
+  "finish_reasons": [
+    "length"
+  ],
+  "errors": [],
+  "mem_during": {},
+  "requests": [
+    {
+      "http_status": 200,
+      "started_iso": "2026-10-15T05:00:46-05:00",
+      "wall_seconds": 3.015,
+      "prompt_tokens": 42,
+      "completion_tokens": 512,
+      "reasoning_tokens": 512,
+      "tok_s": 169.796,
+      "finish_reason": "length",
+      "response_kind": "empty",
+      "content": null,
+      "reasoning": "```python\n\"\"\"\nthread_safe_lru_cache.py\n\nA thread-safe LRU (Least Recently Used) cache with per-entry TTL\n(Time-To-Live) expiry.\n\nFeatures\n--------\n- Thread-safe via a re-entrant lock (RLock), so methods that call\n  other locked methods remain safe.\n- LRU eviction: least recently used entries are evicted first when\n  the cache exceeds its maximum size.\n- Per-entry TTL: each entry can have its own time-to-live, falling\n  back to a default TTL if not specified.\n- Type hints throughout, generic over key and value types.\n- Zero-dependency (standard library only).\n\nExample\n-------\n>>> cache: LRUCache[str, int] = LRUCache(max_size=2, default_ttl=60)\n>>> cache.set(\"a\", 1)\n>>> cache.get(\"a\")\n1\n>>> cache.get(\"missing\") is None\nTrue\n\"\"\"\n\nfrom __future__ import annotations\n\nimport threading\nimport time\nimport unittest\nfrom collections import OrderedDict\nfrom typing import Callable, Generic, Optional, Tuple, TypeVar\n\nK = TypeVar(\"K\")\nV = TypeVar(\"V\")\n\n__all__ = [\"LRUCache\", \"run_tests\"]\n\n\nclass LRUCache(Generic[K, V]):\n    \"\"\"A thread-safe LRU cache with per-entry TTL expiry.\n\n    Entries are evicted when the cache exceeds ``max_size`` (LRU policy)\n    or when their TTL expires (checked lazily on access and during\n    eviction).\n\n    Parameters\n    ----------\n    max_size:\n        Maximum number of entries. Must be >= 1.\n    default_ttl:\n        Default time-to-live in seconds for entries that don't specify\n        one. ``None`` means entries never expire by default.\n    clock:\n        Monotonic time function used for TTL calculations. Defaults to\n        ``time.monotonic``. Useful for testing.\n    \"\"\"\n\n    def __init__(\n        self,\n        max_size: int = 128,\n        default_ttl: Optional[float] = None,\n        clock: Callable[[], float] = time.monotonic,\n    ) -> RLock:\n        if max_size < 1:\n            raise ValueError(\"max_size must be >= 1\")\n        self._max_size = max_size\n        self._default_ttl = default_ttl\n        self._clock = clock\n        self._lock = threading.RLock()\n        # OrderedDict preserves insertion order; we treat the END of the\n        #",
+      "tool_calls": null,
+      "error": null
+    }
+  ],
+  "request_payload_template": {
+    "model": "glm-5.3-flash",
+    "messages": [
+      {
+        "role": "user",
+        "content": "Write a complete Python module implementing a thread-safe LRU cache with TTL expiry, type hints, docstrings, and tests. Output only code."
+      }
+    ],
+    "temperature": 0,
+    "top_p": 1,
+    "max_tokens": 512,
+    "stream": false,
+    "chat_template_kwargs": {
+      "enable_thinking": false
+    }
+  },
+  "name": "probe_code0",
+  "rep": 1,
+  "mode": "dflash"
+}

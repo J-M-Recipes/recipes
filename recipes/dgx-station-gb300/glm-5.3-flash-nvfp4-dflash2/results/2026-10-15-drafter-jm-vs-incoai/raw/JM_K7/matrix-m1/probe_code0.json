@@ -1,0 +1,114 @@
+{
+  "fixture": "probe_code0",
+  "concurrency": 1,
+  "started_iso": "2026-10-15T04:58:32-05:00",
+  "ended_iso": "2026-10-15T04:58:35-05:00",
+  "batch_wall_seconds": 2.977,
+  "mean_wall_seconds": 2.976,
+  "completion_tokens_total": 512,
+  "aggregate_tok_s": 171.974,
+  "per_stream_tok_s": [
+    172.015
+  ],
+  "spec_metrics_present": true,
+  "metric_before": {
+    "drafts": 3521.0,
+    "draft_tokens": 24647.0,
+    "accepted_tokens": 6124.0
+  },
+  "metric_after": {
+    "drafts": 3710.0,
+    "draft_tokens": 25970.0,
+    "accepted_tokens": 6447.0
+  },
+  "metric_delta": {
+    "drafts": 189.0,
+    "draft_tokens": 1323.0,
+    "accepted_tokens": 323.0
+  },
+  "per_pos_accepted_delta": {
+    "0": 131.0,
+    "1": 88.0,
+    "2": 51.0,
+    "3": 32.0,
+    "4": 14.0,
+    "5": 6.0,
+    "6": 1.0
+  },
+  "per_pos_accept_prob": {
+    "0": 0.6931216931216931,
+    "1": 0.4656084656084656,
+    "2": 0.2698412698412698,
+    "3": 0.1693121693121693,
+    "4": 0.07407407407407407,
+    "5": 0.031746031746031744,
+    "6": 0.005291005291005291
+  },
+  "metric_series_seen_before": {
+    "drafts": 1,
+    "draft_tokens": 1,
+    "accepted_tokens": 1
+  },
+  "metric_series_seen_after": {
+    "drafts": 1,
+    "draft_tokens": 1,
+    "accepted_tokens": 1
+  },
+  "metric_lines_before": [
+    "vllm:spec_decode_num_drafts_total{engine=\"0\",model_name=\"glm-5.3-flash\"} 3521.0",
+    "vllm:spec_decode_num_draft_tokens_total{engine=\"0\",model_name=\"glm-5.3-flash\"} 24647.0",
+    "vllm:spec_decode_num_accepted_tokens_total{engine=\"0\",model_name=\"glm-5.3-flash\"} 6124.0"
+  ],
+  "metric_lines_after": [
+    "vllm:spec_decode_num_drafts_total{engine=\"0\",model_name=\"glm-5.3-flash\"} 3710.0",
+    "vllm:spec_decode_num_draft_tokens_total{engine=\"0\",model_name=\"glm-5.3-flash\"} 25970.0",
+    "vllm:spec_decode_num_accepted_tokens_total{engine=\"0\",model_name=\"glm-5.3-flash\"} 6447.0"
+  ],
+  "acceptance_length": 2.708994708994709,
+  "accept_rate": 0.24414210128495842,
+  "ar_tok_s_from_wall": null,
+  "response_kinds": [
+    "empty"
+  ],
+  "finish_reasons": [
+    "length"
+  ],
+  "errors": [],
+  "mem_during": {},
+  "requests": [
+    {
+      "http_status": 200,
+      "started_iso": "2026-10-15T04:58:32-05:00",
+      "wall_seconds": 2.976,
+      "prompt_tokens": 42,
+      "completion_tokens": 512,
+      "reasoning_tokens": 512,
+      "tok_s": 172.015,
+      "finish_reason": "length",
+      "response_kind": "empty",
+      "content": null,
+      "reasoning": "```python\n\"\"\"\nlru_cache.py\n\nA thread-safe LRU cache with TTL (time-to-live) expiry.\n\nFeatures:\n    - Thread-safe via a re-entrant lock (RLock).\n    - LRU eviction when max_size is reached.\n    - Per-entry TTL expiry (lazy expiry on access, plus background\n      sweeper thread for proactive cleanup).\n    - Full type hints and docstrings.\n    - Optional statistics (hits, misses, evictions, expiries).\n\nClasses:\n    LRUCache - the cache itself.\n    CacheEntry - internal record for a single cached value.\n\nExample:\n    >>> cache = LRUCache(max_size=2, default_ttl=60)\n    >>> cache.put(\"a\", 1)\n    >>> cache.get(\"a\")\n    1\n    >>> import time\n    >>> cache.put(\"b\", 2, ttl=0.1)\n    >>> time.sleep(0.2)\n    >>> cache.get(\"b\") is None\n    True\n\"\"\"\n\nfrom __future__ import annotations\n\nimport threading\nimport time\nimport functools\nfrom collections import OrderedDict\nfrom dataclasses import dataclass, field\nfrom typing import (\n    Any,\n    Callable,\n    Generic,\n    Hashable,\n    Optional,\n    TypeVar,\n)\n\n__all__ = [\"LRUCache\", \"CacheEntry\", \"CacheStats\"]\n\nK = TypeVar(\"K\", bound=Hashable)\nV = TypeVar(\"V\")\n\n\nclass _SentineType:\n    \"\"\"Internal sentinel for 'no value' (distinct from cached None).\"\"\"\n    __slots__ = ()\n\n\n_MISSING = _SentineType()\n\n\n@dataclass\nclass CacheEntry(Generic[K, V]):\n    \"\"\"A single cached item along with its expiry metadata.\n\n    Attributes:\n        key: The cache key.\n        value: The cached value.\n        expires_at: Absolute monotonic deadline (seconds) after which\n            the entry is considered expired. ``None`` means no expiry.\n    \"\"\"\n\n    key: K\n    value: V\n    expires_at: Optional[float] = None\n\n    def is_expired(self, now: Optional[float] = None) -> bool:\n        \"\"\"Return True if this entry has expired.\n\n        Args:\n            now: Current monotonic time. If None, computed via\n                ``time.monotonic()``.\n\n        Returns:\n            True if the entry has an expiry deadline that has passed.\n        \"\"\"\n        if self.expires_at is None:\n            return False\n        if now is",
+      "tool_calls": null,
+      "error": null
+    }
+  ],
+  "request_payload_template": {
+    "model": "glm-5.3-flash",
+    "messages": [
+      {
+        "role": "user",
+        "content": "Write a complete Python module implementing a thread-safe LRU cache with TTL expiry, type hints, docstrings, and tests. Output only code."
+      }
+    ],
+    "temperature": 0,
+    "top_p": 1,
+    "max_tokens": 512,
+    "stream": false,
+    "chat_template_kwargs": {
+      "enable_thinking": false
+    }
+  },
+  "name": "probe_code0",
+  "rep": 1,
+  "mode": "dflash"
+}

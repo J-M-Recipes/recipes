@@ -1,0 +1,83 @@
+{
+  "row": {
+    "name": "probe_prose1",
+    "regime": "think_on_t1",
+    "completion_tokens": 512,
+    "reasoning_tokens": 512,
+    "wall": 3.856,
+    "tok_s": 132.796,
+    "drafts": 251.0,
+    "acceptance_length": 2.039840637450199,
+    "accept_rate": 0.1485486624928856,
+    "per_pos": {
+      "0": 0.582,
+      "1": 0.263,
+      "2": 0.116,
+      "3": 0.04,
+      "4": 0.028,
+      "5": 0.008,
+      "6": 0.004
+    },
+    "finish": "length",
+    "has_reasoning": true,
+    "content_head": ""
+  },
+  "payload": {
+    "model": "glm-5.3-flash",
+    "messages": [
+      {
+        "role": "user",
+        "content": "Explain speculative decoding to an inference engineer, including verification, acceptance length, and failure modes."
+      }
+    ],
+    "max_tokens": 512,
+    "stream": false,
+    "temperature": 1.0,
+    "top_p": 0.95,
+    "chat_template_kwargs": {
+      "enable_thinking": true
+    }
+  },
+  "body": {
+    "id": "chatcmpl-b41923d8325af99f",
+    "object": "chat.completion",
+    "created": 1792062179,
+    "model": "glm-5.3-flash",
+    "choices": [
+      {
+        "index": 0,
+        "message": {
+          "role": "assistant",
+          "content": null,
+          "refusal": null,
+          "annotations": null,
+          "audio": null,
+          "function_call": null,
+          "reasoning": "The user is asking me to explain speculative decoding to an inference engineer. This is a technical topic in LLM inference optimization. The target audience is someone who works on inference systems, so I should assume they understand:\n\n- Autoregressive LLM inference basics\n- KV caches, memory bandwidth as a bottleneck\n- Batch size, GPU utilization concepts\n- Token generation speed measured in tokens/second\n\nLet me think about what speculative decoding actually is and make sure I get all the technical details right.\n\n**Core idea:**\n\nStandard autoregressive decoding is memory-bandwidth bound: for each token generated, you do a full forward pass through the model, reading all model weights from HBM, just to produce one token. The arithmetic intensity is low (batch 1 case especially). The key insight: verifying tokens in parallel is much cheaper than generating them sequentially, because a forward pass over k tokens costs nearly the same as a forward pass over 1 token (in the memory-bound regime), since the weight reading dominates.\n\nSo the idea: use a cheap \"draft\" model (or some other proposal mechanism) to generate k candidate tokens autoregressively, then run the large \"target\" model once on all k+1 tokens (the k drafts plus the last accepted token, or rather the prefix plus drafts) in parallel to verify them all. If the draft tokens match what the target would have sampled, great \u2014 you get k+1 tokens for one target forward pass. If not, you reject and fall back.\n\n**The crucial theoretical guarantee:** Speculative decoding with the standard rejection sampling scheme is provably lossless \u2014 the output distribution is exactly the same as sampling from the target model alone. This is important to explain carefully.\n\n**The verification/rejection sampling scheme (Leviathan et al. 2022, Chen et al. 2023):**\n\nGiven target distribution p(x) and draft distribution q(x), for each drafted token:\n- If draft sampled token x, and p(x) \u2265 q(x): accept.\n- Otherwise: reject, and resample from the residual distribution norm(max(p - q, 0)) = (p - q)+ / ||(p - q)+||\u2081.\n\nThis is the modified rejection sampling that makes the marginal distribution of accepted tokens exactly p. The intuition: the acceptance probability for token x is min(1, p(x)/q(x)), and the leftover probability mass gets redistributed to tokens where p > q.\n\nNote: this is per-token independent rejection sampling. Important detail:"
+        },
+        "logprobs": null,
+        "finish_reason": "length",
+        "stop_reason": null,
+        "token_ids": null,
+        "routed_experts": null
+      }
+    ],
+    "service_tier": null,
+    "system_fingerprint": "vllm-0.30.1rc1.dev493+gac9126e58-a8c9a315",
+    "usage": {
+      "prompt_tokens": 31,
+      "total_tokens": 543,
+      "completion_tokens": 512,
+      "prompt_tokens_details": null,
+      "completion_tokens_details": {
+        "reasoning_tokens": 512
+      }
+    },
+    "prompt_logprobs": null,
+    "prompt_token_ids": null,
+    "prompt_text": null,
+    "kv_transfer_params": null,
+    "ec_transfer_params": null,
+    "metrics": null
+  }
+}

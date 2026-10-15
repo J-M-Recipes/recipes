@@ -1,0 +1,83 @@
+{
+  "row": {
+    "name": "probe_prose1",
+    "regime": "reason_low_t0",
+    "completion_tokens": 512,
+    "reasoning_tokens": 512,
+    "wall": 2.594,
+    "tok_s": 197.38,
+    "drafts": 168.0,
+    "acceptance_length": 3.0476190476190474,
+    "accept_rate": 0.2942176870748299,
+    "per_pos": {
+      "0": 0.756,
+      "1": 0.506,
+      "2": 0.315,
+      "3": 0.208,
+      "4": 0.143,
+      "5": 0.077,
+      "6": 0.054
+    },
+    "finish": "length",
+    "has_reasoning": true,
+    "content_head": ""
+  },
+  "payload": {
+    "model": "glm-5.3-flash",
+    "messages": [
+      {
+        "role": "user",
+        "content": "Explain speculative decoding to an inference engineer, including verification, acceptance length, and failure modes."
+      }
+    ],
+    "max_tokens": 512,
+    "stream": false,
+    "temperature": 0,
+    "top_p": 1,
+    "chat_template_kwargs": {
+      "reasoning_effort": "low"
+    }
+  },
+  "body": {
+    "id": "chatcmpl-81e47439de50e7f4",
+    "object": "chat.completion",
+    "created": 1792065856,
+    "model": "glm-5.3-flash",
+    "choices": [
+      {
+        "index": 0,
+        "message": {
+          "role": "assistant",
+          "content": null,
+          "refusal": null,
+          "annotations": null,
+          "audio": null,
+          "function_call": null,
+          "reasoning": "# Speculative Decoding\n\n## Core Idea\n\nAutoregressive LLM inference is memory-bandwidth bound: generating one token requires reading all model weights, but the compute is trivially parallel per token. Speculative decoding exploits this by using a cheap draft model to propose multiple tokens at once, then verifying them in a **single forward pass** of the large model \u2014 turning sequential generation into parallel verification.\n\n## The Algorithm\n\n1. **Draft phase**: The small draft model (e.g., a 1B model paired with a 70B target) autoregressively generates k candidate tokens (k typically 3\u20138).\n2. **Verification phase**: Run the target model once on the prompt + all k draft tokens. Because of the causal mask, this single pass yields the target's distribution at every position \u2014 exactly as if you'd generated each token sequentially.\n3. **Accept/reject**: Walk through draft tokens left to right. For each position i, accept the draft token with probability:\n\n$$p_{\\text{accept}} = \\min\\left(1, \\frac{p_{\\text{target}}(t_i)}{p_{\\text{draft}}(t_i)}\\right)$$\n\n4. **Resample on rejection**: If a token is rejected, sample from the residual distribution:\n\n$$\\max(0, p_{\\text{target}}(x) - p_{\\text{draft}}(x)) / \\|p_{\\text{target}} - p_{\\text{draft}}\\|_1$$\n\nthen stop. This guarantees the output distribution is **exactly identical** to sampling from the target model alone (for greedy decoding, it's equivalent to greedy target decoding).\n\n## Acceptance Length\n\nThe expected number of tokens emitted per target forward pass. If \u03b1 is the expected per-token acceptance probability:\n\n$$E[\\text{tokens per cycle}] = \\frac{1 - \\alpha^{k+1}}{1 - \\alpha}$$\n\n- \u03b1 = 1 (draft is perfect): k+1 tokens per pass \u2014 maximum speedup.\n- \u03b1 = 0: 1 token per pass \u2014 you've wasted the draft compute, and you're slightly *slower* than vanilla decoding.\n\nKey insight: you always get at least one token per verification pass (the resampled token after the first rejection, or k+1 if all accepted). Speedup = acceptance length \u00d7 (cost of target pass / cost of draft + verify pass)."
+        },
+        "logprobs": null,
+        "finish_reason": "length",
+        "stop_reason": null,
+        "token_ids": null,
+        "routed_experts": null
+      }
+    ],
+    "service_tier": null,
+    "system_fingerprint": "vllm-0.30.1rc1.dev493+gac9126e58-f9d564b6",
+    "usage": {
+      "prompt_tokens": 32,
+      "total_tokens": 544,
+      "completion_tokens": 512,
+      "prompt_tokens_details": null,
+      "completion_tokens_details": {
+        "reasoning_tokens": 512
+      }
+    },
+    "prompt_logprobs": null,
+    "prompt_token_ids": null,
+    "prompt_text": null,
+    "kv_transfer_params": null,
+    "ec_transfer_params": null,
+    "metrics": null
+  }
+}

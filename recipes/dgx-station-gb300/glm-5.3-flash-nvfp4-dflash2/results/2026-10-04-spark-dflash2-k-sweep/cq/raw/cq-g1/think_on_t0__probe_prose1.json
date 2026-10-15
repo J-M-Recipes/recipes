@@ -1,0 +1,80 @@
+{
+  "row": {
+    "name": "probe_prose1",
+    "regime": "think_on_t0",
+    "completion_tokens": 512,
+    "reasoning_tokens": null,
+    "wall": 24.411,
+    "tok_s": 20.974,
+    "drafts": 208.0,
+    "acceptance_length": 2.4615384615384617,
+    "accept_rate": 0.20810439560439561,
+    "per_pos": {
+      "0": 0.654,
+      "1": 0.37,
+      "2": 0.202,
+      "3": 0.115,
+      "4": 0.072,
+      "5": 0.029,
+      "6": 0.014
+    },
+    "finish": "length",
+    "has_reasoning": true,
+    "content_head": ""
+  },
+  "payload": {
+    "model": "glm-5.3-flash",
+    "messages": [
+      {
+        "role": "user",
+        "content": "Explain speculative decoding to an inference engineer, including verification, acceptance length, and failure modes."
+      }
+    ],
+    "max_tokens": 512,
+    "stream": false,
+    "temperature": 0,
+    "top_p": 1,
+    "chat_template_kwargs": {
+      "enable_thinking": true
+    }
+  },
+  "body": {
+    "id": "chatcmpl-876a69156267bcba",
+    "object": "chat.completion",
+    "created": 1791168143,
+    "model": "glm-5.3-flash",
+    "choices": [
+      {
+        "index": 0,
+        "message": {
+          "role": "assistant",
+          "content": null,
+          "refusal": null,
+          "annotations": null,
+          "audio": null,
+          "function_call": null,
+          "reasoning": "The user is asking for an explanation of speculative decoding aimed at an inference engineer. This is a technical topic in LLM inference optimization. Let me think about what an inference engineer would already know and what they'd want to know.\n\nAn inference engineer already knows:\n- Autoregressive decoding, KV caches, how transformer inference works\n- Memory bandwidth vs compute tradeoffs, batch size dynamics\n- Latency vs throughput considerations\n- Probably familiar with vLLM, TensorRT-LLM, etc.\n\nWhat they need:\n1. Core idea: draft-then-verify paradigm\n2. Why it works: the mathematical guarantee (rejection sampling preserves the target distribution)\n3. Verification mechanics: parallel scoring of draft tokens in one forward pass\n4. Acceptance/rejection: the modified acceptance criterion (accept if u < p/q, else resample from normalized residual)\n5. Acceptance length: expected number of tokens per forward pass, what determines it (draft quality, temperature, gamma)\n6. Failure modes: distribution mismatch issues, KV cache management, batch interactions, memory bandwidth saturation, draft-target misalignment, spec decode hurting throughput at high batch sizes, etc.\n\nLet me structure this carefully.\n\n## Core Idea\n\nStandard autoregressive decoding: one token per forward pass, memory-bandwidth bound (weights read once per token). The key insight: LLM forward passes are cheap to batch (parallel tokens cost little extra compute when memory-bound), so you can use a big model to verify K tokens in roughly the time of generating 1.\n\nSpeculative decoding: a cheap draft model (or n-gram, or Medusa heads, or EAGLE, or the model itself with early exit) proposes \u03b3 tokens autoregressively. The target model then runs ONE forward pass over the prompt + \u03b3 draft tokens, producing logits at each position. These logits give the target's distribution for each position, which is used to accept or reject each draft token in order.\n\n## Verification \u2014 the math\n\nThis is the crucial part that people get wrong. Naive approach: accept token if draft token is the argmax of target distribution. That's greedy and changes the output distribution (it's not lossless). The correct scheme (Leviathan et al. 2023, Chen et al. 2023):\n\nGiven draft proposal q(x) and target distribution p(x) at a position:\n- Draw draft token x ~ q\n- Accept with probability min(1, p(x)/q(x))\n- On rejection, res"
+        },
+        "logprobs": null,
+        "finish_reason": "length",
+        "stop_reason": null,
+        "token_ids": null,
+        "routed_experts": null
+      }
+    ],
+    "service_tier": null,
+    "system_fingerprint": "vllm-0.1.dev20051+g487ecf187-tp2-3737b693",
+    "usage": {
+      "prompt_tokens": 31,
+      "total_tokens": 543,
+      "completion_tokens": 512,
+      "prompt_tokens_details": null
+    },
+    "prompt_logprobs": null,
+    "prompt_token_ids": null,
+    "prompt_text": null,
+    "kv_transfer_params": null,
+    "ec_transfer_params": null,
+    "metrics": null
+  }
+}

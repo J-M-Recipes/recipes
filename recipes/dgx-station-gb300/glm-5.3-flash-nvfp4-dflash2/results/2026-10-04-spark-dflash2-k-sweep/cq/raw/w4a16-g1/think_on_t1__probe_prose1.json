@@ -1,0 +1,80 @@
+{
+  "row": {
+    "name": "probe_prose1",
+    "regime": "think_on_t1",
+    "completion_tokens": 512,
+    "reasoning_tokens": null,
+    "wall": 23.444,
+    "tok_s": 21.84,
+    "drafts": 208.0,
+    "acceptance_length": 2.4615384615384617,
+    "accept_rate": 0.2087912087912088,
+    "per_pos": {
+      "0": 0.606,
+      "1": 0.337,
+      "2": 0.221,
+      "3": 0.149,
+      "4": 0.077,
+      "5": 0.048,
+      "6": 0.024
+    },
+    "finish": "length",
+    "has_reasoning": true,
+    "content_head": ""
+  },
+  "payload": {
+    "model": "glm-5.3-flash",
+    "messages": [
+      {
+        "role": "user",
+        "content": "Explain speculative decoding to an inference engineer, including verification, acceptance length, and failure modes."
+      }
+    ],
+    "max_tokens": 512,
+    "stream": false,
+    "temperature": 1.0,
+    "top_p": 0.95,
+    "chat_template_kwargs": {
+      "enable_thinking": true
+    }
+  },
+  "body": {
+    "id": "chatcmpl-b46812c738c75f44",
+    "object": "chat.completion",
+    "created": 1791197062,
+    "model": "glm-5.3-flash",
+    "choices": [
+      {
+        "index": 0,
+        "message": {
+          "role": "assistant",
+          "content": null,
+          "refusal": null,
+          "annotations": null,
+          "audio": null,
+          "function_call": null,
+          "reasoning": "The user is an inference engineer asking about speculative decoding. This is a technical topic that I know well. Let me think through what I know and how to structure this.\n\nSpeculative decoding is a technique for accelerating LLM inference. The core insight: autoregressive decoding is memory-bandwidth bound (each token requires reading all model weights from HBM), so generating multiple tokens in one forward pass costs nearly the same as generating one. Speculative decoding exploits this by using a cheap draft model to propose multiple tokens, then verifying them in parallel with the target model in a single forward pass.\n\nKey components to cover:\n1. **The core mechanism**: draft-then-verify\n2. **Verification** - the crucial part. The standard method is rejection sampling / modified rejection sampling that guarantees the output distribution is *exactly* the same as the target model sampling. This is the key theoretical result (Leviathan et al. 2023, Chen et al. 2023).\n3. **Acceptance length** (a.k.a. accepted tokens per iteration, tau, or block efficiency) - the expected number of tokens accepted per draft-verify cycle. This determines the speedup.\n4. **Failure modes** - this is where I can add real engineering value. Things like: low acceptance rate, draft-target distribution mismatch effects, greedy vs sampling subtleties, KV cache management, batch interaction (it can slow down large-batch serving), memory bandwidth considerations, latency variance, pipeline bubbles, etc.\n\nLet me work through the details carefully to be technically precise.\n\n**Basic algorithm:**\n1. Draft model q generates \u03b3 tokens autoregressively (cheap, small model, or n-gram, or draft heads like Medusa/Eagle which are single-forward-pass multi-token proposal).\n2. Target model p runs a single forward pass over the prompt + \u03b3 drafted tokens (parallel verification). This gives logits p(x|prefix) for each position.\n3. Verification: for each drafted token, accept or reject via rejection sampling:\n   - Sample r ~ U(0,1)\n   - Accept token x_i if r < p(x_i)/q(x_i) (clamped at 1, since ratio can exceed 1)\n   - If rejected at position i: resample from the residual distribution norm(max(p - q, 0)) = (p(x) - q(x))_+ / ||(p - q)_+||_1, and stop; discard all subsequent drafted tokens.\n   - If"
+        },
+        "logprobs": null,
+        "finish_reason": "length",
+        "stop_reason": null,
+        "token_ids": null,
+        "routed_experts": null
+      }
+    ],
+    "service_tier": null,
+    "system_fingerprint": "vllm-0.1.dev20051+g487ecf187-tp2-815c380c",
+    "usage": {
+      "prompt_tokens": 31,
+      "total_tokens": 543,
+      "completion_tokens": 512,
+      "prompt_tokens_details": null
+    },
+    "prompt_logprobs": null,
+    "prompt_token_ids": null,
+    "prompt_text": null,
+    "kv_transfer_params": null,
+    "ec_transfer_params": null,
+    "metrics": null
+  }
+}

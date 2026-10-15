@@ -1,0 +1,80 @@
+{
+  "row": {
+    "name": "probe_code1",
+    "regime": "think_on_t1",
+    "completion_tokens": 512,
+    "reasoning_tokens": null,
+    "wall": 22.648,
+    "tok_s": 22.607,
+    "drafts": 191.0,
+    "acceptance_length": 2.680628272251309,
+    "accept_rate": 0.2400897531787584,
+    "per_pos": {
+      "0": 0.654,
+      "1": 0.44,
+      "2": 0.23,
+      "3": 0.152,
+      "4": 0.099,
+      "5": 0.058,
+      "6": 0.047
+    },
+    "finish": "length",
+    "has_reasoning": true,
+    "content_head": ""
+  },
+  "payload": {
+    "model": "glm-5.3-flash",
+    "messages": [
+      {
+        "role": "user",
+        "content": "Write a complete Rust implementation of a bounded work queue with cancellation and unit tests. Output only code."
+      }
+    ],
+    "max_tokens": 512,
+    "stream": false,
+    "temperature": 1.0,
+    "top_p": 0.95,
+    "chat_template_kwargs": {
+      "enable_thinking": true
+    }
+  },
+  "body": {
+    "id": "chatcmpl-87db7a522b306016",
+    "object": "chat.completion",
+    "created": 1791168306,
+    "model": "glm-5.3-flash",
+    "choices": [
+      {
+        "index": 0,
+        "message": {
+          "role": "assistant",
+          "content": null,
+          "refusal": null,
+          "annotations": null,
+          "audio": null,
+          "function_call": null,
+          "reasoning": "The user wants a complete Rust implementation of a bounded work queue with cancellation and unit tests. They want only code output.\n\nLet me think about what a good bounded work queue with cancellation looks like in Rust:\n\n1. **Bounded work queue**: A queue with a fixed capacity. Producers block (or get backpressure) when full, consumers block when empty.\n\n2. **Cancellation**: Ability to signal workers/consumers to shut down. Typically a `close()` method or a cancellation token.\n\nDesign options:\n- Use `std::sync::mpsc` with `sync_channel` - but that doesn't easily support cancellation with close semantics\n- Implement with `Mutex<VecDeque<T>>` + `Condvar` - classic approach, gives full control\n- Use crossbeam channels - external dependency, probably better to stick with std\n\nI'll implement with `std::sync::Mutex` + `Condvar` since that's the idiomatic std-only approach and demonstrates the mechanics.\n\nKey features:\n- `WorkQueue<T>` - bounded, thread-safe\n- `send(item)` - blocks if full, returns `Err` if cancelled/closed\n- `recv()` - blocks if empty, returns `None` when closed and drained\n- `close()` / cancellation - wakes all waiters, marks closed\n- Maybe a `CancellationToken`-like approach? Or just a simple close flag. Let me think.\n\n\"Cancellation\" could mean:\n1. Closing the queue so senders/receivers stop\n2. A separate cancellation token that workers check\n\nA clean design: the queue has a closed flag. `close()` sets it and notifies all. Senders get errors after close; receivers drain remaining items then get `None`. Also maybe `try_send`, `try_recv` non-blocking variants.\n\nAlso consider: should `send` be cancel-safe itself? With condvar, a waiting sender can't easily be interrupted except by close. That's fine.\n\nLet me also think about whether to make it multi-producer multi-consumer. Yes, MPMC with Arc sharing is the standard pattern.\n\nLet me write the implementation:\n\n```rust\nuse std::collections::VecDeque;\nuse std::fmt;\nuse std::sync::{Arc, Condvar, Mutex};\n\n#[derive(Debug, Clone, Copy, PartialEq, Eq)]\npub enum SendError<T> {\n    /// The queue has been cancelled (closed); the item is returned.\n    Cancelled(T),\n}\n\n#[derive(Debug, Clone, Copy, PartialEq, Eq"
+        },
+        "logprobs": null,
+        "finish_reason": "length",
+        "stop_reason": null,
+        "token_ids": null,
+        "routed_experts": null
+      }
+    ],
+    "service_tier": null,
+    "system_fingerprint": "vllm-0.1.dev20051+g487ecf187-tp2-3737b693",
+    "usage": {
+      "prompt_tokens": 32,
+      "total_tokens": 544,
+      "completion_tokens": 512,
+      "prompt_tokens_details": null
+    },
+    "prompt_logprobs": null,
+    "prompt_token_ids": null,
+    "prompt_text": null,
+    "kv_transfer_params": null,
+    "ec_transfer_params": null,
+    "metrics": null
+  }
+}

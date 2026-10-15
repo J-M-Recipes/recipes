@@ -1,0 +1,8 @@
+12:(APIServer pid=1) INFO 10-05 02:13:44 [model.py:679] Resolved architecture: DFlash2DraftModel
+14:(APIServer pid=1) INFO 10-05 02:13:44 [speculative.py:1256] Overriding draft model max model len from 1048576 to 262144
+20:(APIServer pid=1) WARNING 10-05 02:13:44 [vllm.py:1872] max_num_scheduled_tokens is set to 2048 based on the speculative decoding settings. This may lead to suboptimal performance. Consider increasing max_num_batched_tokens to accommodate the additional draft token slots, or decrease num_speculat
+39:(Worker_TP0 pid=388) WARNING 10-05 02:14:05 [vllm.py:1872] max_num_scheduled_tokens is set to 2048 based on the speculative decoding settings. This may lead to suboptimal performance. Consider increasing max_num_batched_tokens to accommodate the additional draft token slots, or decrease num_specu
+186:(Worker_TP0 pid=388) WARNING 10-05 02:27:08 [speculator.py:197] Draft model DFlash2Qwen3ForCausalLM does not support external multimodal embeddings. Embeddings from the target model will not be passed to the drafter; using text-only draft inputs instead.
+204:(EngineCore pid=316) INFO 10-05 02:29:27 [kv_cache_utils.py:1590] DFLASH2-DRAFTER-GROUP: GLM-5-Next fast path engaged with a spec-decode drafter group (drafter_layers=5, mamba_groups=4, tail_group=True)
+216:(Worker_TP0 pid=388) WARNING 10-05 02:30:46 [flashinfer.py:1308] Using FlashInfer for draft model non-causal attention; TRTLLM can still be used for target model causal attention.
+236:(EngineCore pid=316) WARNING 10-05 02:32:11 [vllm.py:1872] max_num_scheduled_tokens is set to 2048 based on the speculative decoding settings. This may lead to suboptimal performance. Consider increasing max_num_batched_tokens to accommodate the additional draft token slots, or decrease num_spec

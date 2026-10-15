@@ -1,0 +1,80 @@
+{
+  "row": {
+    "name": "probe_code0",
+    "regime": "think_on_t1",
+    "completion_tokens": 512,
+    "reasoning_tokens": null,
+    "wall": 14.99,
+    "tok_s": 34.156,
+    "drafts": 131.0,
+    "acceptance_length": 3.9083969465648853,
+    "accept_rate": 0.42093784078516905,
+    "per_pos": {
+      "0": 0.847,
+      "1": 0.634,
+      "2": 0.511,
+      "3": 0.351,
+      "4": 0.237,
+      "5": 0.214,
+      "6": 0.153
+    },
+    "finish": "length",
+    "has_reasoning": true,
+    "content_head": ""
+  },
+  "payload": {
+    "model": "glm-5.3-flash",
+    "messages": [
+      {
+        "role": "user",
+        "content": "Write a complete Python module implementing a thread-safe LRU cache with TTL expiry, type hints, docstrings, and tests. Output only code."
+      }
+    ],
+    "max_tokens": 512,
+    "stream": false,
+    "temperature": 1.0,
+    "top_p": 0.95,
+    "chat_template_kwargs": {
+      "enable_thinking": true
+    }
+  },
+  "body": {
+    "id": "chatcmpl-b1e903663566a842",
+    "object": "chat.completion",
+    "created": 1791197086,
+    "model": "glm-5.3-flash",
+    "choices": [
+      {
+        "index": 0,
+        "message": {
+          "role": "assistant",
+          "content": null,
+          "refusal": null,
+          "annotations": null,
+          "audio": null,
+          "function_call": null,
+          "reasoning": "The user wants a complete Python module with:\n1. Thread-safe LRU cache\n2. TTL (time-to-live) expiry\n3. Type hints\n4. Docstrings\n5. Tests\n\nThey said \"Output only code\" - so I should not include explanations, just the code. Let me design this carefully.\n\nDesign considerations:\n- Use `collections.OrderedDict` for LRU ordering (move_to_end for access, popitem(last=False) for eviction)\n- Use `threading.Lock` (or RLock) for thread safety\n- TTL: store expiry timestamps with each entry. On access, check if expired. Also, expired entries should be purged lazily.\n- Type hints: use `Generic[K, V]` with `TypeVar`s\n- Docstrings: comprehensive Google-style or standard docstrings\n- Tests: use `unittest` with `unittest.mock.patch` for time mocking to make TTL tests deterministic\n\nLet me write the implementation:\n\n```python\n\"\"\"Thread-safe LRU cache with per-entry TTL (time-to-live) expiry.\"\"\"\n\nfrom __future__ import annotations\n\nimport threading\nimport time\nfrom collections import OrderedDict\nfrom typing import Callable, Generic, Hashable, Optional, TypeVar, overload\n\nK = TypeVar(\"K\")\nV = TypeVar(\"V\")\n\n\nclass _CacheEntry(Generic[V]):\n    \"\"\"Internal wrapper storing a value together with its expiry timestamp.\"\"\"\n\n    __slots__ = (\"value\", \"expires_at\")\n\n    def __init__(self, value: V, expires_at: float) -> None:\n        self.value = value\n        self.expires_at = expires_at\n\n    def is_expired(self, now: float) -> bool:\n        return now >= self.expires_at\n```\n\nWait, should expiry be `now >= expires_at` or `now > expires_at`? Conventionally, an entry with ttl=0 expires immediately, so `now >= expires_at` makes sense. Let me think: expires_at = now + ttl. If ttl=0, expires_at = now, and at check time now' >= now, so it's expired. Good.\n\n```python\nclass LRUCache(Generic[K, V]):\n    \"\"\"A thread-safe LRU cache with per-entry time-to-live expiry.\n\n    ...\n    \"\"\"\n\n    def __init__(self, maxsize: int = 128, ttl: Optional[float] = None) -> None:\n        if maxsize <= 0:\n            raise ValueError(\"maxsize must be a positive integer"
+        },
+        "logprobs": null,
+        "finish_reason": "length",
+        "stop_reason": null,
+        "token_ids": null,
+        "routed_experts": null
+      }
+    ],
+    "service_tier": null,
+    "system_fingerprint": "vllm-0.1.dev20051+g487ecf187-tp2-815c380c",
+    "usage": {
+      "prompt_tokens": 41,
+      "total_tokens": 553,
+      "completion_tokens": 512,
+      "prompt_tokens_details": null
+    },
+    "prompt_logprobs": null,
+    "prompt_token_ids": null,
+    "prompt_text": null,
+    "kv_transfer_params": null,
+    "ec_transfer_params": null,
+    "metrics": null
+  }
+}

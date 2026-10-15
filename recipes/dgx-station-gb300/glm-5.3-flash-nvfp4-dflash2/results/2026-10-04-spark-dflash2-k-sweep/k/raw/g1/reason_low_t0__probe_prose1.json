@@ -1,0 +1,80 @@
+{
+  "row": {
+    "name": "probe_prose1",
+    "regime": "reason_low_t0",
+    "completion_tokens": 512,
+    "reasoning_tokens": null,
+    "wall": 22.208,
+    "tok_s": 23.055,
+    "drafts": 188.0,
+    "acceptance_length": 2.723404255319149,
+    "accept_rate": 0.24696048632218845,
+    "per_pos": {
+      "0": 0.729,
+      "1": 0.431,
+      "2": 0.25,
+      "3": 0.176,
+      "4": 0.09,
+      "5": 0.032,
+      "6": 0.021
+    },
+    "finish": "length",
+    "has_reasoning": false,
+    "content_head": "# Speculative Decoding\n\n## Core Idea\n\nAutoregressive LLM inference is memory-bandwidth bound: generating one token requi"
+  },
+  "payload": {
+    "model": "glm-5.3-flash",
+    "messages": [
+      {
+        "role": "user",
+        "content": "Explain speculative decoding to an inference engineer, including verification, acceptance length, and failure modes."
+      }
+    ],
+    "max_tokens": 512,
+    "stream": false,
+    "temperature": 0,
+    "top_p": 1,
+    "chat_template_kwargs": {
+      "reasoning_effort": "low"
+    }
+  },
+  "body": {
+    "id": "chatcmpl-bf12392c33d6c01a",
+    "object": "chat.completion",
+    "created": 1791125987,
+    "model": "glm-5.3-flash",
+    "choices": [
+      {
+        "index": 0,
+        "message": {
+          "role": "assistant",
+          "content": "# Speculative Decoding\n\n## Core Idea\n\nAutoregressive LLM inference is memory-bandwidth bound: generating one token requires reading all model weights to produce a single forward pass, regardless of batch size. Speculative decoding exploits this by using cheap \"draft\" tokens to amortize the cost of a full target-model forward pass over multiple tokens.\n\nThe key insight: **verifying k tokens in one forward pass is much cheaper than generating k tokens sequentially**, because a single pass through the target model can score all k positions in parallel (causal attention lets you compute logits for every position simultaneously).\n\n## The Algorithm\n\n1. **Draft phase**: A small draft model (e.g., a 1B model for a 70B target) autoregressively generates \u03b3 candidate tokens (\u03b3 typically 3\u20138).\n2. **Verification phase**: Run the target model once on the prompt + \u03b3 drafted tokens. This yields the target's distributions p(x) at each position in a single forward pass.\n3. **Accept/reject**: Walk through the draft tokens left to right. For each position i, accept or reject the draft token d\u1d62 based on agreement between draft and target distributions.\n\n## Verification: The Rejection Sampling Scheme\n\nThe clever part is that acceptance is done in a way that's **provably distribution-preserving** \u2014 the output is exactly what the target model would have produced (for the standard scheme):\n\nFor draft token d with draft probability q(d) and target probability p(d):\n\n- If p(d) \u2265 q(d): **accept** always.\n- Otherwise: accept with probability p(d)/q(d). If rejected, **resample** from the normalized residual distribution:\n\n  max(0, p(x) \u2212 q(x)) / \u2016max(0, p(x) \u2212 q(x))\u2016\u2081\n\nThis guarantees the marginal distribution of every emitted token equals the target model's distribution. It's rejection sampling with a residual proposal \u2014 no quality loss, ever (assuming correct implementation).\n\nA common cheaper variant: **greedy acceptance** \u2014 accept if the target's argmax equals the draft token. This matches greedy decoding exactly but loses the sampling-preserving property.\n\n**Bonus token**: When a draft token is rejected at position i, the resampled token from the residual distribution is emitted in the same verification pass \u2014 so even a \"failed\" position produces a token. If all \u03b3 drafts are accepted, you can also emit the target's next-token sample \"for free,\" giving up to \u03b3+",
+          "refusal": null,
+          "annotations": null,
+          "audio": null,
+          "function_call": null,
+          "reasoning": null
+        },
+        "logprobs": null,
+        "finish_reason": "length",
+        "stop_reason": null,
+        "token_ids": null,
+        "routed_experts": null
+      }
+    ],
+    "service_tier": null,
+    "system_fingerprint": "vllm-0.1.dev20051+g487ecf187-tp2-3737b693",
+    "usage": {
+      "prompt_tokens": 32,
+      "total_tokens": 544,
+      "completion_tokens": 512,
+      "prompt_tokens_details": null
+    },
+    "prompt_logprobs": null,
+    "prompt_token_ids": null,
+    "prompt_text": null,
+    "kv_transfer_params": null,
+    "ec_transfer_params": null,
+    "metrics": null
+  }
+}

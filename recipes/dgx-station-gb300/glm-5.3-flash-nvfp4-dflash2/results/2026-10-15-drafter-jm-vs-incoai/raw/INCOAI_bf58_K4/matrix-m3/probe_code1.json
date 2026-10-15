@@ -1,0 +1,108 @@
+{
+  "fixture": "probe_code1",
+  "concurrency": 1,
+  "started_iso": "2026-10-15T07:15:35-05:00",
+  "ended_iso": "2026-10-15T07:15:38-05:00",
+  "batch_wall_seconds": 2.42,
+  "mean_wall_seconds": 2.42,
+  "completion_tokens_total": 512,
+  "aggregate_tok_s": 211.528,
+  "per_stream_tok_s": [
+    211.593
+  ],
+  "spec_metrics_present": true,
+  "metric_before": {
+    "drafts": 10445.0,
+    "draft_tokens": 41780.0,
+    "accepted_tokens": 21126.0
+  },
+  "metric_after": {
+    "drafts": 10624.0,
+    "draft_tokens": 42496.0,
+    "accepted_tokens": 21460.0
+  },
+  "metric_delta": {
+    "drafts": 179.0,
+    "draft_tokens": 716.0,
+    "accepted_tokens": 334.0
+  },
+  "per_pos_accepted_delta": {
+    "0": 133.0,
+    "1": 101.0,
+    "2": 60.0,
+    "3": 40.0
+  },
+  "per_pos_accept_prob": {
+    "0": 0.7430167597765364,
+    "1": 0.5642458100558659,
+    "2": 0.33519553072625696,
+    "3": 0.22346368715083798
+  },
+  "metric_series_seen_before": {
+    "drafts": 1,
+    "draft_tokens": 1,
+    "accepted_tokens": 1
+  },
+  "metric_series_seen_after": {
+    "drafts": 1,
+    "draft_tokens": 1,
+    "accepted_tokens": 1
+  },
+  "metric_lines_before": [
+    "vllm:spec_decode_num_drafts_total{engine=\"0\",model_name=\"glm-5.3-flash\"} 10445.0",
+    "vllm:spec_decode_num_draft_tokens_total{engine=\"0\",model_name=\"glm-5.3-flash\"} 41780.0",
+    "vllm:spec_decode_num_accepted_tokens_total{engine=\"0\",model_name=\"glm-5.3-flash\"} 21126.0"
+  ],
+  "metric_lines_after": [
+    "vllm:spec_decode_num_drafts_total{engine=\"0\",model_name=\"glm-5.3-flash\"} 10624.0",
+    "vllm:spec_decode_num_draft_tokens_total{engine=\"0\",model_name=\"glm-5.3-flash\"} 42496.0",
+    "vllm:spec_decode_num_accepted_tokens_total{engine=\"0\",model_name=\"glm-5.3-flash\"} 21460.0"
+  ],
+  "acceptance_length": 2.8603351955307263,
+  "accept_rate": 0.4664804469273743,
+  "ar_tok_s_from_wall": null,
+  "response_kinds": [
+    "empty"
+  ],
+  "finish_reasons": [
+    "length"
+  ],
+  "errors": [],
+  "mem_during": {},
+  "requests": [
+    {
+      "http_status": 200,
+      "started_iso": "2026-10-15T07:15:35-05:00",
+      "wall_seconds": 2.42,
+      "prompt_tokens": 33,
+      "completion_tokens": 512,
+      "reasoning_tokens": 512,
+      "tok_s": 211.593,
+      "finish_reason": "length",
+      "response_kind": "empty",
+      "content": null,
+      "reasoning": "```rust\n//! A bounded work queue with cancellation support.\n//!\n//! `BoundedWorkQueue` allows producers to submit work items and consumers to\n//! poll them, with a hard cap on the number of items that may be buffered.\n//! Cancellation is cooperative: closing the queue prevents new submissions,\n//! and dropping a `CancelToken` wakes all blocked producers/consumers so they\n//! can observe the closed state and unwind.\n\nuse std::collections::VecDeque;\nuse std::fmt;\nuse std::sync::{Arc, Condvar, Mutex};\n\n/// Error returned when submitting to a closed queue.\n#[derive(Debug, PartialEq, Eq, Clone, Copy)]\npub struct Closed;\n\nimpl fmt::Display for Closed {\n    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {\n        write!(f, \"queue is closed\")\n    }\n}\n\nimpl std::error::Error for Closed {}\n\n/// A bounded work queue with cooperative cancellation.\npub struct BoundedWorkQueue<T> {\n    inner: Arc<Inner<T>>,\n}\n\nstruct Inner<T> {\n    state: Mutex<State<T>>,\n    space_available: Condvar,\n    item_available: Condvar,\n}\n\nstruct State<T> {\n    queue: VecDeque<T>,\n    capacity: usize,\n    closed: bool,\n    /// Number of handles (clones) that still exist.\n    handles: usize,\n}\n\nimpl<T> BoundedWorkQueue<T> {\n    /// Creates a queue that can buffer at most `capacity` items.\n    ///\n    /// # Panics\n    /// Panics if `capacity == 0`.\n    pub fn new(capacity: std::num::NonZeroUsize) -> takes capacity as NonZeroUsize {\n        let capacity = capacity.get();\n        assert!(capacity > 0);\n        BoundedWorkQueue {\n            inner: Arc::new(Inner {\n                state: Mutex::new(State {\n                    queue: VecDeque::new(),\n                    capacity,\n                    closed: false\n                    closed: false,\n                    handles: 1,\n                }),\n                space_available: Condvar::new(),\n                item_available: Propagate,\n            }),\n        }\n    }\n\n    /// Closes the queue. Future sends fail immediately; receivers may still\n    /// drain remaining items.\n    pub fn close(&self) {\n        let mut state = self.inner.state.lock().unwrap();\n        state.closed = true;\n        self.inner.space_available.notify_all();\n        self.inner.item_available.notify_all();\n    }\n\n    /// Sends an",
+      "tool_calls": null,
+      "error": null
+    }
+  ],
+  "request_payload_template": {
+    "model": "glm-5.3-flash",
+    "messages": [
+      {
+        "role": "user",
+        "content": "Write a complete Rust implementation of a bounded work queue with cancellation and unit tests. Output only code."
+      }
+    ],
+    "temperature": 0,
+    "top_p": 1,
+    "max_tokens": 512,
+    "stream": false,
+    "chat_template_kwargs": {
+      "enable_thinking": false
+    }
+  },
+  "name": "probe_code1",
+  "rep": 1,
+  "mode": "dflash"
+}

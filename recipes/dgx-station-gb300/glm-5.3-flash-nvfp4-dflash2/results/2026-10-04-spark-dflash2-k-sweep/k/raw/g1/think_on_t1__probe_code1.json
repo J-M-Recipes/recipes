@@ -1,0 +1,80 @@
+{
+  "row": {
+    "name": "probe_code1",
+    "regime": "think_on_t1",
+    "completion_tokens": 512,
+    "reasoning_tokens": null,
+    "wall": 21.234,
+    "tok_s": 24.113,
+    "drafts": 178.0,
+    "acceptance_length": 2.8764044943820224,
+    "accept_rate": 0.2680577849117175,
+    "per_pos": {
+      "0": 0.697,
+      "1": 0.438,
+      "2": 0.298,
+      "3": 0.202,
+      "4": 0.112,
+      "5": 0.073,
+      "6": 0.056
+    },
+    "finish": "length",
+    "has_reasoning": true,
+    "content_head": ""
+  },
+  "payload": {
+    "model": "glm-5.3-flash",
+    "messages": [
+      {
+        "role": "user",
+        "content": "Write a complete Rust implementation of a bounded work queue with cancellation and unit tests. Output only code."
+      }
+    ],
+    "max_tokens": 512,
+    "stream": false,
+    "temperature": 1.0,
+    "top_p": 0.95,
+    "chat_template_kwargs": {
+      "enable_thinking": true
+    }
+  },
+  "body": {
+    "id": "chatcmpl-ab3b9e8e449f3ae2",
+    "object": "chat.completion",
+    "created": 1791126238,
+    "model": "glm-5.3-flash",
+    "choices": [
+      {
+        "index": 0,
+        "message": {
+          "role": "assistant",
+          "content": null,
+          "refusal": null,
+          "annotations": null,
+          "audio": null,
+          "function_call": null,
+          "reasoning": "The user wants a complete Rust implementation of a bounded work queue with cancellation and unit tests. They want only code as output.\n\nLet me design this:\n\n1. **Bounded work queue**: A queue with a maximum capacity. Producers block (or fail) when full, consumers block when empty.\n2. **Cancellation**: Ability to cancel/shutdown the queue so workers can stop gracefully.\n3. **Unit tests**: Test various functionality.\n\nDesign decisions:\n- Use `std::sync` primitives (Mutex, Condvar) for a blocking bounded queue \u2014 this is the classic approach without external dependencies.\n- Alternatively, use channels with async. But a classic MPMC bounded queue with condvars is clean and self-contained.\n- Should support:\n  - `new(capacity)` \u2014 create queue with bounded capacity\n  - `send(item)` \u2014 blocks if full; returns error if cancelled/closed\n  - `try_send(item)` \u2014 non-blocking; returns error if full or cancelled\n  - `recv()` \u2014 blocks if empty; returns `None` (or error) when closed and drained\n  - `cancel()` \u2014 wakes all waiters, prevents new sends; optionally drops pending items or lets them drain\n  - `len()`, `is_empty()`, `capacity()`, `is_cancelled()`\n\nLet me think about cancellation semantics. Two common designs:\n1. **Close (graceful)**: no new sends allowed, but receivers can drain remaining items, then `recv` returns `None`.\n2. **Cancel (abrupt)**: immediately wakes all waiters; pending items may be dropped or drained.\n\nI could implement both: `close()` for graceful shutdown and `cancel()` for immediate. Or just cancel with a \"drain\" flag. Let me implement:\n- `send` / `try_send` / `send_timeout` maybe.\n- `recv` / `try_recv`.\n- `close()` \u2014 graceful: senders get errors, receivers drain then get `None`.\n- `cancel()` \u2014 abrupt: wakes everyone, receivers get `Cancelled` immediately (or drain?). Let me make cancel mean: drop pending items and wake everyone with `Cancelled` error. Actually to keep it simpler and testable, maybe cancel means: the queue enters cancelled state, `send` fails immediately, `recv` wakes up all waiting receivers with `RecvError::Cancelled`, and pending items are... hmm.\n\nLet me think about what's most useful. A \"cancellation\" for a work queue typically means"
+        },
+        "logprobs": null,
+        "finish_reason": "length",
+        "stop_reason": null,
+        "token_ids": null,
+        "routed_experts": null
+      }
+    ],
+    "service_tier": null,
+    "system_fingerprint": "vllm-0.1.dev20051+g487ecf187-tp2-3737b693",
+    "usage": {
+      "prompt_tokens": 32,
+      "total_tokens": 544,
+      "completion_tokens": 512,
+      "prompt_tokens_details": null
+    },
+    "prompt_logprobs": null,
+    "prompt_token_ids": null,
+    "prompt_text": null,
+    "kv_transfer_params": null,
+    "ec_transfer_params": null,
+    "metrics": null
+  }
+}

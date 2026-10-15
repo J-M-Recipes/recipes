@@ -1,0 +1,114 @@
+{
+  "fixture": "probe_prose1",
+  "concurrency": 1,
+  "started_iso": "2026-10-15T04:58:27-05:00",
+  "ended_iso": "2026-10-15T04:58:31-05:00",
+  "batch_wall_seconds": 3.665,
+  "mean_wall_seconds": 3.664,
+  "completion_tokens_total": 512,
+  "aggregate_tok_s": 139.713,
+  "per_stream_tok_s": [
+    139.742
+  ],
+  "spec_metrics_present": true,
+  "metric_before": {
+    "drafts": 3284.0,
+    "draft_tokens": 22988.0,
+    "accepted_tokens": 5849.0
+  },
+  "metric_after": {
+    "drafts": 3521.0,
+    "draft_tokens": 24647.0,
+    "accepted_tokens": 6124.0
+  },
+  "metric_delta": {
+    "drafts": 237.0,
+    "draft_tokens": 1659.0,
+    "accepted_tokens": 275.0
+  },
+  "per_pos_accepted_delta": {
+    "0": 152.0,
+    "1": 69.0,
+    "2": 33.0,
+    "3": 11.0,
+    "4": 6.0,
+    "5": 4.0,
+    "6": 0.0
+  },
+  "per_pos_accept_prob": {
+    "0": 0.6413502109704642,
+    "1": 0.2911392405063291,
+    "2": 0.13924050632911392,
+    "3": 0.046413502109704644,
+    "4": 0.02531645569620253,
+    "5": 0.016877637130801686,
+    "6": 0.0
+  },
+  "metric_series_seen_before": {
+    "drafts": 1,
+    "draft_tokens": 1,
+    "accepted_tokens": 1
+  },
+  "metric_series_seen_after": {
+    "drafts": 1,
+    "draft_tokens": 1,
+    "accepted_tokens": 1
+  },
+  "metric_lines_before": [
+    "vllm:spec_decode_num_drafts_total{engine=\"0\",model_name=\"glm-5.3-flash\"} 3284.0",
+    "vllm:spec_decode_num_draft_tokens_total{engine=\"0\",model_name=\"glm-5.3-flash\"} 22988.0",
+    "vllm:spec_decode_num_accepted_tokens_total{engine=\"0\",model_name=\"glm-5.3-flash\"} 5849.0"
+  ],
+  "metric_lines_after": [
+    "vllm:spec_decode_num_drafts_total{engine=\"0\",model_name=\"glm-5.3-flash\"} 3521.0",
+    "vllm:spec_decode_num_draft_tokens_total{engine=\"0\",model_name=\"glm-5.3-flash\"} 24647.0",
+    "vllm:spec_decode_num_accepted_tokens_total{engine=\"0\",model_name=\"glm-5.3-flash\"} 6124.0"
+  ],
+  "acceptance_length": 2.160337552742616,
+  "accept_rate": 0.16576250753465943,
+  "ar_tok_s_from_wall": null,
+  "response_kinds": [
+    "empty"
+  ],
+  "finish_reasons": [
+    "length"
+  ],
+  "errors": [],
+  "mem_during": {},
+  "requests": [
+    {
+      "http_status": 200,
+      "started_iso": "2026-10-15T04:58:27-05:00",
+      "wall_seconds": 3.664,
+      "prompt_tokens": 32,
+      "completion_tokens": 512,
+      "reasoning_tokens": 512,
+      "tok_s": 139.742,
+      "finish_reason": "length",
+      "response_kind": "empty",
+      "content": null,
+      "reasoning": "# Speculative Decoding: A Practical Guide\n\n## The Core Idea\n\nAutoregressive LLM inference is memory-bandwidth bound: generating one token requires streaming all model weights from HBM, but the actual FLOPs are trivial relative to what the hardware could do. Speculative decoding exploits this by **drafting multiple tokens with a cheap model, then verifying them all in parallel with the expensive model**. If the draft is good, you get multiple tokens for roughly the price of one forward pass.\n\nThe critical property: with the right acceptance rule, the output distribution is **provably identical to sampling from the target model alone**. It's a lossless speedup (modulo implementation details).\n\n## The Algorithm\n\n1. **Draft phase**: The draft model (e.g., a 1B model paired with a 70B target) autoregressively generates \u03b3 tokens (\u03b3 = 5\u201310 typically).\n2. **Verification phase**: Run the target model once on the prompt + all \u03b3 draft tokens. Because of causal attention, this single forward pass yields the target's distributions at every draft position simultaneously.\n3. **Accept/reject**: Walk through draft tokens left to right. For each position, accept or reject based on agreement between draft and target distributions.\n4. **Resample on rejection**: If token *i* is rejected, resample from a corrected distribution and **discard everything after it**. The target's forward pass still gives you one \"free\" token beyond the last accepted one (the bonus token), since its logits at that position are already computed.\n\n## The Acceptance Rule (and why it's exact)\n\nFor draft token x with draft distribution q and target distribution p, the standard rule (Leviathan et al. 2023):\n\n- **Accept** if u ~ Uniform(0,1) and u \u2264 p(x)/q(x)\n- **Reject** otherwise, and resample from the residual: `norm(max(0, p \u2212 q))`\n\nWhy this is lossless: the acceptance probability is min(1, p(x)/q(x)), and the residual distribution handles the rejection case. Working through the algebra, the probability of emitting token x becomes:\n\n```\nq(x)\u00b7min(1, p(x)/q(x)) + max(0, p(x) \u2212 q(x)) = p(x)\n```\n\nexactly the target distribution. This is rejection sampling with a cleverly chosen proposal. Note the residual `max(0, p\u2212q)` is",
+      "tool_calls": null,
+      "error": null
+    }
+  ],
+  "request_payload_template": {
+    "model": "glm-5.3-flash",
+    "messages": [
+      {
+        "role": "user",
+        "content": "Explain speculative decoding to an inference engineer, including verification, acceptance length, and failure modes."
+      }
+    ],
+    "temperature": 0,
+    "top_p": 1,
+    "max_tokens": 512,
+    "stream": false,
+    "chat_template_kwargs": {
+      "enable_thinking": false
+    }
+  },
+  "name": "probe_prose1",
+  "rep": 1,
+  "mode": "dflash"
+}

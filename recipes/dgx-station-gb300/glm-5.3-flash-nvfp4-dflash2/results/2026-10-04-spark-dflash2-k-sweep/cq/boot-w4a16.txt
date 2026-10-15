@@ -1,0 +1,19 @@
+12:(APIServer pid=1) INFO 10-05 10:23:53 [model.py:679] Resolved architecture: DFlash2DraftModel
+14:(APIServer pid=1) INFO 10-05 10:23:53 [speculative.py:1256] Overriding draft model max model len from 1048576 to 262144
+19:(APIServer pid=1) WARNING 10-05 10:23:53 [vllm.py:1872] max_num_scheduled_tokens is set to 2048 based on the speculative decoding settings. This may lead to suboptimal performance. Consider increasing max_num_batched_tokens to accommodate the additional draft token slots, or decrease num_speculat
+21:(APIServer pid=1) INFO 10-05 10:23:53 [compilation.py:329] Enabled custom fusions: norm_quant, act_quant
+37:(Worker_TP0 pid=389) WARNING 10-05 10:24:13 [vllm.py:1872] max_num_scheduled_tokens is set to 2048 based on the speculative decoding settings. This may lead to suboptimal performance. Consider increasing max_num_batched_tokens to accommodate the additional draft token slots, or decrease num_specu
+39:(Worker_TP0 pid=389) INFO 10-05 10:24:13 [compilation.py:329] Enabled custom fusions: norm_quant, act_quant
+45:(Worker_TP0 pid=389) INFO 10-05 10:24:13 [compressed_tensors_moe.py:132] Using CompressedTensorsWNA16MoEMethod
+46:(Worker_TP0 pid=389) INFO 10-05 10:24:13 [int_wna16.py:297] Using 'MARLIN' WNA16 MoE backend.
+64:(Worker_TP0 pid=389) INFO 10-05 10:27:37 [int_wna16.py:408] Using MoEPrepareAndFinalizeNoDPEPModular
+65:(Worker_TP0 pid=389) INFO 10-05 10:27:37 [int_wna16.py:409] Using MarlinExperts
+75:(Worker_TP0 pid=389) WARNING 10-05 10:27:50 [speculator.py:197] Draft model DFlash2Qwen3ForCausalLM does not support external multimodal embeddings. Embeddings from the target model will not be passed to the drafter; using text-only draft inputs instead.
+90:(EngineCore pid=317) INFO 10-05 10:29:03 [shm_broadcast.py:801] No available shared memory broadcast block found in 60 seconds. This typically happens when some processes are hanging or doing some time-consuming work (e.g. compilation, weight/kv cache quantization).
+91:(EngineCore pid=317) INFO 10-05 10:30:03 [shm_broadcast.py:801] No available shared memory broadcast block found in 60 seconds. This typically happens when some processes are hanging or doing some time-consuming work (e.g. compilation, weight/kv cache quantization).
+93:(EngineCore pid=317) INFO 10-05 10:30:05 [kv_cache_utils.py:1590] DFLASH2-DRAFTER-GROUP: GLM-5-Next fast path engaged with a spec-decode drafter group (drafter_layers=5, mamba_groups=4, tail_group=True)
+104:(EngineCore pid=317) INFO 10-05 10:31:06 [shm_broadcast.py:801] No available shared memory broadcast block found in 60 seconds. This typically happens when some processes are hanging or doing some time-consuming work (e.g. compilation, weight/kv cache quantization).
+105:(Worker_TP0 pid=389) WARNING 10-05 10:31:23 [flashinfer.py:1308] Using FlashInfer for draft model non-causal attention; TRTLLM can still be used for target model causal attention.
+110:(EngineCore pid=317) INFO 10-05 10:32:06 [shm_broadcast.py:801] No available shared memory broadcast block found in 60 seconds. This typically happens when some processes are hanging or doing some time-consuming work (e.g. compilation, weight/kv cache quantization).
+125:(EngineCore pid=317) WARNING 10-05 10:32:47 [vllm.py:1872] max_num_scheduled_tokens is set to 2048 based on the speculative decoding settings. This may lead to suboptimal performance. Consider increasing max_num_batched_tokens to accommodate the additional draft token slots, or decrease num_spec
+127:(EngineCore pid=317) INFO 10-05 10:32:47 [compilation.py:329] Enabled custom fusions: norm_quant, act_quant

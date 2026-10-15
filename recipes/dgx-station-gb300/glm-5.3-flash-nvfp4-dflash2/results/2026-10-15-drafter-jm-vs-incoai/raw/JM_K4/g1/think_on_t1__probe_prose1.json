@@ -1,0 +1,80 @@
+{
+  "row": {
+    "name": "probe_prose1",
+    "regime": "think_on_t1",
+    "completion_tokens": 512,
+    "reasoning_tokens": 512,
+    "wall": 3.047,
+    "tok_s": 168.018,
+    "drafts": 231.0,
+    "acceptance_length": 2.2164502164502164,
+    "accept_rate": 0.30303030303030304,
+    "per_pos": {
+      "0": 0.628,
+      "1": 0.359,
+      "2": 0.16,
+      "3": 0.065
+    },
+    "finish": "length",
+    "has_reasoning": true,
+    "content_head": ""
+  },
+  "payload": {
+    "model": "glm-5.3-flash",
+    "messages": [
+      {
+        "role": "user",
+        "content": "Explain speculative decoding to an inference engineer, including verification, acceptance length, and failure modes."
+      }
+    ],
+    "max_tokens": 512,
+    "stream": false,
+    "temperature": 1.0,
+    "top_p": 0.95,
+    "chat_template_kwargs": {
+      "enable_thinking": true
+    }
+  },
+  "body": {
+    "id": "chatcmpl-8586cf1f4fe7e6a9",
+    "object": "chat.completion",
+    "created": 1792054761,
+    "model": "glm-5.3-flash",
+    "choices": [
+      {
+        "index": 0,
+        "message": {
+          "role": "assistant",
+          "content": null,
+          "refusal": null,
+          "annotations": null,
+          "audio": null,
+          "function_call": null,
+          "reasoning": "The user is asking me to explain speculative decoding to an inference engineer. This is a technical topic in LLM inference optimization. The person is clearly technical \u2014 they're an inference engineer, they already know the vocabulary (verification, acceptance length, failure modes), so I should pitch this at a peer-level technical discussion, not a tutorial.\n\nLet me think through what I actually know about speculative decoding deeply:\n\n## Core Idea\n\nStandard autoregressive LLM decoding generates one token per forward pass of the target model. For a large model (say 70B), each forward pass is expensive \u2014 memory-bandwidth bound during decode phase (batch size 1, weights must be read from HBM for each token). So decode is bottlenecked by memory bandwidth, not FLOPs. This is the key insight that makes speculative decoding valuable: the target model has spare FLOPs during decode; it's memory-bound.\n\nSpeculative decoding exploits this: use a cheap draft model (or other draft mechanism) to propose K tokens autoregressively, then verify all K tokens in a single forward pass of the target model (using the causal mask / KV-cache trick \u2014 a single forward pass over K positions gives you the target model's distribution at each position in parallel).\n\nKey theoretical guarantee: with the standard rejection sampling scheme (Leviathan et al. 2023, Chen et al. 2023), the output distribution is *exactly* the target model's distribution. This is not an approximation method \u2014 it's exact sampling from the target, done in fewer forward passes. This is critical and worth emphasizing.\n\n## The algorithm in detail\n\nSetup:\n- Target model M_p with distribution p(x | prefix)\n- Draft model M_q with distribution q(x | prefix)\n- Draft model is much smaller (e.g., 1B drafting for 70B), fast per token\n\nLoop:\n1. Draft phase: draft model autoregressively generates \u03b3 (gamma) tokens, x_1..x_\u03b3, using greedy or sampling from q. This costs \u03b3 small forward passes.\n2. Verification phase: run the target model once on the prefix + all \u03b3 draft tokens. This gives p(x | prefix + x_1..x_{i-1}) for each i \u2014 i.e., the target's distribution at each draft position, all in one pass. Because of the causal attention structure, position i's logits only depend on tokens 1..i-1 (plus itself), so you get all of these in parallel."
+        },
+        "logprobs": null,
+        "finish_reason": "length",
+        "stop_reason": null,
+        "token_ids": null,
+        "routed_experts": null
+      }
+    ],
+    "service_tier": null,
+    "system_fingerprint": "vllm-0.30.1rc1.dev493+gac9126e58-ac48cfcd",
+    "usage": {
+      "prompt_tokens": 31,
+      "total_tokens": 543,
+      "completion_tokens": 512,
+      "prompt_tokens_details": null,
+      "completion_tokens_details": {
+        "reasoning_tokens": 512
+      }
+    },
+    "prompt_logprobs": null,
+    "prompt_token_ids": null,
+    "prompt_text": null,
+    "kv_transfer_params": null,
+    "ec_transfer_params": null,
+    "metrics": null
+  }
+}

@@ -1,0 +1,114 @@
+{
+  "fixture": "probe_code1",
+  "concurrency": 1,
+  "started_iso": "2026-10-15T04:58:36-05:00",
+  "ended_iso": "2026-10-15T04:58:39-05:00",
+  "batch_wall_seconds": 3.185,
+  "mean_wall_seconds": 3.184,
+  "completion_tokens_total": 512,
+  "aggregate_tok_s": 160.768,
+  "per_stream_tok_s": [
+    160.803
+  ],
+  "spec_metrics_present": true,
+  "metric_before": {
+    "drafts": 3710.0,
+    "draft_tokens": 25970.0,
+    "accepted_tokens": 6447.0
+  },
+  "metric_after": {
+    "drafts": 3913.0,
+    "draft_tokens": 27391.0,
+    "accepted_tokens": 6759.0
+  },
+  "metric_delta": {
+    "drafts": 203.0,
+    "draft_tokens": 1421.0,
+    "accepted_tokens": 312.0
+  },
+  "per_pos_accepted_delta": {
+    "0": 141.0,
+    "1": 83.0,
+    "2": 41.0,
+    "3": 22.0,
+    "4": 16.0,
+    "5": 6.0,
+    "6": 3.0
+  },
+  "per_pos_accept_prob": {
+    "0": 0.6945812807881774,
+    "1": 0.4088669950738916,
+    "2": 0.2019704433497537,
+    "3": 0.10837438423645321,
+    "4": 0.07881773399014778,
+    "5": 0.029556650246305417,
+    "6": 0.014778325123152709
+  },
+  "metric_series_seen_before": {
+    "drafts": 1,
+    "draft_tokens": 1,
+    "accepted_tokens": 1
+  },
+  "metric_series_seen_after": {
+    "drafts": 1,
+    "draft_tokens": 1,
+    "accepted_tokens": 1
+  },
+  "metric_lines_before": [
+    "vllm:spec_decode_num_drafts_total{engine=\"0\",model_name=\"glm-5.3-flash\"} 3710.0",
+    "vllm:spec_decode_num_draft_tokens_total{engine=\"0\",model_name=\"glm-5.3-flash\"} 25970.0",
+    "vllm:spec_decode_num_accepted_tokens_total{engine=\"0\",model_name=\"glm-5.3-flash\"} 6447.0"
+  ],
+  "metric_lines_after": [
+    "vllm:spec_decode_num_drafts_total{engine=\"0\",model_name=\"glm-5.3-flash\"} 3913.0",
+    "vllm:spec_decode_num_draft_tokens_total{engine=\"0\",model_name=\"glm-5.3-flash\"} 27391.0",
+    "vllm:spec_decode_num_accepted_tokens_total{engine=\"0\",model_name=\"glm-5.3-flash\"} 6759.0"
+  ],
+  "acceptance_length": 2.522167487684729,
+  "accept_rate": 0.21956368754398312,
+  "ar_tok_s_from_wall": null,
+  "response_kinds": [
+    "empty"
+  ],
+  "finish_reasons": [
+    "length"
+  ],
+  "errors": [],
+  "mem_during": {},
+  "requests": [
+    {
+      "http_status": 200,
+      "started_iso": "2026-10-15T04:58:36-05:00",
+      "wall_seconds": 3.184,
+      "prompt_tokens": 33,
+      "completion_tokens": 512,
+      "reasoning_tokens": 512,
+      "tok_s": 160.803,
+      "finish_reason": "length",
+      "response_kind": "empty",
+      "content": null,
+      "reasoning": "```rust\n//! A bounded work queue with cancellation support.\n//!\n//! The queue has a fixed capacity. Producers submit work items; consumers\n//! (workers) pull items and execute them. Dropping the queue's handles\n//! cancels outstanding work, and individual tasks can be cancelled via\n//! a `CancellationToken`-like handle returned at submission time.\n\nuse std::collections::VecDeque;\nuse std::fmt;\nuse std::sync::atomic::{AtomicUsize, Ordering};\nuse std::sync::{Arc, Condvar, Mutex};\n\n// ---------------------------------------------------------------------------\n// Cancellation token\n// ---------------------------------------------------------------------------\n\n/// A handle used to cancel a submitted task before it starts (or to signal\n/// a running task that it should stop).\n#[derive(Clone)]\npub struct CancellationToken {\n    inner: Arc<CancelInner>,\n}\n\nstruct CancelInner {\n    state: Mutex<bool>,\n    condvar: Condvar,\n}\n\nimpl CancellationToken {\n    fn new() -> Self {\n        CancellationToken {\n            inner: Arc::new(CancelInner {\n                state: Mutex::new(false),\n                condvar: Condvar::new(),\n            },\n        }\n    }\n\n    /// Returns true if cancellation has been requested.\n    pub fn is_cancelled(&self) -> bool {\n        *self.inner.state.lock().unwrap()\n    }\n\n    /// Request cancellation. Returns true if this call was the one that\n    /// flipped the token from uncancelled to cancelled.\n    pub fn cancel(&self) -> bool {\n        let mut state = self.inner.state.lock().unwrap();\n        let first = !*state;\n        *state = true;\n        self.inner.condvar.notify_all();\n        first\n    }\n\n    /// Block until cancelled or the timeout elapses. Returns true if the\n    /// token was cancelled.\n    pub fn wait_timeout(&self, timeout: std::time::Duration) -> bool {\n        let mut state = self.inner.state.lock().unwrap();\n        let deadline = std::time::Instant::now() + timeout;\n        while !*state {\n            let now = std::time::Instant::now();\n            if now >= deadline {\n                return false;\n            }\n            let (guard, res) = self\n                .inner\n                .condvar\n                .wait_timeout(state, deadline - now)\n                .unwrap();\n            state = guard;\n            let _ = res;\n        }\n        true\n    }\n}\n\nimpl fmt::Debug for CancellationToken {\n    fn answer(&self, f: &mut fmt::Formatter<'_>) -> bool",
+      "tool_calls": null,
+      "error": null
+    }
+  ],
+  "request_payload_template": {
+    "model": "glm-5.3-flash",
+    "messages": [
+      {
+        "role": "user",
+        "content": "Write a complete Rust implementation of a bounded work queue with cancellation and unit tests. Output only code."
+      }
+    ],
+    "temperature": 0,
+    "top_p": 1,
+    "max_tokens": 512,
+    "stream": false,
+    "chat_template_kwargs": {
+      "enable_thinking": false
+    }
+  },
+  "name": "probe_code1",
+  "rep": 1,
+  "mode": "dflash"
+}

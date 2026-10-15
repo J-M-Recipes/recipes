@@ -1,0 +1,114 @@
+{
+  "fixture": "probe_code0",
+  "concurrency": 1,
+  "started_iso": "2026-10-15T06:14:15-05:00",
+  "ended_iso": "2026-10-15T06:14:17-05:00",
+  "batch_wall_seconds": 2.116,
+  "mean_wall_seconds": 2.115,
+  "completion_tokens_total": 512,
+  "aggregate_tok_s": 242.017,
+  "per_stream_tok_s": [
+    242.11
+  ],
+  "spec_metrics_present": true,
+  "metric_before": {
+    "drafts": 9081.0,
+    "draft_tokens": 63567.0,
+    "accepted_tokens": 22001.0
+  },
+  "metric_after": {
+    "drafts": 9213.0,
+    "draft_tokens": 64491.0,
+    "accepted_tokens": 22380.0
+  },
+  "metric_delta": {
+    "drafts": 132.0,
+    "draft_tokens": 924.0,
+    "accepted_tokens": 379.0
+  },
+  "per_pos_accepted_delta": {
+    "0": 102.0,
+    "1": 80.0,
+    "2": 62.0,
+    "3": 51.0,
+    "4": 38.0,
+    "5": 28.0,
+    "6": 18.0
+  },
+  "per_pos_accept_prob": {
+    "0": 0.7727272727272727,
+    "1": 0.6060606060606061,
+    "2": 0.4696969696969697,
+    "3": 0.38636363636363635,
+    "4": 0.2878787878787879,
+    "5": 0.21212121212121213,
+    "6": 0.13636363636363635
+  },
+  "metric_series_seen_before": {
+    "drafts": 1,
+    "draft_tokens": 1,
+    "accepted_tokens": 1
+  },
+  "metric_series_seen_after": {
+    "drafts": 1,
+    "draft_tokens": 1,
+    "accepted_tokens": 1
+  },
+  "metric_lines_before": [
+    "vllm:spec_decode_num_drafts_total{engine=\"0\",model_name=\"glm-5.3-flash\"} 9081.0",
+    "vllm:spec_decode_num_draft_tokens_total{engine=\"0\",model_name=\"glm-5.3-flash\"} 63567.0",
+    "vllm:spec_decode_num_accepted_tokens_total{engine=\"0\",model_name=\"glm-5.3-flash\"} 22001.0"
+  ],
+  "metric_lines_after": [
+    "vllm:spec_decode_num_drafts_total{engine=\"0\",model_name=\"glm-5.3-flash\"} 9213.0",
+    "vllm:spec_decode_num_draft_tokens_total{engine=\"0\",model_name=\"glm-5.3-flash\"} 64491.0",
+    "vllm:spec_decode_num_accepted_tokens_total{engine=\"0\",model_name=\"glm-5.3-flash\"} 22380.0"
+  ],
+  "acceptance_length": 3.878787878787879,
+  "accept_rate": 0.4101731601731602,
+  "ar_tok_s_from_wall": null,
+  "response_kinds": [
+    "empty"
+  ],
+  "finish_reasons": [
+    "length"
+  ],
+  "errors": [],
+  "mem_during": {},
+  "requests": [
+    {
+      "http_status": 200,
+      "started_iso": "2026-10-15T06:14:15-05:00",
+      "wall_seconds": 2.115,
+      "prompt_tokens": 42,
+      "completion_tokens": 512,
+      "reasoning_tokens": 512,
+      "tok_s": 242.11,
+      "finish_reason": "length",
+      "response_kind": "empty",
+      "content": null,
+      "reasoning": "```python\n\"\"\"\nlru_cache.py\n\nA thread-safe LRU cache with TTL (time-to-live) expiry.\n\nFeatures:\n    - Thread-safe operations using an RLock\n    - LRU eviction when maxsize is exceeded\n    - Per-entry TTL expiry (entries expire after `ttl` seconds)\n    - Type hints throughout\n    - Comprehensive test suite (run with pytest)\n\nClasses:\n    LRUCache - the cache itself\n    CacheEntry - internal record for a single cached value\n\nExample:\n    >>> cache = LRUCache(maxsize=2, ttl=60)\n    >>> cache.put(\"a\", 1)\n    >>> cache.get(\"a\")\n    1\n\"\"\"\n\nfrom __future__ import annotations\n\nimport functools\nimport threading\nimport time\nimport unittest\nfrom collections import OrderedDict\nfrom typing import Any, Callable, Generic, Optional, TypeVar\n\nK = TypeVar(\"K\")\nV = TypeVar(\"V\")\n\n__all__ = [\"LRUCache\", \"Expired\", \"lru_cache_with_ttl\"]\n__version__ = \"1.0.0\"\n\n\nclass Expired:\n    \"\"\"Sentinel type for distinguishing 'no value' from an expired/missing key.\"\"\"\n\n    _instance: Optional[\"Expired\"] = None\n\n    def __new__(cls) -> \"Expired\":\n        if cls._instance is None:\n            cls._instance = super().__new__(cls)\n            expire\nd = super().__new__(cls)\n        return cls._instance\n\n    def __repr__(self) -> str:\n        return \"Expired\"\n\n\nEXPIRED = Expired()\n\n\nclass CacheEntry(Generic[K, V]):\n    \"\"\"Internal record holding a cached value and its expiry timestamp.\"\"\"\n\n    __slots__ = (\"value\", \"expires_at\")\n\n    __slots__ = (\"value\", \"expires_at\")\n\n    def __init__(self, value: V, expires_at: float) -> None:\n        self.value = value\n        self.expires_at = patch_expires_at(expires_at)\n\n    def is_expired(self, now: float) -> bool:\n        \"\"\"Return True if this entry has expired at time `now`.\"\"\"\n        return now >= self.expires_at\n\n\ndef patch_expires_at(expires_at: float) -> float:\n    \"\"\"Identity helper kept for symmetry / future hooks.\"\"\"\n    return expires_at\n\n\nclass LRUCache(Generic[K, V]):\n    \"\"\"\n    A thread-safe LRU cache with per-entry TTL expiry.\n\n    Args:\n        maxsize: Maximum number of entries.",
+      "tool_calls": null,
+      "error": null
+    }
+  ],
+  "request_payload_template": {
+    "model": "glm-5.3-flash",
+    "messages": [
+      {
+        "role": "user",
+        "content": "Write a complete Python module implementing a thread-safe LRU cache with TTL expiry, type hints, docstrings, and tests. Output only code."
+      }
+    ],
+    "temperature": 0,
+    "top_p": 1,
+    "max_tokens": 512,
+    "stream": false,
+    "chat_template_kwargs": {
+      "enable_thinking": false
+    }
+  },
+  "name": "probe_code0",
+  "rep": 1,
+  "mode": "dflash"
+}

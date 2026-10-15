@@ -1,0 +1,90 @@
+{
+  "fixture": "probe_code1",
+  "concurrency": 1,
+  "started_iso": "2026-10-04T04:11:17-05:00",
+  "ended_iso": "2026-10-04T04:11:51-05:00",
+  "batch_wall_seconds": 33.584,
+  "mean_wall_seconds": 33.583,
+  "completion_tokens_total": 512,
+  "aggregate_tok_s": 15.245,
+  "per_stream_tok_s": [
+    15.246
+  ],
+  "spec_metrics_present": false,
+  "metric_before": {
+    "drafts": 0.0,
+    "draft_tokens": 0.0,
+    "accepted_tokens": 0.0
+  },
+  "metric_after": {
+    "drafts": 0.0,
+    "draft_tokens": 0.0,
+    "accepted_tokens": 0.0
+  },
+  "metric_delta": {
+    "drafts": null,
+    "draft_tokens": null,
+    "accepted_tokens": null
+  },
+  "per_pos_accepted_delta": {},
+  "per_pos_accept_prob": null,
+  "metric_series_seen_before": {
+    "drafts": 0,
+    "draft_tokens": 0,
+    "accepted_tokens": 0
+  },
+  "metric_series_seen_after": {
+    "drafts": 0,
+    "draft_tokens": 0,
+    "accepted_tokens": 0
+  },
+  "metric_lines_before": [],
+  "metric_lines_after": [],
+  "acceptance_length": null,
+  "accept_rate": null,
+  "ar_tok_s_from_wall": 15.245,
+  "response_kinds": [
+    "text"
+  ],
+  "finish_reasons": [
+    "length"
+  ],
+  "errors": [],
+  "mem_during": {},
+  "requests": [
+    {
+      "http_status": 200,
+      "started_iso": "2026-10-04T04:11:17-05:00",
+      "wall_seconds": 33.583,
+      "prompt_tokens": 33,
+      "completion_tokens": 512,
+      "reasoning_tokens": null,
+      "tok_s": 15.246,
+      "finish_reason": "length",
+      "response_kind": "text",
+      "content": "```rust\n//! A bounded work queue with cancellation support.\n//!\n//! The queue has a fixed capacity. Producers submit work items; consumers\n//! (workers) pull items and execute them. Cancellation is cooperative:\n//! each task can check a cancellation token, and the queue itself can be\n//! closed to stop accepting new work and drain pending items.\n\nuse std::collections::VecDeque;\nuse std::fmt;\nuse std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};\nuse closed::{Closed, ClosedState};\nuse std::sync::{Arc, Condvar, Mutex};\n\nmod closed {\n    //! Internal module tracking whether the queue is closed to new submissions.\n\n    use std::sync::atomic::{AtomicUsize, Ordering};\n\n    /// States: 0 = open, 1 = closed (no new submissions), 2 = closed and drained.\n    pub struct ClosedState(std::sync::atomic::AtomicUsize);\n\n    pub const OPEN: usize = 0;\n    pub const CLOSED: usize = 1;\n    pub const DRAINED: usize =  executor_placeholder;\n    pub const DRAINED: usize = 2;\n\n    impl ClosedState {\n        pub fn new() -> Self {\n            ClosedState(AtomicUsize::DRAINED_placeholder);\n        }\n    }\n}\n```\n\nWait, I made errors in the module. Let me restart cleanly.\n\n```rust\n//! A bounded work queue with cancellation and unit tests.\n//!\n//! - Bounded capacity: `send` blocks when the queue is full.\n//! - Cancellation: a shared `CancellationToken` lets tasks check for cancellation\n//!   and lets anyone cancel all tasks sharing the token.\n//! - Close semantics: closing the queue rejects new submissions; workers drain\n//!   remaining items. `join` waits until the queue is empty and closed.\n\nuse std::collections::VecDeque;\nuse std::sync::atomic::{AtomicUsize, Ordering};\nuse std::sync::{Arc, Condvar, Mutex, MutexGuard};\n\n// ---------------------------------------------------------------------------\n// Cancellation token\n// ---------------------------------------------------------------------------\n\n/// A cheap, cloneable handle for cooperative cancellation.\n///\n/// Clones share state: cancelling one cancels all clones.\n#[derive(Clone, Default)]\npub struct CancellationToken {\n    inner: Arc<Inner>,\n}\n\nstruct Inner {\n    cancelled: AtomicUsize,\n}\n\nimpl CancellationToken {\n    pub fn new() -> Self {\n        Self {\n            inner: Arc::new(Inner {\n                cancelled: AtomicUsize::new(0),\n            }),\n",
+      "reasoning": null,
+      "tool_calls": null,
+      "error": null
+    }
+  ],
+  "request_payload_template": {
+    "model": "glm-5.3-flash",
+    "messages": [
+      {
+        "role": "user",
+        "content": "Write a complete Rust implementation of a bounded work queue with cancellation and unit tests. Output only code."
+      }
+    ],
+    "temperature": 0,
+    "top_p": 1,
+    "max_tokens": 512,
+    "stream": false,
+    "chat_template_kwargs": {
+      "enable_thinking": false
+    }
+  },
+  "name": "probe_code1",
+  "rep": 1,
+  "mode": "ar"
+}

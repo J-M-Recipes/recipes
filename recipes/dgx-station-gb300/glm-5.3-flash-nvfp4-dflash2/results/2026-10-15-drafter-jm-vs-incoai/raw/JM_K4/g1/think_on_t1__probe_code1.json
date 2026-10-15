@@ -1,0 +1,80 @@
+{
+  "row": {
+    "name": "probe_code1",
+    "regime": "think_on_t1",
+    "completion_tokens": 512,
+    "reasoning_tokens": 512,
+    "wall": 2.94,
+    "tok_s": 174.161,
+    "drafts": 221.0,
+    "acceptance_length": 2.316742081447964,
+    "accept_rate": 0.33144796380090497,
+    "per_pos": {
+      "0": 0.665,
+      "1": 0.376,
+      "2": 0.199,
+      "3": 0.086
+    },
+    "finish": "length",
+    "has_reasoning": true,
+    "content_head": ""
+  },
+  "payload": {
+    "model": "glm-5.3-flash",
+    "messages": [
+      {
+        "role": "user",
+        "content": "Write a complete Rust implementation of a bounded work queue with cancellation and unit tests. Output only code."
+      }
+    ],
+    "max_tokens": 512,
+    "stream": false,
+    "temperature": 1.0,
+    "top_p": 0.95,
+    "chat_template_kwargs": {
+      "enable_thinking": true
+    }
+  },
+  "body": {
+    "id": "chatcmpl-be101a50ab77d2b1",
+    "object": "chat.completion",
+    "created": 1792054769,
+    "model": "glm-5.3-flash",
+    "choices": [
+      {
+        "index": 0,
+        "message": {
+          "role": "assistant",
+          "content": null,
+          "refusal": null,
+          "annotations": null,
+          "audio": null,
+          "function_call": null,
+          "reasoning": "The user wants a complete Rust implementation of a bounded work queue with cancellation and unit tests. They want only code output.\n\nLet me design this:\n\n1. **Bounded work queue**: A queue with a fixed capacity. Producers should block (or fail) when the queue is full. Consumers should block when the queue is empty.\n\n2. **Cancellation**: There should be a way to cancel/shut down the queue, so that waiting producers/consumers get notified and can exit gracefully.\n\nLet me think about the design:\n\n- Use `std::sync::Mutex` + `std::sync::Condvar` to build the queue without external crates (no crossbeam, no tokio). This makes it a self-contained implementation.\n- Bounded: `VecDeque` with max capacity.\n- Cancellation: A `close()` method that sets a closed flag. After closing:\n  - Consumers drain remaining items, then receive `None` or an error.\n  - Producers get an error (queue closed).\n- Optionally a `cancel()` that discards pending items immediately vs `close()` that drains. Let me support both semantics: `close()` (no more sends, receivers drain remaining) and maybe `cancel()`/`abort()` which drops pending work.\n\nActually, let's keep it clean: a `WorkQueue<T>` with:\n- `new(bound: usize)` \u2014 capacity, must be > 0.\n- `send(&self, item: T) -> Result<(), SendError<T>>` \u2014 blocks while full; errors if closed.\n- `try_send(&self, item: T) -> Result<(), TrySendError<T>>` \u2014 non-blocking.\n- `recv(&self) -> Result<T, RecvError>` \u2014 blocks while empty; returns `RecvError::Disconnected` when closed and empty.\n- `close(&self)` \u2014 signal no more items will be sent; wake everyone.\n- `cancel(&self)` \u2014 close and drop pending items; wake everyone.\n- `len`, `is_empty`, `capacity`, `is_closed` maybe.\n\nUse `Condvar` with two conditions or one? Typically you can use a single condvar, but two is cleaner: `not_full` and `not_empty`. On close, broadcast both.\n\nSince we may want to share across threads, methods take `&self` and the state is interior-mutable via `Mutex`. Users clone an `Arc<WorkQueue<T>>`.\n\nState:\n```rust\nstruct Inner<T> {\n    queue:"
+        },
+        "logprobs": null,
+        "finish_reason": "length",
+        "stop_reason": null,
+        "token_ids": null,
+        "routed_experts": null
+      }
+    ],
+    "service_tier": null,
+    "system_fingerprint": "vllm-0.30.1rc1.dev493+gac9126e58-ac48cfcd",
+    "usage": {
+      "prompt_tokens": 32,
+      "total_tokens": 544,
+      "completion_tokens": 512,
+      "prompt_tokens_details": null,
+      "completion_tokens_details": {
+        "reasoning_tokens": 512
+      }
+    },
+    "prompt_logprobs": null,
+    "prompt_token_ids": null,
+    "prompt_text": null,
+    "kv_transfer_params": null,
+    "ec_transfer_params": null,
+    "metrics": null
+  }
+}

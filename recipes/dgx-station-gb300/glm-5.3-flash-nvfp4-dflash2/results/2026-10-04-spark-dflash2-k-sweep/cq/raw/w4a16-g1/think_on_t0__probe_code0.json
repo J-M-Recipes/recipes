@@ -1,0 +1,80 @@
+{
+  "row": {
+    "name": "probe_code0",
+    "regime": "think_on_t0",
+    "completion_tokens": 512,
+    "reasoning_tokens": null,
+    "wall": 17.487,
+    "tok_s": 29.279,
+    "drafts": 155.0,
+    "acceptance_length": 3.303225806451613,
+    "accept_rate": 0.3327188940092166,
+    "per_pos": {
+      "0": 0.755,
+      "1": 0.535,
+      "2": 0.368,
+      "3": 0.29,
+      "4": 0.206,
+      "5": 0.11,
+      "6": 0.065
+    },
+    "finish": "length",
+    "has_reasoning": true,
+    "content_head": ""
+  },
+  "payload": {
+    "model": "glm-5.3-flash",
+    "messages": [
+      {
+        "role": "user",
+        "content": "Write a complete Python module implementing a thread-safe LRU cache with TTL expiry, type hints, docstrings, and tests. Output only code."
+      }
+    ],
+    "max_tokens": 512,
+    "stream": false,
+    "temperature": 0,
+    "top_p": 1,
+    "chat_template_kwargs": {
+      "enable_thinking": true
+    }
+  },
+  "body": {
+    "id": "chatcmpl-82139b264288364a",
+    "object": "chat.completion",
+    "created": 1791196973,
+    "model": "glm-5.3-flash",
+    "choices": [
+      {
+        "index": 0,
+        "message": {
+          "role": "assistant",
+          "content": null,
+          "refusal": null,
+          "annotations": null,
+          "audio": null,
+          "function_call": null,
+          "reasoning": "The user wants a complete Python module implementing a thread-safe LRU cache with TTL (time-to-live) expiry, with type hints, docstrings, and tests. They want only code as output.\n\nLet me think about what a good implementation looks like:\n\n1. **LRU Cache with TTL**:\n   - LRU = Least Recently Used eviction policy\n   - TTL = Time To Live - entries expire after a certain time\n   - Thread-safe = needs locking (RLock since we may call methods that call other methods)\n\n2. **Design considerations**:\n   - Use `OrderedDict` from `collections` for O(1) LRU operations\n   - Use `threading.RLock` for thread safety (RLock allows reentrance, e.g., `__contains__` calling `__getitem__` or `get` calling internal methods)\n   - Store `(value, expiry_time)` tuples\n   - On access, check if expired; if expired, treat as miss and remove\n   - Lazy expiry (remove on access) plus optionally proactive cleanup\n   - `get`, `set`/`__setitem__`, `__getitem__`, `__contains__`, `__len__`, `clear`, `delete`/`pop`, maybe `touch`, `expire()` to purge expired items\n   - Type hints with generics: `LRUCache(Generic[K, V])` \u2014 use `TypeVar`\n   - Docstrings for module, classes, methods\n   - Tests using `unittest` (standard library, so the module is self-contained) \u2014 could use `unittest.TestCase` with tests for:\n     - basic get/set\n     - LRU eviction order\n     - TTL expiry (with small TTLs and sleeps, or injectable clock)\n     - thread safety (concurrent access)\n     - contains, len, delete, clear\n     - `get` with default\n     - `__getitem__` raising KeyError\n\n3. **Clock injection**: To make TTL testable without sleeps, allow a `clock` parameter (callable returning float). Default `time.monotonic`. Tests can use a fake clock. But also test with real short sleeps maybe. Better to use injectable clock for deterministic tests, plus maybe one real-time test.\n\n4. **Implementation details**:\n\n```python\nfrom __future__ import annotations\n\nimport threading\nimport time\nfrom collections import OrderedDict\nfrom typing import Callable, Generic, Hashable, Optional, TypeVar, Union"
+        },
+        "logprobs": null,
+        "finish_reason": "length",
+        "stop_reason": null,
+        "token_ids": null,
+        "routed_experts": null
+      }
+    ],
+    "service_tier": null,
+    "system_fingerprint": "vllm-0.1.dev20051+g487ecf187-tp2-815c380c",
+    "usage": {
+      "prompt_tokens": 41,
+      "total_tokens": 553,
+      "completion_tokens": 512,
+      "prompt_tokens_details": null
+    },
+    "prompt_logprobs": null,
+    "prompt_token_ids": null,
+    "prompt_text": null,
+    "kv_transfer_params": null,
+    "ec_transfer_params": null,
+    "metrics": null
+  }
+}

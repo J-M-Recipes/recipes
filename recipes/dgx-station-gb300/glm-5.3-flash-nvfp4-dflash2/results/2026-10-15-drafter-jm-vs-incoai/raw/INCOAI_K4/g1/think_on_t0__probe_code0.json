@@ -1,0 +1,80 @@
+{
+  "row": {
+    "name": "probe_code0",
+    "regime": "think_on_t0",
+    "completion_tokens": 512,
+    "reasoning_tokens": 512,
+    "wall": 2.21,
+    "tok_s": 231.653,
+    "drafts": 166.0,
+    "acceptance_length": 3.0843373493975905,
+    "accept_rate": 0.5195783132530121,
+    "per_pos": {
+      "0": 0.777,
+      "1": 0.578,
+      "2": 0.41,
+      "3": 0.313
+    },
+    "finish": "length",
+    "has_reasoning": true,
+    "content_head": ""
+  },
+  "payload": {
+    "model": "glm-5.3-flash",
+    "messages": [
+      {
+        "role": "user",
+        "content": "Write a complete Python module implementing a thread-safe LRU cache with TTL expiry, type hints, docstrings, and tests. Output only code."
+      }
+    ],
+    "max_tokens": 512,
+    "stream": false,
+    "temperature": 0,
+    "top_p": 1,
+    "chat_template_kwargs": {
+      "enable_thinking": true
+    }
+  },
+  "body": {
+    "id": "chatcmpl-bd1122ed57af5b48",
+    "object": "chat.completion",
+    "created": 1792057736,
+    "model": "glm-5.3-flash",
+    "choices": [
+      {
+        "index": 0,
+        "message": {
+          "role": "assistant",
+          "content": null,
+          "refusal": null,
+          "annotations": null,
+          "audio": null,
+          "function_call": null,
+          "reasoning": "The user wants a complete Python module implementing a thread-safe LRU cache with TTL (time-to-live) expiry. They want:\n1. Thread-safe implementation\n2. LRU (Least Recently Used) eviction\n3. TTL expiry\n4. Type hints\n5. Docstrings\n6. Tests\n7. Output only code\n\nLet me design this carefully.\n\n**Design considerations:**\n\n1. **Data structure**: For LRU, I can use `collections.OrderedDict` with `move_to_end()` for O(1) operations, or a doubly-linked list. OrderedDict is the standard approach.\n\n2. **Thread safety**: Use `threading.RLock` (RLock in case of reentrancy, though Lock would suffice; RLock is safer if methods call each other).\n\n3. **TTL expiry**: Each entry stores an expiry timestamp. On access, check if expired. Also need periodic purging of expired entries. Lazy expiry on access + optional background purge or purge on operations.\n\n4. **API design**:\n   - `__init__(maxsize, ttl)` \n   - `get(key, default=None)` - doesn't count as miss/ hit tracking maybe\n   - `put(key, value)` or `__setitem__`\n   - `__getitem__`, `__setitem__`, `__delitem__`, `__contains__`, `__len__`\n   - `clear()`\n   - `pop(key, default)`\n   - Decorator support maybe: `@cache.decorator` or similar\n   - Statistics: hits, misses\n   - `purge()` / `expire()` to remove expired items\n\n5. **TTL semantics**: Should TTL be per-entry (settable at put time) or global? I'll support a default TTL with optional per-entry override.\n\n6. **LRU + TTL interaction**: When an entry expires, it should be removed. When we access an entry, we move it to the end (most recently used). Expired entries shouldn't be returned.\n\n7. **Eviction**: When size exceeds maxsize, evict least recently used. Should we evict expired entries first? A good implementation purges expired entries before evicting LRU ones.\n\n8. **Time source**: Use `time.monotonic()` for TTL to avoid issues with system clock changes.\n\n9. **Type hints**: Use generics with `TypeVar` for key and value types. `KT = TypeVar(\"KT\")`, `VT"
+        },
+        "logprobs": null,
+        "finish_reason": "length",
+        "stop_reason": null,
+        "token_ids": null,
+        "routed_experts": null
+      }
+    ],
+    "service_tier": null,
+    "system_fingerprint": "vllm-0.30.1rc1.dev493+gac9126e58-6a2df9e8",
+    "usage": {
+      "prompt_tokens": 41,
+      "total_tokens": 553,
+      "completion_tokens": 512,
+      "prompt_tokens_details": null,
+      "completion_tokens_details": {
+        "reasoning_tokens": 512
+      }
+    },
+    "prompt_logprobs": null,
+    "prompt_token_ids": null,
+    "prompt_text": null,
+    "kv_transfer_params": null,
+    "ec_transfer_params": null,
+    "metrics": null
+  }
+}

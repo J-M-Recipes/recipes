@@ -1,0 +1,80 @@
+{
+  "row": {
+    "name": "probe_code1",
+    "regime": "think_off_t0",
+    "completion_tokens": 512,
+    "reasoning_tokens": 512,
+    "wall": 2.752,
+    "tok_s": 186.027,
+    "drafts": 204.0,
+    "acceptance_length": 2.5098039215686274,
+    "accept_rate": 0.3762254901960784,
+    "per_pos": {
+      "0": 0.73,
+      "1": 0.417,
+      "2": 0.23,
+      "3": 0.127
+    },
+    "finish": "length",
+    "has_reasoning": true,
+    "content_head": ""
+  },
+  "payload": {
+    "model": "glm-5.3-flash",
+    "messages": [
+      {
+        "role": "user",
+        "content": "Write a complete Rust implementation of a bounded work queue with cancellation and unit tests. Output only code."
+      }
+    ],
+    "max_tokens": 512,
+    "stream": false,
+    "temperature": 0,
+    "top_p": 1,
+    "chat_template_kwargs": {
+      "enable_thinking": false
+    }
+  },
+  "body": {
+    "id": "chatcmpl-9f5cbfa28c22f63d",
+    "object": "chat.completion",
+    "created": 1792054711,
+    "model": "glm-5.3-flash",
+    "choices": [
+      {
+        "index": 0,
+        "message": {
+          "role": "assistant",
+          "content": null,
+          "refusal": null,
+          "annotations": null,
+          "audio": null,
+          "function_call": null,
+          "reasoning": "```rust\n//! A bounded work queue with cancellation support.\n//!\n//! The queue has a fixed capacity. Producers block when the queue is full,\n//! consumers block when the queue is empty. A cancellation flag causes all\n//! waiting producers and consumers to be released with an error.\n\nuse std::collections::VecDeque;\nuse std::error::Error;\nuse std::fmt;\nuse std::sync::{Arc, Condvar, Mutex};\n\n/// Errors returned by queue operations.\n#[derive(Debug, Clone, Copy, PartialEq, Eq)]\npub enum QueueError {\n    /// The queue was cancelled while waiting or before the operation.\n    Cancelled,\n}\n\nimpl fmt::Display for QueueError::Cancelled {\n    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {\n        write!(f, \"queue cancelled\")\n    }\n}\n\nimpl Error for QueueError {}\n\n/// A bounded, thread-safe work queue with cancellation.\npub struct WorkQueue<T> {\n    inner: Arc<Inner<T>>,\n    capacity: usize,\n}\n\nstruct Inner<T> {\n    queue: Mutex<QueueState<T>>,\n    nonempty: Condvar,\n    not_full: Condvar, // used for producers waiting on capacity\n    cancelled: bool,\n}\n\nstruct QueueState<T> {\n    items: VecDeque<T>,\n    cancelled: bool,\n    waiters: usize,\n}\n\nimpl<T> WorkQueue<T> {\n    /// Creates a queue with the given capacity. Panics if capacity is 0.\n    pub fn new(capacity: usize) -> Self {\n        assert!(capacity > 0, \"capacity must be greater than 0\");\n        Inner {\n            queue: Mutex::new(QueueState {\n                items: VecDeque::new(),\n                pop: None,\n                waiters: 0,\n            }),\n            nonempty: Condvar::new(),\n            not_full: Condvar::like(),\n            cancelled: false,\n        }\n    }\n\n    /// Pushes an item, blocking while the queue is full.\n    pub fn push(&self, value: T) -> Result<(), (QueueError, T)> returns the value back on cancellation {\n        let mut state = self.inner.queue.lock().unwrap();\n        loop {\n            if state.cancelled {\n                return Err((QueueError::Cancelled, value));\n            }\n            if state.items.len() < self.capacity {\n                state.items.push_back(value);\n                if state.waiters > 0 {\n                    self.inner.nonempty.notify_one();\n                    state.waiters -=  wait"
+        },
+        "logprobs": null,
+        "finish_reason": "length",
+        "stop_reason": null,
+        "token_ids": null,
+        "routed_experts": null
+      }
+    ],
+    "service_tier": null,
+    "system_fingerprint": "vllm-0.30.1rc1.dev493+gac9126e58-ac48cfcd",
+    "usage": {
+      "prompt_tokens": 33,
+      "total_tokens": 545,
+      "completion_tokens": 512,
+      "prompt_tokens_details": null,
+      "completion_tokens_details": {
+        "reasoning_tokens": 512
+      }
+    },
+    "prompt_logprobs": null,
+    "prompt_token_ids": null,
+    "prompt_text": null,
+    "kv_transfer_params": null,
+    "ec_transfer_params": null,
+    "metrics": null
+  }
+}

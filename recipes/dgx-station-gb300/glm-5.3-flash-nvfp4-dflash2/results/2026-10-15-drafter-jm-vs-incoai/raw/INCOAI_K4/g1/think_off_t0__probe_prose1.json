@@ -1,0 +1,80 @@
+{
+  "row": {
+    "name": "probe_prose1",
+    "regime": "think_off_t0",
+    "completion_tokens": 512,
+    "reasoning_tokens": 512,
+    "wall": 2.707,
+    "tok_s": 189.117,
+    "drafts": 204.0,
+    "acceptance_length": 2.5098039215686274,
+    "accept_rate": 0.37745098039215685,
+    "per_pos": {
+      "0": 0.706,
+      "1": 0.446,
+      "2": 0.235,
+      "3": 0.123
+    },
+    "finish": "length",
+    "has_reasoning": true,
+    "content_head": ""
+  },
+  "payload": {
+    "model": "glm-5.3-flash",
+    "messages": [
+      {
+        "role": "user",
+        "content": "Explain speculative decoding to an inference engineer, including verification, acceptance length, and failure modes."
+      }
+    ],
+    "max_tokens": 512,
+    "stream": false,
+    "temperature": 0,
+    "top_p": 1,
+    "chat_template_kwargs": {
+      "enable_thinking": false
+    }
+  },
+  "body": {
+    "id": "chatcmpl-a4e2fa18eb57cf04",
+    "object": "chat.completion",
+    "created": 1792057699,
+    "model": "glm-5.3-flash",
+    "choices": [
+      {
+        "index": 0,
+        "message": {
+          "role": "assistant",
+          "content": null,
+          "refusal": null,
+          "annotations": null,
+          "audio": null,
+          "function_call": null,
+          "reasoning": "# Speculative Decoding: A Practical Guide\n\n## The Core Idea\n\nAutoregressive LLM inference is memory-bandwidth-bound: generating one token requires streaming all model weights from HBM, but the actual FLOPs are trivial. Speculative decoding exploits this by using cheap \"draft\" tokens to amortize the cost of each expensive target-model forward pass. Instead of paying full price for one token, you pay it for a batch of k candidate tokens and accept most of them.\n\nThe critical property: **with correct implementation, the output distribution is identical to sampling from the target model alone.** This is not an approximation\u2014it's exact. That property is what distinguishes speculative decoding from lossy speedups, and it's why it's become the default in production serving stacks.\n\n## The Algorithm\n\n1. **Draft**: The draft model (or draft head, or n-gram table) autoregressively generates k candidate tokens, each costing a fraction of a target forward pass.\n2. **Score**: Run the target model once on the full draft sequence (all k+1 positions in parallel). This is the key trick\u2014verification of k tokens costs roughly the same as generating one, because the target forward pass is bandwidth-bound, not compute-bound.\n3. **Accept/reject**: Walk through positions. For each draft token, accept or reject based on a stochastic test comparing draft and target distributions.\n4. **Resample on rejection**: If token i is rejected, resample from a corrected distribution and stop. All tokens after the first rejection are discarded.\n\nThe acceptance test (from Leviathan et al. 2023): accept draft token x if u < min(1, p(x)/q(x)), where p is the target distribution, q is the draft distribution, and u ~ Uniform(0,1). On rejection, sample from the residual distribution max(0, p \u2212 q), normalized. This residual-sampling step is what makes the scheme lossless\u2014intuitively, the target \"gets the last word\" whenever the draft is wrong, and the correction exactly compensates for the acceptance bias.\n\n## Acceptance Length\n\nThe metric that matters is E[\u03c4], the expected number of tokens accepted per target forward pass (sometimes reported as \u03b1, the per-token acceptance rate, and E[\u03c4) \u2248 (1 \u2212 \u03b1^(k+1))/(1 \u2212 \u03b1) for i.i.d. tokens). Practical numbers:\n\n- \u03b1 ~ 0.7\u20130.9 for well-matched draft"
+        },
+        "logprobs": null,
+        "finish_reason": "length",
+        "stop_reason": null,
+        "token_ids": null,
+        "routed_experts": null
+      }
+    ],
+    "service_tier": null,
+    "system_fingerprint": "vllm-0.30.1rc1.dev493+gac9126e58-6a2df9e8",
+    "usage": {
+      "prompt_tokens": 32,
+      "total_tokens": 544,
+      "completion_tokens": 512,
+      "prompt_tokens_details": null,
+      "completion_tokens_details": {
+        "reasoning_tokens": 512
+      }
+    },
+    "prompt_logprobs": null,
+    "prompt_token_ids": null,
+    "prompt_text": null,
+    "kv_transfer_params": null,
+    "ec_transfer_params": null,
+    "metrics": null
+  }
+}

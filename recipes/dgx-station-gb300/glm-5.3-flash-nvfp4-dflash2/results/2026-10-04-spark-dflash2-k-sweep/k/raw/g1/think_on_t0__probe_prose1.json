@@ -1,0 +1,80 @@
+{
+  "row": {
+    "name": "probe_prose1",
+    "regime": "think_on_t0",
+    "completion_tokens": 512,
+    "reasoning_tokens": null,
+    "wall": 22.939,
+    "tok_s": 22.32,
+    "drafts": 195.0,
+    "acceptance_length": 2.6256410256410256,
+    "accept_rate": 0.23223443223443224,
+    "per_pos": {
+      "0": 0.697,
+      "1": 0.385,
+      "2": 0.256,
+      "3": 0.149,
+      "4": 0.072,
+      "5": 0.046,
+      "6": 0.021
+    },
+    "finish": "length",
+    "has_reasoning": true,
+    "content_head": ""
+  },
+  "payload": {
+    "model": "glm-5.3-flash",
+    "messages": [
+      {
+        "role": "user",
+        "content": "Explain speculative decoding to an inference engineer, including verification, acceptance length, and failure modes."
+      }
+    ],
+    "max_tokens": 512,
+    "stream": false,
+    "temperature": 0,
+    "top_p": 1,
+    "chat_template_kwargs": {
+      "enable_thinking": true
+    }
+  },
+  "body": {
+    "id": "chatcmpl-b542da38d1bd7862",
+    "object": "chat.completion",
+    "created": 1791126082,
+    "model": "glm-5.3-flash",
+    "choices": [
+      {
+        "index": 0,
+        "message": {
+          "role": "assistant",
+          "content": null,
+          "refusal": null,
+          "annotations": null,
+          "audio": null,
+          "function_call": null,
+          "reasoning": "The user is asking for an explanation of speculative decoding aimed at an inference engineer. This is a technical topic in LLM inference optimization. Let me think about what an inference engineer would already know and what they'd want to know.\n\nAn inference engineer already knows:\n- Autoregressive decoding, KV caches, how transformer inference works\n- Memory bandwidth vs compute tradeoffs, batch size dynamics\n- Token throughput vs latency tradeoffs\n- Probably familiar with vLLM, TensorRT-LLM, etc.\n\nWhat they need:\n1. Core idea: draft-then-verify paradigm\n2. Why it works: the mathematical guarantee (rejection sampling preserves the target distribution)\n3. Verification mechanics: parallel scoring of draft tokens in one forward pass\n4. Acceptance/rejection: the modified rejection sampling scheme\n5. Acceptance length: expected number of tokens per forward pass, the key metric\n6. Failure modes: distribution mismatch, draft quality, memory/batch interactions, edge cases\n\nLet me structure this carefully.\n\n**Core idea**\n\nAutoregressive decoding is memory-bandwidth bound: each forward pass generates one token, but you load all the weights and KV cache to do it. Arithmetic intensity is terrible at small batch sizes. Speculative decoding exploits this: since a single forward pass through the target model can score multiple tokens nearly as cheaply as one (the KV cache read dominates, and the extra compute for scoring K tokens is small relative to weight loading), you can use spare capacity to verify multiple draft tokens in parallel.\n\nThe scheme:\n1. A cheap draft model (or n-gram model, or draft heads like EAGLE/Medusa) autoregressively generates \u03b3 candidate tokens (plus possibly its own KV entries).\n2. The target model runs a single forward pass scoring all \u03b3 draft tokens plus one bonus position \u2014 this gives p(x | prefix) for each position in one shot.\n3. Accept/reject each draft token left to right using the modified rejection sampling rule.\n4. On first rejection, resample from the residual (normalized) distribution and stop.\n5. If all accepted, sample one extra token from the target model's distribution at the final position (the \"free\" bonus token).\n\n**The acceptance rule and why it's exact**\n\nStandard rejection sampling variant (Leviathan et al. 2023, Chen et al. 2023):\n\nGiven target distribution p and draft distribution q for token x:\n- Accept x with probability min(1, p(x)/q(x)).\n-"
+        },
+        "logprobs": null,
+        "finish_reason": "length",
+        "stop_reason": null,
+        "token_ids": null,
+        "routed_experts": null
+      }
+    ],
+    "service_tier": null,
+    "system_fingerprint": "vllm-0.1.dev20051+g487ecf187-tp2-3737b693",
+    "usage": {
+      "prompt_tokens": 31,
+      "total_tokens": 543,
+      "completion_tokens": 512,
+      "prompt_tokens_details": null
+    },
+    "prompt_logprobs": null,
+    "prompt_token_ids": null,
+    "prompt_text": null,
+    "kv_transfer_params": null,
+    "ec_transfer_params": null,
+    "metrics": null
+  }
+}

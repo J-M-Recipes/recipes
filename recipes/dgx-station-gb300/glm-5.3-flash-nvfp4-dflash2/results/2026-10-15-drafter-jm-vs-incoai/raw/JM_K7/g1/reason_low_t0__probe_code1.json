@@ -1,0 +1,83 @@
+{
+  "row": {
+    "name": "probe_code1",
+    "regime": "reason_low_t0",
+    "completion_tokens": 512,
+    "reasoning_tokens": 512,
+    "wall": 2.494,
+    "tok_s": 205.313,
+    "drafts": 159.0,
+    "acceptance_length": 3.220125786163522,
+    "accept_rate": 0.31716082659478884,
+    "per_pos": {
+      "0": 0.811,
+      "1": 0.566,
+      "2": 0.333,
+      "3": 0.233,
+      "4": 0.119,
+      "5": 0.094,
+      "6": 0.063
+    },
+    "finish": "length",
+    "has_reasoning": true,
+    "content_head": ""
+  },
+  "payload": {
+    "model": "glm-5.3-flash",
+    "messages": [
+      {
+        "role": "user",
+        "content": "Write a complete Rust implementation of a bounded work queue with cancellation and unit tests. Output only code."
+      }
+    ],
+    "max_tokens": 512,
+    "stream": false,
+    "temperature": 0,
+    "top_p": 1,
+    "chat_template_kwargs": {
+      "reasoning_effort": "low"
+    }
+  },
+  "body": {
+    "id": "chatcmpl-8cd194066d073999",
+    "object": "chat.completion",
+    "created": 1792062145,
+    "model": "glm-5.3-flash",
+    "choices": [
+      {
+        "index": 0,
+        "message": {
+          "role": "assistant",
+          "content": null,
+          "refusal": null,
+          "annotations": null,
+          "audio": null,
+          "function_call": null,
+          "reasoning": "```rust\nuse std::collections::VecDeque;\nuse std::sync::{Arc, Condvar, Mutex};\nuse std::thread;\nuse std::time::Duration;\n\n#[derive(Debug, PartialEq)]\npub enum QueueError {\n    Closed,\n    Full,\n}\n\n#[derive(Debug, PartialEq)]\npub enum RecvError {\n    Empty,\n    Disconnected,\n}\n\nstruct State<T> {\n    queue: VecDeque<T>,\n    capacity: usize,\n    closed: bool,\n    cancelled: bool,\n    senders: usize,\n}\n\npub struct BoundedQueue<T> {\n    state: Arc<(Mutex<State<T>>, Condvar, Condvar)>,\n}\n\nimpl<T> BoundedQueue<T> {\n    pub fn new(capacity: usize) -> Self {\n        assert!(capacity > 0, \"capacity must be > 0\");\n        BoundedQueue {\n            state: Arc::new((\n                Mutex::new(State {\n                    queue: VecDeque::new(),\n                    capacity,\n                    closed: false,\n                    cancelled: false,\n                    senders: 1,\n                }),\n                Condvar::new(),\n                Condvar::new(),\n            )),\n        }\n    }\n\n    fn lock(&self) -> (MutexGuard<'_, State<T>>, &Condvar, &Condvar) {\n        let (m, not_full, not_empty) = &*self.state;\n        (m.lock().unwrap(), not_full, not_empty)\n    }\n\n    pub fn send(&self, item: T) -> Result<(), (QueueError, T)> {\n        let (guard, not_full, not_empty) = self.lock();\n        let mut state = guard;\n        loop {\n            if state.cancelled {\n                return Err((QueueError::Full, item)); // cancelled behaves like full\n            }\n            if state.closed {\n                return Err((QueueError::Closed, item));\n            }\n            if state.queue.len() < state.capacity {\n                state.queue.push_back(item);\n                not_empty.notify_one();\n                return Ok(());\n            }\n            let (s, _) = not_full.wait(state).unwrap();\n            state = s;\n        }\n    }\n\n    pub fn try_send(&self, item: T) -> Result<(), (QueueError, T)> {\n        let (guard, _not_full, not_empty) = self.lock();\n        let mut state = guard;\n        if state.cancelled {\n            return Err((QueueError::Full, item));\n        }\n        if state.closed {\n            return Err((QueueError::Closed, item"
+        },
+        "logprobs": null,
+        "finish_reason": "length",
+        "stop_reason": null,
+        "token_ids": null,
+        "routed_experts": null
+      }
+    ],
+    "service_tier": null,
+    "system_fingerprint": "vllm-0.30.1rc1.dev493+gac9126e58-a8c9a315",
+    "usage": {
+      "prompt_tokens": 33,
+      "total_tokens": 545,
+      "completion_tokens": 512,
+      "prompt_tokens_details": null,
+      "completion_tokens_details": {
+        "reasoning_tokens": 512
+      }
+    },
+    "prompt_logprobs": null,
+    "prompt_token_ids": null,
+    "prompt_text": null,
+    "kv_transfer_params": null,
+    "ec_transfer_params": null,
+    "metrics": null
+  }
+}

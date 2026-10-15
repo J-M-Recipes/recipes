@@ -1,0 +1,108 @@
+{
+  "fixture": "probe_code0",
+  "concurrency": 1,
+  "started_iso": "2026-10-04T07:51:22-05:00",
+  "ended_iso": "2026-10-04T07:51:39-05:00",
+  "batch_wall_seconds": 17.377,
+  "mean_wall_seconds": 17.376,
+  "completion_tokens_total": 512,
+  "aggregate_tok_s": 29.465,
+  "per_stream_tok_s": [
+    29.467
+  ],
+  "spec_metrics_present": true,
+  "metric_before": {
+    "drafts": 3322.0,
+    "draft_tokens": 13288.0,
+    "accepted_tokens": 6338.0
+  },
+  "metric_after": {
+    "drafts": 3493.0,
+    "draft_tokens": 13972.0,
+    "accepted_tokens": 6682.0
+  },
+  "metric_delta": {
+    "drafts": 171.0,
+    "draft_tokens": 684.0,
+    "accepted_tokens": 344.0
+  },
+  "per_pos_accepted_delta": {
+    "0": 133.0,
+    "1": 99.0,
+    "2": 68.0,
+    "3": 44.0
+  },
+  "per_pos_accept_prob": {
+    "0": 0.7777777777777778,
+    "1": 0.5789473684210527,
+    "2": 0.39766081871345027,
+    "3": 0.2573099415204678
+  },
+  "metric_series_seen_before": {
+    "drafts": 1,
+    "draft_tokens": 1,
+    "accepted_tokens": 1
+  },
+  "metric_series_seen_after": {
+    "drafts": 1,
+    "draft_tokens": 1,
+    "accepted_tokens": 1
+  },
+  "metric_lines_before": [
+    "vllm:spec_decode_num_drafts_total{engine=\"0\",model_name=\"glm-5.3-flash\"} 3322.0",
+    "vllm:spec_decode_num_draft_tokens_total{engine=\"0\",model_name=\"glm-5.3-flash\"} 13288.0",
+    "vllm:spec_decode_num_accepted_tokens_total{engine=\"0\",model_name=\"glm-5.3-flash\"} 6338.0"
+  ],
+  "metric_lines_after": [
+    "vllm:spec_decode_num_drafts_total{engine=\"0\",model_name=\"glm-5.3-flash\"} 3493.0",
+    "vllm:spec_decode_num_draft_tokens_total{engine=\"0\",model_name=\"glm-5.3-flash\"} 13972.0",
+    "vllm:spec_decode_num_accepted_tokens_total{engine=\"0\",model_name=\"glm-5.3-flash\"} 6682.0"
+  ],
+  "acceptance_length": 2.9941520467836256,
+  "accept_rate": 0.5029239766081871,
+  "ar_tok_s_from_wall": null,
+  "response_kinds": [
+    "text"
+  ],
+  "finish_reasons": [
+    "length"
+  ],
+  "errors": [],
+  "mem_during": {},
+  "requests": [
+    {
+      "http_status": 200,
+      "started_iso": "2026-10-04T07:51:22-05:00",
+      "wall_seconds": 17.376,
+      "prompt_tokens": 42,
+      "completion_tokens": 512,
+      "reasoning_tokens": null,
+      "tok_s": 29.467,
+      "finish_reason": "length",
+      "response_kind": "text",
+      "content": "```python\n\"\"\"\nlru_cache.py\n\nA thread-safe LRU cache with TTL (time-to-live) expiry.\n\nFeatures:\n    - Thread-safe via a re-entrant lock (RLock), so methods may call\n      each other internally without deadlocking.\n    - LRU eviction: least-recently-used entries are evicted first when\n      the cache exceeds its maximum size.\n    - TTL expiry: entries expire after a configurable number of seconds.\n      Expired entries are lazily removed on access and proactively\n      purged by a background thread (optional, enabled by default).\n    - Full type hints and docstrings.\n\"\"\"\n\nfrom __future__ import annotations\n\nimport functools\nimport itertools\nimport threading\nimport time\nfrom collections import OrderedDict\nfrom typing import (\n    Any,\n    Callable,\n    Generic,\n    Hashable,\n    Optional,\n    Tuple,\n    TypeVar,\n)\n\n__all__ = [\"LRUCache\", \"lru_cache_with_ttl\"]\n\nK = TypeVar(\"K\", bound=Hashable)\nV = TypeVar(\"V\")\n\n\nclass LRUCache(Generic[K, V]):\n    \"\"\"A thread-safe LRU cache with per-entry TTL expiry.\n\n    The cache is implemented with an ``OrderedDict`` that keeps entries\n    in least-recently-used order. On every access the entry is moved to\n    the end of the dict; when the cache is full, the entry at the front\n    is evicted.\n\n    Each entry carries its own expiry deadline. A value of ``None`` for\n    ``default_ttl`` means entries never expire (but can still be evicted\n    by the LRU policy).\n\n    Thread-safety is provided by a single ``threading.RLock`` guarding\n    all state. A background daemon thread periodically purges expired\n    entries so memory is reclaimed even if the cache is never read.\n    \"\"\"\n\n    _PURGE_INTERVAL: float = 1.0  # seconds between background purges\n\n    def __init__(\n        self,\n        maxsize: int = 128,\n        default_ttl: Optional[float] = None,\n        purge_interval: Optional[float] = None,\n        enable_background_purge: bool = True,\n    ) -> _NonePlaceholder:  # replaced below; see note\n        \"\"\"Initialize the cache.\n\n        Args:\n            maxsize: Maximum number of entries. Must be >= 1.\n            default_ttl: Default time-to-live in seconds for entries\n                that don't specify one.",
+      "reasoning": null,
+      "tool_calls": null,
+      "error": null
+    }
+  ],
+  "request_payload_template": {
+    "model": "glm-5.3-flash",
+    "messages": [
+      {
+        "role": "user",
+        "content": "Write a complete Python module implementing a thread-safe LRU cache with TTL expiry, type hints, docstrings, and tests. Output only code."
+      }
+    ],
+    "temperature": 0,
+    "top_p": 1,
+    "max_tokens": 512,
+    "stream": false,
+    "chat_template_kwargs": {
+      "enable_thinking": false
+    }
+  },
+  "name": "probe_code0",
+  "rep": 1,
+  "mode": "dflash"
+}

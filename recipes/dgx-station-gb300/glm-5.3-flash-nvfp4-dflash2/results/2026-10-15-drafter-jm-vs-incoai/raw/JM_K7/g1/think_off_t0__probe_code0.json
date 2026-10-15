@@ -1,0 +1,83 @@
+{
+  "row": {
+    "name": "probe_code0",
+    "regime": "think_off_t0",
+    "completion_tokens": 512,
+    "reasoning_tokens": 512,
+    "wall": 2.978,
+    "tok_s": 171.912,
+    "drafts": 189.0,
+    "acceptance_length": 2.708994708994709,
+    "accept_rate": 0.2456538170823885,
+    "per_pos": {
+      "0": 0.688,
+      "1": 0.455,
+      "2": 0.243,
+      "3": 0.143,
+      "4": 0.09,
+      "5": 0.063,
+      "6": 0.037
+    },
+    "finish": "length",
+    "has_reasoning": true,
+    "content_head": ""
+  },
+  "payload": {
+    "model": "glm-5.3-flash",
+    "messages": [
+      {
+        "role": "user",
+        "content": "Write a complete Python module implementing a thread-safe LRU cache with TTL expiry, type hints, docstrings, and tests. Output only code."
+      }
+    ],
+    "max_tokens": 512,
+    "stream": false,
+    "temperature": 0,
+    "top_p": 1,
+    "chat_template_kwargs": {
+      "enable_thinking": false
+    }
+  },
+  "body": {
+    "id": "chatcmpl-944d54faab49a750",
+    "object": "chat.completion",
+    "created": 1792062120,
+    "model": "glm-5.3-flash",
+    "choices": [
+      {
+        "index": 0,
+        "message": {
+          "role": "assistant",
+          "content": null,
+          "refusal": null,
+          "annotations": null,
+          "audio": null,
+          "function_call": null,
+          "reasoning": "```python\n\"\"\"\nlru_cache.py\n\nA thread-safe LRU cache with per-entry TTL (time-to-live) expiry.\n\nFeatures\n--------\n- Thread-safe via a single re-entrant lock guarding all state.\n- O(1) get/set/delete using an OrderedDict as the LRU structure.\n- Per-entry TTL: each entry may have its own expiry time.\n- Optional default TTL for entries that don't specify one.\n- Optional max size with LRU eviction.\n- Statistics tracking (hits, misses, evictions, expiries).\n- `get_or_set` for atomic compute-if-absent semantics.\n- Context-manager support for bulk operations under one lock.\n\nExample\n-------\n    from lru_cache import LRUCache\n\n    cache = LRUCache(max_size=100, default_ttl=60.0)\n    cache.set(\"key\", \"value\")\n    value = cache.get(\"key\")  # \"value\"\n\"\"\"\n\nfrom __future__ import annotations\n\nimport functools\nimport threading\nimport time\nfrom collections import OrderedDict\nfrom typing import (\n    Any,\n    Callable,\n    Generic,\n    Hashable,\n    Optional,\n    Tuple,\n    TypeVar,\n)\n\n__all__ = [\"LRUCache\", \"CacheStats\"]\n\nK = TypeVar(\"K\", bound=Hashable)\nV = TypeVar(\"V\")\n\n\nclass CacheStats:\n    \"\"\"Simple counters for cache performance monitoring.\"\"\"\n\n    __slots__ = (\"hits\", \"misses\", \"evictions\", \"expiries\", \"sets\", \"deletes\")\n\n    def __init__(self) -> None:\n        self.hits: int = 0\n        self.misses: int = 0\n        self.expiries: int = 0\n        self.evictions: int = 0\n        self.sets: int = 0\n        self.deletes: int = loader_placeholder  # replaced below\n\n    def __repr__(self) -> str:\n        return (\n            f\"CacheStats(hits={self.hits}, misses={self.misses}, \"\n            f\"evictions={self.evictions}, expiries={self.expiries}, \"\n            f\"sets={self.sets}, deletes={self.deletes})\"\n        )\n\n\n# Fix the placeholder from __init__ (kept for clarity in review).\nCacheStats.__init__.__globals__[\"loader_placeholder\"] = 0\n\n\nclass LRUCache(Generic[K, V]):\n    \"\"\"A thread-safe LRU cache with per-entry TTL expiry.\n\n    Args:\n        max_size"
+        },
+        "logprobs": null,
+        "finish_reason": "length",
+        "stop_reason": null,
+        "token_ids": null,
+        "routed_experts": null
+      }
+    ],
+    "service_tier": null,
+    "system_fingerprint": "vllm-0.30.1rc1.dev493+gac9126e58-a8c9a315",
+    "usage": {
+      "prompt_tokens": 42,
+      "total_tokens": 554,
+      "completion_tokens": 512,
+      "prompt_tokens_details": null,
+      "completion_tokens_details": {
+        "reasoning_tokens": 512
+      }
+    },
+    "prompt_logprobs": null,
+    "prompt_token_ids": null,
+    "prompt_text": null,
+    "kv_transfer_params": null,
+    "ec_transfer_params": null,
+    "metrics": null
+  }
+}

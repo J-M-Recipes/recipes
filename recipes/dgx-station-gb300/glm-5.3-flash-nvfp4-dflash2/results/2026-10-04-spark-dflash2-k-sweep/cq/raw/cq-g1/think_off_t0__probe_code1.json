@@ -1,0 +1,80 @@
+{
+  "row": {
+    "name": "probe_code1",
+    "regime": "think_off_t0",
+    "completion_tokens": 512,
+    "reasoning_tokens": null,
+    "wall": 17.782,
+    "tok_s": 28.794,
+    "drafts": 146.0,
+    "acceptance_length": 3.506849315068493,
+    "accept_rate": 0.35812133072407043,
+    "per_pos": {
+      "0": 0.801,
+      "1": 0.596,
+      "2": 0.432,
+      "3": 0.288,
+      "4": 0.199,
+      "5": 0.123,
+      "6": 0.068
+    },
+    "finish": "length",
+    "has_reasoning": false,
+    "content_head": "```rust\n//! A bounded work queue with cancellation support.\n//!\n//! The queue has a fixed capacity. Producers block when"
+  },
+  "payload": {
+    "model": "glm-5.3-flash",
+    "messages": [
+      {
+        "role": "user",
+        "content": "Write a complete Rust implementation of a bounded work queue with cancellation and unit tests. Output only code."
+      }
+    ],
+    "max_tokens": 512,
+    "stream": false,
+    "temperature": 0,
+    "top_p": 1,
+    "chat_template_kwargs": {
+      "enable_thinking": false
+    }
+  },
+  "body": {
+    "id": "chatcmpl-9f8a53de25bd6b52",
+    "object": "chat.completion",
+    "created": 1791167986,
+    "model": "glm-5.3-flash",
+    "choices": [
+      {
+        "index": 0,
+        "message": {
+          "role": "assistant",
+          "content": "```rust\n//! A bounded work queue with cancellation support.\n//!\n//! The queue has a fixed capacity. Producers block when the queue is full,\n//! consumers block when the queue is empty. Cancellation is cooperative:\n//! a `CancellationToken` can be used to wake blocked producers/consumers so\n//! they return an error instead of waiting forever.\n\nuse std::collections::VecDeque;\nuse std::fmt;\nuse std::sync::{Arc, Condvar, Mutex};\n\n/// Error returned by queue operations.\n#[derive(Debug, Clone, Copy, PartialEq, Eq)]\npub enum QueueError {\n    /// The operation was cancelled before it could complete.\n    Cancelled,\n    /// The queue was shut down; no more items can be sent.\n    Closed,\n}\n\nimpl fmt::Display for QueueError {\n    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {\n        match self {\n            QueueError::Cancelled => write!(f, \"operation cancelled\"),\n            QueueError::Closed => write!(f, \"queue closed\"),\n        }\n    }\n}\n\nimpl std::error::Error for QueueError {}\n\n/// A handle used to cancel pending operations on a queue.\n///\n/// Cheap to clone. Cancellation is \"sticky\": once cancelled, all subsequent\n/// operations on queues sharing this token also fail immediately.\n#[derive(Clone, Default)]\npub struct CancellationToken {\n    inner: Arc<(Mutex<bool>, Condvar)>,\n}\n\nimpl CancellationToken {\n    pub fn new() -> Self {\n        Self {\n            inner: Arc::new((Mutex::new(false), Condvar::new())),\n        }\n    }\n\n    /// Cancel the token. Wakes all waiters; future operations fail fast.\n    pub fn cancel(&self) {\n        let (lock, cv) = &*self.inner;\n        let mut cancelled = lock.lock().unwrap();\n        *cancelled = true;\n        cv.notify_all();\n    }\n\n    /// Returns true if the token has been cancelled.\n    pub fn is_cancelled(&self) -> bool {\n        *self.inner.0.lock().unwrap()\n    }\n\n    fn wait(&self) -> bool {\n        let (lock, cv) = &*self.inner;\n        let mut cancelled = lock.lock().unwrap();\n        while !*cancelled {\n            cancelled = cv.wait(cancelled).unwrap();\n        }\n    }\n}\n```\n\nWait, I need to fix that `wait` function \u2014 it doesn't return anything but the signature says `bool`. Let me write the whole thing cleanly",
+          "refusal": null,
+          "annotations": null,
+          "audio": null,
+          "function_call": null,
+          "reasoning": null
+        },
+        "logprobs": null,
+        "finish_reason": "length",
+        "stop_reason": null,
+        "token_ids": null,
+        "routed_experts": null
+      }
+    ],
+    "service_tier": null,
+    "system_fingerprint": "vllm-0.1.dev20051+g487ecf187-tp2-3737b693",
+    "usage": {
+      "prompt_tokens": 33,
+      "total_tokens": 545,
+      "completion_tokens": 512,
+      "prompt_tokens_details": null
+    },
+    "prompt_logprobs": null,
+    "prompt_token_ids": null,
+    "prompt_text": null,
+    "kv_transfer_params": null,
+    "ec_transfer_params": null,
+    "metrics": null
+  }
+}

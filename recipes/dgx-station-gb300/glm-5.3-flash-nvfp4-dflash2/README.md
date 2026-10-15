@@ -116,6 +116,23 @@ Flags that matter:
 
 ## Results
 
+### Drafter study (October 2026): K sweep, then a self-trained drafter that failed · runs [`2026-10-04-spark-dflash2-k-sweep`](results/2026-10-04-spark-dflash2-k-sweep/RESULTS.md) · [`2026-10-15-drafter-jm-vs-incoai`](results/2026-10-15-drafter-jm-vs-incoai/P3-RESULTS.md)
+
+**The serving config in this recipe is unchanged.** This study was about the drafter, not the lane.
+
+**Weekend K sweep (Oct 3–5, 2× DGX Spark TP2, incoai `7d74cdd`, greedy, thinking off).** Prose acceptance is **~2.3 per verify step on every stack we tried** (drafter revision, CUDA graphs, sampling, thinking regime, image, NVFP4 vs W4A16, K). The 3.6-class figures on other cards come from code and math prompts. On prose, K=4 and K=3 beat K=7 by 11–16 % single-stream and 25–61 % at C4/C8; K=7 at C4–C8 is slower than no speculation. Structured output and code still want K=7. The bundle has the full matrix, per-position curves and launchers (`RESULTS.md`).
+
+**Self-trained drafter `-JM`: FAILED (negative result).** It has the same geometry as incoai (DFlash2, 5 layers, 1.17 B, same 5 taps), so it drops into any incoai launcher. Training: 150,000 target-regenerated samples, one pass, 18,750 steps, TorchSpec with CE + top-20 KL, on one GB300. It was served beside incoai on a GB300 vLLM DFlash lane (TP1) on the same morning; the Spark TP2 link was down. The four pass bars were set before training:
+
+| Bar | `-JM` | incoai `7d74cdd` | Result |
+|---|---|---|---|
+| C1 prose ≥ 2.6 at K=4 | **1.97** | 2.34–2.44 | **FAIL** (< 2.4, so negative result) |
+| Agent ≥ 4.33 at K=4 | 4.33 | 4.33 | pass (both at the ceiling; doesn't separate them) |
+| probe_code within −0.2 at K=7 | 2.67 / 2.52 | 3.88 / 3.22 | **FAIL** |
+| cq thinking-ON holdout within −0.1 (K=4, 500 prompts) | 2.712 | 3.134 | **FAIL** (−0.42) |
+
+It is also weaker on our own held-out prompts from the training distribution (2.65 vs 3.03), so this is not a regime mismatch. The cost is −16 to −19 % C1 prose tok/s. Output is unaffected, because speculation is target-verified. incoai's `bf582e4e` checkpoint is within noise of `7d74cdd`. **Use incoai.** The weights are published as a labelled failure at [jmeadlock/GLM-5.3-Flash-DFlash2-JM-FAILED](https://huggingface.co/jmeadlock/GLM-5.3-Flash-DFlash2-JM-FAILED). Likely causes, all untested: data volume (150K × 1 pass vs canada-quant's 736K), our 0.5 KL weight, and unknown Inco scale. The canada-quant holdout kit isn't vendored here; it is [canada-quant/vllm-glm53-flash-sm121](https://github.com/canada-quant/vllm-glm53-flash-sm121), and the commit is pinned in the results. Prompt files (`*.jsonl`) are omitted.
+
 ### Round 4 — claim card, long context, GPQA, verify width · run [`2026-09-23-cardE-gpqa-w3a`](results/2026-09-23-cardE-gpqa-w3a/README.md) · raw [`throughput.csv`](results/2026-09-23-cardE-gpqa-w3a/throughput.csv)
 
 Daily config (`e0`: DFlash2 block 7, 48 KDA slots, mem 0.85, 1M ctx, v0.5.20), fresh container per boot, cold boots. Every C1 number is answer-only (`reasoning_effort: low`), median of 3.

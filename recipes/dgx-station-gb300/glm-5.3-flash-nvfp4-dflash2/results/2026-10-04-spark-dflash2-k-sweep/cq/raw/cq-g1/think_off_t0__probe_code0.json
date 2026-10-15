@@ -1,0 +1,80 @@
+{
+  "row": {
+    "name": "probe_code0",
+    "regime": "think_off_t0",
+    "completion_tokens": 512,
+    "reasoning_tokens": null,
+    "wall": 17.603,
+    "tok_s": 29.086,
+    "drafts": 146.0,
+    "acceptance_length": 3.506849315068493,
+    "accept_rate": 0.35812133072407043,
+    "per_pos": {
+      "0": 0.808,
+      "1": 0.568,
+      "2": 0.425,
+      "3": 0.288,
+      "4": 0.178,
+      "5": 0.137,
+      "6": 0.103
+    },
+    "finish": "length",
+    "has_reasoning": false,
+    "content_head": "```python\n\"\"\"\nlru_cache.py\n\nA thread-safe LRU cache with TTL (time-to-live) expiry.\n\nFeatures:\n    - Thread-safe via a r"
+  },
+  "payload": {
+    "model": "glm-5.3-flash",
+    "messages": [
+      {
+        "role": "user",
+        "content": "Write a complete Python module implementing a thread-safe LRU cache with TTL expiry, type hints, docstrings, and tests. Output only code."
+      }
+    ],
+    "max_tokens": 512,
+    "stream": false,
+    "temperature": 0,
+    "top_p": 1,
+    "chat_template_kwargs": {
+      "enable_thinking": false
+    }
+  },
+  "body": {
+    "id": "chatcmpl-9e6bf0cca631b8b2",
+    "object": "chat.completion",
+    "created": 1791167967,
+    "model": "glm-5.3-flash",
+    "choices": [
+      {
+        "index": 0,
+        "message": {
+          "role": "assistant",
+          "content": "```python\n\"\"\"\nlru_cache.py\n\nA thread-safe LRU cache with TTL (time-to-live) expiry.\n\nFeatures:\n    - Thread-safe via a re-entrant lock (safe for nested calls).\n    - LRU eviction when max_size is reached.\n    - Per-entry TTL expiry (lazy expiry on access, plus optional\n      background sweeper thread).\n    - Full type hints and docstrings.\n    - Optional statistics (hits, misses, evictions, expiries).\n\nExample:\n    >>> cache = LRUCache(max_size=2, default_ttl=60)\n    >>> cache.put(\"a\", 1)\n    >>> cache.get(\"a\")\n    1\n\"\"\"\n\nfrom __future__ import annotations\n\nimport threading\nimport time\nimport unittest\nfrom collections import OrderedDict\nfrom dataclasses import dataclass, field\nfrom typing import Any, Callable, Generic, Hashable, Optional, Tuple, TypeVar\n\n__all__ = [\"LRUCache\", \"CacheStats\"]\n\nK = TypeVar(\"K\", bound=Hashable)\nV = TypeVar(\"V\")\n\n\n@dataclass(frozen=True)\nclass CacheStats:\n    \"\"\"Immutable snapshot of cache statistics.\n\n    Attributes:\n        hits: Number of successful lookups.\n        misses: Number of failed lookups (key absent or expired).\n        evictions: Number of entries evicted due to LRU capacity.\n        expiries: Number of entries removed due to TTL expiry.\n        size: Current number of live entries.\n    \"\"\"\n\n    hits: int\n    misses: int\n    evictions: int\n    expiries: int\n    size: int\n\n\nclass LRUCache(Generic[K, V]):\n    \"\"\"A thread-safe LRU cache with per-entry TTL expiry.\n\n    The cache combines two eviction policies:\n      1. LRU (Least Recently Used) eviction when the cache exceeds\n         ``max_size`` entries.\n      2. TTL (time-to-live) expiry, where each entry becomes invalid\n         after ``ttl`` seconds have elapsed since it was stored.\n\n    Expiry is checked lazily on access. An optional background\n    sweeper thread can be started to proactively remove expired\n    entries.\n\n    Thread-safety is provided by a ``threading.RLock``, making the\n    cache safe for concurrent use and for re-entrant access from the\n    same thread (e.g., a ``get_or_compute`` that calls ``get``).\n\n    Type Args:\n        K: Key type,",
+          "refusal": null,
+          "annotations": null,
+          "audio": null,
+          "function_call": null,
+          "reasoning": null
+        },
+        "logprobs": null,
+        "finish_reason": "length",
+        "stop_reason": null,
+        "token_ids": null,
+        "routed_experts": null
+      }
+    ],
+    "service_tier": null,
+    "system_fingerprint": "vllm-0.1.dev20051+g487ecf187-tp2-3737b693",
+    "usage": {
+      "prompt_tokens": 42,
+      "total_tokens": 554,
+      "completion_tokens": 512,
+      "prompt_tokens_details": null
+    },
+    "prompt_logprobs": null,
+    "prompt_token_ids": null,
+    "prompt_text": null,
+    "kv_transfer_params": null,
+    "ec_transfer_params": null,
+    "metrics": null
+  }
+}

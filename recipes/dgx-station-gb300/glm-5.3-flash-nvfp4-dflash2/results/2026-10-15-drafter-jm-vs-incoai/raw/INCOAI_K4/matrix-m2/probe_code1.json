@@ -1,0 +1,108 @@
+{
+  "fixture": "probe_code1",
+  "concurrency": 1,
+  "started_iso": "2026-10-15T04:09:27-05:00",
+  "ended_iso": "2026-10-15T04:09:29-05:00",
+  "batch_wall_seconds": 2.264,
+  "mean_wall_seconds": 2.263,
+  "completion_tokens_total": 512,
+  "aggregate_tok_s": 226.193,
+  "per_stream_tok_s": [
+    226.261
+  ],
+  "spec_metrics_present": true,
+  "metric_before": {
+    "drafts": 6995.0,
+    "draft_tokens": 27980.0,
+    "accepted_tokens": 13844.0
+  },
+  "metric_after": {
+    "drafts": 7162.0,
+    "draft_tokens": 28648.0,
+    "accepted_tokens": 14189.0
+  },
+  "metric_delta": {
+    "drafts": 167.0,
+    "draft_tokens": 668.0,
+    "accepted_tokens": 345.0
+  },
+  "per_pos_accepted_delta": {
+    "0": 133.0,
+    "1": 100.0,
+    "2": 68.0,
+    "3": 44.0
+  },
+  "per_pos_accept_prob": {
+    "0": 0.7964071856287425,
+    "1": 0.5988023952095808,
+    "2": 0.40718562874251496,
+    "3": 0.2634730538922156
+  },
+  "metric_series_seen_before": {
+    "drafts": 1,
+    "draft_tokens": 1,
+    "accepted_tokens": 1
+  },
+  "metric_series_seen_after": {
+    "drafts": 1,
+    "draft_tokens": 1,
+    "accepted_tokens": 1
+  },
+  "metric_lines_before": [
+    "vllm:spec_decode_num_drafts_total{engine=\"0\",model_name=\"glm-5.3-flash\"} 6995.0",
+    "vllm:spec_decode_num_draft_tokens_total{engine=\"0\",model_name=\"glm-5.3-flash\"} 27980.0",
+    "vllm:spec_decode_num_accepted_tokens_total{engine=\"0\",model_name=\"glm-5.3-flash\"} 13844.0"
+  ],
+  "metric_lines_after": [
+    "vllm:spec_decode_num_drafts_total{engine=\"0\",model_name=\"glm-5.3-flash\"} 7162.0",
+    "vllm:spec_decode_num_draft_tokens_total{engine=\"0\",model_name=\"glm-5.3-flash\"} 28648.0",
+    "vllm:spec_decode_num_accepted_tokens_total{engine=\"0\",model_name=\"glm-5.3-flash\"} 14189.0"
+  ],
+  "acceptance_length": 3.065868263473054,
+  "accept_rate": 0.5164670658682635,
+  "ar_tok_s_from_wall": null,
+  "response_kinds": [
+    "empty"
+  ],
+  "finish_reasons": [
+    "length"
+  ],
+  "errors": [],
+  "mem_during": {},
+  "requests": [
+    {
+      "http_status": 200,
+      "started_iso": "2026-10-15T04:09:27-05:00",
+      "wall_seconds": 2.263,
+      "prompt_tokens": 33,
+      "completion_tokens": 512,
+      "reasoning_tokens": 512,
+      "tok_s": 226.261,
+      "finish_reason": "length",
+      "response_kind": "empty",
+      "content": null,
+      "reasoning": "```rust\n//! A bounded work queue with cancellation support.\n//!\n//! The queue has a fixed capacity. Producers block when the queue is full,\n//! consumers block when the queue is empty. Cancellation is cooperative:\n//! a `CancellationToken` can be used to wake blocked producers/consumers so\n//! they return an error instead of waiting forever.\n\nuse std::collections::VecDeque;\nuse std::fmt;\nuse std::sync::{Arc, Condvar, Mutex};\n\n/// Error returned by queue operations.\n#[derive(Debug, Clone, Copy, PartialEq, Eq)]\npub enum QueueError {\n    /// The operation was cancelled before it could complete.\n    Cancelled,\n    /// The queue was closed; no new items can be enqueued.\n    Closed,\n}\n\nimpl fmt::Display for QueueError {\n    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {\n        match self {\n            QueueError::Cancelled => write!(f, \"operation cancelled\"),\n            QueueError::BlockingQueue::Closed => write!(f, \"queue closed\"),\n        }\n    }\n}\n\nimpl std::error::Error for QueueError {}\n\n/// Token used to cancel blocking operations on a queue.\n#[derive(Clone, Default)]\npub struct CancellationToken {\n    inner: Arc<(Mutex<bool>, Condvar)>,\n}\n\nimpl CancellationToken {\n    pub fn new() -> Self {\n        Self {\n            inner: Arc::new((Mutex::new(false, Condvar::new())),\n        }\n    }\n\n    /// Put the token into the cancelled state and wake all waiters.\n    pub fn cancel(&self) {\n        let (lock, cvar) = &*self.inner;\n        let mut cancelled = lock.lock().unwrap();\n        *cancelled = true;\n        cvar.notify_all();\n    }\n\n    /// Non-blocking check.\n    if cancelled() {\n        return Err(QueueError::Cancelled);\n    }\n    /// ```\n    pub fn is_cancelled(&self) -> bool {\n        let (lock, _) = &*self.inner;\n        *lock.lock().unwrap()\n    }\n\n    /// Returns a guard that blocks until the token is cancelled.\n    pub fn cancelled_guard(&self) -> CancelledGuard<'_> {\n        CancelledGuard { token: self }\n    }\n\n    fn wait_for_cancel(&self) {\n        let (lock, cvar) = &*self.inner;\n        let mut cancelled = loose lock.lock().unwrap();\n        while !*cancelled {\n            cancelled = cvar.wait(cancelled).unwrap();",
+      "tool_calls": null,
+      "error": null
+    }
+  ],
+  "request_payload_template": {
+    "model": "glm-5.3-flash",
+    "messages": [
+      {
+        "role": "user",
+        "content": "Write a complete Rust implementation of a bounded work queue with cancellation and unit tests. Output only code."
+      }
+    ],
+    "temperature": 0,
+    "top_p": 1,
+    "max_tokens": 512,
+    "stream": false,
+    "chat_template_kwargs": {
+      "enable_thinking": false
+    }
+  },
+  "name": "probe_code1",
+  "rep": 1,
+  "mode": "dflash"
+}

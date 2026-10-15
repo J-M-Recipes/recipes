@@ -1,0 +1,108 @@
+{
+  "fixture": "probe_prose0",
+  "concurrency": 1,
+  "started_iso": "2026-10-15T07:14:32-05:00",
+  "ended_iso": "2026-10-15T07:14:35-05:00",
+  "batch_wall_seconds": 3.123,
+  "mean_wall_seconds": 3.122,
+  "completion_tokens_total": 512,
+  "aggregate_tok_s": 163.968,
+  "per_stream_tok_s": [
+    164.006
+  ],
+  "spec_metrics_present": true,
+  "metric_before": {
+    "drafts": 6306.0,
+    "draft_tokens": 25224.0,
+    "accepted_tokens": 13030.0
+  },
+  "metric_after": {
+    "drafts": 6548.0,
+    "draft_tokens": 26192.0,
+    "accepted_tokens": 13299.0
+  },
+  "metric_delta": {
+    "drafts": 242.0,
+    "draft_tokens": 968.0,
+    "accepted_tokens": 269.0
+  },
+  "per_pos_accepted_delta": {
+    "0": 152.0,
+    "1": 71.0,
+    "2": 36.0,
+    "3": 10.0
+  },
+  "per_pos_accept_prob": {
+    "0": 0.628099173553719,
+    "1": 0.29338842975206614,
+    "2": 0.1487603305785124,
+    "3": 0.04132231404958678
+  },
+  "metric_series_seen_before": {
+    "drafts": 1,
+    "draft_tokens": 1,
+    "accepted_tokens": 1
+  },
+  "metric_series_seen_after": {
+    "drafts": 1,
+    "draft_tokens": 1,
+    "accepted_tokens": 1
+  },
+  "metric_lines_before": [
+    "vllm:spec_decode_num_drafts_total{engine=\"0\",model_name=\"glm-5.3-flash\"} 6306.0",
+    "vllm:spec_decode_num_draft_tokens_total{engine=\"0\",model_name=\"glm-5.3-flash\"} 25224.0",
+    "vllm:spec_decode_num_accepted_tokens_total{engine=\"0\",model_name=\"glm-5.3-flash\"} 13030.0"
+  ],
+  "metric_lines_after": [
+    "vllm:spec_decode_num_drafts_total{engine=\"0\",model_name=\"glm-5.3-flash\"} 6548.0",
+    "vllm:spec_decode_num_draft_tokens_total{engine=\"0\",model_name=\"glm-5.3-flash\"} 26192.0",
+    "vllm:spec_decode_num_accepted_tokens_total{engine=\"0\",model_name=\"glm-5.3-flash\"} 13299.0"
+  ],
+  "acceptance_length": 2.115702479338843,
+  "accept_rate": 0.27789256198347106,
+  "ar_tok_s_from_wall": null,
+  "response_kinds": [
+    "empty"
+  ],
+  "finish_reasons": [
+    "length"
+  ],
+  "errors": [],
+  "mem_during": {},
+  "requests": [
+    {
+      "http_status": 200,
+      "started_iso": "2026-10-15T07:14:32-05:00",
+      "wall_seconds": 3.122,
+      "prompt_tokens": 32,
+      "completion_tokens": 512,
+      "reasoning_tokens": 512,
+      "tok_s": 164.006,
+      "finish_reason": "length",
+      "response_kind": "empty",
+      "content": null,
+      "reasoning": "# Roman Aqueducts: Engineering Gradient and Purity\n\nRoman aqueducts stand among history's most impressive engineering achievements, and their success depended on solving two fundamental problems: moving water across vast distances using only gravity, and keeping that water clean throughout its journey. The Romans' solutions to these challenges reveal sophisticated understanding of hydraulics, materials science, and public health\u2014often achieved through empirical knowledge rather than formal theory.\n\n## Maintaining Gradient: The Precision of Gravity-Fed Flow\n\nThe most remarkable aspect of aqueduct engineering was the gradient\u2014the gentle, continuous slope that allowed water to flow downhill over enormous distances. Most Roman aqueducts maintained gradients of roughly 0.15 to 0.3 percent, meaning the channel dropped only about 15 to 30 centimeters per 100 meters. The aqueducts serving Rome collectively dropped approximately 300 meters over their combined lengths, with individual channels sometimes falling as little as a few centimeters per kilometer.\n\nAchieving such precision required sophisticated surveying instruments. Roman engineers used the *chorobates*, a long wooden bench with a groove for water or a plumb-line apparatus, to establish level lines. They also employed the *groma* for right angles and the *libella*, an A-shaped level similar to a modern spirit level. Using these tools, surveyors traced routes across challenging terrain, often taking paths that seem circuitous until one understands they were following contour lines to preserve the delicate gradient.\n\nThe Romans also understood that a uniform gradient was not always ideal. In steep sections, they slowed the water using stepped cascades (*cascatae*) that dissipated energy and prevented erosion. In flatter regions, they sometimes used *venteris*\u2014inclined drops where water plunged down hillsides in sealed pipes\u2014allowing the channel to \"reset\" its elevation. The famous siphons at places like Lyon (Lugdunum) pushed water through lead pipes down into valleys and up the other side, exploiting the principle that water in connected pipes seeks its own level. These inverted siphons could withstand enormous pressures, requiring thick-walled lead or drilled stone blocks fitted together.\n\n## Water Quality: Filtration, Settling, and Maintenance\n\nKeeping water clean began at the source. Romans preferred spring water, which they considered superior because it emerged already filtered through rock and soil. Vitruvius, writing in the first century BCE, noted that springs emerging from gravelly or stony ground produced the healthiest water, and he advised",
+      "tool_calls": null,
+      "error": null
+    }
+  ],
+  "request_payload_template": {
+    "model": "glm-5.3-flash",
+    "messages": [
+      {
+        "role": "user",
+        "content": "Write a detailed 700-word explanation of how Roman aqueducts maintained gradient and water quality."
+      }
+    ],
+    "temperature": 0,
+    "top_p": 1,
+    "max_tokens": 512,
+    "stream": false,
+    "chat_template_kwargs": {
+      "enable_thinking": false
+    }
+  },
+  "name": "probe_prose0",
+  "rep": 1,
+  "mode": "dflash"
+}

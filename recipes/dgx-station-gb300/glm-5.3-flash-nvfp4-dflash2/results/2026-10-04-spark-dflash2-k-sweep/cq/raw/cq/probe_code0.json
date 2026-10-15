@@ -1,0 +1,114 @@
+{
+  "fixture": "probe_code0",
+  "concurrency": 1,
+  "started_iso": "2026-10-04T21:37:54-05:00",
+  "ended_iso": "2026-10-04T21:38:10-05:00",
+  "batch_wall_seconds": 16.782,
+  "mean_wall_seconds": 16.781,
+  "completion_tokens_total": 512,
+  "aggregate_tok_s": 30.508,
+  "per_stream_tok_s": [
+    30.51
+  ],
+  "spec_metrics_present": true,
+  "metric_before": {
+    "drafts": 2844.0,
+    "draft_tokens": 19908.0,
+    "accepted_tokens": 6825.0
+  },
+  "metric_after": {
+    "drafts": 2982.0,
+    "draft_tokens": 20874.0,
+    "accepted_tokens": 7200.0
+  },
+  "metric_delta": {
+    "drafts": 138.0,
+    "draft_tokens": 966.0,
+    "accepted_tokens": 375.0
+  },
+  "per_pos_accepted_delta": {
+    "0": 109.0,
+    "1": 76.0,
+    "2": 59.0,
+    "3": 46.0,
+    "4": 34.0,
+    "5": 28.0,
+    "6": 23.0
+  },
+  "per_pos_accept_prob": {
+    "0": 0.7898550724637681,
+    "1": 0.5507246376811594,
+    "2": 0.427536231884058,
+    "3": 0.3333333333333333,
+    "4": 0.2463768115942029,
+    "5": 0.2028985507246377,
+    "6": 0.16666666666666666
+  },
+  "metric_series_seen_before": {
+    "drafts": 1,
+    "draft_tokens": 1,
+    "accepted_tokens": 1
+  },
+  "metric_series_seen_after": {
+    "drafts": 1,
+    "draft_tokens": 1,
+    "accepted_tokens": 1
+  },
+  "metric_lines_before": [
+    "vllm:spec_decode_num_drafts_total{engine=\"0\",model_name=\"glm-5.3-flash\"} 2844.0",
+    "vllm:spec_decode_num_draft_tokens_total{engine=\"0\",model_name=\"glm-5.3-flash\"} 19908.0",
+    "vllm:spec_decode_num_accepted_tokens_total{engine=\"0\",model_name=\"glm-5.3-flash\"} 6825.0"
+  ],
+  "metric_lines_after": [
+    "vllm:spec_decode_num_drafts_total{engine=\"0\",model_name=\"glm-5.3-flash\"} 2982.0",
+    "vllm:spec_decode_num_draft_tokens_total{engine=\"0\",model_name=\"glm-5.3-flash\"} 20874.0",
+    "vllm:spec_decode_num_accepted_tokens_total{engine=\"0\",model_name=\"glm-5.3-flash\"} 7200.0"
+  ],
+  "acceptance_length": 3.710144927536232,
+  "accept_rate": 0.38819875776397517,
+  "ar_tok_s_from_wall": null,
+  "response_kinds": [
+    "text"
+  ],
+  "finish_reasons": [
+    "length"
+  ],
+  "errors": [],
+  "mem_during": {},
+  "requests": [
+    {
+      "http_status": 200,
+      "started_iso": "2026-10-04T21:37:54-05:00",
+      "wall_seconds": 16.781,
+      "prompt_tokens": 42,
+      "completion_tokens": 512,
+      "reasoning_tokens": null,
+      "tok_s": 30.51,
+      "finish_reason": "length",
+      "response_kind": "text",
+      "content": "```python\n\"\"\"\nlru_cache.py\n\nA thread-safe LRU cache with TTL (time-to-live) expiry.\n\nFeatures:\n    - Thread-safe via a re-entrant lock (RLock), so methods may call\n      other locked methods internally.\n    - LRU eviction: least-recently-used entries are evicted first when\n      the cache exceeds its maximum size.\n    - TTL expiry: entries expire after a configurable number of seconds.\n      Expired entries are lazily removed on access and proactively\n      purged by a background thread (optional).\n    - Full type hints and docstrings.\n\"\"\"\n\nfrom __future__ import annotations\n\nimport functools\nimport itertools\nimport threading\nimport time\nimport types\nfrom collections import OrderedDict\nfrom typing import (\n    Any,\n    Callable,\n    Generic,\n    Hashable,\n    Iterator,\n    Optional,\n    Protocol,\n    TypeVar,\n)\n\n__all__ = [\"LRUCache\", \"TTLCache\", \"cached\"]\n\nK = TypeVar(\"K\", bound=Hashable)\nV = TypeVar(\"V\")\n\n# A monotonic clock function; swap-able for testing.\n_Clock = Callable[[], float]\n\n_MISSING = object()  # Sentinel for \"key not present\"\n\n\nclass _ExpiringCache(Generic[K, V]):\n    \"\"\"Internal base: a thread-safe dict with per-entry expiry times.\"\"\"\n\n    def __init__(self, maxsize: int = 128, clock: _Clock = time.monotonic) -> None:\n        \"\"\"\n        Args:\n            maxsize: Maximum number of entries. Must be >= 1.\n            clock:   Monotonic clock used for TTL calculations.\n                     Defaults to `time.monotonic`. Injectable for tests.\n        \"\"\"\n        if maxsize < 1:\n            raise ValueError(\"maxsize must be >= 1\")\n        self._maxsize = maxsize\n        self._clock = clock\n        self._lock = threading.RLock()\n        self._data: \"OrderedDict[K, tuple[V, float]]\" = OrderedDict()\n\n    # ------------------------------------------------------------------ #\n    # Public API\n    # ------------------------------------------------------------------ #\n\n    def get(self, key: K, default: V | None = None) -> V | None:\n        \"\"\"Return the value for `key`, or `default` if absent/expired.\"\"\"\n        with self._lock:\n            entry = self._data.get(key)\n            if entry is None:\n                return default\n            value, expires_at = entry\n            if self._clock",
+      "reasoning": null,
+      "tool_calls": null,
+      "error": null
+    }
+  ],
+  "request_payload_template": {
+    "model": "glm-5.3-flash",
+    "messages": [
+      {
+        "role": "user",
+        "content": "Write a complete Python module implementing a thread-safe LRU cache with TTL expiry, type hints, docstrings, and tests. Output only code."
+      }
+    ],
+    "temperature": 0,
+    "top_p": 1,
+    "max_tokens": 512,
+    "stream": false,
+    "chat_template_kwargs": {
+      "enable_thinking": false
+    }
+  },
+  "name": "probe_code0",
+  "rep": 1,
+  "mode": "dflash"
+}

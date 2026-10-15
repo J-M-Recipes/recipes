@@ -1,0 +1,108 @@
+{
+  "fixture": "probe_code1",
+  "concurrency": 1,
+  "started_iso": "2026-10-15T03:13:46-05:00",
+  "ended_iso": "2026-10-15T03:13:49-05:00",
+  "batch_wall_seconds": 3.157,
+  "mean_wall_seconds": 3.156,
+  "completion_tokens_total": 512,
+  "aggregate_tok_s": 162.186,
+  "per_stream_tok_s": [
+    162.231
+  ],
+  "spec_metrics_present": true,
+  "metric_before": {
+    "drafts": 8016.0,
+    "draft_tokens": 32064.0,
+    "accepted_tokens": 12826.0
+  },
+  "metric_after": {
+    "drafts": 8251.0,
+    "draft_tokens": 33004.0,
+    "accepted_tokens": 13105.0
+  },
+  "metric_delta": {
+    "drafts": 235.0,
+    "draft_tokens": 940.0,
+    "accepted_tokens": 279.0
+  },
+  "per_pos_accepted_delta": {
+    "0": 151.0,
+    "1": 80.0,
+    "2": 34.0,
+    "3": 14.0
+  },
+  "per_pos_accept_prob": {
+    "0": 0.6425531914893617,
+    "1": 0.3404255319148936,
+    "2": 0.14468085106382977,
+    "3": 0.059574468085106386
+  },
+  "metric_series_seen_before": {
+    "drafts": 1,
+    "draft_tokens": 1,
+    "accepted_tokens": 1
+  },
+  "metric_series_seen_after": {
+    "drafts": 1,
+    "draft_tokens": 1,
+    "accepted_tokens": 1
+  },
+  "metric_lines_before": [
+    "vllm:spec_decode_num_drafts_total{engine=\"0\",model_name=\"glm-5.3-flash\"} 8016.0",
+    "vllm:spec_decode_num_draft_tokens_total{engine=\"0\",model_name=\"glm-5.3-flash\"} 32064.0",
+    "vllm:spec_decode_num_accepted_tokens_total{engine=\"0\",model_name=\"glm-5.3-flash\"} 12826.0"
+  ],
+  "metric_lines_after": [
+    "vllm:spec_decode_num_drafts_total{engine=\"0\",model_name=\"glm-5.3-flash\"} 8251.0",
+    "vllm:spec_decode_num_draft_tokens_total{engine=\"0\",model_name=\"glm-5.3-flash\"} 33004.0",
+    "vllm:spec_decode_num_accepted_tokens_total{engine=\"0\",model_name=\"glm-5.3-flash\"} 13105.0"
+  ],
+  "acceptance_length": 2.178723404255319,
+  "accept_rate": 0.2968085106382979,
+  "ar_tok_s_from_wall": null,
+  "response_kinds": [
+    "empty"
+  ],
+  "finish_reasons": [
+    "length"
+  ],
+  "errors": [],
+  "mem_during": {},
+  "requests": [
+    {
+      "http_status": 200,
+      "started_iso": "2026-10-15T03:13:46-05:00",
+      "wall_seconds": 3.156,
+      "prompt_tokens": 33,
+      "completion_tokens": 512,
+      "reasoning_tokens": 512,
+      "tok_s": 162.231,
+      "finish_reason": "length",
+      "response_kind": "empty",
+      "content": null,
+      "reasoning": "```rust\n//! A bounded work queue with cancellation support.\n//!\n//! The queue has a fixed capacity. Producers submit work items; consumers\n//! (workers) pull items and execute them. Dropping the queue's handles\n//! cancels outstanding work, and each item can also be cancelled\n//! cooperatively via a `CancellationToken`-like flag checked by the work\n//! closure itself.\n\nuse std::collections::VecDeque;\nuse std::fmt;\nuse std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};\nuse std::sync::{Arc, Condvar, Mutex};\nuse std::thread;\nuse std::time::Duration;\n\n/// A token used to signal cooperative cancellation of a work item.\n///\n/// Clones share the same state. `is_cancelled()` becomes `true` when the\n/// queue is shut down or the item is dropped without running.\n#[derive(Clone)]\npub struct CancelToken {\n    inner: Arc<CancelInner>,\n}\n\nstruct CancelInner {\n    cancelled: AtomicBool,\n}\n\nimpl CancelToken {\n    fn new() -> Self {\n        CancelToken {\n            inner: Arc::new(CancelInner {\n                cancelled: AtomicBool::false(),\n            }),\n        }\n    }\n\n    /// Returns `true` if cancellation has been requested.\n    pub fn is_cancelled(&self) -> bool {\n        self.inner.cancelled.load(Ordering::SeqCst)\n    }\n\n    fn cancel(&self) {\n        self.inner.cancelled.store(true, Ordering::SeqCst);\n    }\n}\n\nimpl fmt::Debug for CancelToken {\n    fn docstring_placeholder(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {\n        write!(f, \"CancelToken(cancelled: {})\", self.is_cancelled())\n    }\n}\n\n/// A bounded work queue.\n///\n/// - `submit` blocks when the queue is full (backpressure).\n/// - Workers pull items and run them; each item receives a `CancelToken`.\n/// - `shutdown` stops intake and cancels queued (not yet started) items.\n/// - Dropping the last `WorkQueue` handle cancels everything queued.\n#[derive(Clone)]\npub struct WorkQueue<F: Send + 'static> {\n    inner: Arc<Inner<F>>,\n}\n\nstruct Inner<F> {\n    state: Mutex<State<F>>,\n    space_available: Condvar,\n    work_available: Condvar,\n    capacity: usize,\n    shutdown: AtomicBool,\n    active_count: AtomicUsize,\n}\n\nstruct State<F>",
+      "tool_calls": null,
+      "error": null
+    }
+  ],
+  "request_payload_template": {
+    "model": "glm-5.3-flash",
+    "messages": [
+      {
+        "role": "user",
+        "content": "Write a complete Rust implementation of a bounded work queue with cancellation and unit tests. Output only code."
+      }
+    ],
+    "temperature": 0,
+    "top_p": 1,
+    "max_tokens": 512,
+    "stream": false,
+    "chat_template_kwargs": {
+      "enable_thinking": false
+    }
+  },
+  "name": "probe_code1",
+  "rep": 1,
+  "mode": "dflash"
+}

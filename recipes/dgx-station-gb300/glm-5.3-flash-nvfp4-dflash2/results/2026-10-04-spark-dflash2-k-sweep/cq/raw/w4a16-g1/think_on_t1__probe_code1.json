@@ -1,0 +1,80 @@
+{
+  "row": {
+    "name": "probe_code1",
+    "regime": "think_on_t1",
+    "completion_tokens": 512,
+    "reasoning_tokens": null,
+    "wall": 18.141,
+    "tok_s": 28.224,
+    "drafts": 159.0,
+    "acceptance_length": 3.220125786163522,
+    "accept_rate": 0.31805929919137466,
+    "per_pos": {
+      "0": 0.736,
+      "1": 0.535,
+      "2": 0.365,
+      "3": 0.252,
+      "4": 0.17,
+      "5": 0.113,
+      "6": 0.057
+    },
+    "finish": "length",
+    "has_reasoning": true,
+    "content_head": ""
+  },
+  "payload": {
+    "model": "glm-5.3-flash",
+    "messages": [
+      {
+        "role": "user",
+        "content": "Write a complete Rust implementation of a bounded work queue with cancellation and unit tests. Output only code."
+      }
+    ],
+    "max_tokens": 512,
+    "stream": false,
+    "temperature": 1.0,
+    "top_p": 0.95,
+    "chat_template_kwargs": {
+      "enable_thinking": true
+    }
+  },
+  "body": {
+    "id": "chatcmpl-a564f943e40dcac1",
+    "object": "chat.completion",
+    "created": 1791197102,
+    "model": "glm-5.3-flash",
+    "choices": [
+      {
+        "index": 0,
+        "message": {
+          "role": "assistant",
+          "content": null,
+          "refusal": null,
+          "annotations": null,
+          "audio": null,
+          "function_call": null,
+          "reasoning": "The user wants a complete Rust implementation of a bounded work queue with cancellation and unit tests. They want only code output.\n\nLet me think about what a bounded work queue with cancellation needs:\n\n1. **Bounded queue**: A queue with a fixed capacity. Producers block when full, consumers block when empty (or return errors).\n2. **Cancellation**: Ability to close/cancel the queue so that:\n   - Producers attempting to push fail (or no longer block)\n   - Consumers drain remaining items then get notified the queue is closed\n   - Possibly immediate cancellation that drops pending items\n3. **Thread-safe**: Use `Mutex` + `Condvar` from std.\n4. **Unit tests**: Test basic push/pop, bounded behavior, blocking, cancellation semantics, multiple producers/consumers, etc.\n\nDesign considerations:\n\n- `WorkQueue<T>` with `Arc`-based shared state so multiple producers and consumers can hold handles.\n- A `Sender`/`Receiver` style split, or just clone-able handles. Let me design:\n  - `WorkQueue<T>` \u2014 the shared state wrapped in `Arc`.\n  - `push(item) -> Result<(), PushError>` \u2014 blocks when full; errors when cancelled.\n  - `try_push(item) -> Result<(), TryPushError>` \u2014 non-blocking.\n  - `pop() -> Result<T, PopError>` \u2014 blocks when empty; errors when empty AND closed.\n  - `try_pop() -> Result<T, TryPopError>` \u2014 non-blocking.\n  - `close()` \u2014 signals no more items will be pushed; wakes all waiters. Consumers drain remaining items.\n  - `cancel()` \u2014 drops pending items immediately and wakes all waiters with cancelled error.\n  - Maybe `len()`, `is_empty()`, `capacity()`.\n\nErrors:\n- `PushError::Closed` \u2014 queue closed or cancelled.\n- `PopError::Empty` (closed and drained) or `PopError::Cancelled`.\n\nActually, let me unify: after `close()`, pops succeed until drained, then return `PopError::Closed`. After `cancel()`, pending items are dropped and pops return `PopError::Cancelled` immediately. Pushes after close or cancel return `PushError::Closed`.\n\nTimeout support could be nice: `push_timeout` and `pop_timeout` using `wait_timeout`. That adds complexity but is useful. Let me include it for completeness \u2014 \"complete implementation\" suggests being thorough.\n\nAlso consider a `try_pop_when_closed` draining semantics"
+        },
+        "logprobs": null,
+        "finish_reason": "length",
+        "stop_reason": null,
+        "token_ids": null,
+        "routed_experts": null
+      }
+    ],
+    "service_tier": null,
+    "system_fingerprint": "vllm-0.1.dev20051+g487ecf187-tp2-815c380c",
+    "usage": {
+      "prompt_tokens": 32,
+      "total_tokens": 544,
+      "completion_tokens": 512,
+      "prompt_tokens_details": null
+    },
+    "prompt_logprobs": null,
+    "prompt_token_ids": null,
+    "prompt_text": null,
+    "kv_transfer_params": null,
+    "ec_transfer_params": null,
+    "metrics": null
+  }
+}

@@ -1,0 +1,197 @@
+12:(APIServer pid=1) INFO 10-04 09:12:55 [model.py:679] Resolved architecture: DFlash2DraftModel
+14:(APIServer pid=1) INFO 10-04 09:12:55 [speculative.py:1256] Overriding draft model max model len from 1048576 to 262144
+20:(APIServer pid=1) WARNING 10-04 09:12:55 [vllm.py:1872] max_num_scheduled_tokens is set to 2048 based on the speculative decoding settings. This may lead to suboptimal performance. Consider increasing max_num_batched_tokens to accommodate the additional draft token slots, or decrease num_speculat
+34:(Worker_TP0 pid=389) INFO 10-04 09:13:15 [model_runner.py:353] Loading model from scratch...
+35:(Worker_TP0 pid=389) INFO 10-04 09:13:15 [cuda.py:592] Using backend AttentionBackendEnum.FLASH_ATTN for vit attention
+36:(Worker_TP0 pid=389) INFO 10-04 09:13:15 [mm_encoder_attention.py:375] Using AttentionBackendEnum.FLASH_ATTN for MMEncoderAttention.
+37:(Worker_TP0 pid=389) WARNING 10-04 09:13:15 [vllm.py:1290] Enforce eager set, disabling torch.compile and CUDAGraphs. This is equivalent to setting -cc.mode=none -cc.cudagraph_mode=none
+38:(Worker_TP0 pid=389) INFO 10-04 09:13:15 [kernel.py:306] Final IR op priority after setting platform defaults: IrOpPriorityConfig(rms_norm=['vllm_c', 'native'], fused_add_rms_norm=['vllm_c', 'native'])
+39:(Worker_TP0 pid=389) WARNING 10-04 09:13:15 [vllm.py:1872] max_num_scheduled_tokens is set to 2048 based on the speculative decoding settings. This may lead to suboptimal performance. Consider increasing max_num_batched_tokens to accommodate the additional draft token slots, or decrease num_specu
+40:(Worker_TP0 pid=389) INFO 10-04 09:13:15 [vllm.py:1541] Cudagraph is disabled under eager mode
+41:(Worker_TP0 pid=389) INFO 10-04 09:13:15 [compilation.py:329] Enabled custom fusions: norm_quant, act_quant
+42:(Worker_TP0 pid=389) INFO 10-04 09:13:15 [cuda.py:533] Using FLASHINFER_MLA_SPARSE_SM90 attention backend out of potential backends: ['FLASHINFER_MLA_SPARSE_SM90', 'FLASHINFER_MLA_SPARSE_SM120'].
+43:(Worker_TP0 pid=389) INFO 10-04 09:13:15 [selector.py:217] Using HND KV cache layout for FLASHINFER_MLA_SPARSE_SM90 backend.
+44:(Worker_TP0 pid=389) WARNING 10-04 09:13:15 [mla_attention.py:567] No MLA prefill backend supports this model; sparse MLA will use the top-k MQA path only (no dense-MHA prefill).
+45:(Worker_TP0 pid=389) INFO 10-04 09:13:15 [deep_gemm.py:191] deep_gemm not found in site-packages, trying vendored vllm.third_party.deep_gemm
+46:(Worker_TP0 pid=389) INFO 10-04 09:13:15 [deep_gemm.py:136] DeepGEMM E8M0 enabled on current platform.
+47:(Worker_TP0 pid=389) INFO 10-04 09:13:15 [nvfp4.py:244] Using 'MARLIN' NvFp4 MoE backend out of potential backends: ['FLASHINFER_TRTLLM', 'FLASHINFER_CUTEDSL', 'FLASHINFER_CUTLASS', 'VLLM_CUTLASS', 'MARLIN', 'HUMMING', 'EMULATION'].
+48:(Worker_TP0 pid=389) INFO 10-04 09:13:16 [weight_utils.py:858] Filesystem type for checkpoints: EXT4. Checkpoint size: 181.29 GiB. Available RAM: 22.79 GiB.
+49:(Worker_TP0 pid=389) INFO 10-04 09:13:16 [weight_utils.py:888] Auto-prefetch is disabled because the filesystem (EXT4) is not a recognized network FS (NFS/Lustre) and the checkpoint size (181.29 GiB) exceeds 90% of available RAM (22.79 GiB).
+50:(Worker_TP0 pid=389) Loading safetensors checkpoint shards:   0% Completed | 0/120 [00:00<?, ?it/s]
+51:(Worker_TP0 pid=389) Loading safetensors checkpoint shards:   1% Completed | 1/120 [00:12<25:26, 12.83s/it]
+52:(Worker_TP0 pid=389) Loading safetensors checkpoint shards:   2% Completed | 2/120 [00:19<17:38,  8.97s/it]
+53:(Worker_TP0 pid=389) Loading safetensors checkpoint shards:   2% Completed | 3/120 [00:25<15:02,  7.71s/it]
+54:(Worker_TP0 pid=389) Loading safetensors checkpoint shards:   3% Completed | 4/120 [00:32<14:41,  7.60s/it]
+55:(Worker_TP0 pid=389) Loading safetensors checkpoint shards:   4% Completed | 5/120 [00:38<13:37,  7.11s/it]
+56:(Worker_TP0 pid=389) Loading safetensors checkpoint shards:   5% Completed | 6/120 [00:44<12:43,  6.69s/it]
+57:(Worker_TP0 pid=389) Loading safetensors checkpoint shards:   6% Completed | 7/120 [00:52<12:53,  6.85s/it]
+58:(Worker_TP0 pid=389) Loading safetensors checkpoint shards:   7% Completed | 8/120 [00:58<12:16,  6.58s/it]
+59:(Worker_TP0 pid=389) Loading safetensors checkpoint shards:   8% Completed | 9/120 [01:04<12:15,  6.63s/it]
+60:(Worker_TP0 pid=389) Loading safetensors checkpoint shards:   8% Completed | 10/120 [01:10<11:52,  6.47s/it]
+61:(Worker_TP0 pid=389) Loading safetensors checkpoint shards:   9% Completed | 11/120 [01:16<11:32,  6.35s/it]
+62:(Worker_TP0 pid=389) Loading safetensors checkpoint shards:  10% Completed | 12/120 [01:23<11:39,  6.48s/it]
+63:(Worker_TP0 pid=389) Loading safetensors checkpoint shards:  11% Completed | 13/120 [01:29<11:06,  6.23s/it]
+64:(Worker_TP0 pid=389) Loading safetensors checkpoint shards:  12% Completed | 14/120 [01:35<10:46,  6.10s/it]
+65:(Worker_TP0 pid=389) Loading safetensors checkpoint shards:  12% Completed | 15/120 [01:42<11:22,  6.50s/it]
+66:(Worker_TP0 pid=389) Loading safetensors checkpoint shards:  13% Completed | 16/120 [01:49<11:12,  6.46s/it]
+67:(Worker_TP0 pid=389) Loading safetensors checkpoint shards:  14% Completed | 17/120 [01:55<10:55,  6.37s/it]
+68:(Worker_TP0 pid=389) Loading safetensors checkpoint shards:  15% Completed | 18/120 [02:02<11:11,  6.59s/it]
+69:(Worker_TP0 pid=389) Loading safetensors checkpoint shards:  16% Completed | 19/120 [02:08<10:51,  6.45s/it]
+70:(Worker_TP0 pid=389) Loading safetensors checkpoint shards:  17% Completed | 20/120 [02:14<10:42,  6.43s/it]
+71:(Worker_TP0 pid=389) Loading safetensors checkpoint shards:  18% Completed | 21/120 [02:21<10:40,  6.47s/it]
+72:(Worker_TP0 pid=389) Loading safetensors checkpoint shards:  18% Completed | 22/120 [02:26<10:06,  6.18s/it]
+73:(Worker_TP0 pid=389) Loading safetensors checkpoint shards:  19% Completed | 23/120 [02:33<10:20,  6.40s/it]
+74:(Worker_TP0 pid=389) Loading safetensors checkpoint shards:  20% Completed | 24/120 [02:39<10:00,  6.25s/it]
+75:(Worker_TP0 pid=389) Loading safetensors checkpoint shards:  21% Completed | 25/120 [02:45<09:50,  6.22s/it]
+76:(Worker_TP0 pid=389) Loading safetensors checkpoint shards:  22% Completed | 26/120 [02:52<10:07,  6.46s/it]
+77:(Worker_TP0 pid=389) Loading safetensors checkpoint shards:  22% Completed | 27/120 [02:59<09:58,  6.44s/it]
+78:(Worker_TP0 pid=389) Loading safetensors checkpoint shards:  23% Completed | 28/120 [03:05<09:44,  6.35s/it]
+79:(Worker_TP0 pid=389) Loading safetensors checkpoint shards:  24% Completed | 29/120 [03:09<08:34,  5.65s/it]
+80:(Worker_TP0 pid=389) Loading safetensors checkpoint shards:  25% Completed | 30/120 [03:15<08:33,  5.70s/it]
+81:(Worker_TP0 pid=389) Loading safetensors checkpoint shards:  26% Completed | 31/120 [03:20<08:29,  5.73s/it]
+82:(Worker_TP0 pid=389) Loading safetensors checkpoint shards:  27% Completed | 32/120 [03:27<08:55,  6.08s/it]
+83:(Worker_TP0 pid=389) Loading safetensors checkpoint shards:  28% Completed | 33/120 [03:34<08:54,  6.14s/it]
+84:(Worker_TP0 pid=389) Loading safetensors checkpoint shards:  28% Completed | 34/120 [03:40<08:56,  6.23s/it]
+85:(Worker_TP0 pid=389) Loading safetensors checkpoint shards:  29% Completed | 35/120 [03:46<08:49,  6.23s/it]
+86:(Worker_TP0 pid=389) Loading safetensors checkpoint shards:  30% Completed | 36/120 [03:53<08:44,  6.25s/it]
+87:(Worker_TP0 pid=389) Loading safetensors checkpoint shards:  31% Completed | 37/120 [04:00<09:02,  6.53s/it]
+88:(Worker_TP0 pid=389) Loading safetensors checkpoint shards:  32% Completed | 38/120 [04:06<08:58,  6.56s/it]
+89:(Worker_TP0 pid=389) Loading safetensors checkpoint shards:  32% Completed | 39/120 [04:13<08:44,  6.48s/it]
+90:(Worker_TP0 pid=389) Loading safetensors checkpoint shards:  33% Completed | 40/120 [04:20<08:54,  6.68s/it]
+91:(Worker_TP0 pid=389) Loading safetensors checkpoint shards:  34% Completed | 41/120 [04:26<08:25,  6.39s/it]
+92:(Worker_TP0 pid=389) Loading safetensors checkpoint shards:  35% Completed | 42/120 [04:32<08:08,  6.26s/it]
+93:(Worker_TP0 pid=389) Loading safetensors checkpoint shards:  36% Completed | 43/120 [04:38<08:12,  6.40s/it]
+94:(Worker_TP0 pid=389) Loading safetensors checkpoint shards:  37% Completed | 44/120 [04:44<07:52,  6.21s/it]
+95:(Worker_TP0 pid=389) Loading safetensors checkpoint shards:  38% Completed | 45/120 [04:51<08:02,  6.43s/it]
+96:(Worker_TP0 pid=389) Loading safetensors checkpoint shards:  38% Completed | 46/120 [04:57<07:43,  6.27s/it]
+97:(Worker_TP0 pid=389) Loading safetensors checkpoint shards:  39% Completed | 47/120 [05:03<07:29,  6.16s/it]
+98:(Worker_TP0 pid=389) Loading safetensors checkpoint shards:  40% Completed | 48/120 [05:09<07:34,  6.31s/it]
+99:(Worker_TP0 pid=389) Loading safetensors checkpoint shards:  41% Completed | 49/120 [05:15<07:18,  6.17s/it]
+100:(Worker_TP0 pid=389) Loading safetensors checkpoint shards:  42% Completed | 50/120 [05:21<07:10,  6.15s/it]
+101:(Worker_TP0 pid=389) Loading safetensors checkpoint shards:  42% Completed | 51/120 [05:28<07:12,  6.27s/it]
+102:(Worker_TP0 pid=389) Loading safetensors checkpoint shards:  43% Completed | 52/120 [05:34<07:03,  6.23s/it]
+103:(Worker_TP0 pid=389) Loading safetensors checkpoint shards:  44% Completed | 53/120 [05:40<06:48,  6.09s/it]
+104:(Worker_TP0 pid=389) Loading safetensors checkpoint shards:  45% Completed | 54/120 [05:47<06:57,  6.33s/it]
+105:(Worker_TP0 pid=389) Loading safetensors checkpoint shards:  46% Completed | 55/120 [05:53<06:45,  6.24s/it]
+106:(Worker_TP0 pid=389) Loading safetensors checkpoint shards:  47% Completed | 56/120 [05:59<06:37,  6.21s/it]
+107:(Worker_TP0 pid=389) Loading safetensors checkpoint shards:  48% Completed | 57/120 [06:05<06:26,  6.14s/it]
+108:(Worker_TP0 pid=389) Loading safetensors checkpoint shards:  48% Completed | 58/120 [06:11<06:15,  6.06s/it]
+109:(Worker_TP0 pid=389) Loading safetensors checkpoint shards:  49% Completed | 59/120 [06:17<06:20,  6.23s/it]
+110:(Worker_TP0 pid=389) Loading safetensors checkpoint shards:  50% Completed | 60/120 [06:23<06:08,  6.15s/it]
+111:(Worker_TP0 pid=389) Loading safetensors checkpoint shards:  51% Completed | 61/120 [06:29<05:54,  6.01s/it]
+112:(Worker_TP0 pid=389) Loading safetensors checkpoint shards:  52% Completed | 62/120 [06:37<06:13,  6.45s/it]
+113:(Worker_TP0 pid=389) Loading safetensors checkpoint shards:  52% Completed | 63/120 [06:43<06:02,  6.37s/it]
+114:(Worker_TP0 pid=389) Loading safetensors checkpoint shards:  53% Completed | 64/120 [06:49<05:57,  6.38s/it]
+115:(Worker_TP0 pid=389) Loading safetensors checkpoint shards:  54% Completed | 65/120 [06:56<06:03,  6.61s/it]
+116:(Worker_TP0 pid=389) Loading safetensors checkpoint shards:  55% Completed | 66/120 [07:02<05:49,  6.46s/it]
+117:(Worker_TP0 pid=389) Loading safetensors checkpoint shards:  56% Completed | 67/120 [07:08<05:36,  6.34s/it]
+118:(Worker_TP0 pid=389) Loading safetensors checkpoint shards:  57% Completed | 68/120 [07:15<05:40,  6.55s/it]
+119:(Worker_TP0 pid=389) Loading safetensors checkpoint shards:  57% Completed | 69/120 [07:22<05:30,  6.48s/it]
+120:(Worker_TP0 pid=389) Loading safetensors checkpoint shards:  58% Completed | 70/120 [07:28<05:26,  6.53s/it]
+121:(Worker_TP0 pid=389) Loading safetensors checkpoint shards:  59% Completed | 71/120 [07:35<05:21,  6.55s/it]
+122:(Worker_TP0 pid=389) Loading safetensors checkpoint shards:  60% Completed | 72/120 [07:41<05:03,  6.32s/it]
+123:(Worker_TP0 pid=389) Loading safetensors checkpoint shards:  61% Completed | 73/120 [07:47<05:02,  6.43s/it]
+124:(Worker_TP0 pid=389) Loading safetensors checkpoint shards:  62% Completed | 74/120 [07:53<04:49,  6.29s/it]
+125:(Worker_TP0 pid=389) Loading safetensors checkpoint shards:  62% Completed | 75/120 [07:59<04:37,  6.16s/it]
+126:(Worker_TP0 pid=389) Loading safetensors checkpoint shards:  63% Completed | 76/120 [08:06<04:41,  6.39s/it]
+127:(Worker_TP0 pid=389) Loading safetensors checkpoint shards:  64% Completed | 77/120 [08:13<04:36,  6.44s/it]
+128:(Worker_TP0 pid=389) Loading safetensors checkpoint shards:  65% Completed | 78/120 [08:19<04:29,  6.41s/it]
+129:(Worker_TP0 pid=389) Loading safetensors checkpoint shards:  66% Completed | 79/120 [08:26<04:33,  6.66s/it]
+130:(Worker_TP0 pid=389) Loading safetensors checkpoint shards:  67% Completed | 80/120 [08:33<04:23,  6.58s/it]
+131:(Worker_TP0 pid=389) Loading safetensors checkpoint shards:  68% Completed | 81/120 [08:39<04:17,  6.60s/it]
+132:(Worker_TP0 pid=389) Loading safetensors checkpoint shards:  68% Completed | 82/120 [08:46<04:05,  6.45s/it]
+133:(Worker_TP0 pid=389) Loading safetensors checkpoint shards:  69% Completed | 83/120 [08:52<03:57,  6.43s/it]
+134:(Worker_TP0 pid=389) Loading safetensors checkpoint shards:  70% Completed | 84/120 [08:59<04:01,  6.70s/it]
+135:(Worker_TP0 pid=389) Loading safetensors checkpoint shards:  71% Completed | 85/120 [09:06<03:51,  6.60s/it]
+136:(Worker_TP0 pid=389) Loading safetensors checkpoint shards:  72% Completed | 86/120 [09:11<03:35,  6.33s/it]
+137:(Worker_TP0 pid=389) Loading safetensors checkpoint shards:  72% Completed | 87/120 [09:18<03:31,  6.40s/it]
+138:(Worker_TP0 pid=389) Loading safetensors checkpoint shards:  73% Completed | 88/120 [09:24<03:20,  6.26s/it]
+139:(Worker_TP0 pid=389) Loading safetensors checkpoint shards:  74% Completed | 89/120 [09:25<02:29,  4.83s/it]
+140:(Worker_TP0 pid=389) Loading safetensors checkpoint shards:  75% Completed | 90/120 [09:32<02:40,  5.34s/it]
+141:(Worker_TP0 pid=389) Loading safetensors checkpoint shards:  76% Completed | 91/120 [09:38<02:43,  5.63s/it]
+142:(Worker_TP0 pid=389) Loading safetensors checkpoint shards:  77% Completed | 92/120 [09:45<02:49,  6.06s/it]
+143:(Worker_TP0 pid=389) Loading safetensors checkpoint shards:  78% Completed | 93/120 [09:51<02:43,  6.06s/it]
+144:(Worker_TP0 pid=389) Loading safetensors checkpoint shards:  78% Completed | 94/120 [09:57<02:34,  5.94s/it]
+145:(Worker_TP0 pid=389) Loading safetensors checkpoint shards:  79% Completed | 95/120 [10:04<02:37,  6.28s/it]
+146:(Worker_TP0 pid=389) Loading safetensors checkpoint shards:  80% Completed | 96/120 [10:10<02:31,  6.31s/it]
+147:(Worker_TP0 pid=389) Loading safetensors checkpoint shards:  81% Completed | 97/120 [10:17<02:24,  6.27s/it]
+148:(Worker_TP0 pid=389) Loading safetensors checkpoint shards:  82% Completed | 98/120 [10:23<02:21,  6.43s/it]
+149:(Worker_TP0 pid=389) Loading safetensors checkpoint shards:  82% Completed | 99/120 [10:29<02:13,  6.35s/it]
+150:(Worker_TP0 pid=389) Loading safetensors checkpoint shards:  83% Completed | 100/120 [10:36<02:06,  6.30s/it]
+151:(Worker_TP0 pid=389) Loading safetensors checkpoint shards:  84% Completed | 101/120 [10:43<02:03,  6.49s/it]
+152:(Worker_TP0 pid=389) Loading safetensors checkpoint shards:  85% Completed | 102/120 [10:49<01:54,  6.35s/it]
+153:(Worker_TP0 pid=389) Loading safetensors checkpoint shards:  86% Completed | 103/120 [10:51<01:29,  5.27s/it]
+154:(Worker_TP0 pid=389) Loading safetensors checkpoint shards:  87% Completed | 104/120 [10:52<01:01,  3.81s/it]
+155:(Worker_TP0 pid=389) Loading safetensors checkpoint shards:  88% Completed | 105/120 [10:52<00:41,  2.74s/it]
+156:(Worker_TP0 pid=389) Loading safetensors checkpoint shards:  88% Completed | 106/120 [10:54<00:34,  2.47s/it]
+157:(Worker_TP0 pid=389) Loading safetensors checkpoint shards:  89% Completed | 107/120 [11:00<00:45,  3.50s/it]
+158:(Worker_TP0 pid=389) Loading safetensors checkpoint shards:  90% Completed | 108/120 [11:06<00:52,  4.35s/it]
+159:(Worker_TP0 pid=389) Loading safetensors checkpoint shards:  91% Completed | 109/120 [11:13<00:57,  5.24s/it]
+160:(Worker_TP0 pid=389) Loading safetensors checkpoint shards:  92% Completed | 110/120 [11:20<00:55,  5.57s/it]
+161:(Worker_TP0 pid=389) Loading safetensors checkpoint shards:  92% Completed | 111/120 [11:21<00:38,  4.33s/it]
+162:(Worker_TP0 pid=389) Loading safetensors checkpoint shards:  93% Completed | 112/120 [11:28<00:40,  5.11s/it]
+163:(Worker_TP0 pid=389) Loading safetensors checkpoint shards:  94% Completed | 113/120 [11:35<00:38,  5.49s/it]
+164:(Worker_TP0 pid=389) Loading safetensors checkpoint shards:  95% Completed | 114/120 [11:41<00:34,  5.81s/it]
+165:(Worker_TP0 pid=389) Loading safetensors checkpoint shards:  96% Completed | 115/120 [11:48<00:30,  6.04s/it]
+166:(Worker_TP0 pid=389) Loading safetensors checkpoint shards:  97% Completed | 116/120 [11:53<00:23,  5.97s/it]
+167:(Worker_TP0 pid=389) Loading safetensors checkpoint shards:  98% Completed | 117/120 [12:00<00:18,  6.26s/it]
+168:(Worker_TP0 pid=389) Loading safetensors checkpoint shards:  98% Completed | 118/120 [12:06<00:12,  6.13s/it]
+169:(Worker_TP0 pid=389) Loading safetensors checkpoint shards:  99% Completed | 119/120 [12:12<00:06,  6.07s/it]
+170:(Worker_TP0 pid=389) Loading safetensors checkpoint shards: 100% Completed | 120/120 [12:17<00:00,  5.72s/it]
+171:(Worker_TP0 pid=389) Loading safetensors checkpoint shards: 100% Completed | 120/120 [12:17<00:00,  6.15s/it]
+172:(Worker_TP0 pid=389) 
+173:(Worker_TP0 pid=389) INFO 10-04 09:25:34 [default_loader.py:430] Loading weights took 737.70 seconds
+174:(Worker_TP0 pid=389) WARNING 10-04 09:25:35 [modelopt.py:1534] w1_weight_scale_2 must match w3_weight_scale_2. Accuracy may be affected.
+175:(Worker_TP0 pid=389) WARNING 10-04 09:25:35 [marlin_utils_fp4.py:354] Your GPU does not have native support for FP4 computation but FP4 quantization is being used. Weight-only FP4 compression will be used leveraging the Marlin kernel. This may degrade performance for compute-heavy workloads.
+176:(Worker_TP0 pid=389) INFO 10-04 09:25:39 [nvfp4.py:564] Using MoEPrepareAndFinalizeNoDPEPModular
+177:(Worker_TP0 pid=389) INFO 10-04 09:25:53 [eagle3_utils.py:28] Using Eagle3 auxiliary layers from config: (6, 15, 25, 34, 43)
+178:(Worker_TP0 pid=389) INFO 10-04 09:25:55 [kernel.py:306] Final IR op priority after setting platform defaults: IrOpPriorityConfig(rms_norm=['vllm_c', 'native'], fused_add_rms_norm=['vllm_c', 'native'])
+179:(Worker_TP0 pid=389) INFO 10-04 09:25:56 [cuda.py:533] Using FLASHINFER attention backend out of potential backends: ['FLASHINFER', 'TRITON_ATTN'].
+180:(Worker_TP0 pid=389) INFO 10-04 09:25:56 [weight_utils.py:858] Filesystem type for checkpoints: EXT4. Checkpoint size: 2.18 GiB. Available RAM: 21.73 GiB.
+181:(Worker_TP0 pid=389) INFO 10-04 09:25:56 [weight_utils.py:881] Auto-prefetch is disabled because the filesystem (EXT4) is not a recognized network FS (NFS/Lustre). If you want to force prefetching, start vLLM with --safetensors-load-strategy=prefetch.
+182:(Worker_TP0 pid=389) Loading safetensors checkpoint shards:   0% Completed | 0/1 [00:00<?, ?it/s]
+183:(Worker_TP0 pid=389) Loading safetensors checkpoint shards: 100% Completed | 1/1 [00:00<00:00, 33.52it/s]
+184:(Worker_TP0 pid=389) 
+185:(Worker_TP0 pid=389) INFO 10-04 09:26:03 [default_loader.py:430] Loading weights took 6.61 seconds
+186:(Worker_TP0 pid=389) WARNING 10-04 09:26:03 [speculator.py:197] Draft model DFlash2Qwen3ForCausalLM does not support external multimodal embeddings. Embeddings from the target model will not be passed to the drafter; using text-only draft inputs instead.
+187:(Worker_TP0 pid=389) INFO 10-04 09:26:13 [model_runner.py:374] Model loading took 90.67 GiB and 778.273625 seconds
+188:(Worker_TP0 pid=389) INFO 10-04 09:26:13 [topk_topp_sampler.py:62] Using FlashInfer for top-p & top-k sampling.
+189:(Worker_TP0 pid=389) INFO 10-04 09:26:13 [interface.py:926] Setting attention block size to 4608 tokens to ensure that attention page size is >= mamba page size.
+190:(Worker_TP0 pid=389) INFO 10-04 09:26:13 [interface.py:950] Padding mamba page size by 0.70% to ensure that mamba page size and attention page size are exactly equal.
+192:(Worker_TP0 pid=389) INFO 10-04 09:26:17 [encoder_runner.py:119] Encoder cache will be initialized with a budget of 32242 tokens, and profiled with 1 video items of the maximum feature size.
+193:(Worker_TP0 pid=389) /usr/local/lib/python3.12/dist-packages/triton/language/core.py:2284: UserWarning: tl.make_block_ptr is deprecated. Use TensorDescriptor or tl.make_tensor_descriptor instead.
+194:(Worker_TP0 pid=389)   warn("tl.make_block_ptr is deprecated. Use TensorDescriptor or tl.make_tensor_descriptor instead.")
+197:(Worker_TP0 pid=389) 2026-10-04 09:26:34  [TileLang:tilelang.jit.kernel:INFO] (kernel.py:129): TileLang begins to compile kernel `mhc_pre_big_fuse_with_norm_tilelang` with `out_idx=None`
+198:(Worker_TP0 pid=389) 2026-10-04 09:26:38  [TileLang:tilelang.jit.kernel:INFO] (kernel.py:137): TileLang completes to compile kernel `mhc_pre_big_fuse_with_norm_tilelang`
+199:(Worker_TP0 pid=389) 2026-10-04 09:26:39  [TileLang:tilelang.jit.kernel:INFO] (kernel.py:129): TileLang begins to compile kernel `mhc_post_tilelang` with `out_idx=None`
+200:(Worker_TP0 pid=389) 2026-10-04 09:26:39  [TileLang:tilelang.jit.kernel:INFO] (kernel.py:137): TileLang completes to compile kernel `mhc_post_tilelang`
+203:(Worker_TP0 pid=389) INFO 10-04 09:28:22 [gpu_worker.py:492] Initial free memory 113.52 GiB, reserved 3.0 GiB memory for KV Cache as specified by kv_cache_memory_bytes config and skipped memory profiling. This does not respect the gpu_memory_utilization config. Only use kv_cache_memory_bytes con
+205:(Worker_TP0 pid=389) INFO 10-04 09:28:22 [indexer.py:729] DSA indexer decode path: use_flattening=True supports_varlen=False (next_n=8, use_fp4_indexer_cache=False)
+206:(Worker_TP0 pid=389) INFO 10-04 09:28:22 [flashinfer.py:889] FlashInfer resolved query dtypes: prefill=torch.bfloat16, decode=torch.bfloat16, decode_backend=xqa, kv_cache_dtype=torch.float8_e4m3fn, arch=sm121
+207:(Worker_TP0 pid=389) INFO 10-04 09:28:22 [kernel.py:306] Final IR op priority after setting platform defaults: IrOpPriorityConfig(rms_norm=['vllm_c', 'native'], fused_add_rms_norm=['vllm_c', 'native'])
+208:(Worker_TP0 pid=389) INFO 10-04 09:28:23 [spec_decode_rejection_warmup.py:64] Warming up spec-decode rejection sampler kernels (vocab=154880, num_spec=7, dtype_pairs=[('torch.float32', 'torch.bfloat16'), ('torch.bfloat16', 'torch.float32'), ('torch.float32', 'torch.float32'), ('torch.bfloat16', 
+209:(Worker_TP0 pid=389) INFO 10-04 09:28:25 [kernel_warmup.py:95] Warming up ll_bf16 router GEMM kernels for shapes: ((4096, 288),).
+210:(Worker_TP0 pid=389) INFO 10-04 09:28:27 [kernel_warmup.py:260] Using FlashInfer autotune cache file: /root/.cache/vllm/flashinfer_autotune_cache/0.6.18.dev20260819/121a/b661f3d60a761647b91c2e435b582724bc11e464dd467bd8495635d7a080616d/autotune_configs.json
+211:(Worker_TP0 pid=389) 2026-10-04 09:28:27,282 - INFO - autotuner.py:972 - flashinfer.jit: [Autotuner]: Autotuning process starts ...
+212:(Worker_TP0 pid=389) /usr/local/lib/python3.12/dist-packages/triton/language/core.py:2284: UserWarning: tl.make_block_ptr is deprecated. Use TensorDescriptor or tl.make_tensor_descriptor instead.
+213:(Worker_TP0 pid=389)   warn("tl.make_block_ptr is deprecated. Use TensorDescriptor or tl.make_tensor_descriptor instead.")
+215:(Worker_TP0 pid=389) WARNING 10-04 09:29:39 [flashinfer.py:1308] Using FlashInfer for draft model non-causal attention; TRTLLM can still be used for target model causal attention.
+216:(Worker_TP0 pid=389) 2026-10-04 09:29:44,370 - INFO - autotuner.py:995 - flashinfer.jit: [Autotuner]: Autotuning process ends
+217:(Worker_TP0 pid=389) 2026-10-04 09:29:44,773 - INFO - autotuner.py:2652 - flashinfer.jit: [Autotuner]: Saved 0 configs to /root/.cache/vllm/flashinfer_autotune_cache/0.6.18.dev20260819/121a/b661f3d60a761647b91c2e435b582724bc11e464dd467bd8495635d7a080616d/autotune_configs.json (0 new, 0 from prev
+218:(Worker_TP0 pid=389) 2026-10-04 09:29:46  [TileLang:tilelang.jit.kernel:INFO] (kernel.py:129): TileLang begins to compile kernel `mhc_pre_big_fuse_with_norm_tilelang` with `out_idx=None`
+219:(Worker_TP0 pid=389) 2026-10-04 09:29:50  [TileLang:tilelang.jit.kernel:INFO] (kernel.py:137): TileLang completes to compile kernel `mhc_pre_big_fuse_with_norm_tilelang`
+221:(Worker_TP0 pid=389) 2026-10-04 09:30:30  [TileLang:tilelang.jit.kernel:INFO] (kernel.py:129): TileLang begins to compile kernel `mhc_fused_tilelang` with `out_idx=None`
+222:(Worker_TP0 pid=389) 2026-10-04 09:30:30  [TileLang:tilelang.jit.kernel:INFO] (kernel.py:137): TileLang completes to compile kernel `mhc_fused_tilelang`
+223:(Worker_TP0 pid=389) 2026-10-04 09:30:31  [TileLang:tilelang.jit.kernel:INFO] (kernel.py:129): TileLang begins to compile kernel `mhc_pre_big_fuse_with_norm_tilelang` with `out_idx=None`
+224:(Worker_TP0 pid=389) 2026-10-04 09:30:35  [TileLang:tilelang.jit.kernel:INFO] (kernel.py:137): TileLang completes to compile kernel `mhc_pre_big_fuse_with_norm_tilelang`
+225:(Worker_TP0 pid=389) 2026-10-04 09:30:42  [TileLang:tilelang.jit.kernel:INFO] (kernel.py:129): TileLang begins to compile kernel `mhc_fused_tilelang` with `out_idx=None`
+226:(Worker_TP0 pid=389) 2026-10-04 09:30:42  [TileLang:tilelang.jit.kernel:INFO] (kernel.py:137): TileLang completes to compile kernel `mhc_fused_tilelang`
+227:(Worker_TP0 pid=389) 2026-10-04 09:30:43  [TileLang:tilelang.jit.kernel:INFO] (kernel.py:129): TileLang begins to compile kernel `mhc_pre_big_fuse_with_norm_tilelang` with `out_idx=None`
+228:(Worker_TP0 pid=389) 2026-10-04 09:30:47  [TileLang:tilelang.jit.kernel:INFO] (kernel.py:137): TileLang completes to compile kernel `mhc_pre_big_fuse_with_norm_tilelang`
+229:(Worker_TP0 pid=389) INFO 10-04 09:30:49 [jit_monitor.py:79] Kernel JIT monitor activated; monitored JIT compilations during inference will use mode=warn.
+230:(Worker_TP0 pid=389) INFO 10-04 09:30:49 [torch_utils.py:262] Reducing Torch threads from 20 to 1 for serving. Set OMP_NUM_THREADS in the external environment to override.
+235:(EngineCore pid=317) WARNING 10-04 09:31:03 [vllm.py:1872] max_num_scheduled_tokens is set to 2048 based on the speculative decoding settings. This may lead to suboptimal performance. Consider increasing max_num_batched_tokens to accommodate the additional draft token slots, or decrease num_spec
+281:(Worker_TP0 pid=389) WARNING 10-04 09:31:33 [jit_monitor.py:135] Triton kernel JIT compilation during inference: _prepare_dflash_inputs_kernel. This causes a latency spike; consider extending warmup to cover this shape/config.
+282:(Worker_TP0 pid=389) WARNING 10-04 09:31:33 [jit_monitor.py:135] Triton kernel JIT compilation during inference: _compute_local_logits_stats_kernel. This causes a latency spike; consider extending warmup to cover this shape/config.
+283:(Worker_TP0 pid=389) WARNING 10-04 09:31:33 [jit_monitor.py:135] Triton kernel JIT compilation during inference: _rejection_kernel. This causes a latency spike; consider extending warmup to cover this shape/config.
+284:(Worker_TP0 pid=389) WARNING 10-04 09:31:34 [jit_monitor.py:135] Triton kernel JIT compilation during inference: _resample_kernel. This causes a latency spike; consider extending warmup to cover this shape/config.
