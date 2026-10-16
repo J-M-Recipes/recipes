@@ -1,0 +1,152 @@
+schema: jm-recipe/v1
+id: dgx-station-gb300/muse-spark-open-816b-vllm-uva-dspark
+title: Muse Spark Open 816B-A42B (NVFP4) on one DGX Station GB300 (vLLM UVA expert offload + DSpark k=2)
+summary: >
+  Meta's Muse Spark Open, 816B total / 42B active, in the first-party NVFP4 checkpoint (496 GiB), served from ONE GB300 the day
+  after release. 310 GiB of expert weights live in Grace memory and are read over NVLink-C2C through vLLM's UVA offload backend.
+  The vLLM day-0 image (vllm/vllm-openai:muse-spark-open) runs it with CUDA graphs on, FlashInfer autotune off and the Inferact
+  DSpark drafter at k=2, 128K context, 4 sequences. Single-stream 29.4 tok/s prose / 29.7 JSON / 29.3 agent / 26.2 code vs
+  25.8 without speculation on the same boot settings; C4 49 tok/s aggregate vs 41. Quality A/B against no speculation, same
+  window: BFCL 563/600 vs 561/600, GSM8K-200 193 vs 192. Boot to /health in ~6 min. Two findings carry beyond this model:
+  FlashInfer MoE autotune cost 1 h 48 min per boot shape here and bought nothing (same tok/s with it off; 32 of 43 tuned
+  choices flipped between two boots), and longer DSpark drafts lose on an expert-offloaded MoE (k=7 keeps 3.17 tokens per step
+  and is 11% slower than no speculation; k=2 keeps 2.42 and wins). Not yet tried: context beyond 128K.
+status: experimental
+owners: [jmeadlock, milo]
+updated: "2026-10-16"
+tags: [muse-spark-open, nvfp4, vllm, uva-offload, dspark, speculative-decoding, single-gpu, day-0, moe]
+
+model:
+  name: Muse Spark Open 816B-A42B
+  params: 816B total / 42B active (MoE, 62 layers, 256 routed experts top-8, no shared expert; 16 full-attention + 46 sliding-window-2048 layers; vision + audio towers)
+  repo: https://huggingface.co/meta-models/Muse-Spark-Open-816B-A42B-NVFP4
+  revision: 4239e4db19376904f2e82c167e78f70abb5455fe
+  quantization: "as shipped, nothing re-quantized: NVFP4 (group 16) experts on layers 1-60, FP8 experts on layers 0 and 61, BF16 attention/embeddings/lm_head. 141 files / 533,043,429,228 bytes byte-verified against the Hub listing; 128 LFS files sha256-verified after staging to local NVMe (results/2026-10-16-muse-s1/model-provenance). Gated repo (manual approval); Muse Model License requires 'Built with Muse Spark Open' attribution."
+  draft:
+    repo: https://huggingface.co/Inferact/Muse-Spark-Open-DSpark
+    revision: ffc3eb50c8ae7a5a391ddedc43085d2e5249bc35
+    method: "DSpark (5-layer BF16 draft, 10.6 GB, conditioned on target hidden states; trained with vllm-project/speculators), num_speculative_tokens=2. Text-only: the drafter logs that it does not receive the target's image embeddings."
+
+hardware:
+  profile: hardware/dgx-station-gb300.yaml
+  nominal: { gpu_memory_gb: 288, host_memory_gb: 496 }
+  observed:
+    gpu: NVIDIA GB300
+    driver: "595.91.07"
+    cuda: "13.0 (container runtime, torch 2.13.0+cu130)"
+    gpu_memory_visible_gib: 250.7
+    host_memory_gib: 494
+    os: Ubuntu 24.04.5 LTS
+    kernel: 7.0.0-1019-nvidia-64k
+    snapshot: results/2026-10-16-muse-s1/system.json
+  required_settings:
+    - "VLLM_WEIGHT_OFFLOADING_DISABLE_PIN_MEMORY=1. torch pin_memory rounds each pinned buffer up to a power of two; for 300+ GiB of experts that is ~2x host memory and the pre-boot sizing (SIZING: ~446 GiB load peak of 494) said PARK. With pinning disabled the lowest MemAvailable recorded across 10 boots was 116-142 GiB."
+    - "Checkpoint on LOCAL NVMe (/models RAID0), never served from the CIFS share. Staged at ~820 MB/s and sha256-checked (scripts/stage-gb300.sh)."
+    - "Do NOT set CUDA_VISIBLE_DEVICES; DGX OS's docker config already hides the display GPU. Select the GB300 with --gpus device=<index or UUID>."
+    - "Host-memory watchdog during boot (scripts/muse-boot.sh kills the container if MemAvailable < 24 GiB). It never fired."
+
+runtime:
+  engine: vLLM
+  engine_version: 0.1.dev22954+ga34ca64c1 (day-0 Muse build, vLLM PR #61879 unmerged at time of test)
+  engine_commit: a34ca64c138ad0360c472ada748b750435b607ae
+  container:
+    image: vllm/vllm-openai:muse-spark-open
+    digest: sha256:c91025b5be1039a93ca975d1d44f352b0e770bb6c8b142b5056cf92204ca137c
+    base_image: "vllm/vllm-openai:muse-spark-open as published (created 2026-10-14T16:00:50Z; labels flashinfer 6b49d21c, deepgemm 1704143a). Pulled by digest, not rebuilt."
+  key_libraries:
+    torch: 2.13.0+cu130
+    transformers: 5.19.0
+    flashinfer: 0.7.0.post1
+    triton: 3.7.1
+  patches:
+    - path: scripts/sitecustomize.py
+      sha256: 8910b43fde519c03c88356368a86e11434d1abaa024507e62394c80a52cf235c
+      purpose: "Bind-mounted in every measured run. Only redirects the FlashInfer autotune cache dir (VLLM_AUTOTUNE_CACHE_KEY); route tracing is off unless ROUTE_TRACE_DIR is set (it was not). Inert with autotune disabled; launch-muse.sh leaves it optional. No vLLM source change."
+
+launch:
+  script: scripts/launch-muse.sh
+  command: "MODEL=<dir of meta-models/Muse-Spark-Open-816B-A42B-NVFP4 @4239e4db>/original DSPARK=<dir of Inferact/Muse-Spark-Open-DSpark @ffc3eb50> bash scripts/launch-muse.sh  (= docker run ... vllm/vllm-openai@sha256:c91025b5... <model> --tensor-parallel-size 1 --offload-backend uva --cpu-offload-gb 310 --cpu-offload-params experts --max-model-len 131072 --max-num-seqs 4 --max-num-batched-tokens 8192 --gpu-memory-utilization 0.92 --kernel-config {enable_flashinfer_autotune:false} --speculative-config {method:dspark, num_speculative_tokens:2} --reasoning-parser muse --tool-call-parser muse --enable-auto-tool-choice; env VLLM_WEIGHT_OFFLOADING_DISABLE_PIN_MEMORY=1. Exact measured argv: results/2026-10-16-muse-s1/runs/q-k2/docker-run-argv.txt)"
+  health: "curl -fs http://127.0.0.1:18100/health. Log must show 'Total CPU offloaded parameters: 311.5', 'Model loading took 207.88 GiB memory', 'GPU KV cache size: 179,747 tokens' (1.37x at 131,072), 'Skipping FlashInfer autotune because it is disabled'. Ready in 366 s (q-k2). If you see 'Autotuning process starts' you are in the 1 h 48 min tune."
+  warmup: "scripts/muse_gates.py BASE OUTDIR: models, chat, reasoning split, one parsed tool call, 4-turn tool replay, greedy repeat, then C1 x4 classes and C4. First request of each shape is not a measurement."
+  notable_flags:
+    - "--offload-backend uva --cpu-offload-gb 310 --cpu-offload-params experts  (310 makes room for the 11.3 GiB drafter: model load 196.6 GiB HBM without DSpark, 207.88 GiB with it. At 300 GiB with no spec C1 was 26.6 tok/s; at 310, 25.8 — about 3% per extra 10 GiB over C2C)"
+    - "--kernel-config {\"enable_flashinfer_autotune\":false}  (boot 345-370 s vs 6,449-6,510 s with autotune on; no-spec graphs C1 26.58 with it off vs 26.56 on, C4 42.6 vs 43.4. The tuner re-profiled all 43 entries on every boot even with the cache file loaded, and picked a different tactic for 32 of 43 between two boots: on this box MoE timings are dominated by Grace reads and there is no stable winner)"
+    - "CUDA graphs ON (no --enforce-eager): C1 10.6 -> 26.6 tok/s, C4 39.9 -> 43.4. Capture 5 s / 0.52 GiB."
+    - "--speculative-config dspark num_speculative_tokens=2  (k sweep, same boot settings: k=7 C1 prose 22.9, k=3 28.7, k=2 29.4, none 25.8-26.6. Approx. step cost from accepted tokens per step / C1: none 38 ms, k=2 82 ms, k=3 99 ms, k=7 138 ms)"
+    - "--max-model-len 131072 --max-num-seqs 4  (KV pool 179,747 tokens with DSpark = 1.37x one full-length request; 342,996 without DSpark at offload 310. Longer context not yet tried)"
+    - "--reasoning-parser muse --tool-call-parser muse --enable-auto-tool-choice  (REQUIRED for tool use; the chat template's default reasoning_effort is xhigh — pass chat_template_kwargs {reasoning_effort: low|medium|high|xhigh})"
+    - "VARIANT no-spec (rollback): drop --speculative-config; C1 25.8 tok/s every class at offload 310 (26.6 at 300), C4 41.4."
+    - "VARIANT eager first boot: add --enforce-eager; C1 10.6, C4 39.9. Only useful to separate graph-capture problems from model problems."
+
+metrics:
+  - name: single-stream decode, prose — DSpark k=2 (recipe)
+    value: 29.44
+    unit: tok/s
+    workload: "C1, warm, T=0, 256 tokens forced (min_tokens + ignore_eos), streaming, template-default reasoning effort (xhigh: the forced tokens are reasoning text — see limits); prompt 'history of lighthouses' essay"
+    aggregation: "mean of 3 reps (29.44/29.44/29.44 within 0.01). Same boot: code 26.18, JSON 29.67, agent 29.31. Control q-k0 (no spec, same settings, same window): 25.83 / 25.84 / 25.82 / 25.83. Repeat boot s1-boot8 (k=2): 29.41 / 26.16 / 29.64 / 29.29"
+    provenance: { run_id: 2026-10-16-muse-s1, method: "scripts/muse_gates.py", raw: runs/q-k2/gates.json }
+  - name: C4 aggregate decode, prose — DSpark k=2 (recipe)
+    value: 49.2
+    unit: tok/s
+    workload: "4 concurrent streams, 256 forced tokens each, prompt variations, T=0"
+    aggregation: "mean of 2 reps (49.64, 48.70). Control q-k0: 41.35, 41.35"
+    provenance: { run_id: 2026-10-16-muse-s1, method: "scripts/muse_gates.py", raw: runs/q-k2/gates.json }
+  - name: single-stream decode, prose — no speculation (control, offload 310)
+    value: 25.83
+    unit: tok/s
+    workload: "same as the k=2 row"
+    aggregation: "mean of 3 reps; every class 25.82-25.84"
+    provenance: { run_id: 2026-10-16-muse-s1, method: "scripts/muse_gates.py", raw: runs/q-k0/gates.json }
+  - name: BFCL dev 600 — DSpark k=2
+    value: 563
+    unit: "of 600 solved"
+    workload: "BFCL v4 simple_python 400 + multiple 200, our grader (scripts/bfcl_gate.py), T=0, reasoning_effort low, C4, max_tokens 4096, non-strict tools"
+    aggregation: "93.8%. Control q-k0 561/600 (93.5%). Per item: 5 fixed, 3 broken (exact McNemar p ~0.73). simple_python 378 vs 378, multiple 185 vs 183. 0 errors, 0 truncated. Wall 2,852 s vs 3,521 s (-19%). Same-grader A/B, not a leaderboard number"
+    provenance: { run_id: 2026-10-16-muse-s1, method: "scripts/quality-chain.sh -> bfcl_gate.py", raw: quality/k2/bfcl-k2-summary.json }
+  - name: GSM8K first 200 — DSpark k=2
+    value: 193
+    unit: "of 200 correct"
+    workload: "openai/gsm8k test, first 200 rows, T=0, reasoning_effort low, C4, max_tokens 4096, exact match on the last number in the answer (scripts/gsm_eval.py)"
+    aggregation: "96.5%. Control q-k0 192/200 (96.0%). Per item: 2 fixed, 1 broken. k=2 had 1 answer truncated at 4,096 tokens, k=0 none"
+    provenance: { run_id: 2026-10-16-muse-s1, method: "scripts/gsm_eval.py", raw: quality/k2/gsm.txt }
+  - name: DSpark accepted tokens per step on BFCL + GSM8K traffic (k=2)
+    value: 2.53
+    unit: tokens/step
+    workload: "lifetime /metrics of the q-k2 server after gates, greedy, C1/C4, BFCL 600 and GSM8K 200"
+    aggregation: "1 + 132,805 accepted / 86,683 drafts. Per position 0.84 / 0.69. On the C1/C4 bench prompts alone (boot s1-boot8): 2.42, 0.80 / 0.62"
+    provenance: { run_id: 2026-10-16-muse-s1, method: "vllm:spec_decode_* counters", raw: quality/k2/spec-metrics.txt }
+  - name: boot to /health — recipe
+    value: 366
+    unit: s
+    workload: "page cache dropped, weights on local NVMe, autotune off, DSpark k=2"
+    aggregation: "single boot; other autotune-off boots 345 / 346 / 366 / 370 s. Autotune-on boots 6,449 / 6,490 / 6,510 s"
+    provenance: { run_id: 2026-10-16-muse-s1, method: "scripts/muse-boot.sh READY line", raw: runs/q-k2/runner.log }
+
+verification:
+  gates:
+    schema:      { how: "scripts/check_recipe.py passes", last_pass_utc: "2026-10-16T23:30:00Z", run_id: 2026-10-16-muse-s1 }
+    digest:      { how: "image pulled by digest sha256:c91025b5...; model dir = pinned revision, 141 files / 533,043,429,228 B vs Hub listing, 128/128 LFS sha256 OK on the GB300 copy; drafter at pinned revision ffc3eb50 (10,604,912,459 B)", last_pass_utc: "2026-10-15T23:12:00Z", run_id: 2026-10-16-muse-s1 }
+    health:      { how: "/health 200; muse_gates.py models (max_model_len 131072), chat, one parsed tool call, 4-turn tool replay (final 'QX-7342'), greedy repeat identical — all PASS on q-k2. reasoning_split FAIL on k=2/k=3: the '17x23' prompt reasons past the gate's 2,000-token cap on those configs (8,616 chars); a cap artifact, the graded evals are level", last_pass_utc: "2026-10-16T19:31:00Z", run_id: 2026-10-16-muse-s1 }
+    quality:     { how: "Same-window A/B vs the no-speculation control (same image, weights, offload 310, graphs, autotune off): BFCL 563 vs 561 /600 (bar +/-2 pts), GSM8K-200 193 vs 192 (bar +/-2 pts). Greedy agreement k=2 vs k=0: 13/20 identical at 600 tokens, the other 7 diverge at token 6-134 (target-verified, not byte-identical). No teacher-forced logprob gate run (see limits)", last_pass_utc: "2026-10-16T21:01:02Z", run_id: 2026-10-16-muse-s1, notes: "promoted to the Muse default by James on 2026-10-16 on this evidence" }
+    performance: { how: "C1 prose within 3% of 29.4 and C4 within 5% of 49.2 after warmup (repeat boot s1-boot8: 29.41 / 49.1)", last_pass_utc: "2026-10-16T19:31:00Z", run_id: 2026-10-16-muse-s1 }
+
+limits:
+  - "C1/C4 numbers decode the template's default reasoning effort (xhigh) for 256 forced tokens, so the measured text is the start of the model's reasoning, not the visible answer (inferred: every gate prompt reasoned for 1,400+ characters before answering). That is why no-spec C1 is identical across classes. Per-class DSpark acceptance on answer text is not measured."
+  - "Speculation is target-verified but NOT byte-identical to no-spec decoding: greedy 13/20 identical at 600 tokens. Quality is argued from graded evals (BFCL, GSM8K), not from a teacher-forced logprob gate; that gate was not run for Muse."
+  - "Code gains nothing from DSpark at k=2 (26.2 vs 25.8) and loses at k=3 (25.0)."
+  - "Why longer drafts lose is a hypothesis, not a profile: verifying k+1 tokens per step routes them to more distinct experts per layer, and most experts are read from Grace over C2C. Measured: the step costs ~2.1x a single-token step at k=2 and ~3.7x at k=7."
+  - "DSpark k=7 + enable_adaptive_verification FAILED at boot at offload 310: adaptive mode's profiling left 10.24 GiB for KV vs 12.5 GiB needed for one 131,072-token request. Parked; would need offload ~330 GiB or shorter context."
+  - "Drafter is text-only on this image (it does not see the target's image embeddings), so image prompts speculate on text alone. No image or audio request was gated."
+  - "Preview image (vLLM PR #61879 unmerged). Re-gate when Muse support lands in a tagged vLLM release."
+  - "NEXT (not yet tried): context beyond 128K. The checkpoint allows 1,048,576; KV pool is 179,747 tokens with DSpark at offload 310 (1.37x at 128K), 342,996 without."
+  - "4 sequences only. C4 is 49 tok/s aggregate (~12 per stream); throughput beyond 4 streams is unmeasured."
+
+rollback:
+  script: scripts/launch-muse.sh
+  summary: "docker stop muse; relaunch without --speculative-config (VARIANT no-spec, C1 25.8 tok/s). ~6 min boot, autotune off."
+
+links:
+  blog: https://al-engr.com/gb300-muse-spark-open.html
+  model: https://huggingface.co/meta-models/Muse-Spark-Open-816B-A42B-NVFP4
+  drafter: https://huggingface.co/Inferact/Muse-Spark-Open-DSpark
+  vllm_pr: https://github.com/vllm-project/vllm/pull/61879

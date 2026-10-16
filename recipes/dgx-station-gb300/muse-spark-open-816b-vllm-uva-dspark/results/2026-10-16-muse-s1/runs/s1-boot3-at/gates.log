@@ -1,0 +1,12 @@
+PASS models 131072
+FAIL chat {"content": "", "reasoning_len": 2067, "usage": {"prompt_tokens": 156, "total_tokens": 556, "completion_tokens": 400, "prompt_tokens_details": null, "completion_tokens_details": {"reasoning_tokens": 397}}}
+PASS reasoning_split {"content": "391", "reasoning_len": 1615}
+PASS tool1 {"tool_calls": [{"id": "chatcmpl-tool-afd3280dc8cfeb78", "type": "function", "function": {"name": "read_file", "arguments": "{\"path\": \"/srv/notes.txt\"}"}}], "finish": "tool_calls"}
+PASS tools_replay4 {"paths": ["/srv/a.txt", "/srv/b.txt", "/srv/c.txt", "/srv/d.txt"], "final": "QX-7342"}
+PASS greedy_repeat {"same": true}
+C1 prose 10.65
+C1 code 10.64
+C1 json 10.66
+C1 agent 10.63
+C4 agg [39.9, 39.85]
+GATES {'models': True, 'chat': False, 'reasoning_split': True, 'tool1': True, 'tools_replay4': True, 'greedy_repeat': True}

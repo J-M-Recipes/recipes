@@ -1,0 +1,155 @@
+{
+ "models": {
+  "pass": true,
+  "info": 131072,
+  "s": 0.0
+ },
+ "chat": {
+  "pass": true,
+  "info": {
+   "content": "A lighthouse keeper operates and maintains a lighthouse to ensure its light guides ships safely and helps prevent coastal accidents. Their duties include caring for the light and its equipment, maintaining the building, monitoring weather and sea conditions, and keeping logs.",
+   "reasoning_len": 2592,
+   "usage": {
+    "prompt_tokens": 156,
+    "total_tokens": 695,
+    "completion_tokens": 539,
+    "prompt_tokens_details": null,
+    "completion_tokens_details": {
+     "reasoning_tokens": 483
+    }
+   }
+  },
+  "s": 19.5
+ },
+ "reasoning_split": {
+  "pass": false,
+  "info": {
+   "content": "",
+   "reasoning_len": 8616
+  },
+  "s": 53.5
+ },
+ "tool1": {
+  "pass": true,
+  "info": {
+   "tool_calls": [
+    {
+     "id": "chatcmpl-tool-81dac0b2a9ee270b",
+     "type": "function",
+     "function": {
+      "name": "read_file",
+      "arguments": "{\"path\": \"/srv/notes.txt\"}"
+     }
+    }
+   ],
+   "finish": "tool_calls"
+  },
+  "s": 4.4
+ },
+ "tools_replay4": {
+  "pass": true,
+  "info": {
+   "paths": [
+    "/srv/a.txt",
+    "/srv/b.txt",
+    "/srv/c.txt",
+    "/srv/d.txt"
+   ],
+   "final": "QX-7342"
+  },
+  "s": 12.8
+ },
+ "greedy_repeat": {
+  "pass": true,
+  "info": {
+   "same": true
+  },
+  "s": 15.6
+ },
+ "bench": {
+  "prose": {
+   "reps": [
+    {
+     "ttft": 0.411,
+     "decode_tok_s": 28.66,
+     "tokens": 256
+    },
+    {
+     "ttft": 0.415,
+     "decode_tok_s": 28.67,
+     "tokens": 256
+    },
+    {
+     "ttft": 0.415,
+     "decode_tok_s": 28.67,
+     "tokens": 256
+    }
+   ],
+   "mean": 28.67
+  },
+  "code": {
+   "reps": [
+    {
+     "ttft": 0.386,
+     "decode_tok_s": 24.99,
+     "tokens": 256
+    },
+    {
+     "ttft": 0.397,
+     "decode_tok_s": 24.99,
+     "tokens": 256
+    },
+    {
+     "ttft": 0.398,
+     "decode_tok_s": 24.99,
+     "tokens": 256
+    }
+   ],
+   "mean": 24.99
+  },
+  "json": {
+   "reps": [
+    {
+     "ttft": 0.279,
+     "decode_tok_s": 29.92,
+     "tokens": 256
+    },
+    {
+     "ttft": 0.369,
+     "decode_tok_s": 29.91,
+     "tokens": 256
+    },
+    {
+     "ttft": 0.369,
+     "decode_tok_s": 29.91,
+     "tokens": 256
+    }
+   ],
+   "mean": 29.91
+  },
+  "agent": {
+   "reps": [
+    {
+     "ttft": 0.345,
+     "decode_tok_s": 28.74,
+     "tokens": 256
+    },
+    {
+     "ttft": 0.257,
+     "decode_tok_s": 28.74,
+     "tokens": 256
+    },
+    {
+     "ttft": 0.257,
+     "decode_tok_s": 28.74,
+     "tokens": 256
+    }
+   ],
+   "mean": 28.74
+  },
+  "c4_agg": [
+   48.03,
+   48.03
+  ]
+ }
+}
