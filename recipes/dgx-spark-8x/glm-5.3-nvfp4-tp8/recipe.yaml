@@ -1,0 +1,174 @@
+schema: jm-recipe/v1
+id: dgx-spark-8x/glm-5.3-nvfp4-tp8
+title: Full GLM-5.3 (744B, RadixArk NVFP4) on 8x DGX Spark, vLLM TP8 over 200G RoCE + MTP, 512K context
+summary: >-
+  GhettoRak's daily GLM-5.3 lane. RadixArk's ModelOpt NVFP4 build (routed experts W4A4 group-16; attention, shared experts,
+  layers 0-1 and the MTP layer kept bf16; 432.9 GiB) served tensor-parallel 8 across eight DGX Spark GB10 nodes on one
+  CRS804. 524,288-token context on a 720,384-token KV pool, single-stream decode 24-26 tok/s, 4-stream aggregate 59 tok/s
+  (+47% vs the FP8 sibling), ~1.2-1.4K tok/s prefill, needles pass at 35K/70K/140K/280K/514K. Trades fidelity for room: third-party
+  KLD 0.0511 vs BF16 against 0.0223 for the official FP8 (sibling recipe dgx-spark-8x/glm-5.3-fp8-tp8).
+status: experimental
+owners:
+- jmeadlock
+- milo
+updated: '2026-10-16'
+tags:
+- glm-5.3
+- nvfp4
+- modelopt
+- vllm
+- dgx-spark
+- gb10
+- tp8
+- roce
+- mtp
+- long-context
+model:
+  name: GLM-5.3
+  params: 744B (MoE, glm_moe_dsa, 78 layers)
+  repo: https://huggingface.co/RadixArk/GLM-5.3-NVFP4
+  revision: 6e389189d564d9d3e4ea7fa284fe91f136d8ae2a
+  quantization: >-
+    NVFP4 (ModelOpt 0.47.0.dev, group 16) on routed experts; 231 ignore entries keep self_attn, shared experts, mlp.gate,
+    layers 0-1, embed/lm_head and the MTP layer (model.layers.78*) in bf16; checkpoint kv_cache_scheme fp8 (serve-time
+    fp8_ds_mla used here). 47 safetensors, 464,823,042,096 bytes; all 49 LFS files sha256-matched to the Hub on all eight nodes.
+    Third-party QFS teacher-forced KLD vs GLM-5.3 BF16: 0.0511 (malaiwah/quant-fidelity-suite, comparator 312a2551db89; stored
+    weights reconstructed, not executed through these kernels).
+  draft:
+    repo: https://huggingface.co/RadixArk/GLM-5.3-NVFP4 (in-checkpoint MTP layer, bf16)
+    revision: 6e389189d564d9d3e4ea7fa284fe91f136d8ae2a
+    method: mtp, num_speculative_tokens 1
+hardware:
+  profile: hardware/dgx-spark-8x.yaml
+  nominal:
+    unified_memory_gb_per_node: 128
+    nodes: 8
+  observed:
+    gpu: NVIDIA GB10 x8
+    driver: '595.84'
+    cuda: '13.2'
+    gpu_memory_visible_gib: 121.69
+    host_memory_gib: 121.7
+    os: Ubuntu 24.04.4 LTS (DGX OS 7.2.3)
+    kernel: 6.17.0-1031-nvidia
+    snapshot: results/2026-10-16-nvfp4-radixark-tp8/system.json
+  required_settings:
+  - Same fabric, kernel and memory settings as the FP8 sibling (see hardware/dgx-spark-8x.yaml and recipes/dgx-spark-8x/glm-5.3-fp8-tp8).
+  - gpu-memory-utilization 0.80, not higher. 0xMagnus measured a global OOM on the head at 0.86 during FP4 autotune; at 0.80 the head keeps ~8.6-8.9 GB host memory free while serving here.
+runtime:
+  engine: vLLM
+  engine_version: 0.11.2.dev280+gilded.gnosis.v18 (ciprianveg gb10-vllm v19-vision; local-inference-lab fork with B12X sparse-MLA kernels for SM121)
+  container:
+    image: ghcr.io/ciprianveg/gb10-glm-5.2:v19-vision
+    digest: sha256:7ac0031cfefc83e2d3fb127faf0c4a58ba25c8a33e2e5690c3e3760d51097898
+    base_image: >-
+      registry manifest digest above; loaded Id on overlay2 hosts sha256:ba79eedf36272341fe7fa30f00f3b9aeaf25a4d18faa4257a63f6cf0bd13c564
+      (launcher refuses anything else). Same image as the FP8 sibling. NCCL 2.30.4 preloaded by the image.
+  key_libraries:
+    nccl: 2.30.4 (image LD_PRELOAD)
+    flashinfer: image build (trtllm fused_moe FP4 GEMMs autotuned at boot, ~104 s)
+launch:
+  script: scripts/cluster.sh
+  command: SPARK_HOSTS="spark1 spark2 spark3 spark4 spark5 spark6 spark7 spark8" bash scripts/cluster.sh push && SPARK_HOSTS="..." bash scripts/cluster.sh up
+  health: BASE_URL=http://<head>:8890/v1 GLM53_API_KEY=... python3 scripts/gates.py
+  warmup: One discarded request per prompt class before measuring.
+  notable_flags:
+  - Per-node launcher scripts/launch-nvfp4-tp8.sh <rank>; workers 7..1 then head 0; mp executor, --nnodes 8 --node-rank N.
+  - Identical to the FP8 sibling except - model path, --gpu-memory-utilization 0.80, --max-model-len 524288, VLLM_FLASHINFER_AUTOTUNE_CACHE_DIR set (0xMagnus reports it is a no-op at TP>1 on this build), and --speculative-config method mtp num_speculative_tokens 1 with no quantization field (bf16 MTP layer).
+  - --attention-backend B12X_MLA_SPARSE --kv-cache-dtype fp8_ds_mla, DSA index_topk_pattern hf-override, --max-num-seqs 4 --max-num-batched-tokens 4096, decode-aware prefill, cudagraph FULL (capture 24), --disable-custom-all-reduce, --model-loader-extra-config enable_multithread_load true num_threads 8, reasoning_effort low default.
+  - Launcher SHA-256 16668ef617308f71aa9cdab03411e40d9572537214846c315c091b0f48cc4f57 (2026-10-16).
+metrics:
+- name: Single-stream decode, code prompt
+  value: 26.29
+  unit: tok/s
+  workload: C1, nginx-log-parser + pytest prompt, 800 max tokens, T=0, reasoning low, streamed; 1 discarded warm + 3 reps (same scripts/bench.py as the FP8 sibling)
+  aggregation: median of 3 (26.24-26.42); FP8 sibling 29.92
+  provenance:
+    run_id: 2026-10-16-nvfp4-radixark-tp8
+    method: scripts/bench.py
+    raw: raw/bench-nvfp4-boot1.jsonl
+- name: Single-stream decode, prose email prompt
+  value: 24.89
+  unit: tok/s
+  workload: C1, same instrument
+  aggregation: median of 3 (24.71-25.28); FP8 sibling 26.87
+  provenance:
+    run_id: 2026-10-16-nvfp4-radixark-tp8
+    method: scripts/bench.py
+    raw: raw/bench-nvfp4-boot1.jsonl
+- name: Single-stream decode, technical-explanation prompt
+  value: 23.82
+  unit: tok/s
+  workload: C1, same instrument
+  aggregation: median of 3 (23.25-23.96); FP8 sibling 23.10
+  provenance:
+    run_id: 2026-10-16-nvfp4-radixark-tp8
+    method: scripts/bench.py
+    raw: raw/bench-nvfp4-boot1.jsonl
+- name: 4-stream aggregate decode
+  value: 59.1
+  unit: tok/s
+  workload: C4, code/explain/prose/code concurrently, 800 max tokens, T=0, reasoning low
+  aggregation: single run; per-user 16.45-18.36; FP8 sibling 40.1 (11.5-14.2 per user)
+  provenance:
+    run_id: 2026-10-16-nvfp4-radixark-tp8
+    method: scripts/bench.py
+    raw: raw/bench-nvfp4-boot1.jsonl
+- name: Prefill + retrieval, ~514K-token needle
+  value: 1241
+  unit: tok/s
+  workload: 513,814-token random-word haystack (98% of the 524,288 limit), code at depth 0.5, reasoning low, T=0; PASS in 413.9 s wall; head host avail 8,469 MB after
+  aggregation: single run
+  provenance:
+    run_id: 2026-10-16-nvfp4-radixark-tp8
+    method: scripts/needle.py
+    raw: raw/needle-nvfp4-20261016.jsonl
+- name: Prefill + retrieval, ~280K-token needle
+  value: 1305
+  unit: tok/s
+  workload: 280,261-token random-word haystack, code at depth 0.5, reasoning low, T=0; PASS in 214.8 s wall (prefill estimated as prompt_tokens / wall)
+  aggregation: single run; 35,055 PASS 37.6 s, 69,979 PASS 50.4 s (~1,389 tok/s), 140,034 PASS 102.2 s (~1,371 tok/s)
+  provenance:
+    run_id: 2026-10-16-nvfp4-radixark-tp8
+    method: scripts/needle.py
+    raw: raw/needle-nvfp4-20261016.jsonl
+- name: KV pool
+  value: 720384
+  unit: tokens
+  workload: gmu 0.80, fp8_ds_mla, 37.82 GiB/rank available for KV; 1.37x concurrency at 524,288
+  aggregation: single boot
+  provenance:
+    run_id: 2026-10-16-nvfp4-radixark-tp8
+    method: engine log
+    raw: raw/boot-head-log-excerpt.txt
+- name: Cold boot to Application startup complete
+  value: 17.5
+  unit: min
+  workload: all 8 ranks, local NVMe, 8-thread loader, page-cache flusher on; head weight load 558.0 s, torch.compile 76.7 s (cold cache), FP4 MoE autotune ~104 s
+  aggregation: single boot (StartedAt 19:37:32Z -> 19:55:04Z)
+  provenance:
+    run_id: 2026-10-16-nvfp4-radixark-tp8
+    method: docker logs -t timestamps vs container StartedAt
+    raw: raw/boot-head-log-excerpt.txt
+verification:
+  gates:
+    schema: { how: "scripts/check_recipe.py passes", last_pass_utc: "2026-10-16T20:45:00Z", run_id: 2026-10-16-nvfp4-radixark-tp8 }
+    digest: { how: "loaded image Id sha256:ba79eedf... on all 8; checkpoint 49/49 LFS files sha256 == Hub at the pinned revision on every node", last_pass_utc: "2026-10-16T19:34:11Z", run_id: 2026-10-16-nvfp4-radixark-tp8 }
+    health: { how: "scripts/gates.py: keyless 401, glm-5.3-nvfp4 / 524288, exact-reply smoke, get_weather tool call + tool-result round", last_pass_utc: "2026-10-16T20:13:00Z", run_id: 2026-10-16-nvfp4-radixark-tp8 }
+    quality: { how: "PENDING on our stack. Third-party QFS stored-weight KLD 0.0511 vs BF16 (official FP8 0.0223). A served teacher-forced comparison against the FP8 sibling on this cluster has not been run.", run_id: 2026-10-16-nvfp4-radixark-tp8 }
+    performance: { how: "scripts/bench.py C1 medians within 5% of 26.3 / 23.8 / 24.9 (code / explain / prose); C4 within 10% of 59.1", last_pass_utc: "2026-10-16T20:17:37Z", run_id: 2026-10-16-nvfp4-radixark-tp8 }
+limits:
+- "Fidelity: NVFP4 is measurably further from BF16 than the official FP8 (QFS 0.0511 vs 0.0223, stored weights). Pick the FP8 sibling when token fidelity matters more than context or concurrency."
+- "Single-stream it is not faster than FP8: 7-12% slower on code and prose, ~3% faster on the explanation prompt. MTP at k=1 accepts ~1.8-2.0 tokens per step. Its wins are KV room (720K vs 150-182K) and concurrency (C4 59.1 vs 40.1)."
+- "reasoning_effort high at 1,500 max tokens hit the length limit with a partial answer (1,417 content chars, finish length); at 16,000 it finished in 2,716 tokens (stop). FP8 at 1,500 returned empty content. The template honours only low and high."
+- "Context: 524,288 configured; needle PASS at 513,814 tokens (413.9 s) with the head at 8.5 GB host free. One needle per length, depth 0.5 only; this is retrieval at depth, not long-context reasoning. 1M needs nvfp4_ds_mla KV or DCP, neither tested here (0xMagnus: DCP fails on the DSA indexer page-size unifier)."
+- "Boot 17.5 min cold (torch.compile cache cold for this model; ~10 min of it is the head's single-file-at-a-time weight load even with 8 threads)."
+- "Decode is latency/weight-read bound on this image; VLLM_ENABLE_ROCE_ALLREDUCE does not exist in v19 (see FP8 sibling limits)."
+rollback:
+  script: scripts/cluster.sh
+  summary: "SPARK_HOSTS=... scripts/cluster.sh down. To go back to the FP8 sibling: NAME=glm53_fp8_tp8 LAUNCHER=launch-fp8-tp8.sh cluster.sh up (weights for both stay on every node; ~1.2 TB per node)."
+links:
+  blog: https://al-engr.com/glm53-fp8-8x-spark.html
+  sibling_recipe: recipes/dgx-spark-8x/glm-5.3-fp8-tp8
+  upstream_launcher: https://github.com/im0xMagnus/glm-5.3-uncensored-8x-dgx-spark (dd5fff7a, launchers/launch-nvfp4-tp8.sh)
+  upstream_stack: https://github.com/ciprianveg/gb10-vllm (c7b7c67a, glm-5.3/v19)
