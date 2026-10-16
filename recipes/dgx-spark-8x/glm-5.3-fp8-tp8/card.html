@@ -1,0 +1,87 @@
+<!doctype html>
+<html><head><meta charset="utf-8">
+<style>
+  html,body{margin:0;background:#0b0f14;}
+  .card{width:1200px;box-sizing:border-box;padding:36px 44px;background:linear-gradient(160deg,#0b0f14 0%,#0f1620 100%);color:#e6edf3;font-family:Inter,-apple-system,Segoe UI,Helvetica,Arial,sans-serif;border:1px solid #1e2a38;border-radius:14px;}
+  .mono{font-family:"JetBrains Mono",SFMono-Regular,Menlo,Consolas,monospace;}
+  .top{display:flex;justify-content:space-between;align-items:flex-start;}
+  h1{margin:0;font-size:38px;font-weight:800;letter-spacing:-0.5px;}
+  .sub{margin-top:6px;font-size:15px;color:#9fb0c3;}
+  .brand{text-align:right;font-size:13px;color:#9fb0c3;line-height:1.5;white-space:nowrap}
+  .brand b{color:#6ee7b7;font-size:16px;letter-spacing:1px}
+  .pills{display:flex;flex-wrap:wrap;gap:8px;margin:18px 0 22px}
+  .pill{border:1px solid #2a3a4d;background:#111a25;border-radius:999px;padding:6px 12px;font-size:13px;color:#cfd9e4}
+  .pill b{color:#fff;font-weight:600}
+  .pill.type{border-color:#6ee7b7;color:#6ee7b7}
+  .grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px}
+  .box{background:#111a25;border:1px solid #1e2a38;border-radius:10px;padding:16px 18px}
+  .lbl{font-size:11px;letter-spacing:1.6px;text-transform:uppercase;color:#7f93a8;margin-bottom:6px}
+  .hero{font-size:56px;font-weight:800;line-height:1;color:#fff}
+  .hero small{font-size:18px;font-weight:500;color:#9fb0c3;margin-left:6px}
+  .note{font-size:12px;color:#9fb0c3;margin-top:8px;line-height:1.4}
+  .row2{display:grid;grid-template-columns:1.2fr 1fr 1fr;gap:14px;margin-top:14px}
+  .kv{font-size:14px;line-height:1.75}
+  .kv b{color:#fff;font-weight:600}
+  .acc span{display:inline-block;margin-right:12px}
+  .fid{margin-top:14px;background:#0e1a17;border:1px solid #1f4d3d;border-radius:10px;padding:16px 18px}
+  .fid .lbl{color:#6ee7b7}
+  .fid ul{margin:0;padding-left:0;list-style:none;display:grid;grid-template-columns:1fr 1fr;gap:6px 24px;font-size:14px;line-height:1.5}
+  .ok::before{content:"✓ ";color:#6ee7b7;font-weight:700}
+  .pend::before{content:"◌ ";color:#f59e0b;font-weight:700}
+  .pend{color:#d9c58a}
+  .meas::before{content:"≈ ";color:#93c5fd;font-weight:700}
+  .pend-inline{color:#f59e0b;font-size:0.6em;font-weight:600;letter-spacing:1px}
+  .foot{display:flex;justify-content:space-between;margin-top:18px;font-size:12px;color:#7f93a8}
+  .foot .mono{color:#9fb0c3}
+  .fid li.pair { list-style: none; margin: 6px 0 2px -18px; padding: 10px 12px; border: 1px solid rgba(255,255,255,.14); border-radius: 8px; background: rgba(255,255,255,.04); }
+  .fid li.pair .big { font-size: 20px; font-weight: 700; color: #e8f0ff; letter-spacing: -.2px; }
+  .fid li.pair .sep { color: rgba(255,255,255,.35); margin: 0 6px; }
+  .fid li.pair .dim { font-size: 11.5px; color: rgba(255,255,255,.62); }
+</style></head><body>
+<div class="card">
+  <div class="top">
+    <div>
+      <h1>GLM-5.3 744B FP8 · 8× DGX Spark</h1>
+      <div class="sub">The official zai-org FP8 checkpoint, unquantized beyond what Z.ai shipped — vLLM TP8 across eight GB10s on one CRS804 at 200G RoCE, in-checkpoint MTP</div>
+    </div>
+    <div class="brand"><b>J-M-RECIPES</b><br>v1 (2026-10-16 · zai-org ba32f8c1 · gb10-glm-5.2:v19-vision · 8-thread loader) · 2026-10-16<br>status: experimental</div>
+  </div>
+  <div class="pills">
+<span class="pill type"><b>MoE+MTP</b> · 256 routed experts, 8 active + 1 shared · 78 layers (3 dense) · DSA sparse attention + MLA · 1 MTP layer</span>
+<span class="pill"><b>744B</b> total · <b><span class="pend-inline">PENDING</span></b> active</span>
+<span class="pill">checkpoint <b>755.6 GB</b> · rev <span class="mono">ba32f8c1</span></span>
+<span class="pill">weights <b>as shipped · official FP8 (e4m3, 128×128 block scales) · no re-quantization</b></span>
+<span class="pill">engine <b>vLLM <span class="mono"></span> · vLLM 0.11.2 local-inference-lab fork · B12X_MLA_SPARSE · NCCL 2.30.4 · ghcr.io/ciprianveg/gb10-glm-5.2:v19-vision</b></span>
+<span class="pill">memory <b>90.96 GiB/rank weights + MTP · KV 8.8–10.9 GiB/rank = 150–182K-token pool · 131K ctx · ~7–8 GB host free per node</b></span>
+  </div>
+  <div class="grid">
+<div class="box"><div class="lbl">Decode · C1 (prose)</div><div class="hero">26.9<small>tok/s</small></div><div class="note">warm, T=0, reasoning low, 800 tok · code 29.9 · technical explanation 23.1 · median of 3</div></div>
+<div class="box"><div class="lbl">Decode · C4 aggregate</div><div class="hero">40.1<small>tok/s</small></div><div class="note">max-num-seqs 4 · 11.5–14.2 per user · boot 1 42.4</div></div>
+<div class="box"><div class="lbl">Prefill · cold</div><div class="hero">1.2K<small>tok/s</small></div><div class="note">69,979-token needle PASS in 57.5 s · 35,055 in 40.3 s (~870 tok/s) · cold, single run</div></div>
+  </div>
+  <div class="row2">
+<div class="box"><div class="lbl">Guesser</div><div class="kv"><b>MTP</b> · in-checkpoint (num_nextn_predict_layers 1)<br>adaptive depth 2 / 4 / 5 (VLLM_ADAPTIVE_SPEC_DEPTHS), window 32, probabilistic draft sampling<br><span class="acc">accept: <span>prose <b>2.0–2.3 / step @ depth 2</b></span> <span>code <b>4.1–4.9 / step @ depth 4–5</b></span> <span>shell <b>pending</b></span> <span>tool-JSON <b>pending</b></span></span></div></div>
+<div class="box"><div class="lbl">Fabric &amp; power</div><div class="kv">8-node NCCL all_reduce busbw: <b>20.13 GB/s @ 1 GiB · 23.49 @ 32 MiB · 0 switch errors · switch CPU 1%</b><br>small-message all_reduce (Tree/LL): <b>81 µs @ 12 KB · 90 µs @ 36 KB (other arms did not complete)</b><br>wall power, decode + 70K prefill: <b>169–189 W per Spark · rack ~1.5 kW at stock clocks</b></div></div>
+<div class="box"><div class="lbl">Long-context &amp; boot</div><div class="kv">needle recall: <b>35K PASS · 70K PASS · 128K untested (head host headroom 6.8 GB)</b><br>cold boot → serving: <b>13.2 min with 8-thread loader (head weight load 567 s) · 27.5 min stock (957 s)</b><br>reasoning high @ 1,500 tok: <b>empty answer — budget spent thinking; use low or ≥16K</b></div></div>
+  </div>
+  <div class="fid"><div class="lbl">Output fidelity — does the recipe change what the model says?</div>
+    <ul>
+<li class="ok">Weights unchanged: official FP8 as shipped, 143/143 LFS files sha256-matched to the Hub on every node</li>
+<li class="ok">Image identity: loaded Id sha256:ba79eedf… on all 8 (launcher refuses otherwise)</li>
+<li class="pend">Teacher-forced Δlogprob MTP-on vs MTP-off on this stack</li>
+<li class="ok">Tool calling: get_weather call + tool-result round on both boots (1/1 ×2) — small sample</li>
+<li class="pend">Public sanity anchor run by us</li>
+<li class="meas">Third-party QFS: official GLM-5.3 FP8 KLD 0.0223 vs BF16 (malaiwah/quant-fidelity-suite, stored weights) — not our measurement</li>
+    </ul>
+  </div>
+  <div class="fid"><div class="lbl">Agent claim card — fixed protocol, held-out sibling, cost per solved task</div>
+    <ul>
+<li class="pend">harness card pending — protocol hash, held-out sibling suite, cost per solved task</li>
+    </ul>
+  </div>
+  <div class="foot">
+    <span>recipe <span class="mono">recipes/dgx-spark-8x/glm-5.3-fp8-tp8</span> · run <span class="mono">2026-10-16-fp8-tp8-baseline-mtload</span></span>
+    <span>github.com/J-M-Recipes/recipes · al-engr.com · @jmeadlock</span>
+  </div>
+</div>
+</body></html>

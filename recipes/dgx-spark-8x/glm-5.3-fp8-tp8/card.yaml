@@ -1,0 +1,48 @@
+# card.yaml — at-a-glance card sidecar. Rendered by scripts/render_card.py; never hand-edit card.html.
+# Every number here traces to recipe.yaml metrics or results/2026-10-16-fp8-tp8-baseline-mtload/. Unknown = pending (amber).
+title: "GLM-5.3 744B FP8 · 8× DGX Spark"
+subtitle: "The official zai-org FP8 checkpoint, unquantized beyond what Z.ai shipped — vLLM TP8 across eight GB10s on one CRS804 at 200G RoCE, in-checkpoint MTP"
+version: "v1 (2026-10-16 · zai-org ba32f8c1 · gb10-glm-5.2:v19-vision · 8-thread loader)"
+run_id: 2026-10-16-fp8-tp8-baseline-mtload
+handles: "github.com/J-M-Recipes/recipes · al-engr.com · @jmeadlock"
+
+model:
+  type: MoE+MTP
+  type_detail: "256 routed experts, 8 active + 1 shared · 78 layers (3 dense) · DSA sparse attention + MLA · 1 MTP layer"
+  total_params: 744B
+  active_params: pending
+  checkpoint_gb: 755.6              # 755,632,050,320 B of safetensors; 143/143 LFS files sha256 == Hub on all 8 nodes
+  weights_short: "as shipped · official FP8 (e4m3, 128×128 block scales) · no re-quantization"
+  engine_extra: "vLLM 0.11.2 local-inference-lab fork · B12X_MLA_SPARSE · NCCL 2.30.4 · ghcr.io/ciprianveg/gb10-glm-5.2:v19-vision"
+  memory: "90.96 GiB/rank weights + MTP · KV 8.8–10.9 GiB/rank = 150–182K-token pool · 131K ctx · ~7–8 GB host free per node"
+
+hero:
+  c1:      { value: 26.9, unit: tok/s, class: prose, note: "warm, T=0, reasoning low, 800 tok · code 29.9 · technical explanation 23.1 · median of 3" }
+  c16:     { value: 40.1, unit: tok/s, label: "Decode · C4 aggregate", note: "max-num-seqs 4 · 11.5–14.2 per user · boot 1 42.4" }
+  prefill: { value: 1.2K, unit: tok/s, note: "69,979-token needle PASS in 57.5 s · 35,055 in 40.3 s (~870 tok/s) · cold, single run" }
+
+guesser:
+  name: MTP
+  source: "in-checkpoint (num_nextn_predict_layers 1)"
+  schedule: "adaptive depth 2 / 4 / 5 (VLLM_ADAPTIVE_SPEC_DEPTHS), window 32, probabilistic draft sampling"
+  accept: { prose: "2.0–2.3 / step @ depth 2", code: "4.1–4.9 / step @ depth 4–5", shell: pending, tool-JSON: pending }
+
+secondary:
+  - label: Fabric & power
+    items:
+      "8-node NCCL all_reduce busbw": "20.13 GB/s @ 1 GiB · 23.49 @ 32 MiB · 0 switch errors · switch CPU 1%"
+      "small-message all_reduce (Tree/LL)": "81 µs @ 12 KB · 90 µs @ 36 KB (other arms did not complete)"
+      "wall power, decode + 70K prefill": "169–189 W per Spark · rack ~1.5 kW at stock clocks"
+  - label: Long-context & boot
+    items:
+      "needle recall": "35K PASS · 70K PASS · 128K untested (head host headroom 6.8 GB)"
+      "cold boot → serving": "13.2 min with 8-thread loader (head weight load 567 s) · 27.5 min stock (957 s)"
+      "reasoning high @ 1,500 tok": "empty answer — budget spent thinking; use low or ≥16K"
+
+fidelity:
+  - { status: pass,    text: "Weights unchanged: official FP8 as shipped, 143/143 LFS files sha256-matched to the Hub on every node" }
+  - { status: pass,    text: "Image identity: loaded Id sha256:ba79eedf… on all 8 (launcher refuses otherwise)" }
+  - { status: pending, text: "Teacher-forced Δlogprob MTP-on vs MTP-off on this stack" }
+  - { status: pass,    text: "Tool calling: get_weather call + tool-result round on both boots (1/1 ×2) — small sample" }
+  - { status: pending, text: "Public sanity anchor run by us" }
+  - { status: measured, text: "Third-party QFS: official GLM-5.3 FP8 KLD 0.0223 vs BF16 (malaiwah/quant-fidelity-suite, stored weights) — not our measurement" }

@@ -1,0 +1,9 @@
+# nccl-lat probe, 2026-10-16 ~13:28-14:02 CDT, v19 image (NCCL 2.30.4 preloaded), 8 ranks one per node, bf16 all_reduce,
+# 50 warm + 500 timed, max across ranks. Run while the model lane was being restarted (memory-contended; treat as indicative).
+# Arm "default": rendezvous timed out ("Timed out after 601 seconds waiting for clients. 3/8 clients joined.") -> no data.
+# Arm "ring_ll": printed nothing -> no data. Arm "tree_ll" (NCCL_ALGO=Tree NCCL_PROTO=LL):
+tree_ll bytes=12288 us=81.2
+tree_ll bytes=36864 us=90.0
+tree_ll bytes=73728 us=128.0
+tree_ll bytes=196608 us=189.4
+tree_ll bytes=393216 us=275.8
