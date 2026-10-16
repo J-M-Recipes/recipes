@@ -1,0 +1,20 @@
+2026-10-16 05:36:33 CDT ===== MUSE S1 BOOT1 START (offload 300 GiB) =====
+2026-10-16 05:36:33 CDT dropped page cache
+MemTotal:       518524160 kB
+MemAvailable:   482201216 kB
+2026-10-16 07:24:03 CDT READY after 6449 s; min MemAvailable during boot 121 GiB
+2026-10-16 07:27:56 CDT gates rc=0
+PASS models 131072
+FAIL chat {"content": "", "reasoning_len": 2175, "usage": {"prompt_tokens": 156, "total_tokens": 556, "completion_tokens": 400, "prompt_tokens_details": null, "completion_tokens_details": {"reasoning_tokens": 397}}}
+PASS reasoning_split {"content": "391", "reasoning_len": 1331}
+PASS tool1 {"tool_calls": [{"id": "chatcmpl-tool-af961588a1a6220d", "type": "function", "function": {"name": "read_file", "arguments": "{\"path\": \"/srv/notes.txt\"}"}}], "finish": "tool_calls"}
+PASS tools_replay4 {"paths": ["/srv/a.txt", "/srv/b.txt", "/srv/c.txt", "/srv/d.txt"], "final": "QX-7342"}
+PASS greedy_repeat {"same": true}
+C1 prose 26.56
+C1 code 26.55
+C1 json 26.57
+C1 agent 26.57
+C4 agg [43.43, 43.43]
+GATES {'models': True, 'chat': False, 'reasoning_split': True, 'tool1': True, 'tools_replay4': True, 'greedy_repeat': True}
+2026-10-16 07:28:02 CDT stop+keep muse-s1-o300-graphs
+2026-10-16 07:28:02 CDT ===== MUSE S1 BOOT1 END =====

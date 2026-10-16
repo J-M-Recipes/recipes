@@ -1,0 +1,87 @@
+<!doctype html>
+<html><head><meta charset="utf-8">
+<style>
+  html,body{margin:0;background:#0b0f14;}
+  .card{width:1200px;box-sizing:border-box;padding:36px 44px;background:linear-gradient(160deg,#0b0f14 0%,#0f1620 100%);color:#e6edf3;font-family:Inter,-apple-system,Segoe UI,Helvetica,Arial,sans-serif;border:1px solid #1e2a38;border-radius:14px;}
+  .mono{font-family:"JetBrains Mono",SFMono-Regular,Menlo,Consolas,monospace;}
+  .top{display:flex;justify-content:space-between;align-items:flex-start;}
+  h1{margin:0;font-size:38px;font-weight:800;letter-spacing:-0.5px;}
+  .sub{margin-top:6px;font-size:15px;color:#9fb0c3;}
+  .brand{text-align:right;font-size:13px;color:#9fb0c3;line-height:1.5;white-space:nowrap}
+  .brand b{color:#6ee7b7;font-size:16px;letter-spacing:1px}
+  .pills{display:flex;flex-wrap:wrap;gap:8px;margin:18px 0 22px}
+  .pill{border:1px solid #2a3a4d;background:#111a25;border-radius:999px;padding:6px 12px;font-size:13px;color:#cfd9e4}
+  .pill b{color:#fff;font-weight:600}
+  .pill.type{border-color:#6ee7b7;color:#6ee7b7}
+  .grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px}
+  .box{background:#111a25;border:1px solid #1e2a38;border-radius:10px;padding:16px 18px}
+  .lbl{font-size:11px;letter-spacing:1.6px;text-transform:uppercase;color:#7f93a8;margin-bottom:6px}
+  .hero{font-size:56px;font-weight:800;line-height:1;color:#fff}
+  .hero small{font-size:18px;font-weight:500;color:#9fb0c3;margin-left:6px}
+  .note{font-size:12px;color:#9fb0c3;margin-top:8px;line-height:1.4}
+  .row2{display:grid;grid-template-columns:1.2fr 1fr 1fr;gap:14px;margin-top:14px}
+  .kv{font-size:14px;line-height:1.75}
+  .kv b{color:#fff;font-weight:600}
+  .acc span{display:inline-block;margin-right:12px}
+  .fid{margin-top:14px;background:#0e1a17;border:1px solid #1f4d3d;border-radius:10px;padding:16px 18px}
+  .fid .lbl{color:#6ee7b7}
+  .fid ul{margin:0;padding-left:0;list-style:none;display:grid;grid-template-columns:1fr 1fr;gap:6px 24px;font-size:14px;line-height:1.5}
+  .ok::before{content:"✓ ";color:#6ee7b7;font-weight:700}
+  .pend::before{content:"◌ ";color:#f59e0b;font-weight:700}
+  .pend{color:#d9c58a}
+  .meas::before{content:"≈ ";color:#93c5fd;font-weight:700}
+  .pend-inline{color:#f59e0b;font-size:0.6em;font-weight:600;letter-spacing:1px}
+  .foot{display:flex;justify-content:space-between;margin-top:18px;font-size:12px;color:#7f93a8}
+  .foot .mono{color:#9fb0c3}
+  .fid li.pair { list-style: none; margin: 6px 0 2px -18px; padding: 10px 12px; border: 1px solid rgba(255,255,255,.14); border-radius: 8px; background: rgba(255,255,255,.04); }
+  .fid li.pair .big { font-size: 20px; font-weight: 700; color: #e8f0ff; letter-spacing: -.2px; }
+  .fid li.pair .sep { color: rgba(255,255,255,.35); margin: 0 6px; }
+  .fid li.pair .dim { font-size: 11.5px; color: rgba(255,255,255,.62); }
+</style></head><body>
+<div class="card">
+  <div class="top">
+    <div>
+      <h1>Muse Spark Open 816B · 1× DGX Station GB300</h1>
+      <div class="sub">Meta first-party NVFP4 + vLLM day-0 image + UVA expert offload (310 GiB in Grace) + DSpark k=2 — 128K context, one GPU, the day after release</div>
+    </div>
+    <div class="brand"><b>J-M-RECIPES</b><br>v1 “Day One” (2026-10-16 · image c91025b5 · drafter ffc3eb50) · 2026-10-16<br>status: experimental</div>
+  </div>
+  <div class="pills">
+<span class="pill type"><b>MoE</b> · 256 routed experts, top-8, no shared expert · 16 full + 46 sliding-window-2048 attention layers · vision + audio towers</span>
+<span class="pill"><b>816B</b> total · <b>42B</b> active</span>
+<span class="pill">checkpoint <b>533.0 GB</b> · rev <span class="mono">4239e4db</span></span>
+<span class="pill">weights <b>as shipped · NVFP4 experts L1–60, FP8 experts L0/L61, BF16 attention/embeddings (Meta first-party)</b></span>
+<span class="pill">engine <b>vLLM <span class="mono">a34ca64c138ad0360c472ada748b750435b607ae</span> · vLLM 0.1.dev22954+ga34ca64c1 (PR #61879) · vllm/vllm-openai:muse-spark-open @ sha256:c91025b5 · FlashInfer 0.7.0.post1, autotune OFF · CUDA graphs on</b></span>
+<span class="pill">memory <b>207.9 GiB HBM (weights + drafter) + 311.5 GiB experts in Grace via UVA, pin_memory off · KV pool 179,747 tok (1.37× at 128K) · 4 seqs</b></span>
+  </div>
+  <div class="grid">
+<div class="box"><div class="lbl">Decode · C1 (prose)</div><div class="hero">29.4<small>tok/s</small></div><div class="note">warm, T=0, 256 forced tok, default effort (xhigh: reasoning text) · JSON 29.7 · agent 29.3 · code 26.2 · no-spec control 25.8 every class (same window)</div></div>
+<div class="box"><div class="lbl">Decode · C4 aggregate</div><div class="hero">49.2<small>tok/s</small></div><div class="note">--max-num-seqs 4 (slot-capped) · no-spec control 41.4 · beyond 4 streams unmeasured</div></div>
+<div class="box"><div class="lbl">Prefill · cold</div><div class="hero"><span class="pend-inline">PENDING</span><small>tok/s</small></div><div class="note">not measured this round</div></div>
+  </div>
+  <div class="row2">
+<div class="box"><div class="lbl">Guesser</div><div class="kv"><b>DSpark</b> · Inferact/Muse-Spark-Open-DSpark @ ffc3eb50 (5-layer BF16, 10.6 GB, text-only)<br>k = 2 fixed · k=3 C1 prose 28.7 · k=7 22.9 (slower than no spec) · k=7+adaptive failed boot (KV)<br><span class="acc">accept: <span>bench prompts <b>2.42 tok/step (0.80 / 0.62)</b></span> <span>BFCL + GSM8K <b>2.53 tok/step (0.84 / 0.69)</b></span></span></div></div>
+<div class="box"><div class="lbl">Settings ladder (C1 prose, tok/s)</div><div class="kv">eager → CUDA graphs (no spec, offload 300): <b>10.65 → 26.56 · C4 39.9 → 43.4</b><br>FlashInfer autotune on → off: <b>26.56 → 26.58 · boot 6,449 s → 345 s · 32/43 tuned tactics flipped between two boots</b><br>offload 300 → 310 GiB (no spec): <b>26.58 → 25.83 (room for the drafter)</b><br>verify step (accepted tok/step ÷ C1): <b>none ~38 ms · k=2 ~82 · k=3 ~99 · k=7 ~138</b></div></div>
+<div class="box"><div class="lbl">Boot &amp; next</div><div class="kv">cold boot → serving (autotune off, NVMe): <b>345–370 s across 5 boots · min host MemAvailable 116–142 GiB across 10 boots</b><br>context: <b>128K served · 1M allowed by checkpoint · longer context = next step, not tried</b></div></div>
+  </div>
+  <div class="fid"><div class="lbl">Output fidelity — does the recipe change what the model says?</div>
+    <ul>
+<li class="ok">Weights unchanged: 0 re-quantized bits, 141 files / 533,043,429,228 B byte-verified vs HF, 128/128 LFS sha256 on the GB300 copy</li>
+<li class="ok">Same-window A/B vs no speculation: BFCL dev 563 vs 561 /600 (5 fixed / 3 broken) · GSM8K-200 193 vs 192 (2 fixed / 1 broken) — bar ±2 pts</li>
+<li class="meas">Speculation target-verified, not byte-identical: greedy k=2 vs k=0 13/20 identical at 600 tok, 7 diverge at token 6–134</li>
+<li class="ok">Tool calling: 1 parsed call + 4-turn tool replay (final QX-7342) pass every boot · BFCL 0 errors, 2 no-call / 600</li>
+<li class="pend">Teacher-forced Δlogprob vs a reference build — not run for Muse</li>
+<li class="pend">Image / audio input gate — not run (drafter is text-only)</li>
+    </ul>
+  </div>
+  <div class="fid"><div class="lbl">Agent claim card — fixed protocol, held-out sibling, cost per solved task</div>
+    <ul>
+<li class="pend">harness card pending — protocol hash, held-out sibling suite, cost per solved task</li>
+    </ul>
+  </div>
+  <div class="foot">
+    <span>recipe <span class="mono">recipes/dgx-station-gb300/muse-spark-open-816b-vllm-uva-dspark</span> · run <span class="mono">2026-10-16-muse-s1 (all numbers · q-k0 / q-k2 same-window quality A/B · s1-boot3..9 settings ladder)</span></span>
+    <span>github.com/J-M-Recipes/recipes · al-engr.com · @jmeadlock · Built with Muse Spark Open</span>
+  </div>
+</div>
+</body></html>

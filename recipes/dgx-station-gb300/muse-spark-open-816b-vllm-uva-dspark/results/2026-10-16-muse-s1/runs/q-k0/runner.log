@@ -1,0 +1,22 @@
+2026-10-16 12:18:05 CDT ===== MUSE S1 BOOT1 START (offload 310 GiB) =====
+2026-10-16 12:18:05 CDT dropped page cache
+MemTotal:       518524160 kB
+MemAvailable:   485972736 kB
+2026-10-16 12:23:51 CDT READY after 346 s; min MemAvailable during boot 123 GiB
+2026-10-16 12:27:59 CDT gates rc=0
+PASS models 131072
+PASS chat {"content": "A lighthouse keeper operates and maintains a lighthouse to ensure its light guides ships safely and helps prevent coastal accidents. Their duties include caring for the light and its equipment, maintaining the building, monitoring weather and sea conditions, and keeping logs.", "reasoning_len": 2592, "usage": {"prompt_tokens": 156, "total_tokens": 695, "completion_tokens": 539, "promp
+PASS reasoning_split {"content": "391", "reasoning_len": 1419}
+PASS tool1 {"tool_calls": [{"id": "chatcmpl-tool-b3712f7207e76015", "type": "function", "function": {"name": "read_file", "arguments": "{\"path\": \"/srv/notes.txt\"}"}}], "finish": "tool_calls"}
+PASS tools_replay4 {"paths": ["/srv/a.txt", "/srv/b.txt", "/srv/c.txt", "/srv/d.txt"], "final": "QX-7342"}
+PASS greedy_repeat {"same": true}
+C1 prose 25.83
+C1 code 25.84
+C1 json 25.82
+C1 agent 25.83
+C4 agg [41.35, 41.35]
+GATES {'models': True, 'chat': True, 'reasoning_split': True, 'tool1': True, 'tools_replay4': True, 'greedy_repeat': True}
+2026-10-16 12:27:59 CDT POST start
+2026-10-16 14:19:36 CDT POST rc=1
+2026-10-16 14:19:42 CDT stop+keep muse-q-k0
+2026-10-16 14:19:42 CDT ===== MUSE S1 BOOT1 END =====

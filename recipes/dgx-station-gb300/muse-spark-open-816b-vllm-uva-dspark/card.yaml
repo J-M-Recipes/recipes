@@ -1,0 +1,48 @@
+# card.yaml — at-a-glance card sidecar. Rendered by scripts/render_card.py; never hand-edit card.html.
+# Every number traces to recipe.yaml metrics or results/2026-10-16-muse-s1. Unknown = pending (renders amber).
+title: "Muse Spark Open 816B · 1× DGX Station GB300"
+subtitle: "Meta first-party NVFP4 + vLLM day-0 image + UVA expert offload (310 GiB in Grace) + DSpark k=2 — 128K context, one GPU, the day after release"
+version: "v1 “Day One” (2026-10-16 · image c91025b5 · drafter ffc3eb50)"
+run_id: 2026-10-16-muse-s1 (all numbers · q-k0 / q-k2 same-window quality A/B · s1-boot3..9 settings ladder)
+handles: "github.com/J-M-Recipes/recipes · al-engr.com · @jmeadlock · Built with Muse Spark Open"
+
+model:
+  type: MoE
+  type_detail: "256 routed experts, top-8, no shared expert · 16 full + 46 sliding-window-2048 attention layers · vision + audio towers"
+  total_params: 816B
+  active_params: "42B"
+  checkpoint_gb: 533.0              # 533,043,429,228 B / 141 files byte-verified vs HF; 496.4 GiB of weights
+  weights_short: "as shipped · NVFP4 experts L1–60, FP8 experts L0/L61, BF16 attention/embeddings (Meta first-party)"
+  engine_extra: "vLLM 0.1.dev22954+ga34ca64c1 (PR #61879) · vllm/vllm-openai:muse-spark-open @ sha256:c91025b5 · FlashInfer 0.7.0.post1, autotune OFF · CUDA graphs on"
+  memory: "207.9 GiB HBM (weights + drafter) + 311.5 GiB experts in Grace via UVA, pin_memory off · KV pool 179,747 tok (1.37× at 128K) · 4 seqs"
+
+hero:
+  c1:      { value: 29.4, unit: tok/s, class: prose, note: "warm, T=0, 256 forced tok, default effort (xhigh: reasoning text) · JSON 29.7 · agent 29.3 · code 26.2 · no-spec control 25.8 every class (same window)" }
+  c16:     { value: 49.2, unit: tok/s, label: "Decode · C4 aggregate", note: "--max-num-seqs 4 (slot-capped) · no-spec control 41.4 · beyond 4 streams unmeasured" }
+  prefill: { value: pending, unit: tok/s, note: "not measured this round" }
+
+guesser:
+  name: DSpark
+  source: "Inferact/Muse-Spark-Open-DSpark @ ffc3eb50 (5-layer BF16, 10.6 GB, text-only)"
+  schedule: "k = 2 fixed · k=3 C1 prose 28.7 · k=7 22.9 (slower than no spec) · k=7+adaptive failed boot (KV)"
+  accept: { "bench prompts": "2.42 tok/step (0.80 / 0.62)", "BFCL + GSM8K": "2.53 tok/step (0.84 / 0.69)" }
+
+secondary:
+  - label: Settings ladder (C1 prose, tok/s)
+    items:
+      "eager → CUDA graphs (no spec, offload 300)": "10.65 → 26.56 · C4 39.9 → 43.4"
+      "FlashInfer autotune on → off": "26.56 → 26.58 · boot 6,449 s → 345 s · 32/43 tuned tactics flipped between two boots"
+      "offload 300 → 310 GiB (no spec)": "26.58 → 25.83 (room for the drafter)"
+      "verify step (accepted tok/step ÷ C1)": "none ~38 ms · k=2 ~82 · k=3 ~99 · k=7 ~138"
+  - label: Boot & next
+    items:
+      "cold boot → serving (autotune off, NVMe)": "345–370 s across 5 boots · min host MemAvailable 116–142 GiB across 10 boots"
+      "context": "128K served · 1M allowed by checkpoint · longer context = next step, not tried"
+
+fidelity:
+  - { status: pass,     text: "Weights unchanged: 0 re-quantized bits, 141 files / 533,043,429,228 B byte-verified vs HF, 128/128 LFS sha256 on the GB300 copy" }
+  - { status: pass,     text: "Same-window A/B vs no speculation: BFCL dev 563 vs 561 /600 (5 fixed / 3 broken) · GSM8K-200 193 vs 192 (2 fixed / 1 broken) — bar ±2 pts" }
+  - { status: measured, text: "Speculation target-verified, not byte-identical: greedy k=2 vs k=0 13/20 identical at 600 tok, 7 diverge at token 6–134" }
+  - { status: pass,     text: "Tool calling: 1 parsed call + 4-turn tool replay (final QX-7342) pass every boot · BFCL 0 errors, 2 no-call / 600" }
+  - { status: pending,  text: "Teacher-forced Δlogprob vs a reference build — not run for Muse" }
+  - { status: pending,  text: "Image / audio input gate — not run (drafter is text-only)" }
