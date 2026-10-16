@@ -25,7 +25,9 @@ gpus_csv, cuda, os_, k, arch, hmem, cpu, dk, power_csv, coherent, vsloshd = sys.
 gpus = []
 for line in gpus_csv.strip().splitlines():
     idx, name, drv, mem = [x.strip() for x in line.split(",")]
-    gpus.append({"index": int(idx), "name": name, "driver": drv, "memory_visible_gib": round(float(mem) / 1024, 1)})
+    try: mvis = round(float(mem) / 1024, 1)
+    except ValueError: mvis = None  # GB10 (DGX Spark) unified memory: nvidia-smi memory.total = [N/A]
+    gpus.append({"index": int(idx), "name": name, "driver": drv, "memory_visible_gib": mvis})
 def fnum(x):
     try: return float(x)
     except Exception: return None
@@ -37,7 +39,7 @@ for line in power_csv.strip().splitlines():
         if g["index"] == idx:
             g["power"] = {"limit_w": fnum(f[1]), "max_limit_w": fnum(f[2]), "draw_w": fnum(f[3]),
                           "sm_mhz": fnum(f[4]), "mem_mhz": fnum(f[5]), "temp_c": fnum(f[6]), "throttle_reasons": f[7]}
-compute = max(gpus, key=lambda g: g["memory_visible_gib"]) if gpus else None
+compute = max(gpus, key=lambda g: g["memory_visible_gib"] or 0) if gpus else None
 def num(x, div):
     try: return round(float(x) / div, 1)
     except Exception: return None

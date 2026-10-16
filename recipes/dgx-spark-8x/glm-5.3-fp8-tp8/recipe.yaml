@@ -1,0 +1,181 @@
+schema: jm-recipe/v1
+id: dgx-spark-8x/glm-5.3-fp8-tp8
+title: Full GLM-5.3 (744B, official zai-org FP8) on 8x DGX Spark, vLLM TP8 over 200G RoCE + MTP
+summary: >-
+  The unquantized-trained GLM-5.3 checkpoint (official FP8, 703.7 GiB) served tensor-parallel 8 across eight DGX Spark GB10
+  nodes on one MikroTik CRS804, with the in-checkpoint MTP head (adaptive depth 2/4/5). 131K context (KV pool 150-182K tokens
+  per boot), single-stream decode 23-30 tok/s on realistic prompts (temp 0, reasoning low), 4-stream aggregate 40-42 tok/s,
+  ~1.2K tok/s prefill at 70K, needles pass at 35K and 70K. Boot 13 min with 8-thread loading (27.5 min stock). No
+  re-quantization; every weight file sha256-matched to the Hub on every node.
+status: experimental
+owners:
+- jmeadlock
+- milo
+updated: '2026-10-16'
+tags:
+- glm-5.3
+- fp8
+- vllm
+- dgx-spark
+- gb10
+- tp8
+- roce
+- mtp
+model:
+  name: GLM-5.3
+  params: 744B (MoE, glm_moe_dsa, 78 layers)
+  repo: https://huggingface.co/zai-org/GLM-5.3
+  revision: ba32f8c19c8738e2c57c71798c601d477a7bf844
+  quantization: >-
+    FP8 as shipped by Z.ai (e4m3, 128x128 block scales, activation_scheme dynamic); 141 safetensors, 755,632,050,320 bytes;
+    all 143 LFS files sha256-matched to the Hub on all eight nodes (results/2026-10-16-fp8-tp8-baseline-mtload/raw/weight-fanout-verify.log).
+    Weight shards are sha256-identical to revision e0b07fd2; ba32f8c1 changed chat_template.jinja (tool-result validation) and eval yamls only.
+  draft:
+    repo: https://huggingface.co/zai-org/GLM-5.3 (in-checkpoint MTP layer)
+    revision: ba32f8c19c8738e2c57c71798c601d477a7bf844
+    method: mtp, num_speculative_tokens 5, VLLM_ADAPTIVE_SPEC_DEPTHS=2,4,5
+hardware:
+  profile: hardware/dgx-spark-8x.yaml
+  nominal:
+    unified_memory_gb_per_node: 128
+    nodes: 8
+  observed:
+    gpu: NVIDIA GB10 x8
+    driver: '595.84'
+    cuda: '13.2'
+    gpu_memory_visible_gib: 121.69
+    host_memory_gib: 121.7
+    os: Ubuntu 24.04.4 LTS (DGX OS 7.2.3)
+    kernel: 6.17.0-1031-nvidia
+    snapshot: results/2026-10-16-fp8-tp8-baseline-mtload/system.json
+  required_settings:
+  - Kernel 6.17.0-1031/1032 on every node, apt-held. 7.0.0-1019 breaks NCCL RoCE memory registration once ~90 GB is CUDA-resident, which is this recipe's load.
+  - Both PCIe functions of the cabled QSFP cage on separate /24s (10.0.0.N and 10.0.1.N), MTU 9000, and both in NCCL_IB_HCA. 8-node all_reduce must reach >= 20 GB/s busbw at 1 GiB before booting (scripts/run_bench.sh).
+  - vm.swappiness=10 and an unconditional page-cache drop every 60 s for the whole boot (scripts/bootflush.sh). Host free memory sits at ~7-8 GB per node once serving.
+  - Full checkpoint on local NVMe on every node (each rank reads all 704 GiB at load). Stage it once and fan out over the fabric; never pull from the Hub on a serving rank.
+runtime:
+  engine: vLLM
+  engine_version: 0.11.2.dev280+gilded.gnosis.v18 (ciprianveg gb10-vllm v19-vision; local-inference-lab fork with B12X sparse-MLA kernels for SM121)
+  container:
+    image: ghcr.io/ciprianveg/gb10-glm-5.2:v19-vision
+    digest: sha256:7ac0031cfefc83e2d3fb127faf0c4a58ba25c8a33e2e5690c3e3760d51097898
+    base_image: >-
+      registry manifest digest above; on overlay2 Docker hosts the loaded image Id is sha256:ba79eedf36272341fe7fa30f00f3b9aeaf25a4d18faa4257a63f6cf0bd13c564
+      (launcher refuses any other Id). Image ENV preloads NCCL 2.30.4 (/opt/libnccl-local-inference.so.2.30.4); torch-bundled NCCL is 2.29.7.
+  key_libraries:
+    nccl: 2.30.4 (image LD_PRELOAD)
+    torch: 2.x cu13.2 (image)
+launch:
+  script: scripts/cluster.sh
+  command: SPARK_HOSTS="spark1 spark2 spark3 spark4 spark5 spark6 spark7 spark8" bash scripts/cluster.sh push && SPARK_HOSTS="..." bash scripts/cluster.sh up
+  health: BASE_URL=http://<head>:8890/v1 GLM53_API_KEY=... python3 scripts/gates.py (keyless 401, /v1/models, exact-reply smoke, tool call + tool-result round)
+  warmup: One discarded request per prompt class before measuring; first request after boot pays nothing visible beyond ~4 s TTFT.
+  notable_flags:
+  - Per-node launcher scripts/launch-fp8-tp8.sh <rank>, workers 7..1 first then head 0. mp executor with --nnodes 8 --node-rank N (no Ray), --master-addr = head fabric IP.
+  - --tensor-parallel-size 8 --pipeline-parallel-size 1 --decode-context-parallel-size 1 --attention-backend B12X_MLA_SPARSE --kv-cache-dtype fp8_ds_mla, DSA index_topk_pattern hf-override (FFFSSS...).
+  - --gpu-memory-utilization 0.86 --max-model-len 131072 --max-num-seqs 4 --max-num-batched-tokens 4096 --enable-chunked-prefill --enable-prefix-caching --async-scheduling, decode-aware prefill (decode budget 1024, idle 16384, 1 long prefill per step).
+  - --speculative-config method mtp, model = the checkpoint, quantization fp8, num_speculative_tokens 5, draft_attention_backend B12X_MLA_SPARSE, probabilistic draft sampling, adaptive window 32; env VLLM_ADAPTIVE_SPEC_DEPTHS=2,4,5.
+  - --compilation-config cudagraph_mode FULL, max_cudagraph_capture_size 30 (engine truncates to 24), --disable-custom-all-reduce.
+  - --model-loader-extra-config enable_multithread_load true, num_threads 8 (boot-time only; head weight load 956.6 s -> 566.9 s).
+  - --default-chat-template-kwargs reasoning_effort low. The template honours only low and high; anything else (off, medium, max, absent) becomes max.
+  - NCCL env NCCL_IB_HCA=rocep1s0f0,roceP2p1s0f0, GID index probed (3), RoCE v2, AF_INET, CROSS_NIC 1, NVLS off, CUMEM off, BUFFSIZE 16M, 4 channels. No NCCL_IB_ADDR_RANGE (the second PCIe function lives on 10.0.1.0/24).
+  - Bearer key via VLLM_API_KEY on the head only; port 8890.
+  - Launcher SHA-256 dfeb155ad6318300aa0e07d725cf995605e318e0bd5a8eb65d4a79a03e3c7600 (2026-10-16).
+metrics:
+- name: Single-stream decode, code prompt (boot 2, recipe as shipped)
+  value: 29.92
+  unit: tok/s
+  workload: C1, nginx-log-parser + pytest prompt, 800 max tokens, T=0, reasoning low, streamed; 1 discarded warm + 3 reps
+  aggregation: median of 3 (29.41-30.08); decode = (completion_tokens-1)/(last-token time - first-token time)
+  provenance:
+    run_id: 2026-10-16-fp8-tp8-baseline-mtload
+    method: scripts/bench.py
+    raw: raw/bench-boot2-multithread-load.jsonl
+- name: Single-stream decode, technical-explanation prompt (boot 2)
+  value: 23.1
+  unit: tok/s
+  workload: C1, same instrument, explanation prompt
+  aggregation: median of 3 (22.90-23.62)
+  provenance:
+    run_id: 2026-10-16-fp8-tp8-baseline-mtload
+    method: scripts/bench.py
+    raw: raw/bench-boot2-multithread-load.jsonl
+- name: Single-stream decode, prose email prompt (boot 2)
+  value: 26.87
+  unit: tok/s
+  workload: C1, same instrument, prose prompt
+  aggregation: median of 3 (25.73-26.90)
+  provenance:
+    run_id: 2026-10-16-fp8-tp8-baseline-mtload
+    method: scripts/bench.py
+    raw: raw/bench-boot2-multithread-load.jsonl
+- name: 4-stream aggregate decode (boot 2)
+  value: 40.1
+  unit: tok/s
+  workload: C4, code/explain/prose/code concurrently, 800 max tokens, T=0, reasoning low
+  aggregation: single run; per-user 11.5-14.2; boot 1 same instrument 42.4
+  provenance:
+    run_id: 2026-10-16-fp8-tp8-baseline-mtload
+    method: scripts/bench.py
+    raw: raw/bench-boot2-multithread-load.jsonl
+- name: Single-stream decode, code prompt (boot 1, stock single-thread loader)
+  value: 30.32
+  unit: tok/s
+  label: control for the loader change (tag base-nccl2.29-adapt245 inside the file is a misnomer; NCCL 2.30.4 was preloaded by the image)
+  workload: C1, same instrument; explain 22.91, prose 25.75
+  aggregation: median of 3
+  provenance:
+    run_id: 2026-10-16-fp8-tp8-baseline-mtload
+    method: scripts/bench.py
+    raw: raw/bench-boot1-baseline.jsonl
+- name: Prefill + retrieval, ~70K-token needle
+  value: 1217
+  unit: tok/s
+  workload: 69,979-token random-word haystack, code at depth 0.5, reasoning low, T=0; PASS in 57.5 s wall (prefill estimated as prompt_tokens / wall)
+  aggregation: single run; 35,055 tokens PASS in 40.3 s (~870 tok/s)
+  provenance:
+    run_id: 2026-10-16-fp8-tp8-baseline-mtload
+    method: scripts/needle.py
+    raw: raw/needle-20261016.jsonl
+- name: Cold boot to Application startup complete (recipe as shipped)
+  value: 13.2
+  unit: min
+  workload: all 8 ranks, local NVMe, page-cache flusher on; torch.compile cache warm from boot 1 (92 s -> 9 s); stock loader boot 1 = 27.5 min
+  aggregation: single boot; head weight load 566.9 s vs 956.6 s
+  provenance:
+    run_id: 2026-10-16-fp8-tp8-baseline-mtload
+    method: docker logs -t timestamps vs container StartedAt
+    raw: raw/boot2-opt1-head-log-excerpt.txt
+- name: 8-node NCCL all_reduce bus bandwidth (fabric gate)
+  value: 20.13
+  unit: GB/s
+  workload: 1 GiB float32, 8 ranks one per node, NCCL 2.27.7 (pytorch 25.09), both PCIe functions; 23.49 @32 MiB, 5.37 @8 MiB
+  aggregation: 5 warm + 20 timed, max elapsed across ranks
+  provenance:
+    run_id: 2026-10-16-fp8-tp8-baseline-mtload
+    method: scripts/run_bench.sh + scripts/allreduce_bench.py
+    raw: raw/nccl-8node-allreduce.log
+verification:
+  gates:
+    schema: { how: "scripts/check_recipe.py passes", last_pass_utc: "2026-10-16T19:40:00Z", run_id: 2026-10-16-fp8-tp8-baseline-mtload }
+    digest: { how: "every node's loaded image Id = sha256:ba79eedf... (launcher refuses otherwise); every node's checkpoint: 143/143 LFS files sha256 == Hub LFS sha256 at the pinned revision", last_pass_utc: "2026-10-16T17:41:56Z", run_id: 2026-10-16-fp8-tp8-baseline-mtload }
+    health: { how: "scripts/gates.py: keyless /v1/models 401, keyed 200 with glm-5.3-fp8 / 131072, exact-reply smoke, get_weather tool call with correct args, tool-result round finishes stop with the result used", last_pass_utc: "2026-10-16T19:13:00Z", run_id: 2026-10-16-fp8-tp8-baseline-mtload }
+    quality: { how: "PENDING. Weights are byte-identical to the official checkpoint and MTP is target-verified, so the model function is the reference by construction; a teacher-forced logprob check of MTP-on vs MTP-off on this stack has not been run. Needles 35K/70K pass; tool calling 1/1 two-round.", run_id: 2026-10-16-fp8-tp8-baseline-mtload }
+    performance: { how: "scripts/bench.py C1 medians within 5% of 29.9 / 23.1 / 26.9 (code / explain / prose)", last_pass_utc: "2026-10-16T19:12:15Z", run_id: 2026-10-16-fp8-tp8-baseline-mtload }
+limits:
+- "Context: KV pool is 149,824-181,632 tokens depending on the boot (8.8-10.9 GiB/rank at gmu 0.86; ~10-20% boot-to-boot variance, also seen by 0xMagnus). max-model-len 131072 keeps one full request inside the low reading. 1M is not reachable: weights + MTP head take 90.96 GiB/rank. Retrieval measured to 70K only; 128K untested (head node has ~6.8 GB host headroom while serving)."
+- "reasoning_effort high with a small budget returns NO answer: 1,500 max_tokens spent entirely on thinking (finish length, empty content). Reproduced on the official FP8 here, so it is not an abliteration artifact (0xMagnus reported it on the uncensored build). Use low, or budget >= 16K tokens for high. Reasoning comes back in message.reasoning."
+- "Decode is not limited by the fabric's bandwidth but by per-token latency and per-rank weight reads. Light Foundry's VLLM_ENABLE_ROCE_ALLREDUCE (their 28.5 -> 38 tok/s on Int4-Int8Mix) does not exist in this image. A small-message all_reduce probe (bf16, 8 ranks, NCCL_ALGO=Tree PROTO=LL) measured 81 us at 12 KB, 90 us at 36 KB; ESTIMATE: ~2 all-reduces per layer x 78 layers = ~156 per target step = ~13-14 ms of an ~80-150 ms step (step time inferred from tok/s and acceptance length, not profiled). The default and Ring arms of that probe did not complete (rendezvous timed out; run abandoned), so no algorithm comparison is claimed and NCCL_ALGO is left at default."
+- "The adaptive MTP controller settles at depth 2 on prose (mean acceptance length 2.0-2.3) and 4-5 on code (4.1-4.9). No fixed-k arm was measured."
+- "Boot time is CPU-bound on the head: one loader thread at 100% while the NVMe idles (each rank reads all 704 GiB to keep 88). 8 threads cut the head load 956.6 -> 566.9 s; workers finish in ~7 min either way. sharded_state pre-sharding is the next lever and is untested on this fork with FP8 + MTP."
+- "The head node is the long pole and the tightest on host memory (~6.8-8 GB free serving vs ~8 GB on workers at gmu 0.86). Do not raise gmu."
+- "Power: ~1.5 kW for the rack at stock clocks under prefill. Size circuits accordingly (see hardware profile)."
+- "Single seat in practice: max-num-seqs 4, C4 aggregate 40-42 tok/s at 11.5-14 tok/s per user."
+rollback:
+  script: scripts/cluster.sh
+  summary: "SPARK_HOSTS=... scripts/cluster.sh down removes the container on all 8 ranks (head first, then 7..1). Nothing else on the nodes is modified by this recipe beyond the page-cache flusher, which exits on its own after 50 min."
+links:
+  blog: https://al-engr.com/glm53-fp8-8x-spark.html
+  upstream_launcher: https://github.com/im0xMagnus/glm-5.3-uncensored-8x-dgx-spark (dd5fff7a, launchers/launch-fp8-tp8.sh)
+  upstream_stack: https://github.com/ciprianveg/gb10-vllm (c7b7c67a, glm-5.3/v19)
+  fabric_notes: https://al-engr.com/inference-box.html
