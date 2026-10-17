@@ -3,6 +3,27 @@
 **Serving on `:30006` since 2026-09-27 08:12 CDT: Fused Split, v21** (v18 launch on the 0909 image + hook v21 — `split_ids()` as one Triton kernel; **182.8 tok/s C1 prose, +6.2 % vs v18 bracketing controls 171.8 / 172.5**, C8 687 (+4.6 %), C16 993 (+4.0 %), non-tool greedy 16/16 vs both controls; held-out BFCL on v21 pending; see Round 12) · documented release **Clean Nightly, v20** (2026-09-21: vLLM nightly `2671fedf` — the last before the #56633 mHC-fold drift — + v15 hook + off54 + fp8_ds_mla + v18's 24-seat/cudagraph flags; **181 tok/s C1 prose (+5.1% pair mean vs v18)**, KV 2.55M tokens, C24 warm agent p95 2.4–2.8 s vs 3.4; **held-out BFCL live sibling 78.8% vs v18 78.9%**, dev 92.7–93.5%; tools 64/64 ×3; $0.008 per 1000 solved tasks; see Round 11b) · rollback **Many Seat, v18** (2026-09-18: v15 hook + `--max-num-seqs 24` + token-sized `--cudagraph-capture-sizes`; 172 tok/s C1 prose, KV 2.50M tokens, C24 warm agent turn 0.55 s p50; **BFCL v4 tool-call exact-match 93.3%**) · **v19 "Nightly" was promoted and reverted on 2026-09-20** (see Round 10) · previous **v15 Pin Hot Experts** (retired 2026-09-18) · **v14 Sixty-K Agent** (retired 2026-09-17) · Historical **v13: 90 tok/s single-stream prose · 140–160 tok/s on agent/code text · 429 agg tok/s at C16** (v12: 89 / 140–160 / 311 · v11: 82 / 130–150 / 287) · 972K-token prompt prefilled in 85 s · Hermes tool-calling 10/10
 
 
+## Release notes — DeepSeek-V4.1-Flash-1017 on the v21 config (2026-10-17, 07:15–09:55)
+
+Weights-only update (`1bae0e10`; config.json, shard index and tokenizer byte-identical to `df42c109`). Same launch, same hook, same autotune set, same rowmap. Promoted to `:30006` as `dsv41-vllm-1017-v21cfg-BOUND-REF`; v21 kept as `-RETIRED-REF`.
+
+Same-window CTL1 → CAND → CTL2 (knee r2, agg tok/s; gauntlet 12/12 all arms; CTL1↔CTL2 greedy identical 18/18):
+
+| | C1 | C2 | C4 | C8 | C12 | C16 |
+|---|---|---|---|---|---|---|
+| df42c109 (CTL1) | 182.7 | 286.3 | 433.1 | 685.6 | 841.2 | 980.9 |
+| **1017 (CAND)** | **192.6** | 288.9 | 423.9 | 672.6 | 850.9 | 946.1 |
+| df42c109 (CTL2) | 182.6 | 286.3 | 434.2 | 686.0 | 852.9 | 984.9 |
+| Δ vs bracket | **+5.4%** | +0.9% | −2.2% | −1.9% | +0.5% | −3.7% |
+
+Drafter acceptance moved (retrained DSpark head): prose 34.9→25.2%, structured 52.5→48.9, code 66.1→**69.6**, shell 90.8→**80.0**, tool_json 87.8→**77.3**. C1 prose got *faster* anyway — fewer accepted drafts per step means fewer unique experts fetched per step. Replay on identical transcripts emits 14 tool turns vs 5–6 (more eager tool use). Quality: GSM8K-200 96.5% vs 97.5% (McNemar p=0.5, n.s.), needle-checksum 500/500, completion tokens −13.6% (GSM8K) / −24% (needle).
+
+Schedule re-check (Card C): `[[1,2,5],[3,24,1]]` wins the C4 prose knee (+12%) and loses real agent replay on both reps (−8…−23%) — the v13 mechanism, unchanged by the new drafter; `[[1,4,3],[5,24,1]]` is −42% C1 (a k<max band inside a k=5 schedule pays the full verify shape). **Keep `[[1,4,5],[5,24,1]]`.**
+
+Promotion waiver: the "acceptance within 2 pts" rule was written for engine changes on fixed weights; a retrained drafter moving acceptance is a checkpoint property (same image, same kernels, controls bit-identical). Waived explicitly in the box ledger.
+
+Card F (same day): vLLM 0.31.0 `deep_gemm_mega_moe` is a hard no on one Station — `DeepseekV4MegaMoEExperts` materializes a full interleaved GPU copy of all experts at first forward (`deep_gemm.transform_weights_for_mega_moe`) and drops the loader params, so UVA offload cannot reduce HBM; 269 GiB > 250. Receipts `results/2026-10-17-ds1017-cardA-cardC-cardF/`, quality `results/2026-10-17-ds1017-cardD/`.
+
 ## Standard bench T2/T3 on v21 (2026-10-06 evening)
 
 Bundle: [`results/2026-10-06-lib-t2t3-v21/`](results/2026-10-06-lib-t2t3-v21/README.md). Fresh host boot (the reboot recovered the PIN_HOT boot margin: 12.47 GiB at the layer-9 check).

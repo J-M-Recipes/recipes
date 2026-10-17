@@ -17,14 +17,14 @@ updated: "2026-10-06"
 tags: [deepseek-v4.1-flash, mxfp4, vllm, uva-offload, dspark, speculative-decoding, 1m-context, single-gpu, agent]
 
 model:
-  name: DeepSeek-V4.1-Flash
+  name: DeepSeek-V4.1-Flash-1017   # weights-only update promoted 2026-10-17 (Card E); df42c109 launch checkpoint retired, results below it are on df42c109 unless marked 1017
   params: 552B backbone (MoE, 384 routed + 1 shared expert, 6 active; 8B activated per token in prefill / 16B in decode) + 196B Engram   # model card; 284B was V4-Flash, corrected 2026-09-20
-  repo: https://huggingface.co/deepseek-ai/DeepSeek-V4.1-Flash
-  revision: df42c109f1defefcbfcedbe7d905718a12266e40
+  repo: https://huggingface.co/deepseek-ai/DeepSeek-V4.1-Flash-1017
+  revision: 1bae0e1088993b9b82de08f59de5be5a34e42170   # previous: deepseek-ai/DeepSeek-V4.1-Flash@df42c109f1defefcbfcedbe7d905718a12266e40 (config.json, index, tokenizer byte-identical; weights only)
   quantization: as shipped — routed experts MXFP4 (I8 + E8M0 block scales), Engram and attention FP8. Nothing re-quantized.
   draft:
     repo: in-checkpoint (mtp.{0,1,2}.* tensors, 97 params)
-    revision: df42c109f1defefcbfcedbe7d905718a12266e40
+    revision: 1bae0e1088993b9b82de08f59de5be5a34e42170   # retrained drafter: fixture acceptance prose 34.9->25.2, shell 90.8->80.0, tool_json 87.8->77.3, code 66.1->69.6 (Card A, same window). Schedule re-validated, unchanged (Card C).
     method: DSpark, num_speculative_tokens=5 with num_speculative_tokens_per_batch_size=[[1,4,5],[5,16,1]] (v14, agent lane; v13 [[1,2,5],[3,16,1]] for prose throughput)
 
 hardware:
