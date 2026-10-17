@@ -10,7 +10,12 @@ Bundle: [`results/2026-10-17-v22-checkpoint-1017/`](results/2026-10-17-v22-check
 - **What changed:** only the weights, `deepseek-ai/DeepSeek-V4.1-Flash-1017@1bae0e10…`. The config, index and tokenizer are byte-identical to `df42c109`, but all 48 shards are new, so it is a 475.3 GiB download.
 - **Boot:** the V20 image, flags, v15 hook and rowmap are unchanged. Re-home gives **206.61 / 62.33 GiB**. The FlashInfer hash `e5a13633…` is a hit (`Loaded 189 configs`, 0 new). KV is 1,918,727 tokens. T0 passes: exact word, parsed `tool_calls[]`, arithmetic smoke.
 - **Autotune set:** the bundle publishes the 189-tactic set this host tuned for the V20 flags (`a6aa6218…`). The V20 release ships only its own set's checksum.
-- **Not measured:** performance, because the lane was serving other clients during both runs (relabelled per `docs/benchmarking.md` rule 2). Quality is also unmeasured: T2 needle and GSM8K-200 paired against V20, plus held-out BFCL.
+- **Quiet-lane runs** (0 foreign requests in every window):
+  - Knee: C1 **183.4**, C2 278.1, C4 400.6, C8 644.5, C12 813.6, C16 917.9.
+  - T1 filler: C1 184.2 / 182.9 / 179.5 at 0 / 32K / 128K.
+  - T2 needle: **EXACT 500/500**.
+  - GSM8K-200: **96.0%** vs the 97.5% baseline, exact McNemar p = 0.25, not significant.
+- **Not yet:** a same-window V20 perf pair. The V20 knee is from 2026-09-24, so the −4 to −7% at C2–C12 is not established. Held-out BFCL is also still pending.
 - **Stale rowmap:** the cold set was profiled on df42c109 routing. Its fit to 1017 is unmeasured, and re-deriving it needs a `PIN_MODE=count` boot.
 
 ## Standard bench T2/T3 on v21 (2026-10-06 evening)

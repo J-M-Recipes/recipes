@@ -1,0 +1,124 @@
+╭──────────────────────────── NVIDIA P2P Override ─────────────────────────────╮
+│ Effective: no                                                                │
+│ Configured file: no (/etc/modprobe.d/nvidia-p2p-override.conf)               │
+│ Runtime: ForceP2P=; RMForceP2PType=; RMPcieP2PType=;                         │
+│ GrdmaPciTopoCheckOverride=; EnableResizableBar=0; DmaRemapPeerMmio=1         │
+│ Suggested modprobe line:                                                     │
+│ options nvidia                                                               │
+│ NVreg_RegistryDwords="ForceP2P=0x11;RMForceP2PType=1;RMPcieP2PType=2;GrdmaPc │
+│ iTopoCheckOverride=1;EnableResizableBar=1"                                   │
+│ Apply requires NVIDIA module reload or reboot after stopping GPU workloads.  │
+╰──────────────────────────────────────────────────────────────────────────────╯
+╭─────────────────────────────── Configuration ────────────────────────────────╮
+│ GSM8K Accuracy Benchmark                                                     │
+│ Model: current @ 127.0.0.1:8000                                              │
+│ Prompt: profile:gsm8k                                                        │
+│ Dataset: gsm8k_test (1319 items, sha256 3730d312f6e34405…)                   │
+│ Concurrency: 30                                                              │
+│ Measured runs: 200 | Max tokens: 131072                                      │
+│ Scoring: per-item final number vs GSM8K reference                            │
+│ Sampling: temperature 0 | Watchdog: stall 600s, wall-clock off               │
+│ Compare baseline:                                                            │
+│ <repo>/recipes/dgx-station-gb300/deepseek-v4.1-flash-vll │
+│ m-uva-dspark/results/2026-10-05-lib-t1-v21/t2-gsm8k200.json                  │
+╰──────────────────────────────────────────────────────────────────────────────╯
+
+╭────────────────────────────── Completion Stats ──────────────────────────────╮
+│ GSM8K Accuracy Benchmark                                                     │
+│ Every request is a different problem from the pinned GSM8K test set, scored  │
+│ by exact final-number match against the reference answer. Accuracy with a    │
+│ Wilson 95% interval is the headline metric; completion tokens show reasoning │
+│ cost. Use --compare-baseline for paired A/B comparison across quantizations. │
+│ Built-in profile run at fixed concurrency C=30.                              │
+╰──────────────────────────────────────────────────────────────────────────────╯
+Profile                                             
+╭────────────────┬─────────────────────────────────╮
+│ field          │ value                           │
+├────────────────┼─────────────────────────────────┤
+│ profile        │ gsm8k                           │
+│ prompt         │ dataset:gsm8k_test (1319 items) │
+│ prompt chars   │ 400                             │
+│ dataset        │ gsm8k_test (200/1319 items)     │
+│ requested runs │ 200                             │
+│ concurrency    │ 30                              │
+│ max tokens     │ 131072                          │
+│ scoring        │ dataset_gsm8k                   │
+│ dataset sha256 │ 3730d312f6e34405                │
+╰────────────────┴─────────────────────────────────╯
+╭────────────────────── Whole-run GPU Power ───────────────────────╮
+│ avg 465 W | max 515 W | limit 1,370 W | over 1m 09s | 31 samples │
+╰──────────────────────────────────────────────────────────────────╯
+Concurrency Results                                                             
+╭───┬───────┬─────────────┬──────┬─────────┬──────────┬──────────┬─────────┬───╮
+│ … │ done… │       score │ sta… │ output… │ output … │ aggrega… │ avg re… │ … │
+├───┼───────┼─────────────┼──────┼─────────┼──────────┼──────────┼─────────┼───┤
+│ … │ 200/… │ EXACT 192 … │ ★★★… │     161 │      338 │     26.9 │     9.8 │ … │
+╰───┴───────┴─────────────┴──────┴─────────┴──────────┴──────────┴─────────┴───╯
+Selected C=30                                      
+╭────────────────────────────┬────────────────────╮
+│ metric                     │              value │
+├────────────────────────────┼────────────────────┤
+│ completed                  │            200/200 │
+│ score                      │ EXACT 192 / FAIL 8 │
+│ stars                      │      ★★★★★★★★★★ 👍 │
+│ accuracy                   │   96.00% (192/200) │
+│ Wilson 95% CI              │    92.31% – 97.96% │
+│ hit max_tokens             │                  0 │
+│ completion tokens avg      │                205 │
+│ completion tokens p50      │                161 │
+│ completion tokens p90      │                338 │
+│ completion tokens p99      │                792 │
+│ elapsed avg                │               9.8s │
+│ TTFT avg                   │              2.16s │
+│ aggregate gen tok/s        │               26.9 │
+│ mean per-request gen tok/s │               27.2 │
+╰────────────────────────────┴────────────────────╯
+Failed Final Answers                                                            
+╭─────┬────────────┬────┬────────┬───────┬─────────────────────────────────────╮
+│   # │ item       │  C │ tokens │ score │ final answer                        │
+├─────┼────────────┼────┼────────┼───────┼─────────────────────────────────────┤
+│  29 │ gsm8k-0184 │ 30 │    281 │ FAIL  │ 100 (expected 25, got 100) | 100%   │
+│ 100 │ gsm8k-0652 │ 30 │    365 │ FAIL  │ 105 (expected 75, got 105) | 105    │
+│ 144 │ gsm8k-0943 │ 30 │    788 │ FAIL  │ 5 (expected 50, got 5) | 5          │
+│ 147 │ gsm8k-0962 │ 30 │    121 │ FAIL  │ 600 (expected 1000, got 600) | 600  │
+│ 158 │ gsm8k-1035 │ 30 │    405 │ FAIL  │ 40 (expected 35, got 40) | 40       │
+│ 159 │ gsm8k-1042 │ 30 │    458 │ FAIL  │ 3.5 (expected 3, got 3.5) | 3.50    │
+│ 160 │ gsm8k-1048 │ 30 │    325 │ FAIL  │ 9860.78 (expected 7400, got         │
+│     │            │    │        │       │ 9860.78) | 9860.78                  │
+│ 164 │ gsm8k-1074 │ 30 │  1,474 │ FAIL  │ 500 (expected 750, got 500) | 500   │
+╰─────┴────────────┴────┴────────┴───────┴─────────────────────────────────────╯
+Interpretation: every measured request is a distinct pinned dataset item, so the
+correctness rate is dataset accuracy, not a resample pass-rate; the Wilson 95% 
+interval reflects item-count resolution. TRUNC would flag requests that hit the 
+max_tokens limit before answering (none here). For quantization A/B tests keep 
+engine version and flags identical, run the same profile against each endpoint, 
+and pass --compare-baseline to get paired per-item deltas with an exact McNemar 
+significance test. Completion-token inflation and max_tokens hits are early 
+damage signals even before accuracy moves.
+
+╭─────────────────────────── Paired A/B Comparison ────────────────────────────╮
+│ Paired per-item comparison over 200 shared items.                            │
+│ baseline:  dsv41-flash-uva @ http://<station>:30006                          │
+│ (2026-10-06T15:18:48.128001)                                                 │
+│ candidate: current @ http://127.0.0.1:8000 (2026-10-17T12:05:07.855479)      │
+╰──────────────────────────────────────────────────────────────────────────────╯
+Accuracy                                                       
+╭───────────────────────┬──────────────────┬──────────────────╮
+│ metric                │         baseline │        candidate │
+├───────────────────────┼──────────────────┼──────────────────┤
+│ accuracy              │ 97.50% (195/200) │ 96.00% (192/200) │
+│ Wilson 95% CI         │  94.28% – 98.93% │  92.31% – 97.96% │
+│ completion tokens avg │              248 │              205 │
+│ completion tokens p90 │              397 │              338 │
+│ hit max_tokens        │                0 │                0 │
+│ unparseable (format)  │                0 │                0 │
+╰───────────────────────┴──────────────────┴──────────────────╯
+╭────────────────────────────────── Verdict ───────────────────────────────────╮
+│ Δ accuracy: -1.50 pp — not significant at α=0.05 (exact McNemar p=0.25)      │
+│ flips: 3 items correct only in baseline, 0 only in candidate                 │
+│ completion-token inflation (candidate vs baseline mean): -17.3%              │
+│ Tip: run the same profile twice against the same server first; that          │
+│ self-flip rate is the noise floor a real degradation must exceed.            │
+╰──────────────────────────────────────────────────────────────────────────────╯
+
+Results saved to t2-gsm8k200.json
