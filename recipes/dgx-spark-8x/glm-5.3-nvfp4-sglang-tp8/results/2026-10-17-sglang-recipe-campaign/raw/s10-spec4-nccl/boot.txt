@@ -1,0 +1,31 @@
+2026-10-17T19:50:39.975116254Z [2026-10-17 19:50:39] Registered linear attn model: config=GigaChat35Config, backend=GDNAttnBackend, archs=['GigaChat35ForCausalLM', 'GigaChat35ForCausalLMNextN']
+2026-10-17T19:50:48.678490762Z [2026-10-17 19:50:48] Use dsa attention backend for DeepSeek with DSA.
+2026-10-17T19:50:48.678520922Z [2026-10-17 19:50:48] Set DSA backends for GLM FP8 KV Cache on SM120/SM121: prefill=flashinfer_sparse_mla, decode=flashinfer_sparse_mla.
+2026-10-17T19:50:48.688458132Z [2026-10-17 19:50:48] Use flashinfer_cutlass as MoE runner backend on SM110/SM120 for modelopt_fp4 (trtllm-gen MoE kernels are SM100-only)
+2026-10-17T19:50:51.895865288Z [2026-10-17 19:50:51] server_args={'model_path': '/models/glm-5.3-nvfp4', 'tokenizer_path': '/models/glm-5.3-nvfp4', 'tokenizer_mode': 'auto', 'tokenizer_backend': 'huggingface', 'tokenizer_worker_num': 1, 'detokenizer_worker_num': 1, 'skip_tokenizer_init': False, 'loa
+2026-10-17T19:50:55.426853018Z [2026-10-17 19:50:55] Tokenizer for /models/glm-5.3-nvfp4 is still TokenizersBackend after retries with --trust-remote-code. Model-specific tokenizer attributes may be missing.
+2026-10-17T19:50:55.973315629Z [2026-10-17 19:50:55] Auto-detected template features: reasoning_config=ReasoningToggleConfig(toggle_param=None, default_enabled=None, special_case='always', effort_kwarg=None), reasoning_parser=glm45, tool_call_parser=glm47
+2026-10-17T19:51:00.253633091Z [2026-10-17 19:51:00] Tokenizer for /models/glm-5.3-nvfp4 is still TokenizersBackend after retries with --trust-remote-code. Model-specific tokenizer attributes may be missing.
+2026-10-17T19:51:05.519751177Z [2026-10-17 19:51:05 TP0] Tokenizer for /models/glm-5.3-nvfp4 is still TokenizersBackend after retries with --trust-remote-code. Model-specific tokenizer attributes may be missing.
+2026-10-17T19:51:09.291503253Z [2026-10-17 19:51:09 TP0] Load weight begin. avail mem=112.00 GB
+2026-10-17T19:57:03.549749106Z [2026-10-17 19:57:03 TP0] Load weight end. elapsed=354.23 s, type=GlmMoeDsaForCausalLM, quant=modelopt_fp4, quant_algo=NVFP4, avail mem=59.65 GB, mem usage=52.35 GB.
+2026-10-17T19:57:08.598700644Z [2026-10-17 19:57:08 TP0] Tokenizer for /models/glm-5.3-nvfp4 is still TokenizersBackend after retries with --trust-remote-code. Model-specific tokenizer attributes may be missing.
+2026-10-17T19:57:14.832028839Z [2026-10-17 19:57:14 TP0] Load weight begin. avail mem=59.32 GB
+2026-10-17T19:58:31.599862942Z [2026-10-17 19:58:31 TP0] Load weight end. elapsed=76.77 s, type=GlmMoeDsaForCausalLMNextN, quant=modelopt_fp4, quant_algo=NVFP4, avail mem=56.05 GB, mem usage=3.26 GB.
+2026-10-17T19:58:49.981916643Z [2026-10-17 19:58:49 TP0] KV Cache is allocated. dtype: torch.float8_e4m3fn, #tokens: 654272, KV size: 32.87 GB
+2026-10-17T19:58:50.088816107Z [2026-10-17 19:58:50 TP0] Memory pool end. avail mem=24.33 GB
+2026-10-17T19:58:50.316064311Z [2026-10-17 19:58:50 TP0] KV Cache is allocated. dtype: torch.float8_e4m3fn, #tokens: 654272, KV size: 0.48 GB
+2026-10-17T19:58:50.316595772Z [2026-10-17 19:58:50 TP0] Memory pool end. avail mem=23.83 GB
+2026-10-17T19:58:58.622539208Z [2026-10-17 19:58:58 TP0] Capture target prefill CUDA graph begin. backend=breakable, num_tokens=[4, 8, 12, 16, 20, 24, 28, 32, 48, 64, 80, 96, 112, 128, 144, 160, 176, 192, 208, 224, 240, 256, 288, 320, 352, 384, 416, 448, 480, 512, 576, 640, 704, 768, 832, 896, 960, 
+2026-10-17T20:00:06.719671683Z [2026-10-17 20:00:06 TP0] Capture target prefill CUDA graph end. elapsed=68.10 s, mem usage=4.72 GB, avail mem=18.40 GB.
+2026-10-17T20:00:06.719714835Z [2026-10-17 20:00:06 TP0] Capture target verify CUDA graph begin. backend=full, num_tokens_per_req=5, avail mem=18.40 GB
+2026-10-17T20:00:08.146578040Z [2026-10-17 20:00:08 TP0] Capture target verify CUDA graph end. bs=[1, 2], elapsed=1.43 s, mem usage=0.13 GB, avail mem=18.26 GB.
+2026-10-17T20:00:08.147307327Z [2026-10-17 20:00:08 TP0] Disable draft prefill CUDA graph because the draft model does not have a 'layers' attribute
+2026-10-17T20:00:08.147759219Z [2026-10-17 20:00:08 TP0] Capture draft decode CUDA graph begin. backend=full, num_tokens_per_req=1, bs=[1, 2], avail mem=18.26 GB
+2026-10-17T20:00:09.331953867Z [2026-10-17 20:00:09 TP0] Capture draft decode CUDA graph end. elapsed=1.18 s, mem usage=0.10 GB, avail mem=18.16 GB.
+2026-10-17T20:00:09.476793443Z [2026-10-17 20:00:09 TP0] Capture draft extend CUDA graph begin. backend=full, num_tokens_per_req=5, bs=[1, 2], avail mem=18.16 GB
+2026-10-17T20:00:10.136619527Z [2026-10-17 20:00:10 TP0] Capture draft extend CUDA graph end. elapsed=0.66 s, mem usage=0.02 GB, avail mem=18.14 GB.
+2026-10-17T20:00:12.081579672Z [2026-10-17 20:00:12] Engine startup timings (s): load_weight=431.00, kv_cache_allocation=18.83, scheduler_e2e=555.15, cuda_graph={prefill=68.10, decode=0.00, target_verify=1.43, draft_prefill=0.00, draft_decode=1.18, draft_extend=0.66}, tokenizer_e2e=560.12
+2026-10-17T20:00:20.462853963Z [2026-10-17 20:00:20 TP0] Prefill batch, #new-seq: 1, #new-token: 6, #cached-token: 0, token usage: 0.00, #running-req: 0, #queue-req: 0, #pending-token: 0, cuda graph: True, input throughput (token/s): 0.58
+2026-10-17T20:00:29.255792065Z [2026-10-17 20:00:29] The server is fired up and ready to roll!
+head avail MB 14013

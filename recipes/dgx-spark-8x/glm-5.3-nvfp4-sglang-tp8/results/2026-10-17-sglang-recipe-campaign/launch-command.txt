@@ -1,0 +1,4 @@
+SG_CTX=524288 SG_MAXRUN=4 SG_SPEC=4,1,5 SG_CHUNK=4096 SG_MEMFRAC=0.80 SG_GBS=4 \
+SG_ENV="-e PYTORCH_CUDA_ALLOC_CONF=expandable_segments:False -e SGLANG_DSA_MQA_LOGITS_FREE_MEM_FRACTION=0.01 -e NCCL_BUFFSIZE=16777216 -e NCCL_MAX_NCHANNELS=4 -e NCCL_MIN_NCHANNELS=4 -e SGLANG_REQ_WAITING_TIMEOUT=30" \
+SG_EXTRA="--max-prefill-tokens 4096 --prefill-max-requests 1 --max-queued-requests 8" \
+NAME=glm53_sglang_tp8 LAUNCHER=launch-sglang-tp8.sh SPARK_HOSTS="spark1 ... spark8" bash scripts/cluster.sh up
