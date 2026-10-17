@@ -3,6 +3,21 @@
 **Serving on `:30006` since 2026-09-27 08:12 CDT: Fused Split, v21** (v18 launch on the 0909 image + hook v21 — `split_ids()` as one Triton kernel; **182.8 tok/s C1 prose, +6.2 % vs v18 bracketing controls 171.8 / 172.5**, C8 687 (+4.6 %), C16 993 (+4.0 %), non-tool greedy 16/16 vs both controls; held-out BFCL on v21 pending; see Round 12) · documented release **Clean Nightly, v20** (2026-09-21: vLLM nightly `2671fedf` — the last before the #56633 mHC-fold drift — + v15 hook + off54 + fp8_ds_mla + v18's 24-seat/cudagraph flags; **181 tok/s C1 prose (+5.1% pair mean vs v18)**, KV 2.55M tokens, C24 warm agent p95 2.4–2.8 s vs 3.4; **held-out BFCL live sibling 78.8% vs v18 78.9%**, dev 92.7–93.5%; tools 64/64 ×3; $0.008 per 1000 solved tasks; see Round 11b) · rollback **Many Seat, v18** (2026-09-18: v15 hook + `--max-num-seqs 24` + token-sized `--cudagraph-capture-sizes`; 172 tok/s C1 prose, KV 2.50M tokens, C24 warm agent turn 0.55 s p50; **BFCL v4 tool-call exact-match 93.3%**) · **v19 "Nightly" was promoted and reverted on 2026-09-20** (see Round 10) · previous **v15 Pin Hot Experts** (retired 2026-09-18) · **v14 Sixty-K Agent** (retired 2026-09-17) · Historical **v13: 90 tok/s single-stream prose · 140–160 tok/s on agent/code text · 429 agg tok/s at C16** (v12: 89 / 140–160 / 311 · v11: 82 / 130–150 / 287) · 972K-token prompt prefilled in 85 s · Hermes tool-calling 10/10
 
 
+## v22 candidate: the V20 release on the DeepSeek-V4.1-Flash-1017 checkpoint (2026-10-17, experimental)
+
+Bundle: [`results/2026-10-17-v22-checkpoint-1017/`](results/2026-10-17-v22-checkpoint-1017/README.md). This is not a promotion; nothing above changes.
+
+- **What changed:** only the weights, `deepseek-ai/DeepSeek-V4.1-Flash-1017@1bae0e10…`. The config, index and tokenizer are byte-identical to `df42c109`, but all 48 shards are new, so it is a 475.3 GiB download.
+- **Boot:** the V20 image, flags, v15 hook and rowmap are unchanged. Re-home gives **206.61 / 62.33 GiB**. The FlashInfer hash `e5a13633…` is a hit (`Loaded 189 configs`, 0 new). KV is 1,918,727 tokens. T0 passes: exact word, parsed `tool_calls[]`, arithmetic smoke.
+- **Autotune set:** the bundle publishes the 189-tactic set this host tuned for the V20 flags (`a6aa6218…`). The V20 release ships only its own set's checksum.
+- **Quiet-lane runs** (0 foreign requests in every window):
+  - Knee: C1 **183.4**, C2 278.1, C4 400.6, C8 644.5, C12 813.6, C16 917.9.
+  - T1 filler: C1 184.2 / 182.9 / 179.5 at 0 / 32K / 128K.
+  - T2 needle: **EXACT 500/500**.
+  - GSM8K-200: **96.0%** vs the 97.5% baseline, exact McNemar p = 0.25, not significant.
+- **Not yet:** a same-window V20 perf pair. The V20 knee is from 2026-09-24, so the −4 to −7% at C2–C12 is not established. Held-out BFCL is also still pending.
+- **Stale rowmap:** the cold set was profiled on df42c109 routing. Its fit to 1017 is unmeasured, and re-deriving it needs a `PIN_MODE=count` boot.
+
 ## Standard bench T2/T3 on v21 (2026-10-06 evening)
 
 Bundle: [`results/2026-10-06-lib-t2t3-v21/`](results/2026-10-06-lib-t2t3-v21/README.md). Fresh host boot (the reboot recovered the PIN_HOT boot margin: 12.47 GiB at the layer-9 check).
