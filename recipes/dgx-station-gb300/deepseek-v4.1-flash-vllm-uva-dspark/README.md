@@ -24,6 +24,12 @@ Promotion waiver: the "acceptance within 2 pts" rule was written for engine chan
 
 Card F (same day): vLLM 0.31.0 `deep_gemm_mega_moe` is a hard no on one Station — `DeepseekV4MegaMoEExperts` materializes a full interleaved GPU copy of all experts at first forward (`deep_gemm.transform_weights_for_mega_moe`) and drops the loader params, so UVA offload cannot reduce HBM; 269 GiB > 250. Receipts `results/2026-10-17-ds1017-cardA-cardC-cardF/`, quality `results/2026-10-17-ds1017-cardD/`.
 
+### Client settings (added 2026-10-17 — a Desktop session failed on this)
+
+The V4.1 chat template validates `reasoning_effort`. Measured against this lane, one request per value: **`none`, `low`, `high`, `xhigh`, `max` → 200; `medium` → HTTP 400** (`DeepSeek V4.1 reasoning_effort must be low, high, xhigh, max, or an integer within [1, 100] in chat_template_kwargs`). Integers 1–100 are accepted only inside `extra_body.chat_template_kwargs`; a top-level integer fails pydantic validation. `medium` is the OpenAI default and the Hermes Desktop composer default, so a fresh client hits this on its first turn.
+
+Hermes: `agent.reasoning_overrides: {dsv41-flash-uva: low}` covers the gateway, cron and CLI, but **not** a Desktop session — the composer's effort selector sends a per-session override that outranks the config. Pick `low` or `high` in the composer for this model. `limits:`/`clients:` in `recipe.yaml` carry the same note.
+
 ## Standard bench T2/T3 on v21 (2026-10-06 evening)
 
 Bundle: [`results/2026-10-06-lib-t2t3-v21/`](results/2026-10-06-lib-t2t3-v21/README.md). Fresh host boot (the reboot recovered the PIN_HOT boot margin: 12.47 GiB at the layer-9 check).
