@@ -1,0 +1,191 @@
+schema: jm-recipe/v1
+id: dgx-spark-8x/glm-5.3-nvfp4-sglang-tp8
+title: Full GLM-5.3 (744B, RadixArk NVFP4) on 8x DGX Spark, SGLang v0.5.22 TP8 over 200G RoCE + EAGLE/NextN, 512K context
+summary: >-
+  GhettoRak's SGLang lane for full GLM-5.3: RadixArk's ModelOpt NVFP4 build served tensor-parallel 8 across eight DGX Spark
+  GB10 nodes on one CRS804 with stock SGLang v0.5.22 (lmsysorg/sglang:v0.5.22-cu130). 524,288-token context on a
+  654,336-token fp8 KV pool, 4 request slots, single-stream decode 23.7-36.2 tok/s with in-checkpoint NextN as a 4-step EAGLE
+  drafter (code faster than the vLLM sibling, explanation slower), 4-stream aggregate 59.5 tok/s, needles pass at 35K/131K/514K,
+  and a 20-step Hermes tool chain in 31.7 s (vLLM sibling 45.8 s). Needs one env var (SGLANG_DSA_MQA_LOGITS_FREE_MEM_FRACTION=0.01)
+  or long prompts hang the group on unified memory; chunked prefill must stay at 4096. Sibling vLLM recipe dgx-spark-8x/glm-5.3-nvfp4-tp8.
+status: experimental
+owners:
+- jmeadlock
+- milo
+updated: '2026-10-17'
+tags:
+- glm-5.3
+- nvfp4
+- modelopt
+- sglang
+- dgx-spark
+- gb10
+- tp8
+- roce
+- eagle
+- nextn
+- long-context
+model:
+  name: GLM-5.3
+  params: 744B (MoE, glm_moe_dsa / GlmMoeDsaForCausalLM, 78 layers)
+  repo: https://huggingface.co/RadixArk/GLM-5.3-NVFP4
+  revision: 6e389189d564d9d3e4ea7fa284fe91f136d8ae2a
+  quantization: >-
+    Same checkpoint as the vLLM sibling: NVFP4 (ModelOpt, group 16) on routed experts; attention, shared experts, mlp.gate,
+    layers 0-1, embed/lm_head and the NextN/MTP layer bf16. 47 safetensors, 464,823,042,096 bytes; 49/49 LFS files
+    sha256-matched to the Hub on all eight nodes (2026-10-16). KV served as fp8_e4m3 (SGLang's DSA pool accepts only fp8_e4m3
+    or bf16; no 4-bit KV path). Third-party QFS stored-weight KLD vs BF16 0.0511 (not executed through these kernels).
+  draft:
+    repo: https://huggingface.co/RadixArk/GLM-5.3-NVFP4 (in-checkpoint NextN layer, bf16; SGLang NEXTN resolves to EAGLE)
+    revision: 6e389189d564d9d3e4ea7fa284fe91f136d8ae2a
+    method: EAGLE, speculative-num-steps 4, eagle-topk 1, num-draft-tokens 5 (swept 2/3/4/5 steps; topk>1 is rejected by the DSA backend)
+hardware:
+  profile: hardware/dgx-spark-8x.yaml
+  nominal:
+    unified_memory_gb_per_node: 128
+    nodes: 8
+  observed:
+    gpu: NVIDIA GB10 x8
+    driver: '595.84'
+    cuda: '13.0 (container) on 13.2 host'
+    gpu_memory_visible_gib: 121.69
+    host_memory_gib: 121.7
+    os: Ubuntu 24.04.4 LTS (DGX OS 7.2.3)
+    kernel: 6.17.0-1031-nvidia
+    snapshot: ../glm-5.3-nvfp4-tp8/results/2026-10-16-nvfp4-radixark-tp8/system.json
+  required_settings:
+  - Same fabric, kernel and memory settings as the vLLM siblings (hardware/dgx-spark-8x.yaml). GPU clocks capped at 2200 MHz on all eight (nvidia-smi -lgc 0,2200 as a systemd unit) since 2026-10-16; an uncapped ~514K prefill drew ~1.74 kW and tripped a 1,440 W strip. Capped long prefill 1,350-1,425 W; decode unchanged.
+  - SGLANG_DSA_MQA_LOGITS_FREE_MEM_FRACTION=0.01. The DSA indexer's fp32 logits scratch is budgeted from memory the planner thinks is free; on unified memory that is the host's working set. With the default 0.2, host free memory ratchets ~80 KB per prompt token and the group dies with NV_ERR_NO_MEMORY at ~100-140K tokens regardless of mem-fraction (five probes, 2026-10-17). Reported on sglang #36941.
+  - --chunked-prefill-size 4096. 8192 and 16384 hang on the first 35K-token prompt even with the budget bounded (arms s3, s4).
+  - --disable-flashinfer-autotune. The all-rank autotune forward deadlocks on this cluster (two ranks never return); a longer dist timeout does not help.
+runtime:
+  engine: SGLang
+  engine_version: 0.5.22 (torch 2.14.1+cu130, flashinfer 0.7.1, NCCL as shipped in the image)
+  container:
+    image: lmsysorg/sglang:v0.5.22-cu130
+    digest: sha256:e3a4f06001a29542fc4a8638536d9ffc5eb9c9942b08603c09b19a56eae4a1ae
+    base_image: >-
+      stock upstream image, no overlay, no patches. Tag v0.5.22 = baa9befa (2026-10-15). 120 main commits after it touch nothing
+      SM121-specific; FlashInfer 0.7.2 (#44591) lands with open #42368 against flash_mla_sm120.py, so a nightly is a risk not a win.
+  key_libraries:
+    flashinfer: 0.7.1 (image; flashinfer_sparse_mla decode, flashinfer_cutlass FP4 MoE - the only MoE backend that loads on SM121; cutedsl and triton exit at load)
+    torch: 2.14.1+cu130
+launch:
+  script: scripts/cluster.sh
+  command: see results/2026-10-17-sglang-recipe-campaign/launch-command.txt (SG_* env -> scripts/launch-sglang-tp8.sh per rank; NAME=glm53_sglang_tp8 LAUNCHER=launch-sglang-tp8.sh SPARK_HOSTS="..." bash scripts/cluster.sh up)
+  health: BASE_URL=http://<head>:8891/v1 GLM53_API_KEY=... python3 scripts/gates.py
+  warmup: One discarded request per prompt class before measuring; Hermes bench runs one discarded turn.
+  notable_flags:
+  - Per-node launcher scripts/launch-sglang-tp8.sh <rank>; --nnodes 8 --node-rank N --tp 8 --dist-init-addr <head>:50000; NCCL over both RoCE PFs (NCCL_IB_HCA=rocep1s0f0,roceP2p1s0f0, GID 3, RoCE v2, NCCL_CROSS_NIC=1, NVLS off, CUMEM off).
+  - --context-length 524288 --mem-fraction-static 0.80 --max-running-requests 4 --chunked-prefill-size 4096 --max-prefill-tokens 4096 --prefill-max-requests 1 --max-queued-requests 8 --kv-cache-dtype fp8_e4m3 --cuda-graph-max-bs-decode 4 --disable-flashinfer-autotune --disable-shared-experts-fusion (SG_SEF=1 turns fusion on; measured no effect).
+  - --speculative-algorithm EAGLE --speculative-num-steps 4 --speculative-eagle-topk 1 --speculative-num-draft-tokens 5 (SG_SPEC=4,1,5).
+  - env SGLANG_DSA_MQA_LOGITS_FREE_MEM_FRACTION=0.01 PYTORCH_CUDA_ALLOC_CONF=expandable_segments:False NCCL_BUFFSIZE=16777216 NCCL_MAX_NCHANNELS=4 NCCL_MIN_NCHANNELS=4 SGLANG_REQ_WAITING_TIMEOUT=30. The NCCL pin (copied from the vLLM sibling launcher) is the biggest single lever found - +8% prose decode and +15% KV pool (654K vs 569K) on the same fraction.
+  - VARIANT solo 2-slot (arm s10) - SG_MAXRUN=2, no SG_EXTRA rails, same speed, KV pool 654,272; use when the lane is single-user only.
+  - VARIANT throughput 131K (campaign 2026-10-16/17) - SG_SPEC=2,1,3 at 131K / 4 slots gave the best 4-stream aggregate of the night (64.0 tok/s) at the cost of code decode (31.8); not the published default.
+  - Launcher SHA-256 66b721bb8cd65cbd3a95bcd11ede6d069f24c075eccb6e0e90c9565096f5a73a (2026-10-17, SG_SEF switch added).
+metrics:
+- name: Single-stream decode, code prompt
+  value: 36.15
+  unit: tok/s
+  workload: C1, nginx-log-parser + pytest prompt, 800 max tokens, T=0, reasoning low, streamed; 1 discarded warm + 3 reps; EAGLE 4 steps; cold boot, 4 slots configured
+  aggregation: median of 3 (36.08-36.25) on the s11 recipe boot; s10 (2-slot, same levers) 36.16; s0 baseline (3 steps, no NCCL pin) 34.09; vLLM sibling MTP k=3 35.65
+  provenance:
+    run_id: 2026-10-17-sglang-recipe-campaign
+    method: scripts/bench.py
+    raw: raw/s11-recipe-shared/bench.log
+- name: Single-stream decode, prose email prompt
+  value: 28.65
+  unit: tok/s
+  workload: C1, same instrument
+  aggregation: median of 3 (28.64-28.66); s0 baseline 26.71; s6 (NCCL pin only, 3 steps) 28.76; vLLM sibling 29.87
+  provenance:
+    run_id: 2026-10-17-sglang-recipe-campaign
+    method: scripts/bench.py
+    raw: raw/s11-recipe-shared/bench.log
+- name: Single-stream decode, technical-explanation prompt
+  value: 23.72
+  unit: tok/s
+  workload: C1, same instrument
+  aggregation: median of 3 (23.71-23.80); s0 baseline 24.53; s6 (3 steps + NCCL) 25.10 - 4 draft steps cost explanation speed, as k=4 did on vLLM; vLLM sibling 25.80
+  provenance:
+    run_id: 2026-10-17-sglang-recipe-campaign
+    method: scripts/bench.py
+    raw: raw/s11-recipe-shared/bench.log
+- name: 4-stream aggregate decode
+  value: 59.5
+  unit: tok/s
+  workload: C4, code/explain/prose/code concurrently, 800 max tokens, T=0, reasoning low; max-running-requests 4
+  aggregation: single run; per-user 15.7-22.3; s9 (same rails, 3 steps, no NCCL pin) 56.4; 2-slot arms 40-46 (slot-capped); vLLM sibling 61.7
+  provenance:
+    run_id: 2026-10-17-sglang-recipe-campaign
+    method: scripts/bench.py
+    raw: raw/s11-recipe-shared/bench.log
+- name: Hermes agent bench, 20-step tool chain
+  value: 31.7
+  unit: s wall
+  workload: hermes chat -Q from an isolated HERMES_HOME (no memory/rules), -t terminal, reasoning low, fresh session; 20 files each naming the next, one terminal call per file, hidden token at the end; 3 reps on the recipe boot
+  aggregation: median of 3 (31.5 / 31.7 / 36.9), 3/3 tokens found, 20 tool calls each; s0 baseline 37.9; vLLM sibling k=3 median 45.8 over 4 runs (40.1-52.2)
+  provenance:
+    run_id: 2026-10-17-sglang-recipe-campaign
+    method: scripts/hermes_gauntlet_reps.py
+    raw: raw/s11-recipe-shared/hermes-gauntlet.log
+- name: EAGLE mean acceptance length (4 steps)
+  value: 3.05
+  unit: tokens/step
+  workload: bench window, scheduler accept len log, median
+  aggregation: 3-step arms 2.83-2.90; 5 steps 3.00; 2 steps 2.48. With topk 1 the ceiling is steps+1.
+  provenance:
+    run_id: 2026-10-17-sglang-recipe-campaign
+    method: docker logs accept len
+    raw: raw/s11-recipe-shared/boot.txt
+- name: Prefill + retrieval, ~514K-token needle
+  value: 640
+  unit: tok/s
+  workload: 513,814-token random-word haystack, code at depth 0.5, reasoning low, T=0; PASS in 802.8 s wall (prefill estimated as prompt_tokens / wall; chunk 4096, prefill-max-requests 1)
+  aggregation: single run; 35,055 PASS 30.1 s (~1,165 tok/s), 131,175 PASS 120.0 s (~1,093 tok/s). vLLM sibling 514K in 413.9 s (~1,241 tok/s) - SGLang prefill is about half the vLLM lane's at 514K
+  provenance:
+    run_id: 2026-10-17-sglang-recipe-campaign
+    method: scripts/needle.py
+    raw: raw/s11-recipe-shared/needles.jsonl
+- name: KV pool
+  value: 654336
+  unit: tokens
+  workload: mem-fraction-static 0.80, fp8_e4m3 DSA KV (53,940 B/token), 1.25x concurrency at 524,288; without the NCCL pin the same fraction gives 567-571K
+  aggregation: single boot
+  provenance:
+    run_id: 2026-10-17-sglang-recipe-campaign
+    method: engine log max_total_num_tokens
+    raw: raw/s11-recipe-shared/boot.txt
+- name: Cold boot to The server is fired up
+  value: 11
+  unit: min
+  workload: all 8 ranks, local NVMe, autotune off, CUDA graphs bs 1-4 captured
+  aggregation: 10-13 min across the 11 campaign boots
+  provenance:
+    run_id: 2026-10-17-sglang-recipe-campaign
+    method: campaign.log boot_min
+    raw: RESULTS.md
+verification:
+  gates:
+    schema: { how: "scripts/check_recipe.py passes", last_pass_utc: "2026-10-17T21:30:00Z", run_id: 2026-10-17-sglang-recipe-campaign }
+    digest: { how: "image lmsysorg/sglang:v0.5.22-cu130 manifest sha256:e3a4f060... on all 8; checkpoint 49/49 LFS files sha256 == Hub (2026-10-16)", last_pass_utc: "2026-10-17T20:37:28Z", run_id: 2026-10-17-sglang-recipe-campaign }
+    health: { how: "scripts/gates.py: keyless 401, glm-5.3-nvfp4-sglang / 524288, exact-reply smoke ROUTE_OK, get_weather tool call + tool-result round", last_pass_utc: "2026-10-17T20:40:00Z", run_id: 2026-10-17-sglang-recipe-campaign }
+    quality: { how: "PENDING on our stack. Greedy parity vs the vLLM sibling on 4 short prompts: primes identical, three prompts diverge after 15-73 chars and both continue coherently (expected across kernels; not a gate). No teacher-forced comparison yet.", run_id: 2026-10-17-sglang-recipe-campaign }
+    performance: { how: "scripts/bench.py C1 medians within 5% of 36.2 / 23.7 / 28.7 (code / explain / prose); C4 within 10% of 59.5; needles 35K/131K/514K PASS; Hermes chain median <= 36 s", last_pass_utc: "2026-10-17T21:00:42Z", run_id: 2026-10-17-sglang-recipe-campaign }
+limits:
+- "Unified-memory trap: without SGLANG_DSA_MQA_LOGITS_FREE_MEM_FRACTION=0.01 every config above ~100K tokens of prompt hangs the TP group (NV_ERR_NO_MEMORY, scheduler watchdog). 0.03 measured no different from 0.01; the budget is not a decode lever (spec-verify stays under the chunking threshold)."
+- "Chunked prefill must be 4096 at 512K. 8192 and 16384 hang on the first 35K prompt (arms s3, s4) even with the budget bounded; cause not isolated beyond the same NV_ERR_NO_MEMORY signature."
+- "Prefill is ~half the vLLM sibling's at 514K (640 vs 1,241 tok/s): prefill-max-requests 1 + chunk 4096 serialize it. 131K prefill is ~1.1K tok/s on both."
+- "4 draft steps trade explanation speed (23.7 vs 25.1 at 3 steps) for code (36.2 vs 35.7) and the fastest agent chain. SG_SPEC=3,1,4 is the balanced alternative; SG_SPEC=2,1,3 is the throughput alternative (64.0 C4 at 131K, 31.8 code)."
+- "1M context is out on SGLang for this model: fp8 DSA KV is 53,940 B/token, 1,048,576 tokens need 52.68 GiB/rank and post-weight free is 52.3-52.6 GiB. 768K booted (774,400 pool at fraction 0.88, no spec) and died on the first 470K prompt. The vLLM sibling with nvfp4_ds_mla KV holds the 754K result."
+- "Refused on SM121 in v0.5.22: EAGLE topk>1 (DSA backend), MoE backends flashinfer_cutedsl and triton (exit at load), FlashInfer autotune (deadlock). Shared-experts fusion and SGLANG_FLASHINFER_MOE_FUSED_FINALIZE boot fine and measure no change."
+- "Context: one needle per length at depth 0.5; retrieval, not long-context reasoning. Rails (prefill-max-requests 1, max-queued-requests 8, SGLANG_REQ_WAITING_TIMEOUT=30) were exercised by the 4-stream bench, not by an overload test; an over-budget request path has not been forced."
+- "Hermes bench numbers include the CLI harness (~1.5 s per turn) and a ~7K-token system prompt; they are agent-shaped wall-clock, not engine throughput, and n=3."
+rollback:
+  script: scripts/cluster.sh
+  summary: "NAME=glm53_sglang_tp8 LAUNCHER=launch-sglang-tp8.sh scripts/cluster.sh down. vLLM sibling: NAME=glm53_nvfp4_tp8 LAUNCHER=launch-nvfp4-tp8.sh cluster.sh up (same weights on every node; the vLLM image must be present - it was once deleted by hand and re-copied over the fabric)."
+links:
+  blog: https://al-engr.com/glm53-8x-spark-sglang-vs-vllm.html
+  sibling_recipe: recipes/dgx-spark-8x/glm-5.3-nvfp4-tp8
+  upstream_issue: https://github.com/sgl-project/sglang/issues/36941#issuecomment-6234243195
+  upstream_stack: https://github.com/sgl-project/sglang (v0.5.22, baa9befa)

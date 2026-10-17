@@ -1,0 +1,48 @@
+# card.yaml — at-a-glance card sidecar. Rendered by scripts/render_card.py; never hand-edit card.html.
+# Every number traces to recipe.yaml metrics or results/2026-10-17-sglang-recipe-campaign/. Unknown = pending (amber).
+title: "GLM-5.3 744B NVFP4 · 8× DGX Spark · SGLang"
+subtitle: "RadixArk's NVFP4 build on stock SGLang v0.5.22 — TP8 across eight GB10s on one CRS804 at 200G RoCE, 512K context, NextN as a 4-step EAGLE chain. GhettoRak's lane since 2026-10-17."
+version: "v1 (2026-10-17 · RadixArk 6e389189 · lmsysorg/sglang:v0.5.22-cu130 · mem-fraction 0.80)"
+run_id: 2026-10-17-sglang-recipe-campaign
+handles: "github.com/J-M-Recipes/recipes · al-engr.com · @jmeadlock"
+
+model:
+  type: MoE+MTP
+  type_detail: "256 routed experts, 8 active + 1 shared · 78 layers · DSA sparse attention + MLA · 1 NextN layer (bf16)"
+  total_params: 744B
+  active_params: pending
+  checkpoint_gb: 464.8              # 464,823,042,096 B of safetensors; 49/49 LFS files sha256 == Hub on all 8 nodes
+  weights_short: "re-quantized NVFP4 by RadixArk (ModelOpt, W4A4 g16) on routed experts · attention/shared/NextN bf16"
+  engine_extra: "SGLang 0.5.22 stock · flashinfer_sparse_mla · cutlass FP4 MoE · flashinfer 0.7.1 · torch 2.14.1+cu130"
+  memory: "fp8 DSA KV 53,940 B/token · 654,336-token pool at fraction 0.80 · 524,288-token (512K) ctx · 4 slots · indexer scratch capped at 0.01 of free"
+
+hero:
+  c1:      { value: 28.7, unit: tok/s, class: prose, note: "cold, T=0, reasoning low, 800 tok · code 36.2 · explanation 23.7 · median of 3 · vLLM sibling 29.9 / 35.7 / 25.8" }
+  c16:     { value: 59.5, unit: tok/s, label: "Decode · C4 aggregate", note: "max-running-requests 4 · 15.7–22.3 per user · vLLM sibling 61.7" }
+  prefill: { value: 640, unit: tok/s, note: "513,814-token needle PASS in 803 s · 131K in 120 s (~1.1K tok/s) · chunk 4096, prefill-max-requests 1 · vLLM sibling ~1.2K at 514K" }
+
+guesser:
+  name: EAGLE (NextN)
+  source: "in-checkpoint NextN layer, bf16; SGLang NEXTN resolves to EAGLE"
+  schedule: "4 steps · topk 1 · 5 draft tokens (swept 2/3/4/5; topk>1 rejected by the DSA backend)"
+  accept: { "mean, bench mix": "3.05 / step", "3 steps": "2.83–2.90", "2 steps": "2.48", shell: pending, tool-JSON: pending }
+
+secondary:
+  - label: Agent workload & long context
+    items:
+      "Hermes 20-step tool chain": "31.7 s median (n=3, 3/3 tokens found) · vLLM sibling 45.8 s (n=4)"
+      "needle recall": "35K · 131K · 514K PASS (depth 0.5, one each)"
+      "1M context": "does not fit — fp8 DSA KV needs 52.68 GiB/rank, 52.3–52.6 free; vLLM sibling holds 754K"
+  - label: Boot, fabric & the unified-memory trap
+    items:
+      "cold boot → serving": "~11 min (autotune off; CUDA graphs bs 1–4)"
+      "required env": "SGLANG_DSA_MQA_LOGITS_FREE_MEM_FRACTION=0.01 · chunk 4096 · NCCL 16 MB buffer / 4 channels (+8% prose, +15% pool)"
+      "GPU clocks": "capped 2,200 MHz on all 8 (uncapped 514K prefill tripped a 1,440 W strip)"
+
+fidelity:
+  - { status: pass,     text: "Checkpoint as RadixArk shipped it: 49/49 LFS files sha256-matched to the Hub on every node" }
+  - { status: measured, text: "Third-party QFS stored-weight KLD vs BF16: 0.0511 (official FP8 0.0223) — not our measurement" }
+  - { status: measured, text: "Greedy parity vs the vLLM sibling, 4 prompts: primes identical; 3 diverge after 15–73 chars, both coherent (not a gate)" }
+  - { status: pending,  text: "Served teacher-forced Δlogprob vs the vLLM sibling on this cluster" }
+  - { status: pass,     text: "Tool calling: get_weather call + tool-result round (1/1) · 20/20 sequential terminal calls ×3 in the Hermes chain" }
+  - { status: pending,  text: "Public sanity anchor run by us" }

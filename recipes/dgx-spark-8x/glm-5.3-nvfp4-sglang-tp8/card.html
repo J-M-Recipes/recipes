@@ -1,0 +1,87 @@
+<!doctype html>
+<html><head><meta charset="utf-8">
+<style>
+  html,body{margin:0;background:#0b0f14;}
+  .card{width:1200px;box-sizing:border-box;padding:36px 44px;background:linear-gradient(160deg,#0b0f14 0%,#0f1620 100%);color:#e6edf3;font-family:Inter,-apple-system,Segoe UI,Helvetica,Arial,sans-serif;border:1px solid #1e2a38;border-radius:14px;}
+  .mono{font-family:"JetBrains Mono",SFMono-Regular,Menlo,Consolas,monospace;}
+  .top{display:flex;justify-content:space-between;align-items:flex-start;}
+  h1{margin:0;font-size:38px;font-weight:800;letter-spacing:-0.5px;}
+  .sub{margin-top:6px;font-size:15px;color:#9fb0c3;}
+  .brand{text-align:right;font-size:13px;color:#9fb0c3;line-height:1.5;white-space:nowrap}
+  .brand b{color:#6ee7b7;font-size:16px;letter-spacing:1px}
+  .pills{display:flex;flex-wrap:wrap;gap:8px;margin:18px 0 22px}
+  .pill{border:1px solid #2a3a4d;background:#111a25;border-radius:999px;padding:6px 12px;font-size:13px;color:#cfd9e4}
+  .pill b{color:#fff;font-weight:600}
+  .pill.type{border-color:#6ee7b7;color:#6ee7b7}
+  .grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px}
+  .box{background:#111a25;border:1px solid #1e2a38;border-radius:10px;padding:16px 18px}
+  .lbl{font-size:11px;letter-spacing:1.6px;text-transform:uppercase;color:#7f93a8;margin-bottom:6px}
+  .hero{font-size:56px;font-weight:800;line-height:1;color:#fff}
+  .hero small{font-size:18px;font-weight:500;color:#9fb0c3;margin-left:6px}
+  .note{font-size:12px;color:#9fb0c3;margin-top:8px;line-height:1.4}
+  .row2{display:grid;grid-template-columns:1.2fr 1fr 1fr;gap:14px;margin-top:14px}
+  .kv{font-size:14px;line-height:1.75}
+  .kv b{color:#fff;font-weight:600}
+  .acc span{display:inline-block;margin-right:12px}
+  .fid{margin-top:14px;background:#0e1a17;border:1px solid #1f4d3d;border-radius:10px;padding:16px 18px}
+  .fid .lbl{color:#6ee7b7}
+  .fid ul{margin:0;padding-left:0;list-style:none;display:grid;grid-template-columns:1fr 1fr;gap:6px 24px;font-size:14px;line-height:1.5}
+  .ok::before{content:"✓ ";color:#6ee7b7;font-weight:700}
+  .pend::before{content:"◌ ";color:#f59e0b;font-weight:700}
+  .pend{color:#d9c58a}
+  .meas::before{content:"≈ ";color:#93c5fd;font-weight:700}
+  .pend-inline{color:#f59e0b;font-size:0.6em;font-weight:600;letter-spacing:1px}
+  .foot{display:flex;justify-content:space-between;margin-top:18px;font-size:12px;color:#7f93a8}
+  .foot .mono{color:#9fb0c3}
+  .fid li.pair { list-style: none; margin: 6px 0 2px -18px; padding: 10px 12px; border: 1px solid rgba(255,255,255,.14); border-radius: 8px; background: rgba(255,255,255,.04); }
+  .fid li.pair .big { font-size: 20px; font-weight: 700; color: #e8f0ff; letter-spacing: -.2px; }
+  .fid li.pair .sep { color: rgba(255,255,255,.35); margin: 0 6px; }
+  .fid li.pair .dim { font-size: 11.5px; color: rgba(255,255,255,.62); }
+</style></head><body>
+<div class="card">
+  <div class="top">
+    <div>
+      <h1>GLM-5.3 744B NVFP4 · 8× DGX Spark · SGLang</h1>
+      <div class="sub">RadixArk&#x27;s NVFP4 build on stock SGLang v0.5.22 — TP8 across eight GB10s on one CRS804 at 200G RoCE, 512K context, NextN as a 4-step EAGLE chain. GhettoRak&#x27;s lane since 2026-10-17.</div>
+    </div>
+    <div class="brand"><b>J-M-RECIPES</b><br>v1 (2026-10-17 · RadixArk 6e389189 · lmsysorg/sglang:v0.5.22-cu130 · mem-fraction 0.80) · 2026-10-17<br>status: experimental</div>
+  </div>
+  <div class="pills">
+<span class="pill type"><b>MoE+MTP</b> · 256 routed experts, 8 active + 1 shared · 78 layers · DSA sparse attention + MLA · 1 NextN layer (bf16)</span>
+<span class="pill"><b>744B</b> total · <b><span class="pend-inline">PENDING</span></b> active</span>
+<span class="pill">checkpoint <b>464.8 GB</b> · rev <span class="mono">6e389189</span></span>
+<span class="pill">weights <b>re-quantized NVFP4 by RadixArk (ModelOpt, W4A4 g16) on routed experts · attention/shared/NextN bf16</b></span>
+<span class="pill">engine <b>SGLang <span class="mono"></span> · SGLang 0.5.22 stock · flashinfer_sparse_mla · cutlass FP4 MoE · flashinfer 0.7.1 · torch 2.14.1+cu130</b></span>
+<span class="pill">memory <b>fp8 DSA KV 53,940 B/token · 654,336-token pool at fraction 0.80 · 524,288-token (512K) ctx · 4 slots · indexer scratch capped at 0.01 of free</b></span>
+  </div>
+  <div class="grid">
+<div class="box"><div class="lbl">Decode · C1 (prose)</div><div class="hero">28.7<small>tok/s</small></div><div class="note">cold, T=0, reasoning low, 800 tok · code 36.2 · explanation 23.7 · median of 3 · vLLM sibling 29.9 / 35.7 / 25.8</div></div>
+<div class="box"><div class="lbl">Decode · C4 aggregate</div><div class="hero">59.5<small>tok/s</small></div><div class="note">max-running-requests 4 · 15.7–22.3 per user · vLLM sibling 61.7</div></div>
+<div class="box"><div class="lbl">Prefill · cold</div><div class="hero">640<small>tok/s</small></div><div class="note">513,814-token needle PASS in 803 s · 131K in 120 s (~1.1K tok/s) · chunk 4096, prefill-max-requests 1 · vLLM sibling ~1.2K at 514K</div></div>
+  </div>
+  <div class="row2">
+<div class="box"><div class="lbl">Guesser</div><div class="kv"><b>EAGLE (NextN)</b> · in-checkpoint NextN layer, bf16; SGLang NEXTN resolves to EAGLE<br>4 steps · topk 1 · 5 draft tokens (swept 2/3/4/5; topk&gt;1 rejected by the DSA backend)<br><span class="acc">accept: <span>mean, bench mix <b>3.05 / step</b></span> <span>3 steps <b>2.83–2.90</b></span> <span>2 steps <b>2.48</b></span> <span>shell <b>pending</b></span> <span>tool-JSON <b>pending</b></span></span></div></div>
+<div class="box"><div class="lbl">Agent workload &amp; long context</div><div class="kv">Hermes 20-step tool chain: <b>31.7 s median (n=3, 3/3 tokens found) · vLLM sibling 45.8 s (n=4)</b><br>needle recall: <b>35K · 131K · 514K PASS (depth 0.5, one each)</b><br>1M context: <b>does not fit — fp8 DSA KV needs 52.68 GiB/rank, 52.3–52.6 free; vLLM sibling holds 754K</b></div></div>
+<div class="box"><div class="lbl">Boot, fabric &amp; the unified-memory trap</div><div class="kv">cold boot → serving: <b>~11 min (autotune off; CUDA graphs bs 1–4)</b><br>required env: <b>SGLANG_DSA_MQA_LOGITS_FREE_MEM_FRACTION=0.01 · chunk 4096 · NCCL 16 MB buffer / 4 channels (+8% prose, +15% pool)</b><br>GPU clocks: <b>capped 2,200 MHz on all 8 (uncapped 514K prefill tripped a 1,440 W strip)</b></div></div>
+  </div>
+  <div class="fid"><div class="lbl">Output fidelity — does the recipe change what the model says?</div>
+    <ul>
+<li class="ok">Checkpoint as RadixArk shipped it: 49/49 LFS files sha256-matched to the Hub on every node</li>
+<li class="meas">Third-party QFS stored-weight KLD vs BF16: 0.0511 (official FP8 0.0223) — not our measurement</li>
+<li class="meas">Greedy parity vs the vLLM sibling, 4 prompts: primes identical; 3 diverge after 15–73 chars, both coherent (not a gate)</li>
+<li class="pend">Served teacher-forced Δlogprob vs the vLLM sibling on this cluster</li>
+<li class="ok">Tool calling: get_weather call + tool-result round (1/1) · 20/20 sequential terminal calls ×3 in the Hermes chain</li>
+<li class="pend">Public sanity anchor run by us</li>
+    </ul>
+  </div>
+  <div class="fid"><div class="lbl">Agent claim card — fixed protocol, held-out sibling, cost per solved task</div>
+    <ul>
+<li class="pend">harness card pending — protocol hash, held-out sibling suite, cost per solved task</li>
+    </ul>
+  </div>
+  <div class="foot">
+    <span>recipe <span class="mono">recipes/dgx-spark-8x/glm-5.3-nvfp4-sglang-tp8</span> · run <span class="mono">2026-10-17-sglang-recipe-campaign</span></span>
+    <span>github.com/J-M-Recipes/recipes · al-engr.com · @jmeadlock</span>
+  </div>
+</div>
+</body></html>
