@@ -2,7 +2,7 @@
 
 **Status: experimental** (2026-10-16). Serves, passes health/tool/needle gates, measured. Teacher-forced quality gate pending.
 
-Sibling: [`dgx-spark-8x/glm-5.3-nvfp4-tp8`](../glm-5.3-nvfp4-tp8/) — RadixArk NVFP4 on the same cluster: 4× the context, +47% at C4, 7–12% slower single-stream, KLD 0.0511 vs 0.0223. NVFP4 is the cluster's daily lane; this FP8 recipe is the fidelity reference.
+Sibling: [`dgx-spark-8x/glm-5.3-nvfp4-tp8`](../glm-5.3-nvfp4-tp8/) — RadixArk NVFP4 on the same cluster: 4× the context, +54% at C4, and with MTP k=3 faster single-stream too (35.7 / 29.9 / 25.8 tok/s), at KLD 0.0511 vs 0.0223. NVFP4 is the cluster's daily lane; this FP8 recipe is the fidelity reference.
 
 | | |
 |---|---|

@@ -42,7 +42,7 @@
   <div class="top">
     <div>
       <h1>GLM-5.3 744B NVFP4 · 8× DGX Spark</h1>
-      <div class="sub">RadixArk&#x27;s NVFP4 build (experts 4-bit, attention + MTP bf16) — vLLM TP8 across eight GB10s on one CRS804 at 200G RoCE, 512K context, MTP k=1. GhettoRak&#x27;s daily lane.</div>
+      <div class="sub">RadixArk&#x27;s NVFP4 build (experts 4-bit, attention + MTP bf16) — vLLM TP8 across eight GB10s on one CRS804 at 200G RoCE, 512K context, MTP k=3. GhettoRak&#x27;s daily lane.</div>
     </div>
     <div class="brand"><b>J-M-RECIPES</b><br>v1 (2026-10-16 · RadixArk 6e389189 · gb10-glm-5.2:v19-vision · gmu 0.80) · 2026-10-16<br>status: experimental</div>
   </div>
@@ -55,12 +55,12 @@
 <span class="pill">memory <b>57.13 GiB/rank weights + MTP · KV 37.82 GiB/rank = 720,384-token pool · 524,288-token (512K) ctx · ~8.5–8.9 GB host free on the head</b></span>
   </div>
   <div class="grid">
-<div class="box"><div class="lbl">Decode · C1 (prose)</div><div class="hero">24.9<small>tok/s</small></div><div class="note">warm, T=0, reasoning low, 800 tok · code 26.3 · explanation 23.8 · median of 3 · FP8 sibling 26.9 / 29.9 / 23.1</div></div>
-<div class="box"><div class="lbl">Decode · C4 aggregate</div><div class="hero">59.1<small>tok/s</small></div><div class="note">max-num-seqs 4 · 16.5–18.4 per user · FP8 sibling 40.1</div></div>
+<div class="box"><div class="lbl">Decode · C1 (prose)</div><div class="hero">29.9<small>tok/s</small></div><div class="note">warm, T=0, reasoning low, 800 tok · code 35.7 · explanation 25.8 · median of 3 · FP8 sibling 26.9 / 29.9 / 23.1 · k=1 was 24.9</div></div>
+<div class="box"><div class="lbl">Decode · C4 aggregate</div><div class="hero">61.7<small>tok/s</small></div><div class="note">max-num-seqs 4 · 17.1–22.7 per user · FP8 sibling 40.1</div></div>
 <div class="box"><div class="lbl">Prefill · cold</div><div class="hero">1.2K<small>tok/s</small></div><div class="note">513,814-token needle PASS in 413.9 s · 280K in 215 s · 70K in 50 s · cold, single runs</div></div>
   </div>
   <div class="row2">
-<div class="box"><div class="lbl">Guesser</div><div class="kv"><b>MTP</b> · in-checkpoint, bf16 (model.layers.78 left unquantized)<br>k = 1<br><span class="acc">accept: <span>prose <b>1.8–2.0 / step</b></span> <span>code <b>1.8–2.0 / step</b></span> <span>shell <b>pending</b></span> <span>tool-JSON <b>pending</b></span></span></div></div>
+<div class="box"><div class="lbl">Guesser</div><div class="kv"><b>MTP</b> · in-checkpoint, bf16 (model.layers.78 left unquantized)<br>k = 3 fixed (swept 1 / 3 / 4 / 5-adaptive)<br><span class="acc">accept: <span>mean, bench mix <b>2.89 / step</b></span> <span>per position <b>0.89–0.97 · 0.72–0.89 · 0.58–0.74</b></span> <span>shell <b>pending</b></span> <span>tool-JSON <b>pending</b></span></span></div></div>
 <div class="box"><div class="lbl">Long context</div><div class="kv">needle recall: <b>35K · 70K · 140K · 280K · 514K PASS (depth 0.5, one each)</b><br>KV pool vs FP8 sibling: <b>720,384 vs 150–182K tokens</b><br>reasoning high: <b>1,500 tok → partial answer (length) · 16K → done in 2,716 tok</b></div></div>
 <div class="box"><div class="lbl">Boot &amp; fabric</div><div class="kv">cold boot → serving: <b>17.5 min (head weight load 558 s, compile 77 s cold, FP4 autotune ~104 s)</b><br>8-node NCCL all_reduce busbw: <b>20.13 GB/s @ 1 GiB · 0 switch errors</b></div></div>
   </div>
@@ -79,7 +79,7 @@
     </ul>
   </div>
   <div class="foot">
-    <span>recipe <span class="mono">recipes/dgx-spark-8x/glm-5.3-nvfp4-tp8</span> · run <span class="mono">2026-10-16-nvfp4-radixark-tp8</span></span>
+    <span>recipe <span class="mono">recipes/dgx-spark-8x/glm-5.3-nvfp4-tp8</span> · run <span class="mono">2026-10-16-nvfp4-mtp-depth-sweep</span></span>
     <span>github.com/J-M-Recipes/recipes · al-engr.com · @jmeadlock</span>
   </div>
 </div>

@@ -1,9 +1,9 @@
 # card.yaml — at-a-glance card sidecar. Rendered by scripts/render_card.py; never hand-edit card.html.
 # Every number traces to recipe.yaml metrics or results/2026-10-16-nvfp4-radixark-tp8/. Unknown = pending (amber).
 title: "GLM-5.3 744B NVFP4 · 8× DGX Spark"
-subtitle: "RadixArk's NVFP4 build (experts 4-bit, attention + MTP bf16) — vLLM TP8 across eight GB10s on one CRS804 at 200G RoCE, 512K context, MTP k=1. GhettoRak's daily lane."
+subtitle: "RadixArk's NVFP4 build (experts 4-bit, attention + MTP bf16) — vLLM TP8 across eight GB10s on one CRS804 at 200G RoCE, 512K context, MTP k=3. GhettoRak's daily lane."
 version: "v1 (2026-10-16 · RadixArk 6e389189 · gb10-glm-5.2:v19-vision · gmu 0.80)"
-run_id: 2026-10-16-nvfp4-radixark-tp8
+run_id: 2026-10-16-nvfp4-mtp-depth-sweep
 handles: "github.com/J-M-Recipes/recipes · al-engr.com · @jmeadlock"
 
 model:
@@ -17,15 +17,15 @@ model:
   memory: "57.13 GiB/rank weights + MTP · KV 37.82 GiB/rank = 720,384-token pool · 524,288-token (512K) ctx · ~8.5–8.9 GB host free on the head"
 
 hero:
-  c1:      { value: 24.9, unit: tok/s, class: prose, note: "warm, T=0, reasoning low, 800 tok · code 26.3 · explanation 23.8 · median of 3 · FP8 sibling 26.9 / 29.9 / 23.1" }
-  c16:     { value: 59.1, unit: tok/s, label: "Decode · C4 aggregate", note: "max-num-seqs 4 · 16.5–18.4 per user · FP8 sibling 40.1" }
+  c1:      { value: 29.9, unit: tok/s, class: prose, note: "warm, T=0, reasoning low, 800 tok · code 35.7 · explanation 25.8 · median of 3 · FP8 sibling 26.9 / 29.9 / 23.1 · k=1 was 24.9" }
+  c16:     { value: 61.7, unit: tok/s, label: "Decode · C4 aggregate", note: "max-num-seqs 4 · 17.1–22.7 per user · FP8 sibling 40.1" }
   prefill: { value: 1.2K, unit: tok/s, note: "513,814-token needle PASS in 413.9 s · 280K in 215 s · 70K in 50 s · cold, single runs" }
 
 guesser:
   name: MTP
   source: "in-checkpoint, bf16 (model.layers.78 left unquantized)"
-  schedule: "k = 1"
-  accept: { prose: "1.8–2.0 / step", code: "1.8–2.0 / step", shell: pending, tool-JSON: pending }
+  schedule: "k = 3 fixed (swept 1 / 3 / 4 / 5-adaptive)"
+  accept: { "mean, bench mix": "2.89 / step", "per position": "0.89–0.97 · 0.72–0.89 · 0.58–0.74", shell: pending, tool-JSON: pending }
 
 secondary:
   - label: Long context

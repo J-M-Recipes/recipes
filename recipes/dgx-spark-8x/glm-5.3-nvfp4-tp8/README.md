@@ -9,8 +9,8 @@ Sibling: [`dgx-spark-8x/glm-5.3-fp8-tp8`](../glm-5.3-fp8-tp8/) — same cluster,
 |---|---:|---:|
 | Weights + MTP per node | 57.13 GiB | 90.96 GiB |
 | KV pool / context | **720,384 / 524,288** | 150–182K / 131,072 |
-| C1 code / prose / explanation (tok/s) | 26.3 / 24.9 / **23.8** | **29.9 / 26.9** / 23.1 |
-| C4 aggregate (tok/s) | **59.1** (16.5–18.4 per user) | 40.1 (11.5–14.2) |
+| C1 code / prose / explanation (tok/s), MTP k=3 | **35.7 / 29.9 / 25.8** | 29.9 / 26.9 / 23.1 |
+| C4 aggregate (tok/s) | **61.7** (17.1–22.7 per user) | 40.1 (11.5–14.2) |
 | Deepest needle passed | **514K** (~1.2K tok/s prefill) | 70K |
 | QFS KLD vs BF16 (third party) | 0.0511 | **0.0223** |
 | Cold boot | 17.5 min | 13.2 min |
@@ -22,7 +22,8 @@ experts, routers, layers 0–1, embeddings/lm_head and the MTP layer left in bf1
 ~433 GiB. Of the three NVFP4 builds with a QFS measurement it has the best fidelity (QFS 0.0511 vs incoai 0.0594, Inferact 0.0754).
 
 Tensor parallel 8, one rank per Spark, MTP one token ahead, `fp8_ds_mla` KV, B12X sparse attention. Launcher is
-0xMagnus's NVFP4 TP8 config (gmu 0.80, 512K, MTP k=1) on the same base as the FP8 sibling, plus the 8-thread loader.
+0xMagnus's NVFP4 TP8 config (gmu 0.80, 512K) on the same base as the FP8 sibling, plus the 8-thread loader, with **MTP raised
+from k=1 to k=3** after a depth sweep (below).
 
 ## Hardware
 
@@ -77,6 +78,24 @@ Same instrument as the FP8 sibling: streamed, T=0, `reasoning_effort: low`, 800 
 | C1 technical explanation | **23.82** (23.25–23.96) |
 | C4 aggregate | **59.1** (per user 16.45–18.36) |
 | MTP | k=1, mean acceptance length 1.77–1.98 |
+
+The C1/C4 rows above are the first boot at **k=1** and are superseded by the sweep.
+
+### MTP depth sweep (`results/2026-10-16-nvfp4-mtp-depth-sweep/`)
+
+Same instrument, one boot per arm, everything else frozen. KV pool 721–723K tokens and head host memory 9.7–10.9 GB free in every arm.
+
+| tok/s | k=1 | **k=3** | k=3 repeat | k=4 | k=5 adaptive (FP8's setting) |
+|---|---:|---:|---:|---:|---:|
+| code | 26.29 | **34.99** | **35.65** | 36.22 | 35.03 |
+| prose | 24.89 | **28.90** | **29.87** | 27.93 | 28.89 |
+| technical explanation | 23.82 | **25.29** | **25.80** | 25.36 | 25.88 |
+| C4 aggregate | 59.1 | **61.6** | **61.7** | 58.9 | 59.1 |
+| mean acceptance length | 1.65–1.91 | 2.89 | — | 2.55–2.95 | 2.18–2.38 |
+
+Per-position acceptance at k=3: 0.89–0.97, 0.72–0.89, 0.58–0.74. Positions 4–5 are kept 13–67% of the time, which is why
+deeper did not pay. The adaptive controller (window 32, ladder 2,4,5) kept stepping back down. **k=3 fixed is the default.**
+Gates (401, models, smoke, tool round) passed in every arm; 70K needle re-passed on the k=3 repeat boot.
 | needle 35,055 / 69,979 / 140,034 / 280,261 / 513,814 tokens | PASS 37.6 / 50.4 / 102.2 / 214.8 / 413.9 s (~930 / 1,390 / 1,370 / 1,305 / 1,241 tok/s prefill) |
 | reasoning high, 1,500 / 16,000 max tokens | length with a partial answer / complete in 2,716 tokens |
 | KV pool | 720,384 tokens (37.82 GiB/rank) |
@@ -86,7 +105,8 @@ Same instrument as the FP8 sibling: streamed, T=0, `reasoning_effort: low`, 800 
 
 - **Fidelity is the price.** QFS stored-weight KLD 0.0511 vs 0.0223 for the official FP8. Use the FP8 sibling when the
   exact model matters more than context or concurrency.
-- **Not faster single-stream.** 7–12% slower than FP8 on code and prose, ~3% faster on the explanation prompt.
+- **At upstream's MTP k=1 it is slower than FP8** (7–12% on code and prose): bf16 attention and shared experts make one
+  token cost 8.16 GiB/rank vs 6.20 for FP8. Keep `SPEC_K=3`; it verifies ~2.9 tokens/step, where NVFP4's reads are smaller.
 - **reasoning `high` needs budget.** 1,500 tokens ran out mid-answer (partial content, `finish_reason: length`); 16K
   finished in 2.7K. Better than FP8, which returned nothing at 1,500. Only `low`/`high` are honoured.
 - **512K configured, 514K-token needle passes** (one needle per length, depth 0.5 — retrieval, not long-context reasoning). 1M needs `nvfp4_ds_mla` KV or DCP; neither tested.
@@ -101,7 +121,7 @@ script; both checkpoints stay on every node (~1.2 TB each).
 ## Credits
 
 - **RadixArk** — the GLM-5.3 NVFP4 build.
-- **0xMagnus** — `im0xMagnus/glm-5.3-uncensored-8x-dgx-spark`: the NVFP4 TP8 config (gmu 0.80, 512K, MTP k=1) and the
+- **0xMagnus** — `im0xMagnus/glm-5.3-uncensored-8x-dgx-spark`: the NVFP4 TP8 config (gmu 0.80, 512K) and the
   traps documented there.
 - **ciprianveg** — `gb10-vllm` and the v19 image. **wrldsuksgo2mars / b12x** — SM121 sparse-MLA kernels.
   **local-inference-lab** — the vLLM fork. **CosmicRaisins** — MTP controller. **eugr** — spark-vllm-docker.
