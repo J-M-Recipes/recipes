@@ -74,7 +74,7 @@ docker run --gpus all -d --name "$NAME" --restart no \
   -e DETERMINISTIC_MOE_ALIGN=1 -e VLLM_MARLIN_USE_ATOMIC_ADD=1 \
   -e VLLM_DCP_QUERY_SPLIT=1 -e VLLM_B12X_MLA_CKG_GATHER=1 \
   -e OMP_NUM_THREADS=8 \
-  -e VLLM_ADAPTIVE_SPEC_DEPTHS=2,4,5 -e VLLM_MTP_INSTRUMENT=1 -e VLLM_MTP_INSTRUMENT_WINDOW=32 \
+  -e VLLM_ADAPTIVE_SPEC_DEPTHS=${SPEC_DEPTHS:-2,4,5} -e VLLM_MTP_INSTRUMENT=1 -e VLLM_MTP_INSTRUMENT_WINDOW=32 \
   -e VLLM_B12X_MLA_SPEC_EXTEND_AS_DECODE=1 -e VLLM_SPARSE_INDEXER_MAX_LOGITS_MB=256 \
   -e GLM52_BIND_HOST_TRITON=0 \
   -e VLLM_FLASHINFER_AUTOTUNE_CACHE_DIR=/cache/flashinfer-autotune \
@@ -114,8 +114,8 @@ docker run --gpus all -d --name "$NAME" --restart no \
     --idle-prefill-token-budget 16384 \
     --max-long-prefills-per-step 1 \
     --kv-cache-dtype fp8_ds_mla \
-    `# Magnus NVFP4: MTP k=1 (1.70 accepted/step); bf16 MTP layer, so no quantization field and no forced --moe-backend` \
-    --speculative-config '{"model":"/models/glm-5.3-nvfp4","draft_attention_backend":"B12X_MLA_SPARSE","method":"mtp","num_speculative_tokens":'"${SPEC_K:-1}"',"draft_tensor_parallel_size":1}' \
+    `# MILO 2026-10-16: MTP k=3 fixed (A/B k=1,3,4,5-adaptive; k=3 best overall: 2.89 accepted/step). Magnus used k=1; bf16 MTP layer, so no quantization field and no forced --moe-backend` \
+    --speculative-config '{"model":"/models/glm-5.3-nvfp4","draft_attention_backend":"B12X_MLA_SPARSE","method":"mtp","num_speculative_tokens":'"${SPEC_K:-3}"''"${ADAPT_WIN:+,\"adaptive_speculative_tokens_window\":$ADAPT_WIN}"',"draft_tensor_parallel_size":1}' \
     --compilation-config '{"cudagraph_mode":"FULL","max_cudagraph_capture_size":30}' \
     --disable-custom-all-reduce \
     `# MILO 2026-10-16 opt1: 8-thread safetensors load (boot-time only; head took 956 s single-threaded)` \

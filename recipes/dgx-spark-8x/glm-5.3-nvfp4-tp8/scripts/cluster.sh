@@ -27,7 +27,7 @@ up)
   done
   for r in 7 6 5 4 3 2 1 0; do
     n=${NODES[$r]}
-    ENVS="${GMU:+GMU=$GMU }${MAXLEN:+MAXLEN=$MAXLEN }${SPEC_K:+SPEC_K=$SPEC_K }"
+    ENVS="${GMU:+GMU=$GMU }${MAXLEN:+MAXLEN=$MAXLEN }${SPEC_K:+SPEC_K=$SPEC_K }${SPEC_DEPTHS:+SPEC_DEPTHS=$SPEC_DEPTHS }${ADAPT_WIN:+ADAPT_WIN=$ADAPT_WIN }"
     on $n "$ENVS~/glm53-tp8/$LAUNCHER $r" || { echo "rank $r launch FAILED on $n"; exit 1; }
   done
   date ;;
