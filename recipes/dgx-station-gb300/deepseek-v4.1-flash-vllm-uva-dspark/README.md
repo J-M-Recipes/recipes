@@ -3,6 +3,20 @@
 **Serving on `:30006` since 2026-09-27 08:12 CDT: Fused Split, v21** (v18 launch on the 0909 image + hook v21 — `split_ids()` as one Triton kernel; **182.8 tok/s C1 prose, +6.2 % vs v18 bracketing controls 171.8 / 172.5**, C8 687 (+4.6 %), C16 993 (+4.0 %), non-tool greedy 16/16 vs both controls; held-out BFCL on v21 pending; see Round 12) · documented release **Clean Nightly, v20** (2026-09-21: vLLM nightly `2671fedf` — the last before the #56633 mHC-fold drift — + v15 hook + off54 + fp8_ds_mla + v18's 24-seat/cudagraph flags; **181 tok/s C1 prose (+5.1% pair mean vs v18)**, KV 2.55M tokens, C24 warm agent p95 2.4–2.8 s vs 3.4; **held-out BFCL live sibling 78.8% vs v18 78.9%**, dev 92.7–93.5%; tools 64/64 ×3; $0.008 per 1000 solved tasks; see Round 11b) · rollback **Many Seat, v18** (2026-09-18: v15 hook + `--max-num-seqs 24` + token-sized `--cudagraph-capture-sizes`; 172 tok/s C1 prose, KV 2.50M tokens, C24 warm agent turn 0.55 s p50; **BFCL v4 tool-call exact-match 93.3%**) · **v19 "Nightly" was promoted and reverted on 2026-09-20** (see Round 10) · previous **v15 Pin Hot Experts** (retired 2026-09-18) · **v14 Sixty-K Agent** (retired 2026-09-17) · Historical **v13: 90 tok/s single-stream prose · 140–160 tok/s on agent/code text · 429 agg tok/s at C16** (v12: 89 / 140–160 / 311 · v11: 82 / 130–150 / 287) · 972K-token prompt prefilled in 85 s · Hermes tool-calling 10/10
 
 
+## Release notes — v22: k=5 band widened to 8 live sequences (2026-10-17, 15:27–16:55)
+
+`num_speculative_tokens_per_batch_size` `[[1,4,5],[5,24,1]]` → **`[[1,8,5],[9,24,1]]`**; nothing else changes (same image, hook, offload, `num_speculative_tokens=5` → same autotune hash, 8-minute boot). Trigger: porting 0xSero's 4× RTX PRO 6000 grid to the lane showed the Station at 0.56× his total decode at C6–C8, and a flat-k=5 arm recovered most of it — the k=1 band was starting too early for high-acceptance output.
+
+| instrument | CTL (v21) | **v22** | CTL (v21) | read |
+|---|---|---|---|---|
+| Sero grid 8192-in, C6 / C8 total tok/s | 345 / — | **542 / 602** | — | +50–58% (Card T; CTL from the same hour) |
+| prose knee C1 / C4 / C8 / C16 | 191.6 / 421.4 / 667.2 / 937.2 | 191.9 / 421.2 / **621.2** / 933.2 | — | C8 −6.9%, rest flat (Card T) |
+| replay, 4 workers, r1 / r2 | 426 / 414 | 293* / 423 | 280* / 418 | flat; *cold r1 on fresh boots (Card U) |
+| replay, 6 workers | 415 / 443 | **461 / 479** | 402 / 411 | +8…+17% (Card U) |
+| replay, 8 workers | 456 / 467 | **473 / 484** | 461 / 453 | +2…+7% (Card U) |
+
+A 4-worker replay keeps ≤4 sequences live, where both schedules run k=5, so it cannot see a 4→8 boundary — the reviewer (Opus 5.5) caught that and Card U is the instrument that can. Both arms hash-hit; hook re-homed 206.61 / 62.33 GiB on each. Promoted 16:55 on James's go; verified end-to-end on Milo (`custom[dsv41]`), the Forge guest gateway (`:4000`, `deepseek-v4.1-flash`) and Echo/Alyx. Prometheus now scrapes the lane (`dsv41-lane`, 15 s) so the next schedule question is asked against a real concurrency histogram instead of "1–4 typical". Receipts: `~/dsv41/1017/results-cardT/`, `results-cardU/`; ledger 16:55.
+
 ## Release notes — DeepSeek-V4.1-Flash-1017 on the v21 config (2026-10-17, 07:15–09:55)
 
 Weights-only update (`1bae0e10`; config.json, shard index and tokenizer byte-identical to `df42c109`). Same launch, same hook, same autotune set, same rowmap. Promoted to `:30006` as `dsv41-vllm-1017-v21cfg-BOUND-REF`; v21 kept as `-RETIRED-REF`.
