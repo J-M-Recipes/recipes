@@ -1,0 +1,9 @@
+#!/bin/sh
+# Card D: GSM8K-200 on 1017 LIVE (:30006, v21 config) vs v21/df42c109 baseline. 2026-10-17 Milo.
+cd /Users/jamesmeadlock/hermes/lil-bench
+echo "start $(date)" > "/Users/jamesmeadlock/hermes/jm-recipes/recipes/recipes/dgx-station-gb300/deepseek-v4.1-flash-vllm-uva-dspark/results/2026-10-17-ds1017-cardD/campaign.log"
+./run.sh --host 192.168.1.9 --port 30006 --model dsv41-flash-uva --test-profile gsm8k --profile-runs 200 --compare-baseline "/Users/jamesmeadlock/hermes/jm-recipes/recipes/recipes/dgx-station-gb300/deepseek-v4.1-flash-vllm-uva-dspark/results/2026-10-05-lib-t1-v21/t2-gsm8k200.json" --output "/Users/jamesmeadlock/hermes/jm-recipes/recipes/recipes/dgx-station-gb300/deepseek-v4.1-flash-vllm-uva-dspark/results/2026-10-17-ds1017-cardD/t2-gsm8k200-1017.json" > "/Users/jamesmeadlock/hermes/jm-recipes/recipes/recipes/dgx-station-gb300/deepseek-v4.1-flash-vllm-uva-dspark/results/2026-10-17-ds1017-cardD/t2-gsm8k200-1017.stdout.txt" 2>&1
+echo "gsm8k rc=$? $(date)" >> "/Users/jamesmeadlock/hermes/jm-recipes/recipes/recipes/dgx-station-gb300/deepseek-v4.1-flash-vllm-uva-dspark/results/2026-10-17-ds1017-cardD/campaign.log"
+./run.sh --host 192.168.1.9 --port 30006 --model dsv41-flash-uva --test-profile needle-checksum --output "/Users/jamesmeadlock/hermes/jm-recipes/recipes/recipes/dgx-station-gb300/deepseek-v4.1-flash-vllm-uva-dspark/results/2026-10-17-ds1017-cardD/t2-needle-1017.json" > "/Users/jamesmeadlock/hermes/jm-recipes/recipes/recipes/dgx-station-gb300/deepseek-v4.1-flash-vllm-uva-dspark/results/2026-10-17-ds1017-cardD/t2-needle-1017.stdout.txt" 2>&1
+echo "needle rc=$? $(date)" >> "/Users/jamesmeadlock/hermes/jm-recipes/recipes/recipes/dgx-station-gb300/deepseek-v4.1-flash-vllm-uva-dspark/results/2026-10-17-ds1017-cardD/campaign.log"
+echo "DONE $(date)" >> "/Users/jamesmeadlock/hermes/jm-recipes/recipes/recipes/dgx-station-gb300/deepseek-v4.1-flash-vllm-uva-dspark/results/2026-10-17-ds1017-cardD/campaign.log"

@@ -1,0 +1,54 @@
+=== WINDOW S32-CTL2 start Sun Oct 18 01:50:41 AM CDT 2026 MemAvailable=131505344kB ===
+--- knee r1 ---
+[S32-CTL2-r1] conc= 1:   192.4 agg tok/s  192.41 per-stream  (runs 191.6/193.2)
+[S32-CTL2-r1] conc= 2:   290.2 agg tok/s  145.08 per-stream  (runs 289.8/290.5)
+[S32-CTL2-r1] conc= 4:   425.8 agg tok/s  106.45 per-stream  (runs 423.6/428.1)
+[S32-CTL2-r1] conc= 8:   594.7 agg tok/s   74.34 per-stream  (runs 629.0/560.5)
+[S32-CTL2-r1] conc=12:   841.9 agg tok/s   70.16 per-stream  (runs 840.3/843.6)
+[S32-CTL2-r1] conc=16:   810.1 agg tok/s   50.63 per-stream  (runs 672.7/947.4)
+--- knee r2 ---
+[S32-CTL2-r2] conc= 1:   192.4 agg tok/s  192.45 per-stream  (runs 191.6/193.3)
+[S32-CTL2-r2] conc= 2:   289.7 agg tok/s  144.86 per-stream  (runs 289.6/289.8)
+[S32-CTL2-r2] conc= 4:   425.8 agg tok/s  106.44 per-stream  (runs 424.5/427.1)
+[S32-CTL2-r2] conc= 8:   582.4 agg tok/s   72.80 per-stream  (runs 558.3/606.6)
+[S32-CTL2-r2] conc=12:   839.0 agg tok/s   69.92 per-stream  (runs 837.6/840.4)
+[S32-CTL2-r2] conc=16:   953.3 agg tok/s   59.58 per-stream  (runs 953.7/953.0)
+--- knee6 ---
+[S32-CTL2-k6] conc= 1:   192.2 agg tok/s  192.20 per-stream  (runs 191.4/193.0)
+[S32-CTL2-k6] conc= 2:   289.1 agg tok/s  144.57 per-stream  (runs 289.0/289.3)
+[S32-CTL2-k6] conc= 3:   354.8 agg tok/s  118.27 per-stream  (runs 354.6/355.0)
+[S32-CTL2-k6] conc= 4:   424.4 agg tok/s  106.11 per-stream  (runs 424.5/424.4)
+[S32-CTL2-k6] conc= 6:   533.1 agg tok/s   88.85 per-stream  (runs 530.6/535.5)
+[S32-CTL2-k6] conc= 8:   608.7 agg tok/s   76.09 per-stream  (runs 631.2/586.2)
+[S32-CTL2-k6] conc=12:   851.4 agg tok/s   70.95 per-stream  (runs 850.4/852.4)
+[S32-CTL2-k6] conc=16:   952.5 agg tok/s   59.53 per-stream  (runs 953.0/952.0)
+--- agent_fixture_o ---
+[S32-CTL2] prose        180.3 tok/s  accept=25.2%  acc/step=1.26  tokens=398
+      (199, 1.11, 'stop', False, 'Speculative decoding works by having a small, fast "draft" model guess several u')
+[S32-CTL2] structured   233.6 tok/s  accept=48.9%  acc/step=2.44  tokens=434
+      (108, 0.43, 'stop', False, "I'll research both mechanisms to ground the comparison, then compute the numbers")
+      (109, 0.49, 'stop', False, '- weights load: complete — 14.2 GB safetensors mapped in 38.4 s - KV cache: allo')
+[S32-CTL2] code         253.0 tok/s  accept=69.6%  acc/step=3.48  tokens=744
+      (215, 0.88, 'stop', False, '```python def knee(rows):     """Return the concurrency where marginal gain per ')
+      (157, 0.59, 'stop', False, '```bash #!/usr/bin/env bash set -euo pipefail  : "${SRC:?SRC is not set}"  missi')
+[S32-CTL2] shell_ops    263.0 tok/s  accept=80.0%  acc/step=4.00  tokens=150
+      (75, 0.28, 'stop', False, '``` docker stop dsv41-vllm-v7 docker rename dsv41-vllm-v7 dsv41-vllm-v7-old sudo')
+[S32-CTL2] tool_json    220.5 tok/s  accept=77.3%  acc/step=3.87  tokens=292
+      (70, 0.4, 'tool_calls', True, "I'll check both. Let me first see what's available.  ")
+      (54, 0.31, 'tool_calls', True, '')
+[S32-CTL2] weighted accept=58.3%
+--- replay r1 n=4 ---
+[S32-CTL2-r1] REPLAY n=4: agg 293.0 tok/s over 20s, 5831 tokens; accept=59.7% acc/step=2.98; tool turns 24 emitted=14 per-req 77.7 tok/s; text turns 24 per-req 70.5 tok/s
+--- replay r2 n=4 ---
+[S32-CTL2-r2] REPLAY n=4: agg 432.1 tok/s over 15s, 6649 tokens; accept=61.0% acc/step=3.05; tool turns 24 emitted=17 per-req 117.3 tok/s; text turns 24 per-req 113.1 tok/s
+--- metrics ---
+32 $HOME/dsv41/overnight-T1T2/metrics-S32-CTL2.txt
+=== WINDOW S32-CTL2 end Sun Oct 18 01:52:51 AM CDT 2026 MemAvailable=131308096kB delta=197248kB (0.19 GiB) ===
+-rw-rw-r-- 1 milo milo 3025 Oct 18 01:52 $HOME/dsv41/overnight-T1T2/agentfix-S32-CTL2.json
+-rw-rw-r-- 1 milo milo  414 Oct 18 01:52 $HOME/dsv41/overnight-T1T2/knee6-S32-CTL2.json
+-rw-rw-r-- 1 milo milo  326 Oct 18 01:51 $HOME/dsv41/overnight-T1T2/knee-S32-CTL2-r1.json
+-rw-rw-r-- 1 milo milo  324 Oct 18 01:51 $HOME/dsv41/overnight-T1T2/knee-S32-CTL2-r2.json
+-rw-rw-r-- 1 milo milo 2883 Oct 18 01:52 $HOME/dsv41/overnight-T1T2/metrics-S32-CTL2.txt
+-rw-rw-r-- 1 milo milo  399 Oct 18 01:52 $HOME/dsv41/overnight-T1T2/replayc-S32-CTL2-r1-n4.json
+-rw-rw-r-- 1 milo milo  400 Oct 18 01:52 $HOME/dsv41/overnight-T1T2/replayc-S32-CTL2-r2-n4.json
+-rw-rw-r-- 1 milo milo 3583 Oct 18 01:52 $HOME/dsv41/overnight-T1T2/window-S32-CTL2.log

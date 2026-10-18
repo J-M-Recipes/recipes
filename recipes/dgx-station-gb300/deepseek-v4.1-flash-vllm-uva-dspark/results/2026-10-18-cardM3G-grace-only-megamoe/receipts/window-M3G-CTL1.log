@@ -1,0 +1,54 @@
+=== WINDOW M3G-CTL1 start Sat Oct 17 11:07:44 PM CDT 2026 MemAvailable=124039360kB ===
+--- knee r1 ---
+[M3G-CTL1-r1] conc= 1:   191.4 agg tok/s  191.39 per-stream  (runs 190.5/192.2)
+[M3G-CTL1-r1] conc= 2:   287.2 agg tok/s  143.62 per-stream  (runs 287.3/287.2)
+[M3G-CTL1-r1] conc= 4:   419.4 agg tok/s  104.85 per-stream  (runs 419.3/419.5)
+[M3G-CTL1-r1] conc= 8:   613.7 agg tok/s   76.71 per-stream  (runs 613.1/614.2)
+[M3G-CTL1-r1] conc=12:   834.5 agg tok/s   69.54 per-stream  (runs 828.7/840.3)
+[M3G-CTL1-r1] conc=16:   937.7 agg tok/s   58.61 per-stream  (runs 937.4/938.0)
+--- knee r2 ---
+[M3G-CTL1-r2] conc= 1:   191.4 agg tok/s  191.35 per-stream  (runs 190.5/192.2)
+[M3G-CTL1-r2] conc= 2:   287.5 agg tok/s  143.75 per-stream  (runs 287.8/287.2)
+[M3G-CTL1-r2] conc= 4:   420.1 agg tok/s  105.02 per-stream  (runs 423.1/417.1)
+[M3G-CTL1-r2] conc= 8:   618.6 agg tok/s   77.33 per-stream  (runs 614.3/622.9)
+[M3G-CTL1-r2] conc=12:   834.8 agg tok/s   69.57 per-stream  (runs 841.6/828.0)
+[M3G-CTL1-r2] conc=16:   935.4 agg tok/s   58.46 per-stream  (runs 932.8/938.0)
+--- knee6 ---
+[M3G-CTL1-k6] conc= 1:   191.5 agg tok/s  191.45 per-stream  (runs 190.6/192.3)
+[M3G-CTL1-k6] conc= 2:   287.7 agg tok/s  143.86 per-stream  (runs 287.8/287.7)
+[M3G-CTL1-k6] conc= 3:   351.4 agg tok/s  117.14 per-stream  (runs 366.6/336.2)
+[M3G-CTL1-k6] conc= 4:   426.9 agg tok/s  106.71 per-stream  (runs 433.9/419.8)
+[M3G-CTL1-k6] conc= 6:   526.6 agg tok/s   87.77 per-stream  (runs 525.2/528.0)
+[M3G-CTL1-k6] conc= 8:   597.6 agg tok/s   74.70 per-stream  (runs 618.1/577.1)
+[M3G-CTL1-k6] conc=12:   836.9 agg tok/s   69.74 per-stream  (runs 832.2/841.6)
+[M3G-CTL1-k6] conc=16:   935.6 agg tok/s   58.47 per-stream  (runs 938.3/932.9)
+--- agent_fixture_o ---
+[M3G-CTL1] prose        179.7 tok/s  accept=25.2%  acc/step=1.26  tokens=398
+      (199, 1.11, 'stop', False, 'Speculative decoding works by having a small, fast "draft" model guess several u')
+[M3G-CTL1] structured   230.9 tok/s  accept=48.9%  acc/step=2.44  tokens=434
+      (108, 0.44, 'stop', False, "I'll research both mechanisms to ground the comparison, then compute the numbers")
+      (109, 0.5, 'stop', False, '- weights load: complete — 14.2 GB safetensors mapped in 38.4 s - KV cache: allo')
+[M3G-CTL1] code         248.7 tok/s  accept=69.6%  acc/step=3.48  tokens=744
+      (215, 0.89, 'stop', False, '```python def knee(rows):     """Return the concurrency where marginal gain per ')
+      (157, 0.6, 'stop', False, '```bash #!/usr/bin/env bash set -euo pipefail  : "${SRC:?SRC is not set}"  missi')
+[M3G-CTL1] shell_ops    259.4 tok/s  accept=80.0%  acc/step=4.00  tokens=150
+      (75, 0.28, 'stop', False, '``` docker stop dsv41-vllm-v7 docker rename dsv41-vllm-v7 dsv41-vllm-v7-old sudo')
+[M3G-CTL1] tool_json    237.4 tok/s  accept=77.3%  acc/step=3.87  tokens=292
+      (70, 0.35, 'tool_calls', True, "I'll check both. Let me first see what's available.  ")
+      (54, 0.31, 'tool_calls', True, '')
+[M3G-CTL1] weighted accept=58.3%
+--- replay r1 n=4 ---
+[M3G-CTL1-r1] REPLAY n=4: agg 365.9 tok/s over 18s, 6497 tokens; accept=60.4% acc/step=3.02; tool turns 24 emitted=16 per-req 87.5 tok/s; text turns 24 per-req 103.4 tok/s
+--- replay r2 n=4 ---
+[M3G-CTL1-r2] REPLAY n=4: agg 414.6 tok/s over 14s, 5711 tokens; accept=58.6% acc/step=2.93; tool turns 24 emitted=16 per-req 111.4 tok/s; text turns 24 per-req 97.6 tok/s
+--- metrics ---
+32 $HOME/dsv41/overnight-T1T2/metrics-M3G-CTL1.txt
+=== WINDOW M3G-CTL1 end Sat Oct 17 11:09:49 PM CDT 2026 MemAvailable=123953024kB delta=86336kB (0.08 GiB) ===
+-rw-rw-r-- 1 milo milo 3021 Oct 17 23:09 $HOME/dsv41/overnight-T1T2/agentfix-M3G-CTL1.json
+-rw-rw-r-- 1 milo milo  407 Oct 17 23:09 $HOME/dsv41/overnight-T1T2/knee6-M3G-CTL1.json
+-rw-rw-r-- 1 milo milo  324 Oct 17 23:08 $HOME/dsv41/overnight-T1T2/knee-M3G-CTL1-r1.json
+-rw-rw-r-- 1 milo milo  322 Oct 17 23:08 $HOME/dsv41/overnight-T1T2/knee-M3G-CTL1-r2.json
+-rw-rw-r-- 1 milo milo 2891 Oct 17 23:09 $HOME/dsv41/overnight-T1T2/metrics-M3G-CTL1.txt
+-rw-rw-r-- 1 milo milo  398 Oct 17 23:09 $HOME/dsv41/overnight-T1T2/replayc-M3G-CTL1-r1-n4.json
+-rw-rw-r-- 1 milo milo  398 Oct 17 23:09 $HOME/dsv41/overnight-T1T2/replayc-M3G-CTL1-r2-n4.json
+-rw-rw-r-- 1 milo milo 3581 Oct 17 23:09 $HOME/dsv41/overnight-T1T2/window-M3G-CTL1.log

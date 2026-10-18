@@ -1,0 +1,16 @@
+2026-10-17 09:40:24 CDT ===== CARD F START =====
+2026-10-17 09:40:24 CDT stop-and-keep dsv41-vllm-1017A-LIVE
+2026-10-17 09:40:34 CDT MemAvailable 465.1 GiB; archive copy running: no
+2026-10-17 09:40:36 CDT launched dsv41-vllm-1017F-v0310-megamoe-hookoff-EXP image=vllm/vllm-openai:v0.31.0
+2026-10-17 09:40:36 CDT waiting 0 min: 
+2026-10-17 09:42:06 CDT F1 RESULT: DIED — NotImplementedError: DeepSeek V4 MegaMoE currently requires expert parallel. Enable it with --enable-expert-parallel, or pick a different moe backend.|    raise RuntimeError(|RuntimeError: Engine core initialization failed. See root cause above. Failed core proc(s): {}|
+2026-10-17 09:42:08 CDT LIVE restarted (rollback after failed spike)
+2026-10-17 09:42:08 CDT ===== CARD F END (F1 DIED) =====
+2026-10-17 09:43:04 CDT ===== CARD F START (attempt 2: +--enable-expert-parallel; attempt 1 died: MegaMoE requires expert parallel) =====
+2026-10-17 09:43:04 CDT stop-and-keep dsv41-vllm-1017A-LIVE
+2026-10-17 09:43:20 CDT MemAvailable 462.8 GiB; archive copy running: no
+2026-10-17 09:43:22 CDT launched dsv41-vllm-1017F-v0310-megamoe-ep1-hookoff-EXP image=vllm/vllm-openai:v0.31.0
+2026-10-17 09:43:22 CDT waiting 0 min: 
+2026-10-17 09:44:52 CDT F1 RESULT: DIED — torch.OutOfMemoryError: CUDA out of memory. Tried to allocate 270.00 MiB. GPU 0 has a total capacity of 249.81 GiB of which 158.00 MiB is free. Including non-PyTorch memory, this process has 249.62 GiB memory in use. Of the allocated memory 248.76 GiB is allocated by PyTorch, and 36.24 MiB is reserv|    raise RuntimeError(|RuntimeError: Engine core initialization failed. See root cause above. Failed core proc(s): {}|
+2026-10-17 09:44:54 CDT LIVE restarted (rollback after failed spike)
+2026-10-17 09:44:54 CDT ===== CARD F END (F1 DIED) =====

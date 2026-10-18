@@ -3,6 +3,71 @@
 **Serving on `:30006` since 2026-09-27 08:12 CDT: Fused Split, v21** (v18 launch on the 0909 image + hook v21 — `split_ids()` as one Triton kernel; **182.8 tok/s C1 prose, +6.2 % vs v18 bracketing controls 171.8 / 172.5**, C8 687 (+4.6 %), C16 993 (+4.0 %), non-tool greedy 16/16 vs both controls; held-out BFCL on v21 pending; see Round 12) · documented release **Clean Nightly, v20** (2026-09-21: vLLM nightly `2671fedf` — the last before the #56633 mHC-fold drift — + v15 hook + off54 + fp8_ds_mla + v18's 24-seat/cudagraph flags; **181 tok/s C1 prose (+5.1% pair mean vs v18)**, KV 2.55M tokens, C24 warm agent p95 2.4–2.8 s vs 3.4; **held-out BFCL live sibling 78.8% vs v18 78.9%**, dev 92.7–93.5%; tools 64/64 ×3; $0.008 per 1000 solved tasks; see Round 11b) · rollback **Many Seat, v18** (2026-09-18: v15 hook + `--max-num-seqs 24` + token-sized `--cudagraph-capture-sizes`; 172 tok/s C1 prose, KV 2.50M tokens, C24 warm agent turn 0.55 s p50; **BFCL v4 tool-call exact-match 93.3%**) · **v19 "Nightly" was promoted and reverted on 2026-09-20** (see Round 10) · previous **v15 Pin Hot Experts** (retired 2026-09-18) · **v14 Sixty-K Agent** (retired 2026-09-17) · Historical **v13: 90 tok/s single-stream prose · 140–160 tok/s on agent/code text · 429 agg tok/s at C16** (v12: 89 / 140–160 / 311 · v11: 82 / 130–150 / 287) · 972K-token prompt prefilled in 85 s · Hermes tool-calling 10/10
 
 
+## Measured, not adopted — Grace-only MegaMoE via el8's M3 hook, and 32 seats (2026-10-18, 23:04–01:52)
+
+Question: can the one-Station lane improve **without** the RTX PRO 6000 sidecar? Two candidates, one bracketed window on the 1017 weights, RonanLabs' real-text harness (CNN/DM 8.2K in, 1,024 forced, nonce, 0% prefix hits) plus our knee/fixture/replay/gauntlet. Bundle: `results/2026-10-18-cardM3G-grace-only-megamoe/`.
+
+**M3G — original-el8's M3 hook in Grace-only mode** (`MEGA_PEER=0 MEGA_COLD_TRT=1`) on `nightly-af7f9488` (pull by digest `sha256:3af6a45b…`, the tag has rotated off Docker Hub) with the vllm#58132 replay overlay: MegaMoE is constructed over the hot rows only, so DeepGEMM never sees all 384 experts (the stock `deep_gemm_mega_moe` OOM, Card F); cold rows run on the TRT-LLM MXFP4 kernel from pinned Grace — this recipe's cold path. 32 seats, k `[[1,4,5],[5,8,3],[9,32,3]]` with probabilistic drafts, `MEGA_LL_GEMM=1`.
+
+| same window, controls = CTL1/CTL2 mean | v22 | M3G, el8 public map 285/99 | **M3G, our map 295/89** | V22S32 confirm |
+|---|--:|--:|--:|--:|
+| real-text C1 / C4 / C16 | 188.5 / 333 / 538 | 147 / 268 / 459 | 176 / 341 / **654** | 186 / 322 / 542 |
+| C32 output tok/s | 511 (24 seats, 8 queued) | 535 | **739** | 640 |
+| TTFT 8K | 0.65 s | 0.33 s | **0.29 s** | 0.64 s |
+| knee C1 / C8 / C16 | 192 / 619 / 938 | 164 / 512 / 691 | 180 / 672 / 934 | 200 / — / — |
+| replay n=4 (agent transcripts) | 415 | 329 | 405 | 418 |
+| KV at 1M | 2.50M | 6.05M | 2.49M | — |
+| gauntlet | 12/12 | 12/12 | 12/12 | — |
+
+- **M3G with our map fails the C1 bar (−6%) and passes everything else** (C16 +22%, TTFT 2.3×, gauntlet, replay within noise). Not promoted: the lane's traffic is C1–C8 agent turns. It is kept stopped as the measured **sidecar base** for the RTX PRO 6000 (same image and hook; `MEGA_PEER=2`).
+- **The map beat the kernel.** Same hook, 285 → 295 hot experts per layer: +20% C1, +42% C16. el8 ships this recipe's `rowmap-static-v1` as his default.
+- **MegaMoE loses to the FlashInfer TRT-LLM hot kernel at M≈6** (C1 fixture prose −9%, tool_json −13%) and wins at large T (prefill) and at C16+ once the k=3 band and probabilistic drafts raise acceptance (2.66 vs 1.80 per step).
+- **32 seats on v22** passed its pre-registered bar only at the edge on a bracketed confirm (C1 −2.4%, C4 −3.0%, C32 output +24%, C16 TTFT worse); the first boot's knee C1 +10% was autotune luck. Not promoted; the seat count moves with the sidecar.
+- Upstream facts that changed the notes (Brief B, GitHub record): vllm#58132 is **not** in af7f9488 or v0.31.0 (it is in the v0.32.0 tag and nightly-39983a5e); `#55095` is a full-decode-graph fallback fix, **not** adaptive verification (`#47808`, `#52228`); `#61509` (adaptive cudagraph memory) is still open; upstream MegaMoE `#60096` allocates all experts in HBM at construction — still no partial residency; `#61371` (nightly ≥ 10-15) changes the V4.1 KV layout. SGLang re-checked: no in-place pinned-host expert read on main; stays parked.
+
+Credits: original-el8 (M3 hook, Apache-2.0), RonanLabsAI (real-text harness and the Grace-only control numbers that prompted the card), 0xSero (bench methodology review).
+
+## Release notes — v22: k=5 band widened to 8 live sequences (2026-10-17, 15:27–16:55)
+
+`num_speculative_tokens_per_batch_size` `[[1,4,5],[5,24,1]]` → **`[[1,8,5],[9,24,1]]`**; nothing else changes (same image, hook, offload, `num_speculative_tokens=5` → same autotune hash, 8-minute boot). Trigger: porting 0xSero's 4× RTX PRO 6000 grid to the lane showed the Station at 0.56× his total decode at C6–C8, and a flat-k=5 arm recovered most of it — the k=1 band was starting too early for high-acceptance output.
+
+| instrument | CTL (v21) | **v22** | CTL (v21) | read |
+|---|---|---|---|---|
+| Sero grid 8192-in, C6 / C8 total tok/s | 345 / — | **542 / 602** | — | +50–58% (Card T; CTL from the same hour) |
+| prose knee C1 / C4 / C8 / C16 | 191.6 / 421.4 / 667.2 / 937.2 | 191.9 / 421.2 / **621.2** / 933.2 | — | C8 −6.9%, rest flat (Card T) |
+| replay, 4 workers, r1 / r2 | 426 / 414 | 293* / 423 | 280* / 418 | flat; *cold r1 on fresh boots (Card U) |
+| replay, 6 workers | 415 / 443 | **461 / 479** | 402 / 411 | +8…+17% (Card U) |
+| replay, 8 workers | 456 / 467 | **473 / 484** | 461 / 453 | +2…+7% (Card U) |
+
+A 4-worker replay keeps ≤4 sequences live, where both schedules run k=5, so it cannot see a 4→8 boundary — the reviewer (Opus 5.5) caught that and Card U is the instrument that can. Both arms hash-hit; hook re-homed 206.61 / 62.33 GiB on each. Promoted 16:55 on James's go; verified end-to-end on Milo (`custom[dsv41]`), the Forge guest gateway (`:4000`, `deepseek-v4.1-flash`) and Echo/Alyx. Prometheus now scrapes the lane (`dsv41-lane`, 15 s) so the next schedule question is asked against a real concurrency histogram instead of "1–4 typical". Receipts: `~/dsv41/1017/results-cardT/`, `results-cardU/`; ledger 16:55.
+
+## Release notes — DeepSeek-V4.1-Flash-1017 on the v21 config (2026-10-17, 07:15–09:55)
+
+Weights-only update (`1bae0e10`; config.json, shard index and tokenizer byte-identical to `df42c109`). Same launch, same hook, same autotune set, same rowmap. Promoted to `:30006` as `dsv41-vllm-1017-v21cfg-BOUND-REF`; v21 kept as `-RETIRED-REF`.
+
+Same-window CTL1 → CAND → CTL2 (knee r2, agg tok/s; gauntlet 12/12 all arms; CTL1↔CTL2 greedy identical 18/18):
+
+| | C1 | C2 | C4 | C8 | C12 | C16 |
+|---|---|---|---|---|---|---|
+| df42c109 (CTL1) | 182.7 | 286.3 | 433.1 | 685.6 | 841.2 | 980.9 |
+| **1017 (CAND)** | **192.6** | 288.9 | 423.9 | 672.6 | 850.9 | 946.1 |
+| df42c109 (CTL2) | 182.6 | 286.3 | 434.2 | 686.0 | 852.9 | 984.9 |
+| Δ vs bracket | **+5.4%** | +0.9% | −2.2% | −1.9% | +0.5% | −3.7% |
+
+Drafter acceptance moved (retrained DSpark head): prose 34.9→25.2%, structured 52.5→48.9, code 66.1→**69.6**, shell 90.8→**80.0**, tool_json 87.8→**77.3**. C1 prose got *faster* anyway — fewer accepted drafts per step means fewer unique experts fetched per step. Replay on identical transcripts emits 14 tool turns vs 5–6 (more eager tool use). Quality: GSM8K-200 96.5% vs 97.5% (McNemar p=0.5, n.s.), needle-checksum 500/500, completion tokens −13.6% (GSM8K) / −24% (needle).
+
+Schedule re-check (Card C): `[[1,2,5],[3,24,1]]` wins the C4 prose knee (+12%) and loses real agent replay on both reps (−8…−23%) — the v13 mechanism, unchanged by the new drafter; `[[1,4,3],[5,24,1]]` is −42% C1 (a k<max band inside a k=5 schedule pays the full verify shape). **Keep `[[1,4,5],[5,24,1]]`.**
+
+Promotion waiver: the "acceptance within 2 pts" rule was written for engine changes on fixed weights; a retrained drafter moving acceptance is a checkpoint property (same image, same kernels, controls bit-identical). Waived explicitly in the box ledger.
+
+Card F (same day): vLLM 0.31.0 `deep_gemm_mega_moe` is a hard no on one Station — `DeepseekV4MegaMoEExperts` materializes a full interleaved GPU copy of all experts at first forward (`deep_gemm.transform_weights_for_mega_moe`) and drops the loader params, so UVA offload cannot reduce HBM; 269 GiB > 250. Receipts `results/2026-10-17-ds1017-cardA-cardC-cardF/`, quality `results/2026-10-17-ds1017-cardD/`.
+
+### Client settings (added 2026-10-17 — a Desktop session failed on this)
+
+The V4.1 chat template validates `reasoning_effort`. Measured against this lane, one request per value: **`none`, `low`, `high`, `xhigh`, `max` → 200; `medium` → HTTP 400** (`DeepSeek V4.1 reasoning_effort must be low, high, xhigh, max, or an integer within [1, 100] in chat_template_kwargs`). Integers 1–100 are accepted only inside `extra_body.chat_template_kwargs`; a top-level integer fails pydantic validation. `medium` is the OpenAI default and the Hermes Desktop composer default, so a fresh client hits this on its first turn.
+
+Hermes: `agent.reasoning_overrides: {dsv41-flash-uva: low}` covers the gateway, cron and CLI, but **not** a Desktop session — the composer's effort selector sends a per-session override that outranks the config. Pick `low` or `high` in the composer for this model. `limits:`/`clients:` in `recipe.yaml` carry the same note.
+
 ## Standard bench T2/T3 on v21 (2026-10-06 evening)
 
 Bundle: [`results/2026-10-06-lib-t2t3-v21/`](results/2026-10-06-lib-t2t3-v21/README.md). Fresh host boot (the reboot recovered the PIN_HOT boot margin: 12.47 GiB at the layer-9 check).

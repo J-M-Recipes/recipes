@@ -1,0 +1,54 @@
+=== WINDOW S32-CAND start Sun Oct 18 01:39:24 AM CDT 2026 MemAvailable=131067456kB ===
+--- knee r1 ---
+[S32-CAND-r1] conc= 1:   199.7 agg tok/s  199.66 per-stream  (runs 198.6/200.7)
+[S32-CAND-r1] conc= 2:   299.0 agg tok/s  149.49 per-stream  (runs 299.0/299.0)
+[S32-CAND-r1] conc= 4:   380.9 agg tok/s   95.23 per-stream  (runs 338.6/423.2)
+[S32-CAND-r1] conc= 8:   615.1 agg tok/s   76.89 per-stream  (runs 626.6/603.6)
+[S32-CAND-r1] conc=12:   840.5 agg tok/s   70.04 per-stream  (runs 833.6/847.4)
+[S32-CAND-r1] conc=16:   813.1 agg tok/s   50.82 per-stream  (runs 676.6/949.7)
+--- knee r2 ---
+[S32-CAND-r2] conc= 1:   199.6 agg tok/s  199.58 per-stream  (runs 198.6/200.6)
+[S32-CAND-r2] conc= 2:   298.3 agg tok/s  149.16 per-stream  (runs 298.6/298.0)
+[S32-CAND-r2] conc= 4:   423.2 agg tok/s  105.80 per-stream  (runs 423.2/423.2)
+[S32-CAND-r2] conc= 8:   613.9 agg tok/s   76.74 per-stream  (runs 626.7/601.0)
+[S32-CAND-r2] conc=12:   844.5 agg tok/s   70.37 per-stream  (runs 844.4/844.5)
+[S32-CAND-r2] conc=16:   957.6 agg tok/s   59.85 per-stream  (runs 956.9/958.3)
+--- knee6 ---
+[S32-CAND-k6] conc= 1:   199.5 agg tok/s  199.47 per-stream  (runs 198.5/200.5)
+[S32-CAND-k6] conc= 2:   298.0 agg tok/s  148.99 per-stream  (runs 297.9/298.0)
+[S32-CAND-k6] conc= 3:   348.4 agg tok/s  116.13 per-stream  (runs 348.2/348.6)
+[S32-CAND-k6] conc= 4:   432.4 agg tok/s  108.09 per-stream  (runs 426.9/437.8)
+[S32-CAND-k6] conc= 6:   491.5 agg tok/s   81.91 per-stream  (runs 490.7/492.2)
+[S32-CAND-k6] conc= 8:   605.6 agg tok/s   75.71 per-stream  (runs 583.9/627.4)
+[S32-CAND-k6] conc=12:   845.3 agg tok/s   70.44 per-stream  (runs 844.7/845.8)
+[S32-CAND-k6] conc=16:   957.6 agg tok/s   59.85 per-stream  (runs 955.6/959.6)
+--- agent_fixture_o ---
+[S32-CAND] prose        185.6 tok/s  accept=29.3%  acc/step=1.46  tokens=350
+      (175, 0.94, 'stop', False, 'Speculative decoding works by having a small, fast "draft" model guess several u')
+[S32-CAND] structured   221.8 tok/s  accept=47.9%  acc/step=2.40  tokens=428
+      (106, 0.44, 'stop', False, "I'll research both mechanisms to ground the comparison, then compute.  ")
+      (108, 0.52, 'stop', False, '- weights load: complete — 14.2 GB sharded across 2 GPUs in 38.4 s - KV cache: a')
+[S32-CAND] code         222.8 tok/s  accept=60.5%  acc/step=3.02  tokens=684
+      (215, 0.98, 'stop', False, '```python def knee(rows):     """Return the concurrency where marginal gain per ')
+      (127, 0.55, 'stop', False, '```bash #!/usr/bin/env bash set -euo pipefail  : "${SRC:?SRC is not set}"  missi')
+[S32-CAND] shell_ops    251.5 tok/s  accept=80.0%  acc/step=4.00  tokens=150
+      (75, 0.29, 'stop', False, '``` docker stop dsv41-vllm-v7 docker rename dsv41-vllm-v7 dsv41-vllm-v7-old sudo')
+[S32-CAND] tool_json    233.2 tok/s  accept=81.4%  acc/step=4.07  tokens=284
+      (104, 0.44, 'tool_calls', True, "I'll check both. Let me first see what's available.  ")
+      (54, 0.32, 'tool_calls', True, '')
+[S32-CAND] weighted accept=56.6%
+--- replay r1 n=4 ---
+[S32-CAND-r1] REPLAY n=4: agg 293.9 tok/s over 19s, 5679 tokens; accept=56.8% acc/step=2.84; tool turns 24 emitted=14 per-req 74.6 tok/s; text turns 24 per-req 78.1 tok/s
+--- replay r2 n=4 ---
+[S32-CAND-r2] REPLAY n=4: agg 417.6 tok/s over 13s, 5592 tokens; accept=58.6% acc/step=2.93; tool turns 24 emitted=13 per-req 113.3 tok/s; text turns 24 per-req 105.4 tok/s
+--- metrics ---
+32 $HOME/dsv41/overnight-T1T2/metrics-S32-CAND.txt
+=== WINDOW S32-CAND end Sun Oct 18 01:41:31 AM CDT 2026 MemAvailable=130947328kB delta=120128kB (0.11 GiB) ===
+-rw-rw-r-- 1 milo milo 3000 Oct 18 01:40 $HOME/dsv41/overnight-T1T2/agentfix-S32-CAND.json
+-rw-rw-r-- 1 milo milo  407 Oct 18 01:40 $HOME/dsv41/overnight-T1T2/knee6-S32-CAND.json
+-rw-rw-r-- 1 milo milo  325 Oct 18 01:39 $HOME/dsv41/overnight-T1T2/knee-S32-CAND-r1.json
+-rw-rw-r-- 1 milo milo  323 Oct 18 01:40 $HOME/dsv41/overnight-T1T2/knee-S32-CAND-r2.json
+-rw-rw-r-- 1 milo milo 2884 Oct 18 01:41 $HOME/dsv41/overnight-T1T2/metrics-S32-CAND.txt
+-rw-rw-r-- 1 milo milo  397 Oct 18 01:41 $HOME/dsv41/overnight-T1T2/replayc-S32-CAND-r1-n4.json
+-rw-rw-r-- 1 milo milo  401 Oct 18 01:41 $HOME/dsv41/overnight-T1T2/replayc-S32-CAND-r2-n4.json
+-rw-rw-r-- 1 milo milo 3576 Oct 18 01:41 $HOME/dsv41/overnight-T1T2/window-S32-CAND.log
