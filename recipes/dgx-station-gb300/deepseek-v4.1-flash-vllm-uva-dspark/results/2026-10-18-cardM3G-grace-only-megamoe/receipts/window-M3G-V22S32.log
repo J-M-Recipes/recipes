@@ -1,0 +1,54 @@
+=== WINDOW M3G-V22S32 start Sun Oct 18 12:35:35 AM CDT 2026 MemAvailable=128176512kB ===
+--- knee r1 ---
+[M3G-V22S32-r1] conc= 1:   210.8 agg tok/s  210.81 per-stream  (runs 209.5/212.1)
+[M3G-V22S32-r1] conc= 2:   308.0 agg tok/s  153.99 per-stream  (runs 308.2/307.7)
+[M3G-V22S32-r1] conc= 4:   434.1 agg tok/s  108.52 per-stream  (runs 433.4/434.8)
+[M3G-V22S32-r1] conc= 8:   632.9 agg tok/s   79.11 per-stream  (runs 645.0/620.7)
+[M3G-V22S32-r1] conc=12:   878.4 agg tok/s   73.20 per-stream  (runs 876.9/879.9)
+[M3G-V22S32-r1] conc=16:   994.7 agg tok/s   62.17 per-stream  (runs 993.6/995.9)
+--- knee r2 ---
+[M3G-V22S32-r2] conc= 1:   210.8 agg tok/s  210.79 per-stream  (runs 209.7/211.9)
+[M3G-V22S32-r2] conc= 2:   307.7 agg tok/s  153.87 per-stream  (runs 307.7/307.7)
+[M3G-V22S32-r2] conc= 4:   448.2 agg tok/s  112.04 per-stream  (runs 438.0/458.3)
+[M3G-V22S32-r2] conc= 8:   647.4 agg tok/s   80.92 per-stream  (runs 645.0/649.8)
+[M3G-V22S32-r2] conc=12:   881.9 agg tok/s   73.49 per-stream  (runs 881.7/882.2)
+[M3G-V22S32-r2] conc=16:   993.3 agg tok/s   62.08 per-stream  (runs 993.7/992.9)
+--- knee6 ---
+[M3G-V22S32-k6] conc= 1:   211.0 agg tok/s  210.98 per-stream  (runs 210.1/211.9)
+[M3G-V22S32-k6] conc= 2:   308.0 agg tok/s  154.02 per-stream  (runs 308.0/308.0)
+[M3G-V22S32-k6] conc= 3:   364.1 agg tok/s  121.36 per-stream  (runs 364.3/363.9)
+[M3G-V22S32-k6] conc= 4:   435.8 agg tok/s  108.96 per-stream  (runs 434.5/437.2)
+[M3G-V22S32-k6] conc= 6:   500.9 agg tok/s   83.49 per-stream  (runs 497.8/504.0)
+[M3G-V22S32-k6] conc= 8:   622.5 agg tok/s   77.82 per-stream  (runs 622.5/622.6)
+[M3G-V22S32-k6] conc=12:   886.2 agg tok/s   73.85 per-stream  (runs 879.5/892.9)
+[M3G-V22S32-k6] conc=16:   995.8 agg tok/s   62.24 per-stream  (runs 996.1/995.6)
+--- agent_fixture_o ---
+[M3G-V22S32] prose        185.7 tok/s  accept=29.3%  acc/step=1.46  tokens=350
+      (175, 0.99, 'stop', False, 'Speculative decoding works by having a small, fast "draft" model guess several u')
+[M3G-V22S32] structured   236.0 tok/s  accept=47.9%  acc/step=2.40  tokens=428
+      (106, 0.42, 'stop', False, "I'll research both mechanisms to ground the comparison, then compute.  ")
+      (108, 0.49, 'stop', False, '- weights load: complete — 14.2 GB sharded across 2 GPUs in 38.4 s - KV cache: a')
+[M3G-V22S32] code         234.2 tok/s  accept=60.5%  acc/step=3.02  tokens=684
+      (215, 0.93, 'stop', False, '```python def knee(rows):     """Return the concurrency where marginal gain per ')
+      (127, 0.53, 'stop', False, '```bash #!/usr/bin/env bash set -euo pipefail  : "${SRC:?SRC is not set}"  missi')
+[M3G-V22S32] shell_ops    271.0 tok/s  accept=80.0%  acc/step=4.00  tokens=150
+      (75, 0.27, 'stop', False, '``` docker stop dsv41-vllm-v7 docker rename dsv41-vllm-v7 dsv41-vllm-v7-old sudo')
+[M3G-V22S32] tool_json    211.0 tok/s  accept=81.4%  acc/step=4.07  tokens=284
+      (104, 0.47, 'tool_calls', True, "I'll check both. Let me first see what's available.  ")
+      (54, 0.32, 'tool_calls', True, '')
+[M3G-V22S32] weighted accept=56.6%
+--- replay r1 n=4 ---
+[M3G-V22S32-r1] REPLAY n=4: agg 368.7 tok/s over 18s, 6692 tokens; accept=56.8% acc/step=2.84; tool turns 24 emitted=15 per-req 90.6 tok/s; text turns 24 per-req 104.6 tok/s
+--- replay r2 n=4 ---
+[M3G-V22S32-r2] REPLAY n=4: agg 445.6 tok/s over 15s, 6840 tokens; accept=55.6% acc/step=2.78; tool turns 24 emitted=12 per-req 115.5 tok/s; text turns 24 per-req 117.4 tok/s
+--- metrics ---
+32 $HOME/dsv41/overnight-T1T2/metrics-M3G-V22S32.txt
+=== WINDOW M3G-V22S32 end Sun Oct 18 12:37:38 AM CDT 2026 MemAvailable=128125248kB delta=51264kB (0.05 GiB) ===
+-rw-rw-r-- 1 milo milo 3002 Oct 18 00:37 $HOME/dsv41/overnight-T1T2/agentfix-M3G-V22S32.json
+-rw-rw-r-- 1 milo milo  416 Oct 18 00:36 $HOME/dsv41/overnight-T1T2/knee6-M3G-V22S32.json
+-rw-rw-r-- 1 milo milo  326 Oct 18 00:35 $HOME/dsv41/overnight-T1T2/knee-M3G-V22S32-r1.json
+-rw-rw-r-- 1 milo milo  324 Oct 18 00:36 $HOME/dsv41/overnight-T1T2/knee-M3G-V22S32-r2.json
+-rw-rw-r-- 1 milo milo 2883 Oct 18 00:37 $HOME/dsv41/overnight-T1T2/metrics-M3G-V22S32.txt
+-rw-rw-r-- 1 milo milo  401 Oct 18 00:37 $HOME/dsv41/overnight-T1T2/replayc-M3G-V22S32-r1-n4.json
+-rw-rw-r-- 1 milo milo  403 Oct 18 00:37 $HOME/dsv41/overnight-T1T2/replayc-M3G-V22S32-r2-n4.json
+-rw-rw-r-- 1 milo milo 3638 Oct 18 00:37 $HOME/dsv41/overnight-T1T2/window-M3G-V22S32.log

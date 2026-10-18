@@ -1,0 +1,54 @@
+=== WINDOW M3G-mix start Sat Oct 17 11:47:42 PM CDT 2026 MemAvailable=34460160kB ===
+--- knee r1 ---
+[M3G-mix-r1] conc= 1:   164.0 agg tok/s  163.98 per-stream  (runs 163.9/164.0)
+[M3G-mix-r1] conc= 2:   211.1 agg tok/s  105.56 per-stream  (runs 211.6/210.6)
+[M3G-mix-r1] conc= 4:   302.3 agg tok/s   75.57 per-stream  (runs 303.8/300.7)
+[M3G-mix-r1] conc= 8:   515.5 agg tok/s   64.44 per-stream  (runs 515.3/515.7)
+[M3G-mix-r1] conc=12:   585.7 agg tok/s   48.81 per-stream  (runs 576.8/594.6)
+[M3G-mix-r1] conc=16:   691.3 agg tok/s   43.20 per-stream  (runs 682.7/699.8)
+--- knee r2 ---
+[M3G-mix-r2] conc= 1:   163.9 agg tok/s  163.91 per-stream  (runs 163.9/164.0)
+[M3G-mix-r2] conc= 2:   211.1 agg tok/s  105.54 per-stream  (runs 211.6/210.5)
+[M3G-mix-r2] conc= 4:   302.2 agg tok/s   75.56 per-stream  (runs 303.8/300.6)
+[M3G-mix-r2] conc= 8:   511.9 agg tok/s   63.98 per-stream  (runs 516.2/507.5)
+[M3G-mix-r2] conc=12:   594.9 agg tok/s   49.57 per-stream  (runs 595.1/594.7)
+[M3G-mix-r2] conc=16:   684.1 agg tok/s   42.75 per-stream  (runs 668.4/699.8)
+--- knee6 ---
+[M3G-mix-k6] conc= 1:   163.9 agg tok/s  163.95 per-stream  (runs 163.9/164.0)
+[M3G-mix-k6] conc= 2:   211.0 agg tok/s  105.52 per-stream  (runs 211.6/210.5)
+[M3G-mix-k6] conc= 3:   263.2 agg tok/s   87.72 per-stream  (runs 263.2/263.1)
+[M3G-mix-k6] conc= 4:   302.1 agg tok/s   75.54 per-stream  (runs 303.7/300.6)
+[M3G-mix-k6] conc= 6:   438.0 agg tok/s   72.99 per-stream  (runs 430.8/445.1)
+[M3G-mix-k6] conc= 8:   520.6 agg tok/s   65.08 per-stream  (runs 516.5/524.7)
+[M3G-mix-k6] conc=12:   589.1 agg tok/s   49.09 per-stream  (runs 588.4/589.7)
+[M3G-mix-k6] conc=16:   699.3 agg tok/s   43.71 per-stream  (runs 699.3/699.3)
+--- agent_fixture_o ---
+[M3G-mix] prose        158.8 tok/s  accept=30.4%  acc/step=1.52  tokens=368
+      (184, 1.21, 'stop', False, 'Speculative decoding speeds up generation by having a small, cheap "draft" model')
+[M3G-mix] structured   174.7 tok/s  accept=34.9%  acc/step=1.74  tokens=680
+      (220, 1.22, 'length', False, "I don't have verified specs for these two specific implementations, so I'll flag")
+      (120, 0.72, 'stop', False, '- weights load: complete — 14.2 GB sharded across 2 GPUs in 38 s - KV cache: all')
+[M3G-mix] code         277.8 tok/s  accept=72.3%  acc/step=3.61  tokens=766
+      (251, 0.87, 'stop', False, '```python def knee(rows):     """Return the concurrency where marginal gain per ')
+      (132, 0.51, 'stop', False, '```bash #!/usr/bin/env bash set -euo pipefail  : "${SRC:?SRC is not set}"  missi')
+[M3G-mix] shell_ops    230.0 tok/s  accept=80.0%  acc/step=4.00  tokens=150
+      (75, 0.32, 'stop', False, '``` docker stop dsv41-vllm-v7 docker rename dsv41-vllm-v7 dsv41-vllm-v7-old sudo')
+[M3G-mix] tool_json    195.2 tok/s  accept=84.0%  acc/step=4.20  tokens=334
+      (120, 0.58, 'tool_calls', True, "I'll check both. Let me first see what's available.  ")
+      (54, 0.29, 'tool_calls', True, '')
+[M3G-mix] weighted accept=56.7%
+--- replay r1 n=4 ---
+[M3G-mix-r1] REPLAY n=4: agg 146.4 tok/s over 48s, 7085 tokens; accept=58.8% acc/step=2.94; tool turns 24 emitted=15 per-req 35.4 tok/s; text turns 24 per-req 39.5 tok/s
+--- replay r2 n=4 ---
+[M3G-mix-r2] REPLAY n=4: agg 329.2 tok/s over 20s, 6714 tokens; accept=61.1% acc/step=3.05; tool turns 24 emitted=16 per-req 84.8 tok/s; text turns 24 per-req 85.7 tok/s
+--- metrics ---
+32 $HOME/dsv41/overnight-T1T2/metrics-M3G-mix.txt
+=== WINDOW M3G-mix end Sat Oct 17 11:50:59 PM CDT 2026 MemAvailable=34335488kB delta=124672kB (0.12 GiB) ===
+-rw-rw-r-- 1 milo milo 3021 Oct 17 23:49 $HOME/dsv41/overnight-T1T2/agentfix-M3G-mix.json
+-rw-rw-r-- 1 milo milo  409 Oct 17 23:49 $HOME/dsv41/overnight-T1T2/knee6-M3G-mix.json
+-rw-rw-r-- 1 milo milo  319 Oct 17 23:48 $HOME/dsv41/overnight-T1T2/knee-M3G-mix-r1.json
+-rw-rw-r-- 1 milo milo  326 Oct 17 23:48 $HOME/dsv41/overnight-T1T2/knee-M3G-mix-r2.json
+-rw-rw-r-- 1 milo milo 2887 Oct 17 23:50 $HOME/dsv41/overnight-T1T2/metrics-M3G-mix.txt
+-rw-rw-r-- 1 milo milo  397 Oct 17 23:50 $HOME/dsv41/overnight-T1T2/replayc-M3G-mix-r1-n4.json
+-rw-rw-r-- 1 milo milo  398 Oct 17 23:50 $HOME/dsv41/overnight-T1T2/replayc-M3G-mix-r2-n4.json
+-rw-rw-r-- 1 milo milo 3552 Oct 17 23:50 $HOME/dsv41/overnight-T1T2/window-M3G-mix.log
