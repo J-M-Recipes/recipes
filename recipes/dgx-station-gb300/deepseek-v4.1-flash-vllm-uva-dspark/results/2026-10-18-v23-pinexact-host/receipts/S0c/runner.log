@@ -1,0 +1,31 @@
+2026-10-18 10:10:13 CDT ===== CARD S0c START =====
+2026-10-18 10:10:15 CDT strays: 2577466 331.8GiB VLLM::EngineCore |2577016 1.6GiB /usr/bin/python3 /usr/local/bin/vllm|2577465 0.3GiB /usr/bin/python3 -c|3898 0.2GiB /usr/bin/containerd | MemAvailable=124.0GiB
+2026-10-18 10:10:16 CDT HOSTMEM A live: meminfo MemAvailable: 123.99 GiB;cgroup memory.current 351.77 GiB;cgroup shmem 327.96 GiB;pinned_devzero maps=192 size_gib=327.96 rss_gib=327.96;
+2026-10-18 10:10:49 CDT KNEE6 A r1: [S0c-A-k6r1] conc= 6: 534.0 agg tok/s 89.00 per-stream (runs 535.6/532.4);[S0c-A-k6r1] conc= 8: 624.4 agg tok/s 78.05 per-stream (runs 629.9/619.0);
+2026-10-18 10:11:22 CDT KNEE6 A r2: [S0c-A-k6r2] conc= 6: 535.8 agg tok/s 89.31 per-stream (runs 535.8/535.8);[S0c-A-k6r2] conc= 8: 597.0 agg tok/s 74.62 per-stream (runs 631.0/563.0);
+2026-10-18 10:11:47 CDT KNEE A r1: [S0c-A-knr1] conc= 8: 596.7 agg tok/s 74.59 per-stream (runs 631.2/562.3);
+2026-10-18 10:12:12 CDT KNEE A r2: [S0c-A-knr2] conc= 8: 629.3 agg tok/s 78.66 per-stream (runs 626.4/632.2);
+2026-10-18 10:13:10 CDT RT A: c1-r1 agg=188.34 acc=2.924 ; c1-r2 agg=185.62 acc=2.911 ; c1-r3 agg=189.44 acc=2.992
+2026-10-18 10:13:10 CDT stop-and-keep dsv41-vllm-1017-v22-ksched1to8-BOUND-REF
+2026-10-18 10:13:22 CDT strays: 3898 0.2GiB /usr/bin/containerd |4228 0.2GiB /usr/bin/dockerd -H|4855 0.1GiB /usr/bin/gnome-shell |3891 0.1GiB /usr/sbin/tailscaled --state=/var/lib/tailscale/tailscaled.state| MemAvailable=465.3GiB
+2026-10-18 10:13:22 CDT HOSTMEM B pre: meminfo MemAvailable: 465.34 GiB;
+2026-10-18 10:18:15 CDT BOUND dsv41-vllm-1017-S0-pinexact-EXP-WIN after 290s
+2026-10-18 10:18:15 CDT boot->ready B 293s
+2026-10-18 10:18:15 CDT FACTS B: loaded=1 saved=1 | GPU KV cache size: 2,504,891 tokens, Maximum concurrency for 1,048,576 tokens per request: 2.39x | L9 host_avail=197.69GiB | min 153.55GiB | layers=40 HBM_expert=206.61GiB pinned_expert=62.33GiB hbm_free=23.08GiB host_avail=197.69GiB (expect ~206.6 / ~62.4)
+2026-10-18 10:18:15 CDT HOSTMEM B bound: meminfo MemAvailable: 196.43 GiB;cgroup memory.current 416.60 GiB;cgroup shmem 252.79 GiB;pinned_devzero maps=192 size_gib=252.79 rss_gib=252.79;
+2026-10-18 10:18:51 CDT KNEE6 B r1: [S0c-B-k6r1] conc= 6: 530.3 agg tok/s 88.39 per-stream (runs 529.6/531.1);[S0c-B-k6r1] conc= 8: 590.3 agg tok/s 73.79 per-stream (runs 624.0/556.7);
+2026-10-18 10:19:24 CDT KNEE6 B r2: [S0c-B-k6r2] conc= 6: 529.6 agg tok/s 88.27 per-stream (runs 531.5/527.7);[S0c-B-k6r2] conc= 8: 604.8 agg tok/s 75.60 per-stream (runs 627.1/582.5);
+2026-10-18 10:19:50 CDT KNEE B r1: [S0c-B-knr1] conc= 8: 623.6 agg tok/s 77.96 per-stream (runs 619.8/627.5);
+2026-10-18 10:20:15 CDT KNEE B r2: [S0c-B-knr2] conc= 8: 598.5 agg tok/s 74.81 per-stream (runs 626.9/570.1);
+2026-10-18 10:21:13 CDT RT B: c1-r1 agg=190.76 acc=3.004 ; c1-r2 agg=189.09 acc=2.974 ; c1-r3 agg=184.83 acc=2.978
+2026-10-18 10:21:14 CDT HOSTMEM B steady: meminfo MemAvailable: 196.23 GiB;cgroup memory.current 416.62 GiB;cgroup shmem 252.79 GiB;pinned_devzero maps=192 size_gib=252.79 rss_gib=252.79;
+2026-10-18 10:21:14 CDT VERDICT: RESULT PASS
+2026-10-18 10:21:14 CDT PROMOTE renamed dsv41-vllm-1017-S0-pinexact-EXP-WIN -> dsv41-vllm-1017-v23-pinexact-BOUND-REF (serving)
+2026-10-18 10:21:14 CDT PROMOTE renamed dsv41-vllm-1017-v22-ksched1to8-BOUND-REF -> dsv41-vllm-1017-v22-ksched1to8-RETIRED-REF (stopped, kept)
+2026-10-18 10:21:14 CDT launch_v23.sh bash -n OK
+2026-10-18 10:21:14 CDT launch_v23 vs launch_S0 non-comment diff lines: < NAME=${1:-dsv41-vllm-1017-v22-ksched1to8-BOUND-REF}|> NAME=${1:-dsv41-vllm-1017-v23-pinexact-BOUND-REF}|
+2026-10-18 10:21:31 CDT GAUNTLET V23: 12 / 12
+2026-10-18 10:21:31 CDT errcount V23 0
+2026-10-18 10:21:32 CDT HOSTMEM V23 final: meminfo MemAvailable: 195.81 GiB;cgroup memory.current 416.54 GiB;cgroup shmem 252.79 GiB;pinned_devzero maps=192 size_gib=252.79 rss_gib=252.79;
+2026-10-18 10:21:32 CDT FINAL dsv41 running=[dsv41-vllm-1017-v23-pinexact-BOUND-REF ] count=1 bound=1
+2026-10-18 10:21:32 CDT ===== CARD S0c END (PASS, PROMOTED v23 = dsv41-vllm-1017-v23-pinexact-BOUND-REF) =====

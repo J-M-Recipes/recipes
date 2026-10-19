@@ -44,45 +44,46 @@
       <h1>DeepSeek-V4.1-Flash · 1× DGX Station GB300</h1>
       <div class="sub">Full 1,048,576-token context from a single GB300 — routed experts split HBM / Grace over NVLink-C2C, in-checkpoint DSpark drafter</div>
     </div>
-    <div class="brand"><b>J-M-RECIPES</b><br>v21 “Fused Split” serving 2026-09-27 (0909 + hook v21, +6.2% C1 vs v18) · documented release v20 “Clean Nightly” 2026-09-21 · v18 = rollback · 2026-09-27<br>status: verified</div>
+    <div class="brand"><b>J-M-RECIPES</b><br>v23 “Pin Exact” serving since 2026-10-18 10:21 CDT (v22 + exact-size pinned host allocs) · v22 = rollback · nightly-39983a5e config C passed its gates, NOT promoted (pending James) · 2026-10-18<br>status: verified</div>
   </div>
   <div class="pills">
 <span class="pill type"><b>MoE</b> · 384 routed experts + Engram</span>
 <span class="pill"><b>552B</b> total · <b>8B prefill / 16B decode</b> active</span>
-<span class="pill">checkpoint <b>510.3 GB</b> · rev <span class="mono">df42c109</span></span>
-<span class="pill">weights <b>as shipped · MXFP4 experts / FP8 attn+Engram · KV fp8_ds_mla (image default)</b></span>
-<span class="pill">engine <b>vLLM <span class="mono">2671fedfc7ae604761990603fc736c0c4f21de57</span> · vLLM nightly 2671fedf (2026-09-13; v18 was day-0 0909) · FlashInfer 0.6.18 · autotune set a34f9ad4 (189 configs)</b></span>
-<span class="pill">memory <b>206.6 GiB HBM experts + 62.3 GiB Grace pinned (off54) · KV pool 2.55M tok (fp8_ds_mla)</b></span>
+<span class="pill">checkpoint <b>510.3 GB</b> · rev <span class="mono">1bae0e10</span></span>
+<span class="pill">weights <b>as shipped · MXFP4 experts / FP8 attn+Engram · nothing re-quantized</b></span>
+<span class="pill">engine <b>vLLM <span class="mono">179dd0fa9</span> · day-0 image deepseekv41-flash-0909 (sha256 00d577a6) · FlashInfer 0.6.18 · autotune hash 62426808 (189 configs) · hook v21</b></span>
+<span class="pill">memory <b>206.6 GiB HBM experts + 62.3 GiB Grace-pinned experts · pinned host total 252.8 GiB (v22: 328.0) · KV 2.50M tok</b></span>
   </div>
   <div class="grid">
-<div class="box"><div class="lbl">Decode · C1 (prose)</div><div class="hero">183<small>tok/s</small></div><div class="note">v21 on 0909: 182.8 vs v18 171.8 / 172.5 bracketing controls (+6.2%), 2026-09-27 · v20 nightly: 180.3–180.9 vs v18 171.8 same window (+5.1% pair mean) · agent/code/shell text 190–260 on the fixture · the v19 nightly read 183 (+6.6%) and was reverted: acceptance −4/−8 pt on tool/shell text</div></div>
-<div class="box"><div class="lbl">Decode · C16 aggregate</div><div class="hero">993<small>tok/s</small></div><div class="note">v21 992.8 vs v18 957 / 952 (+4.0%) · C8 687 vs 656 / 657 · v20: 979 / 965 vs v18 952 · C8 670 / 661 vs 660 · max-num-seqs 24 · 35-seat fund harness C24 aggregate 285, C24 warm turn p50 0.55 s, C16 warm p95 1.8 s</div></div>
-<div class="box"><div class="lbl">Prefill · cold</div><div class="hero">22.7K<small>tok/s</small></div><div class="note">104K prompt in 4.6 s · 6.5K @ 15.7K tok/s · 972K prompt in 85 s · 1K / 256K points pending</div></div>
+<div class="box"><div class="lbl">Decode · C1, mean of 3 (prose-class real text, CNN/DM 8.2K in)</div><div class="hero">188<small>tok/s</small></div><div class="note">188.2 (190.8 / 189.1 / 184.8), 2.99 tokens/step, v23 promotion boot; later v23 controls 186.1 / 186.8 · 1,024 forced tokens, 0% prefix hits · per class (40 real prompts, decode only): prose 232 · structured 250 · code 293 · shell 317 · tool-JSON 300</div></div>
+<div class="box"><div class="lbl">Decode · C8 aggregate (prose knee, 4 reps)</div><div class="hero">605<small>tok/s</small></div><div class="note">knee6 C8 596.5 / 614.0 on the two v23 control arms (reps bimodal: ~570–580 or ~620) · knee r2 C16 944 · max-num-seqs 24, k=5 to 8 live sequences</div></div>
+<div class="box"><div class="lbl">TTFT · 8.2K-token prompt</div><div class="hero">0.645<small>s</small></div><div class="note">0.643 / 0.647 s, RT C1 median on two v23 arms · cold ~53K-token prompt at 24.1K tok/s · 972K prompt in 85 s (v11)</div></div>
   </div>
   <div class="row2">
-<div class="box"><div class="lbl">Guesser</div><div class="kv"><b>DSpark</b> · in-checkpoint MTP (mtp.0–2), same revision<br>k = 5 at 1–4 seqs, 1 at 5–24 (batch-size schedule)<br><span class="acc">accept: <span>prose <b>35%</b></span> <span>code <b>66%</b></span> <span>shell <b>91%</b></span> <span>tool-JSON <b>88%</b></span></span></div></div>
-<div class="box"><div class="lbl">Long-context behaviour</div><div class="kv">decode flat to (tokens in ctx): <b>425K</b><br>short-request TTFT during a 480K prefill: <b>~1 s</b><br>cold 120K p95 under 16 live streams: <b>8.4 s</b></div></div>
-<div class="box"><div class="lbl">v19 nightly — promoted 12:11, reverted 21:42 on 2026-09-20 (results/2026-09-21-toolcall-gate-49435)</div><div class="kv">speed: <b>C1 183 (+6.6%) · C16 995 · fund C24 +8% — real, and not the question</b><br>BFCL v4 simple+multiple, 600 calls, T=0, same window: <b>v18 93.3% · v19 93.2% · same failure kinds — correctness PASS</b><br>DSpark acceptance tool-JSON / shell: <b>v18 0.878 / 0.908 · v19 0.838 / 0.829 — FAIL (bar: within 2 pt)</b><br>cause: <b>nightly kernels, not the fp8 KV writer: nightly d05da62e with vLLM #49435 leaves agent-doc top-1 flips at 11.45% (v18 0.56%)</b></div></div>
+<div class="box"><div class="lbl">Guesser</div><div class="kv"><b>DSpark</b> · in-checkpoint MTP (mtp.0–2), 1017 revision<br>k = 5 at 1–8 seqs, 1 at 9–24 (batch-size schedule, v22)<br><span class="acc">accept: <span>prose <b>42%</b></span> <span>structured <b>46%</b></span> <span>code <b>67%</b></span> <span>shell <b>68%</b></span> <span>tool-JSON <b>60%</b></span></span></div></div>
+<div class="box"><div class="lbl">Host memory and long context (v23)</div><div class="kv">pinned host, v22 → v23: <b>327.96 → 252.79 GiB</b><br>hook boot guard at layer 9 (floor 10 GiB): <b>12.1 → 197.7 GiB</b><br>decode flat to (tokens in ctx): <b>425K</b><br>short-request TTFT during a 480K prefill: <b>~1 s</b></div></div>
+<div class="box"><div class="lbl">Candidate, NOT promoted — vLLM nightly-39983a5e “config C” · and P1, 2026-10-18</div><div class="kv">7 pre-registered gates: <b>all PASS · per-class decode 20/20 cells (+0.5…+12.6%)</b><br>speed vs v23: <b>RT C1 197.8 vs 186.4 (+6.1%) · knee6 C8 656.5 vs 605.2 · TTFT 8K 0.43 s · KV +55%</b><br>weakest cell: <b>GSM8K-200 95.5 vs 97.0 — exactly at the −1.5 bar, +48% completion tokens</b><br>P1 prefill graphs to 8K: <b>FAILED — KV −43% at 2K, no boot at 8K</b></div></div>
   </div>
   <div class="fid"><div class="lbl">Output fidelity — does the recipe change what the model says?</div>
     <ul>
-<li class="ok">Weights unchanged: 0 re-quantized bits, 510,313,343,553 B byte-verified vs HF</li>
+<li class="ok">Weights unchanged: 1017 checkpoint as shipped, 0 re-quantized bits · v23 changes host allocation only (no kernel, no HBM byte)</li>
 <li class="ok">Speculation is target-verified: every emitted token accepted by the full model (lossless at T=0)</li>
-<li class="ok">Greedy parity 44/44 non-tool prompts byte-exact across recipe variants · v21 hook 16/16 non-tool vs both v18 controls (2026-09-27) · gauntlet 36/36</li>
-<li class="ok">Tool calling: BFCL v4 simple_python+multiple 560/600 = 93.3% exact-match (our AST grader, T=0, 2026-09-20) · Hermes harness 10/10 · 35-seat fund harness 64/64</li>
-<li class="meas">Teacher-forced Δlogprob vs no-hook reference, 79,544 positions (prefill-only): v18 hook mean |Δ| 0.030, top-1 flips 1.06% corpus-wide and 0.56% on agent/tool-shaped text — uniform noise. The reverted v19 nightly was 0.059 / 2.2% corpus-wide but 0.257 / 11.45% on tool-shaped text; unchanged on nightly d05da62e (+#49435), so it is the nightly’s kernels, not the KV writer. Perplexity unchanged either way.</li>
-<li class="meas">GPQA-Diamond 198 run by us, T=0, reasoning on, 64k budget: v18 86.9% (172/198, ±4.7, 7 truncated) · v19 nightly 87.4% (173/198) — equal-budget pair, wash · model card 90.9 at max effort, T=1 — anchor, not a reproduction</li>
+<li class="ok">Greedy parity 16/16 non-tool prompts byte-exact, v23 vs both v22 controls (2026-10-18) · gauntlet 12/12 on every v23 arm</li>
+<li class="ok">Tool calling, measured on the live v23 lane: BFCL v4 dev 554/600 = 92.3% · held-out live sibling 1018/1311 = 77.65% (our AST grader, T=0; same-grader A/B, not a leaderboard number)</li>
+<li class="meas">GSM8K-200 97.0% (194/200) on the live v23 lane, 96.5% on its restart (lil-bench v0.7.7, T=0) — the same-config floor is ~1 item</li>
+<li class="meas">Teacher-forced Δlogprob vs no-hook reference (2026-09-20, df42c109 weights, prefill-only): hook mean |Δ| 0.030, top-1 flips 1.06% corpus-wide and 0.56% on agent/tool-shaped text; v23 adds no GPU-side change</li>
     </ul>
   </div>
   <div class="fid"><div class="lbl">Agent claim card — fixed protocol, held-out sibling, cost per solved task</div>
     <ul>
 <li class="ok">protocol <span class="mono">harness/protocol.yaml</span> sha256 <span class="mono">61c2d22b6351</span> · T=0, no thinking, tool_choice auto, 1 retry, C8 BFCL / C16 fund tools, 4-turn fund conversations</li>
-<li class="ok">dev suite (decides candidacy): <b>BFCL dev (simple_python 400 + multiple 200)</b> 556/600 solved (92.7%) · v20 on the promotion boot; 561/600 (93.5%) the night before — ±1 pt run-to-run on 600. v18 same boots 558/600 (93.0%), 560 (93.3%). Decides candidacy only</li>
-<li class="pair"><span class="big">Pass@1 78.8%</span> <span class="dim">(1033/1311)</span> <span class="sep">·</span> <span class="big">$0.30 / 1000 solved</span><br><span class="dim">BFCL live sibling (live_simple 258 + live_multiple 1,053) · decides promotion · protocol sha 61c2d22b6351 · priced 2026-09-21: Station amortized $3.80/hr (≈$100k / 3 yr / 8,760 h, saturated at C8, no power or ancillaries) + energy $0.15/kWh (490 W × 392 s = $0.008 / 1000 alone); ~$2.4 at C1</span><br><span class="dim">unsolved: 27 no-call · 0 truncated · 0 error · 181 wrong-arg-value · 45 wrong-function · 24 missing-arg · 1 extra-arg</span></li>
+<li class="ok">dev suite (decides candidacy): <b>BFCL dev (simple_python 400 + multiple 200)</b> 554/600 solved (92.3%) · v23 live lane, Card P2f arm A, 2026-10-18; v23 restart 556/600 (92.7%). Decides candidacy only</li>
+<li class="ok">held-out sibling (decides promotion): <b>BFCL live sibling (live_simple 258 + live_multiple 1,053)</b> 1018/1311 solved (77.65%)</li>
+<li class="pend">Pass@1 · $ / solved pair: pending (needs held-out run + priced cost)</li>
     </ul>
   </div>
   <div class="foot">
-    <span>recipe <span class="mono">recipes/dgx-station-gb300/deepseek-v4.1-flash-vllm-uva-dspark</span> · run <span class="mono">2026-09-27-v21-fused-split (v21) · 2026-09-21-v20-promotion (v20) · 2026-09-21-toolcall-gate-49435</span></span>
+    <span>recipe <span class="mono">recipes/dgx-station-gb300/deepseek-v4.1-flash-vllm-uva-dspark</span> · run <span class="mono">2026-10-18-v23-pinexact-host (v23) · 2026-10-18-p2-nightly-39983a5e-gate (v23 controls, candidate) · 2026-10-18-p1-prefill-graphs-FAIL</span></span>
     <span>github.com/J-M-Recipes/recipes · al-engr.com · @jmeadlock</span>
   </div>
 </div>

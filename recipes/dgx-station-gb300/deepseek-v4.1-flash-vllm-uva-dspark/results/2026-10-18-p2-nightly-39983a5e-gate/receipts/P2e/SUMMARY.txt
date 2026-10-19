@@ -1,0 +1,42 @@
+2026-10-18 17:04:10 CDT FACTS A: replay_line=0 drafter_inherit_line=0 mega_lines=0 sparse_lines=1 kvfmt=[Using DeepSeek's fp8_ds_mla KV cache format ] rehome=1 | autotune: starts=1 window=18:43:08->18:43:13 managed= saved=Saved 189 configs store_entries=210 | GPU KV cache size: 2,504,891 tokens, Maximum concurrency for | guard: host_avail=196.82GiB done:host_avail=196.82GiB
+2026-10-18 17:05:09 CDT RT A: c1-r1 agg=190.93 ttft=0.65 acc=2.976 ; c1-r2 agg=187.92 ttft=0.65 acc=2.98 ; c1-r3 agg=181.55 ttft=0.65 acc=2.888
+2026-10-18 17:05:31 CDT FIXX3 A: prose accept=0.2468;structured accept=0.468;code accept=0.7837;shell_ops accept=0.7703;tool_json accept=0.8311;
+2026-10-18 17:05:40 CDT FIXROT A rot0 [prose structured code shell_ops tool_json]: prose 181.0 tok/s accept=25.2%;structured 231.7 tok/s accept=48.9%;code 251.4 tok/s accept=69.6%;shell_ops 262.1 tok/s accept=80.0%;tool_json 298.6 tok/s accept=73.3%;
+2026-10-18 17:05:49 CDT FIXROT A rot1 [structured code shell_ops tool_json prose]: structured 231.1 tok/s accept=48.9%;code 251.5 tok/s accept=69.6%;shell_ops 260.4 tok/s accept=80.0%;tool_json 298.7 tok/s accept=73.3%;prose 181.3 tok/s accept=25.2%;
+2026-10-18 17:05:58 CDT FIXROT A rot2 [code shell_ops tool_json prose structured]: code 251.3 tok/s accept=69.6%;shell_ops 260.8 tok/s accept=80.0%;tool_json 298.6 tok/s accept=73.3%;prose 181.3 tok/s accept=25.2%;structured 231.8 tok/s accept=48.9%;
+2026-10-18 17:08:06 CDT WINDOW A: knee r1 C1=192.0 C8=620.1 C16=928.8 ; knee r2 C1=192.2 C8=597.4 C16=940.7 ; replay r1 309.3 acc 0.599 tok 6373 ; replay r2 426.6 acc 0.595 tok 6093
+2026-10-18 17:08:11 CDT COLD64K A: PREFILL target=65536 prompt_tokens=53179 ttft_s=[2.24, 2.22] tok_s=[23722, 23972] mean_tok_s=23847;
+2026-10-18 17:08:22 CDT GAUNTLET A: 12 / 12
+2026-10-18 17:08:22 CDT HOSTMEM A steady: meminfo MemAvailable: 193.31 GiB;pinned_devzero maps=192 size_gib=252.79 rss_gib=252.79;
+2026-10-18 17:08:22 CDT ERRCOUNT A 0 (since 2026-10-18T22:04:10Z)
+2026-10-18 17:08:34 CDT HOSTMEM E-off60 pre: meminfo MemAvailable: 463.39 GiB;
+2026-10-18 17:08:34 CDT store entries before E boot: 210
+2026-10-18 17:17:20 CDT BOUND dsv41-vllm-1017-P2e-noreplay-sparse-EXP after 523s
+2026-10-18 17:17:20 CDT boot->ready E 526s (dsv41-vllm-1017-P2e-noreplay-sparse-EXP off60)
+2026-10-18 17:17:20 CDT FACTS E: replay_line=0 drafter_inherit_line=0 mega_lines=0 sparse_lines=2 kvfmt=[Using DeepSeek's fp8_ds_mla KV cache format ] rehome=1 | autotune: starts=1 window=22:16:33->22:16:41 managed=Preloaded 210/210 saved= store_entries=210 | GPU KV cache size: 3,877,002 tokens, Maximum concurrency for | guard: host_avail=197.22GiB done:host_avail=197.22GiB
+2026-10-18 17:17:20 CDT HOSTMEM E bound: meminfo MemAvailable: 192.66 GiB;pinned_devzero maps=192 size_gib=252.79 rss_gib=252.79;
+2026-10-18 17:17:20 CDT store entries after E bind: 210 (before 210)
+2026-10-18 17:18:13 CDT RT E: c1-r1 agg=202.25 ttft=0.46 acc=2.913 ; c1-r2 agg=207.72 ttft=0.46 acc=3.021 ; c1-r3 agg=198.53 ttft=0.46 acc=2.925
+2026-10-18 17:18:36 CDT FIXX3 E: prose accept=0.2617;structured accept=0.4433;code accept=0.7471;shell_ops accept=0.7465;tool_json accept=0.815;
+2026-10-18 17:18:45 CDT FIXROT E rot0 [prose structured code shell_ops tool_json]: prose 226.5 tok/s accept=31.8%;structured 238.0 tok/s accept=36.8%;code 263.6 tok/s accept=63.1%;shell_ops 309.5 tok/s accept=85.7%;tool_json 252.1 tok/s accept=75.2%;
+2026-10-18 17:18:53 CDT FIXROT E rot1 [structured code shell_ops tool_json prose]: structured 237.5 tok/s accept=36.8%;code 263.6 tok/s accept=63.1%;shell_ops 308.9 tok/s accept=85.7%;tool_json 327.6 tok/s accept=80.0%;prose 227.3 tok/s accept=31.8%;
+2026-10-18 17:19:02 CDT FIXROT E rot2 [code shell_ops tool_json prose structured]: code 263.0 tok/s accept=63.1%;shell_ops 309.0 tok/s accept=85.7%;tool_json 327.3 tok/s accept=80.0%;prose 227.2 tok/s accept=31.8%;structured 237.9 tok/s accept=36.8%;
+2026-10-18 17:21:05 CDT WINDOW E: knee r1 C1=219.9 C8=634.1 C16=1069.1 ; knee r2 C1=220.3 C8=636.4 C16=1082.1 ; replay r1 215.5 acc 0.567 tok 5338 ; replay r2 470.5 acc 0.613 tok 5432
+2026-10-18 17:21:09 CDT COLD64K E: PREFILL target=65536 prompt_tokens=53076 ttft_s=[1.94, 1.93] tok_s=[27390, 27549] mean_tok_s=27469;
+2026-10-18 17:21:25 CDT GAUNTLET E: 12 / 12
+2026-10-18 17:21:25 CDT HOSTMEM E steady: meminfo MemAvailable: 192.43 GiB;pinned_devzero maps=192 size_gib=252.79 rss_gib=252.79;
+2026-10-18 17:21:25 CDT ERRCOUNT E 0 (since 2026-10-18T22:08:35.805859496Z)
+2026-10-18 17:26:42 CDT BOUND dsv41-vllm-1017-v23-pinexact-BOUND-REF after 303s
+2026-10-18 17:26:42 CDT boot->ready D 305s
+2026-10-18 17:26:42 CDT FACTS D: replay_line=0 drafter_inherit_line=0 mega_lines=0 sparse_lines=1 kvfmt=[Using DeepSeek's fp8_ds_mla KV cache format ] rehome=1 | autotune: starts=1 window=22:26:05->22:26:10 managed= saved=Saved 189 configs store_entries=210 | GPU KV cache size: 2,504,891 tokens, Maximum concurrency for | guard: host_avail=197.55GiB done:host_avail=197.55GiB
+2026-10-18 17:27:41 CDT RT D: c1-r1 agg=187.72 ttft=0.64 acc=2.864 ; c1-r2 agg=190.76 ttft=0.64 acc=2.981 ; c1-r3 agg=187.25 ttft=0.64 acc=2.948
+2026-10-18 17:28:06 CDT FIXX3 D: prose accept=0.2468;structured accept=0.468;code accept=0.7837;shell_ops accept=0.7703;tool_json accept=0.8609;
+2026-10-18 17:28:15 CDT FIXROT D rot0 [prose structured code shell_ops tool_json]: prose 180.9 tok/s accept=25.2%;structured 232.1 tok/s accept=48.9%;code 252.8 tok/s accept=69.6%;shell_ops 262.2 tok/s accept=80.0%;tool_json 297.7 tok/s accept=73.3%;
+2026-10-18 17:28:24 CDT FIXROT D rot1 [structured code shell_ops tool_json prose]: structured 232.0 tok/s accept=48.9%;code 252.9 tok/s accept=69.6%;shell_ops 262.1 tok/s accept=80.0%;tool_json 299.8 tok/s accept=73.3%;prose 181.5 tok/s accept=25.2%;
+2026-10-18 17:28:33 CDT FIXROT D rot2 [code shell_ops tool_json prose structured]: code 252.7 tok/s accept=69.6%;shell_ops 262.7 tok/s accept=80.0%;tool_json 299.3 tok/s accept=73.3%;prose 181.5 tok/s accept=25.2%;structured 232.9 tok/s accept=48.9%;
+2026-10-18 17:30:40 CDT WINDOW D: knee r1 C1=192.4 C8=593.9 C16=943.9 ; knee r2 C1=192.5 C8=590.2 C16=943.0 ; replay r1 294.5 acc 0.592 tok 6091 ; replay r2 423.4 acc 0.614 tok 5549
+2026-10-18 17:30:44 CDT COLD64K D: PREFILL target=65536 prompt_tokens=53046 ttft_s=[2.23, 2.18] tok_s=[23823, 24396] mean_tok_s=24109;
+2026-10-18 17:31:02 CDT GAUNTLET D: 12 / 12
+2026-10-18 17:31:02 CDT HOSTMEM D steady: meminfo MemAvailable: 195.66 GiB;pinned_devzero maps=192 size_gib=252.79 rss_gib=252.79;
+2026-10-18 17:31:02 CDT ERRCOUNT D 0 (since 2026-10-18T22:21:37Z)
+2026-10-18 17:31:03 CDT kept dsv41-vllm-1017-P2e-noreplay-sparse-EXP-FAIL (stopped)

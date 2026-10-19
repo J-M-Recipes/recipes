@@ -1,0 +1,13 @@
+Card P2 CPU-only preflight — 2026-10-18 10:42:06 CDT (docker run --rm --network none --entrypoint python3/bash, no --gpus)
+image: sha256:a3bc7f09c1e2e72e068021feb75118c92e98c538706caa0c5d1acc0bb9252623 size 10737690526 arm64 (docker images: 36.9GB)
+py 3.12.3 | vllm 0.32.0rc1.dev329+g39983a5e7 | flashinfer-python 0.7.2 | flashinfer.autotune_v2 callable: True
+/usr/lib/python3.12 exists (sitecustomize bind target OK; image ships Ubuntu apport sitecustomize, hook version keeps apport)
+TrtLlmMxfp4ExpertsModular._invoke_kernel(self, output: Tensor|None, x_quant, x_scale: Tensor|None, topk_ids, topk_weights, w1, w2, activation: MoEActivation, global_num_experts:int, local_num_experts:int, local_expert_offset:int, topk:int) -> UnfinalizedMoEOutput|None  == hook signature
+fi_moe_largest_bucket OK | RoutingMethodType.Renormalize=1 | get_accelerator_view_from_cpu_tensor OK | RoutedExperts present | flashinfer.trtllm_fp4_block_scale_routed_moe present
+vllm.envs knows VLLM_FLASHINFER_AUTOTUNE_CACHE_DIR: True | vllm.v1.worker.gpu.model_runner.GPUModelRunner present (V2)
+replay boot line source: vllm/models/deepseek_v41/nvidia/model.py:874 ("Decoder SWA bounded replay: in eager prefill steps, layer %d ..."); off form :1288
+  NOTE: path is vllm/models/deepseek_v41/ in the installed wheel (brief cited model_executor-less tree path nvidia/model.py:873 — same text)
+MXFP8 KV record gate _use_v41_mxfp8_kv_record: attention.py:137 (present)
+hook pin_hot_experts_hook.py sha256 b5e4f4f8… parses on py3.12.3 (ast) | hook imports only vllm.utils.torch_utils, fused_moe.config, fused_moe.utils (all import OK)
+benign without GPU: "Failed to import from vllm._C" (platforms/cpu.py warning_once — CPU platform probe), torch deprecation warnings
+RESULT: PREFLIGHT PASS

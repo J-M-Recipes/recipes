@@ -1,0 +1,11 @@
+2,3c2,4
+< # launch_v22.sh — the exact v22 launch (promoted 2026-10-17 16:55): v21 config with k-schedule [[1,8,5],[9,24,1]]. Same autotune hash as v21 (num_speculative_tokens unchanged).
+< # Rollback: docker stop dsv41-vllm-1017-v22-ksched1to8-BOUND-REF && docker start dsv41-vllm-1017-v21cfg-RETIRED-REF
+---
+> # launch_v23.sh — the exact v23 launch (promoted 2026-10-18, Card S0c): launch_v22.sh + ONE env -e PYTORCH_CUDA_ALLOC_CONF=pinned_max_cached_size_mb:1024
+> #   (exact-size pinned host allocs above 1 GiB: host pinned 328.0 -> 252.8 GiB; same image, same autotune hash, same kernels).
+> # Rollback: docker stop dsv41-vllm-1017-v23-pinexact-BOUND-REF && docker start dsv41-vllm-1017-v22-ksched1to8-RETIRED-REF
+9c10
+< NAME=${1:-dsv41-vllm-1017-v22-ksched1to8-BOUND-REF}
+---
+> NAME=${1:-dsv41-vllm-1017-v23-pinexact-BOUND-REF}

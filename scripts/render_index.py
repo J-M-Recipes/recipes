@@ -24,7 +24,13 @@ def headline_metric(r: dict) -> str:
         return "—"
     m = ms[0]
     label = f" *({m['label']})*" if m.get("label") else ""
-    return f"{m['value']:g} {m['unit']} @ {m['workload']}{label}"
+    acc = f" · accept {m['acceptance_len']:.2f} tok/step" if m.get("acceptance_len") else ""
+    cls = ""
+    if m.get("by_class"):
+        parts = [f"{c['class']} {c['value']:g}" + (f"/{c['acceptance_len']:.2f}" if c.get("acceptance_len") else "")
+                 for c in m["by_class"]]
+        cls = " · by class (tok/s/accept): " + " · ".join(parts)
+    return f"{m['value']:g} {m['unit']}{acc} @ {m['workload']}{cls}{label}"
 
 
 def render() -> str:

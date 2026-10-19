@@ -110,6 +110,22 @@
           "unit": { "type": "string" },
           "workload": { "type": "string", "description": "concurrency, prompt/output lengths, prompt class" },
           "aggregation": { "type": "string", "description": "mean of n=3, single run, median..." },
+          "acceptance_len": { "type": "number", "minimum": 1, "description": "speculative-decoding tokens per verify step over the same cell = 1 + accepted / drafts (vLLM spec_decode counters; kbench_chat_ds.py definition). Required in review for a speculative recipe's C1 headline." },
+          "by_class": {
+            "type": "array",
+            "description": "the same cell split by content class (prose, structured, code, shell_ops, tool_json); acceptance is content-dependent, so one blended number hides the spread",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["class", "value"],
+              "properties": {
+                "class": { "type": "string" },
+                "value": { "type": "number" },
+                "acceptance_len": { "type": "number", "minimum": 1 },
+                "raw": { "type": "string", "description": "path in results/<run-id>/ if different from provenance.raw" }
+              }
+            }
+          },
           "label": { "type": "string", "description": "e.g. 'pre-router-fix' — caveats that must travel with the number" },
           "provenance": {
             "type": "object", "additionalProperties": false,

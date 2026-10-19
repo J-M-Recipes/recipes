@@ -1,0 +1,40 @@
+2026-10-18 04:41:49 CDT ===== CARD P1 START =====
+2026-10-18 04:41:49 CDT WAIT CTL1: archive=[bash -c mkdir -p ~/dsv41/bf1017 && bash -n ~/dsv41/ark_bf1017.sh && setsid nohup bash ~/dsv41/ark_bf1017.sh >/dev/null 2|bash ~/dsv41/ark_bf1017.sh|rsync -a --inplace --no-perms --no-owner --no-group --omit-dir-times --exclude .cache/ --bwlimit=600000 /models/DeepSeek|] foreign=[]
+2026-10-18 04:46:50 CDT WAIT CTL1: archive=[bash -c mkdir -p ~/dsv41/bf1017 && bash -n ~/dsv41/ark_bf1017.sh && setsid nohup bash ~/dsv41/ark_bf1017.sh >/dev/null 2|bash ~/dsv41/ark_bf1017.sh|sha256sum -c --quiet SHA256SUMS|] foreign=[]
+2026-10-18 04:51:50 CDT WAIT CTL1: archive=[bash -c mkdir -p ~/dsv41/bf1017 && bash -n ~/dsv41/ark_bf1017.sh && setsid nohup bash ~/dsv41/ark_bf1017.sh >/dev/null 2|bash ~/dsv41/ark_bf1017.sh|sha256sum -c --quiet SHA256SUMS|] foreign=[]
+2026-10-18 04:53:20 CDT QUIET for CTL1 after 690s
+2026-10-18 04:53:21 CDT FACTS CTL1: loaded=5 tune_starts=5 | GPU KV cache size: 2,504,891 tokens, Maximum concurrency for 1,048,576 tokens per request: 2.39x | CUDA graph pool memory: 1.08 GiB (actual), 1.74 GiB (estimated), difference: 0.66 GiB (60.8%). | Available KV cache memory: 5.26 GiB
+2026-10-18 04:53:21 CDT boot->ready CTL1 live (no reboot); KV 2504891
+2026-10-18 04:53:21 CDT strays: 2542068 331.8GiB VLLM::EngineCore |2541620 1.2GiB /usr/bin/python3 /usr/local/bin/vllm|3898 0.6GiB /usr/bin/containerd |2542067 0.3GiB /usr/bin/python3 -c| MemAvailable=121.5GiB
+2026-10-18 04:53:23 CDT COLD64K CTL1: PREFILL target=65536 prompt_tokens=52942 ttft_s=[2.17] tok_s=[24359] mean_tok_s=24359
+2026-10-18 04:57:03 CDT RT CTL1: c1-r1 agg=196.25 out=174.95 ttft=0.64 acc=3.068 ; c1-r2 agg=188.99 out=169.05 ttft=0.65 acc=2.972 ; c1-r3 agg=180.86 out=162.51 ttft=0.64 acc=2.875 ; c4 agg=326.8 out=292.87 ttft=0.88 acc=2.925 ; c16 agg=537.44 out=489.13 ttft=1.87 acc=1.793 ; c32 agg=954.66 out=511.21 ttft=7.87 acc=1.974
+2026-10-18 04:59:05 CDT WINDOW CTL1: [P1-CTL1-r2] conc= 1:   192.5 agg tok/s  192.51 per-stream  (runs 191.7/193.3);[P1-CTL1-r2] conc= 2:   289.8 agg tok/s  144.91 per-stream  (runs 289.9/289.7);[P1-CTL1-r2] conc= 4:   426.6 agg tok/s  106.65 per-stream  (runs 424.7/428.5);[P1-CTL1-r2] conc= 8:   585.4 agg tok/s   73.17 per-stream  (ru
+2026-10-18 04:59:05 CDT REPLAY CTL1: [P1-CTL1-r1] REPLAY n=4: agg 421.3 tok/s over 14s, 6074 tokens; accept=60.7% acc/step=3.04; tool turns 24 emitted=14 per;[P1-CTL1-r2] REPLAY n=4: agg 409.5 tok/s over 14s, 5669 tokens; accept=55.8% acc/step=2.79; tool turns 24 emitted=14 per;
+2026-10-18 04:59:15 CDT GAUNTLET CTL1: 12 / 12
+2026-10-18 04:59:15 CDT stop-and-keep dsv41-vllm-1017-v22-ksched1to8-BOUND-REF
+2026-10-18 04:59:27 CDT strays: 3898 0.6GiB /usr/bin/containerd |4228 0.2GiB /usr/bin/dockerd -H|4855 0.1GiB /usr/bin/gnome-shell |3891 0.1GiB /usr/sbin/tailscaled --state=/var/lib/tailscale/tailscaled.state| MemAvailable=465.9GiB
+launched dsv41-vllm-1017-P1-cg8192-EXP
+2026-10-18 04:59:30 CDT launched dsv41-vllm-1017-P1-cg8192-EXP sizes=[1 2 4 6 8 12 16 18 24 32 40 48 64 96 128 256 512 1024 2048 4096 8192]
+2026-10-18 05:06:35 CDT DIED dsv41-vllm-1017-P1-cg8192-EXP
+2026-10-18 05:06:35 CDT FACTS CG8K: loaded=0 tune_starts=0 |  |  | Available KV cache memory: -1.6 GiB
+2026-10-18 05:06:35 CDT BOOTFAIL CG8K tail: (EngineCore pid=365) ValueError: No available memory for the cache blocks. Try increasing `gpu_memory_utilization` when initializing the engine (this flag also controls CPU memory reservation on the C|(APIServer pid=1) Traceback (most recent call last):|(APIServer pid=1) RuntimeError: Engine core initialization failed. See root cause above. Failed core proc(s): {}|
+2026-10-18 05:06:35 CDT CG8K rc=1
+2026-10-18 05:06:41 CDT strays: 4228 0.2GiB /usr/bin/dockerd -H|4855 0.1GiB /usr/bin/gnome-shell |3898 0.1GiB /usr/bin/containerd |3891 0.1GiB /usr/sbin/tailscaled --state=/var/lib/tailscale/tailscaled.state| MemAvailable=465.6GiB
+launched dsv41-vllm-1017-P1-cg2048-EXP
+2026-10-18 05:06:44 CDT launched dsv41-vllm-1017-P1-cg2048-EXP sizes=[1 2 4 6 8 12 16 18 24 32 40 48 64 96 128 256 512 1024 2048]
+2026-10-18 05:29:42 CDT BOUND dsv41-vllm-1017-P1-cg2048-EXP after 1370s
+2026-10-18 05:29:42 CDT boot->ready CG2K 1380s
+2026-10-18 05:29:42 CDT FACTS CG2K: loaded=0 tune_starts=1 | GPU KV cache size: 1,420,753 tokens, Maximum concurrency for 1,048,576 tokens per request: 1.35x | CUDA graph pool memory: 2.46 GiB (actual), 4.02 GiB (estimated), difference: 1.56 GiB (63.5%). | Available KV cache memory: 2.98 GiB
+2026-10-18 05:29:42 CDT KV CG2K: 1420753 tokens (CTL1 2504891, loss 1084138)
+2026-10-18 05:29:42 CDT KVFAIL CG2K: loss 1084138 > 500000 — skipping benches
+2026-10-18 05:29:48 CDT CG2K rc=2
+2026-10-18 05:29:53 CDT strays: 4228 0.2GiB /usr/bin/dockerd -H|4855 0.1GiB /usr/bin/gnome-shell |3898 0.1GiB /usr/bin/containerd |3891 0.1GiB /usr/sbin/tailscaled --state=/var/lib/tailscale/tailscaled.state| MemAvailable=464.7GiB
+2026-10-18 05:35:09 CDT BOUND dsv41-vllm-1017-v22-ksched1to8-BOUND-REF after 310s
+2026-10-18 05:35:09 CDT boot->ready CTL2 316s
+2026-10-18 05:35:10 CDT FACTS CTL2: loaded=1 tune_starts=1 | GPU KV cache size: 2,504,891 tokens, Maximum concurrency for 1,048,576 tokens per request: 2.39x | CUDA graph pool memory: 1.08 GiB (actual), 1.74 GiB (estimated), difference: 0.66 GiB (60.8%). | Available KV cache memory: 5.26 GiB
+2026-10-18 05:35:13 CDT COLD64K CTL2: PREFILL target=65536 prompt_tokens=53151 ttft_s=[3.1] tok_s=[17134] mean_tok_s=17134
+2026-10-18 05:39:00 CDT RT CTL2: c1-r1 agg=186.47 out=166.64 ttft=0.66 acc=2.943 ; c1-r2 agg=188.41 out=168.18 ttft=0.66 acc=2.984 ; c1-r3 agg=181.6 out=162.68 ttft=0.66 acc=2.93 ; c4 agg=321.46 out=287.79 ttft=0.9 acc=2.903 ; c16 agg=519.41 out=473.41 ttft=1.54 acc=1.797 ; c32 agg=910.03 out=491.19 ttft=8.04 acc=1.978
+2026-10-18 05:41:09 CDT WINDOW CTL2: [P1-CTL2-r2] conc= 1:   191.9 agg tok/s  191.90 per-stream  (runs 191.1/192.7);[P1-CTL2-r2] conc= 2:   287.7 agg tok/s  143.85 per-stream  (runs 288.3/287.1);[P1-CTL2-r2] conc= 4:   422.1 agg tok/s  105.53 per-stream  (runs 420.1/424.2);[P1-CTL2-r2] conc= 8:   592.5 agg tok/s   74.06 per-stream  (ru
+2026-10-18 05:41:09 CDT REPLAY CTL2: [P1-CTL2-r1] REPLAY n=4: agg 300.5 tok/s over 21s, 6333 tokens; accept=54.8% acc/step=2.74; tool turns 24 emitted=13 per;[P1-CTL2-r2] REPLAY n=4: agg 423.0 tok/s over 13s, 5586 tokens; accept=60.0% acc/step=3.00; tool turns 24 emitted=16 per;
+2026-10-18 05:41:25 CDT GAUNTLET CTL2: 12 / 12
+2026-10-18 05:41:26 CDT ===== CARD P1 END (lane = dsv41-vllm-1017-v22-ksched1to8-BOUND-REF; bound=1) =====

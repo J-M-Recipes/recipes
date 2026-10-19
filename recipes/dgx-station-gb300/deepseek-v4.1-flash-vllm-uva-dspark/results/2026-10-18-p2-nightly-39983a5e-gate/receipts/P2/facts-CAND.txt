@@ -1,0 +1,65 @@
+PIN_HOT installed PIN_MODE=split dump_dir=~/pin-hot-experts/e2a DECODE_T=16 MAX_N=49152 target=vllm.model_executor.layers.fused_moe.experts.trtllm_mxfp4_moe rowmap=/w/rowmap-static-v1.json freeze=- counter=- split_fused=True
+(APIServer pid=1) INFO 10-18 15:51:18 [cache.py:360] Using fp8_ds_mla data type to store kv cache. It reduces the GPU memory footprint and boosts the performance. Meanwhile, it may cause accuracy drop without a proper scaling factor
+(APIServer pid=1) INFO 10-18 15:51:28 [vllm.py:819] Auto-enabling VLLM_USE_BREAKABLE_CUDAGRAPH=1. Set VLLM_USE_BREAKABLE_CUDAGRAPH=0 to opt out.
+PIN_HOT installed PIN_MODE=split dump_dir=~/pin-hot-experts/e2a DECODE_T=16 MAX_N=49152 target=vllm.model_executor.layers.fused_moe.experts.trtllm_mxfp4_moe rowmap=/w/rowmap-static-v1.json freeze=- counter=- split_fused=True
+(EngineCore pid=917) INFO 10-18 15:51:36 [core.py:133] Initializing a V1 LLM engine (v0.32.0rc1.dev329+g39983a5e7) with config: model='/model', speculative_config=SpeculativeConfig(method='dspark', model='/model', num_spec_tokens=5), tokenizer='/model', skip_tokenizer_init=False, tokenizer_mode=deepseek_v41, revision=None, tokenizer_revision=None, trust_remote_code=True, dtype=torch.bfloat16, max_
+(EngineCore pid=917) INFO 10-18 15:51:37 [gpu_worker.py:510] Using V2 Model Runner
+PIN_HOT wrapped GPUModelRunner.load_model+profile_run in vllm.v1.worker.gpu.model_runner
+(EngineCore pid=917) INFO 10-18 15:51:57 [attention.py:170] Using DeepSeek's fp8_ds_mla KV cache format.
+(EngineCore pid=917) INFO 10-18 15:52:04 [mxfp4.py:818] Using 'FLASHINFER_TRTLLM_MXFP4_MXFP8' Mxfp4 MoE backend.
+(EngineCore pid=917) INFO 10-18 15:52:10 [engram.py:1021] Engram table offloaded to pinned host memory: 384006168 rows x 256, 94.42 GiB per rank
+(EngineCore pid=917) INFO 10-18 15:52:19 [engram.py:1021] Engram table offloaded to pinned host memory: 384016682 rows x 256, 94.42 GiB per rank
+(EngineCore pid=917) INFO 10-18 15:52:19 [model.py:873] Decoder SWA bounded replay: in eager prefill steps, layer 20 writes its KV for every token, and the rest of it and layers 21-39 run on each request's last 128 tokens only.
+(EngineCore pid=917) INFO 10-18 15:54:39 [utils.py:27] Using the target model's FLASHMLA_MEGA_ATTN_DSV41 attention backend for the DeepSeek-V4 DSpark drafter.
+(EngineCore pid=917) INFO 10-18 15:54:57 [model_runner.py:429] Model loading took 226.75 GiB memory and 189.997509 seconds
+PIN_HOT rehome layer=10 name=language_model.model.layers.10.ffn.experts uva=False hot_w1=(295, 4608, 2560) cold_w1=(89, 4608, 2560) hbm_free=23.47GiB host_avail=197.86GiB
+PIN_HOT rehome layer=11 name=language_model.model.layers.11.ffn.experts uva=False hot_w1=(295, 4608, 2560) cold_w1=(89, 4608, 2560) hbm_free=25.02GiB host_avail=196.26GiB
+PIN_HOT rehome layer=12 name=language_model.model.layers.12.ffn.experts uva=False hot_w1=(295, 4608, 2560) cold_w1=(89, 4608, 2560) hbm_free=26.58GiB host_avail=194.68GiB
+PIN_HOT rehome layer=13 name=language_model.model.layers.13.ffn.experts uva=False hot_w1=(295, 4608, 2560) cold_w1=(89, 4608, 2560) hbm_free=28.14GiB host_avail=193.07GiB
+PIN_HOT rehome layer=14 name=language_model.model.layers.14.ffn.experts uva=False hot_w1=(295, 4608, 2560) cold_w1=(89, 4608, 2560) hbm_free=29.69GiB host_avail=191.74GiB
+PIN_HOT rehome layer=15 name=language_model.model.layers.15.ffn.experts uva=False hot_w1=(295, 4608, 2560) cold_w1=(89, 4608, 2560) hbm_free=31.25GiB host_avail=190.13GiB
+PIN_HOT rehome layer=16 name=language_model.model.layers.16.ffn.experts uva=False hot_w1=(295, 4608, 2560) cold_w1=(89, 4608, 2560) hbm_free=32.81GiB host_avail=188.53GiB
+PIN_HOT rehome layer=17 name=language_model.model.layers.17.ffn.experts uva=False hot_w1=(295, 4608, 2560) cold_w1=(89, 4608, 2560) hbm_free=34.36GiB host_avail=186.94GiB
+PIN_HOT rehome layer=18 name=language_model.model.layers.18.ffn.experts uva=False hot_w1=(295, 4608, 2560) cold_w1=(89, 4608, 2560) hbm_free=35.92GiB host_avail=185.37GiB
+PIN_HOT rehome layer=19 name=language_model.model.layers.19.ffn.experts uva=False hot_w1=(295, 4608, 2560) cold_w1=(89, 4608, 2560) hbm_free=37.48GiB host_avail=183.77GiB
+PIN_HOT rehome layer=20 name=language_model.model.layers.20.ffn.experts uva=False hot_w1=(295, 4608, 2560) cold_w1=(89, 4608, 2560) hbm_free=39.03GiB host_avail=182.18GiB
+PIN_HOT rehome layer=21 name=language_model.model.layers.21.ffn.experts uva=False hot_w1=(295, 4608, 2560) cold_w1=(89, 4608, 2560) hbm_free=40.59GiB host_avail=180.59GiB
+PIN_HOT rehome layer=22 name=language_model.model.layers.22.ffn.experts uva=False hot_w1=(295, 4608, 2560) cold_w1=(89, 4608, 2560) hbm_free=42.15GiB host_avail=179.00GiB
+PIN_HOT rehome layer=23 name=language_model.model.layers.23.ffn.experts uva=False hot_w1=(295, 4608, 2560) cold_w1=(89, 4608, 2560) hbm_free=43.70GiB host_avail=177.43GiB
+PIN_HOT rehome layer=24 name=language_model.model.layers.24.ffn.experts uva=False hot_w1=(295, 4608, 2560) cold_w1=(89, 4608, 2560) hbm_free=45.26GiB host_avail=175.83GiB
+PIN_HOT rehome layer=25 name=language_model.model.layers.25.ffn.experts uva=False hot_w1=(295, 4608, 2560) cold_w1=(89, 4608, 2560) hbm_free=46.82GiB host_avail=174.24GiB
+PIN_HOT rehome layer=26 name=language_model.model.layers.26.ffn.experts uva=False hot_w1=(295, 4608, 2560) cold_w1=(89, 4608, 2560) hbm_free=48.37GiB host_avail=172.64GiB
+PIN_HOT rehome layer=27 name=language_model.model.layers.27.ffn.experts uva=False hot_w1=(295, 4608, 2560) cold_w1=(89, 4608, 2560) hbm_free=49.93GiB host_avail=171.05GiB
+PIN_HOT rehome layer=28 name=language_model.model.layers.28.ffn.experts uva=False hot_w1=(295, 4608, 2560) cold_w1=(89, 4608, 2560) hbm_free=51.49GiB host_avail=169.45GiB
+PIN_HOT rehome layer=29 name=language_model.model.layers.29.ffn.experts uva=False hot_w1=(295, 4608, 2560) cold_w1=(89, 4608, 2560) hbm_free=53.04GiB host_avail=167.84GiB
+PIN_HOT rehome layer=30 name=language_model.model.layers.30.ffn.experts uva=False hot_w1=(295, 4608, 2560) cold_w1=(89, 4608, 2560) hbm_free=54.60GiB host_avail=166.24GiB
+PIN_HOT rehome layer=31 name=language_model.model.layers.31.ffn.experts uva=False hot_w1=(295, 4608, 2560) cold_w1=(89, 4608, 2560) hbm_free=56.16GiB host_avail=164.65GiB
+PIN_HOT rehome layer=32 name=language_model.model.layers.32.ffn.experts uva=False hot_w1=(295, 4608, 2560) cold_w1=(89, 4608, 2560) hbm_free=57.71GiB host_avail=163.07GiB
+PIN_HOT rehome layer=33 name=language_model.model.layers.33.ffn.experts uva=False hot_w1=(295, 4608, 2560) cold_w1=(89, 4608, 2560) hbm_free=59.27GiB host_avail=161.48GiB
+PIN_HOT rehome layer=34 name=language_model.model.layers.34.ffn.experts uva=False hot_w1=(295, 4608, 2560) cold_w1=(89, 4608, 2560) hbm_free=60.83GiB host_avail=159.88GiB
+PIN_HOT rehome layer=35 name=language_model.model.layers.35.ffn.experts uva=False hot_w1=(295, 4608, 2560) cold_w1=(89, 4608, 2560) hbm_free=62.38GiB host_avail=158.29GiB
+PIN_HOT rehome layer=36 name=language_model.model.layers.36.ffn.experts uva=False hot_w1=(295, 4608, 2560) cold_w1=(89, 4608, 2560) hbm_free=63.94GiB host_avail=156.70GiB
+PIN_HOT rehome layer=37 name=language_model.model.layers.37.ffn.experts uva=False hot_w1=(295, 4608, 2560) cold_w1=(89, 4608, 2560) hbm_free=65.50GiB host_avail=155.11GiB
+PIN_HOT rehome layer=38 name=language_model.model.layers.38.ffn.experts uva=False hot_w1=(295, 4608, 2560) cold_w1=(89, 4608, 2560) hbm_free=67.05GiB host_avail=153.51GiB
+PIN_HOT rehome layer=39 name=language_model.model.layers.39.ffn.experts uva=False hot_w1=(295, 4608, 2560) cold_w1=(89, 4608, 2560) hbm_free=68.61GiB host_avail=151.91GiB
+PIN_HOT rehome layer=0 name=language_model.model.layers.0.ffn.experts uva=True hot_w1=(295, 4608, 2560) cold_w1=(89, 4608, 2560) hbm_free=63.84GiB host_avail=156.11GiB
+PIN_HOT rehome layer=1 name=language_model.model.layers.1.ffn.experts uva=True hot_w1=(295, 4608, 2560) cold_w1=(89, 4608, 2560) hbm_free=59.07GiB host_avail=160.58GiB
+PIN_HOT rehome layer=2 name=language_model.model.layers.2.ffn.experts uva=True hot_w1=(295, 4608, 2560) cold_w1=(89, 4608, 2560) hbm_free=54.29GiB host_avail=165.30GiB
+PIN_HOT rehome layer=3 name=language_model.model.layers.3.ffn.experts uva=True hot_w1=(295, 4608, 2560) cold_w1=(89, 4608, 2560) hbm_free=49.52GiB host_avail=169.24GiB
+PIN_HOT rehome layer=4 name=language_model.model.layers.4.ffn.experts uva=True hot_w1=(295, 4608, 2560) cold_w1=(89, 4608, 2560) hbm_free=44.75GiB host_avail=173.97GiB
+PIN_HOT rehome layer=5 name=language_model.model.layers.5.ffn.experts uva=True hot_w1=(295, 4608, 2560) cold_w1=(89, 4608, 2560) hbm_free=39.98GiB host_avail=178.05GiB
+PIN_HOT rehome layer=6 name=language_model.model.layers.6.ffn.experts uva=True hot_w1=(295, 4608, 2560) cold_w1=(89, 4608, 2560) hbm_free=35.21GiB host_avail=182.64GiB
+PIN_HOT rehome layer=7 name=language_model.model.layers.7.ffn.experts uva=True hot_w1=(295, 4608, 2560) cold_w1=(89, 4608, 2560) hbm_free=30.44GiB host_avail=187.37GiB
+PIN_HOT rehome layer=8 name=language_model.model.layers.8.ffn.experts uva=True hot_w1=(295, 4608, 2560) cold_w1=(89, 4608, 2560) hbm_free=25.67GiB host_avail=192.21GiB
+PIN_HOT rehome layer=9 name=language_model.model.layers.9.ffn.experts uva=True hot_w1=(295, 4608, 2560) cold_w1=(89, 4608, 2560) hbm_free=23.00GiB host_avail=195.30GiB
+PIN_HOT rehome done layers=40 HBM_expert=206.61GiB pinned_expert=62.33GiB hbm_free=23.00GiB host_avail=195.30GiB (expect ~206.6 / ~62.4)
+(EngineCore pid=917) INFO 10-18 15:58:04 [model_runner.py:1140] Graph capturing finished in 82 secs, took 1.78 GiB
+(EngineCore pid=917) INFO 10-18 15:58:04 [gpu_worker.py:763] Available KV cache memory: 6.68 GiB
+(EngineCore pid=917) INFO 10-18 15:58:04 [kv_cache_utils.py:1101] GPU KV cache size: 3,455,569 tokens, Maximum concurrency for 1,048,576 tokens per request: 3.30x
+(EngineCore pid=917) INFO 10-18 15:59:25 [kernel_warmup.py:461] Using FlashInfer managed autotune cache (root=/root/.cache/vllm/fi-autotune-v2)
+2026-10-18 15:59:25,609 - INFO - autotuner.py:1048 - flashinfer.jit: [Autotuner]: Autotuning process starts ...
+2026-10-18 15:59:26,512 - INFO - autotune_cache.py:495 - flashinfer.jit: [Autotuner]: Managed autotune cache attached for this process: ManagedAutotuneCache(env_dir='/root/.cache/vllm/fi-autotune-v2/v2/fd6e12df2b959586', hits=0, misses=0)
+2026-10-18 16:10:48,702 - INFO - autotuner.py:1071 - flashinfer.jit: [Autotuner]: Autotuning process ends
+(EngineCore pid=917) INFO 10-18 16:11:15 [model_runner.py:1140] Graph capturing finished in 16 secs, took 1.57 GiB
+TUNEWINDOW 15:59:25 16:10:48
+STORE_ENTRIES 210
