@@ -1,7 +1,90 @@
 # DeepSeek-V4.1-Flash at 1M context on one DGX Station GB300
 
-**Serving on `:30006` since 2026-09-27 08:12 CDT: Fused Split, v21** (v18 launch on the 0909 image + hook v21 — `split_ids()` as one Triton kernel; **182.8 tok/s C1 prose, +6.2 % vs v18 bracketing controls 171.8 / 172.5**, C8 687 (+4.6 %), C16 993 (+4.0 %), non-tool greedy 16/16 vs both controls; held-out BFCL on v21 pending; see Round 12) · documented release **Clean Nightly, v20** (2026-09-21: vLLM nightly `2671fedf` — the last before the #56633 mHC-fold drift — + v15 hook + off54 + fp8_ds_mla + v18's 24-seat/cudagraph flags; **181 tok/s C1 prose (+5.1% pair mean vs v18)**, KV 2.55M tokens, C24 warm agent p95 2.4–2.8 s vs 3.4; **held-out BFCL live sibling 78.8% vs v18 78.9%**, dev 92.7–93.5%; tools 64/64 ×3; $0.008 per 1000 solved tasks; see Round 11b) · rollback **Many Seat, v18** (2026-09-18: v15 hook + `--max-num-seqs 24` + token-sized `--cudagraph-capture-sizes`; 172 tok/s C1 prose, KV 2.50M tokens, C24 warm agent turn 0.55 s p50; **BFCL v4 tool-call exact-match 93.3%**) · **v19 "Nightly" was promoted and reverted on 2026-09-20** (see Round 10) · previous **v15 Pin Hot Experts** (retired 2026-09-18) · **v14 Sixty-K Agent** (retired 2026-09-17) · Historical **v13: 90 tok/s single-stream prose · 140–160 tok/s on agent/code text · 429 agg tok/s at C16** (v12: 89 / 140–160 / 311 · v11: 82 / 130–150 / 287) · 972K-token prompt prefilled in 85 s · Hermes tool-calling 10/10
+**Serving on `:30006` since 2026-10-18 10:21 CDT: Pin Exact, v23** (v22 + exact-size pinned host allocations: pinned host 328.0 → 252.8 GiB, boot-guard margin 12 → 198 GiB, decode and greedy non-tool output unchanged; **188.2 tok/s C1 real text, accept 2.99/step**; BFCL held-out 77.65; see the 2026-10-18 round) · rollback **v22** (k=5 band to 8 sequences, 2026-10-17) · **candidate, not promoted:** vLLM nightly-39983a5e "config C" passed all seven pre-registered gates (+6% C1, TTFT 8K 0.43 s, KV +55%; GSM8K exactly at its bar), pending James · previous **Fused Split, v21** (2026-09-27: v18 launch on the 0909 image + hook v21 — `split_ids()` as one Triton kernel; **182.8 tok/s C1 prose, +6.2 % vs v18 bracketing controls 171.8 / 172.5**, C8 687 (+4.6 %), C16 993 (+4.0 %), non-tool greedy 16/16 vs both controls; held-out BFCL on v21 pending; see Round 12) · documented release **Clean Nightly, v20** (2026-09-21: vLLM nightly `2671fedf` — the last before the #56633 mHC-fold drift — + v15 hook + off54 + fp8_ds_mla + v18's 24-seat/cudagraph flags; **181 tok/s C1 prose (+5.1% pair mean vs v18)**, KV 2.55M tokens, C24 warm agent p95 2.4–2.8 s vs 3.4; **held-out BFCL live sibling 78.8% vs v18 78.9%**, dev 92.7–93.5%; tools 64/64 ×3; $0.008 per 1000 solved tasks; see Round 11b) · rollback **Many Seat, v18** (2026-09-18: v15 hook + `--max-num-seqs 24` + token-sized `--cudagraph-capture-sizes`; 172 tok/s C1 prose, KV 2.50M tokens, C24 warm agent turn 0.55 s p50; **BFCL v4 tool-call exact-match 93.3%**) · **v19 "Nightly" was promoted and reverted on 2026-09-20** (see Round 10) · previous **v15 Pin Hot Experts** (retired 2026-09-18) · **v14 Sixty-K Agent** (retired 2026-09-17) · Historical **v13: 90 tok/s single-stream prose · 140–160 tok/s on agent/code text · 429 agg tok/s at C16** (v12: 89 / 140–160 / 311 · v11: 82 / 130–150 / 287) · 972K-token prompt prefilled in 85 s · Hermes tool-calling 10/10
 
+
+## 2026-10-18 round — v23 promoted, nightly config C passes its gates (not promoted), P1 fails
+
+Same box, same 1017 weights, every verdict from a bracketed window against the live lane. Bundles:
+[`results/2026-10-18-v23-pinexact-host/`](results/2026-10-18-v23-pinexact-host/README.md), [`results/2026-10-18-p2-nightly-39983a5e-gate/`](results/2026-10-18-p2-nightly-39983a5e-gate/README.md), [`results/2026-10-18-p1-prefill-graphs-FAIL/`](results/2026-10-18-p1-prefill-graphs-FAIL/README.md).
+
+### v23 Pin Exact — promoted 10:21 CDT
+
+`launch_v22.sh` + `-e PYTORCH_CUDA_ALLOC_CONF=pinned_max_cached_size_mb:1024`. torch 2.13 rounds every pinned host
+allocation up to a power of two, so the two 94.4 GiB Engram tables had been pinned as 2 × 128 GiB. Above the cap they
+are now pinned at exact size. Nothing on the GPU changes: same image, kernels, autotune hash (`62426808`, Loaded 189),
+KV pool and expert split.
+
+| | v22 (controls) | **v23** |
+|---|---|---|
+| pinned host (EngineCore `/dev/zero` maps, smaps Size sum) | 327.96 GiB | **252.79 GiB (−75.17)** |
+| MemAvailable steady / after drop_caches | 118–124 / 131–133 GiB | 193–196 / 206 GiB |
+| hook guard `host_avail` at layer-9 rehome (floor 10 GiB) | 11.3–12.1 GiB | **197.7 GiB** |
+| HBM experts / Grace-pinned experts · KV tokens | 206.61 / 62.33 GiB · 2,504,891 | same · same |
+| RT C1 / C4 / C16 real text (Card S0, bracketed) | 186.5 / 318.7 / 522.9 · 193.5 / 335.9 / 540.2 | 190.2 / 325.1 / 523.5 (+0.1 / −0.7 / −1.5%) |
+| replay r2 · gauntlet | 441 / 437 · 12/12 | 438 (−0.2%) · 12/12 |
+| greedy non-tool parity (e2c_parity, 16 prompts) | — | **16/16 vs CTL1 and 16/16 vs CTL2** |
+| confirm (Card S0c): knee6 r2 C8 / C6 / RT C1 (mean of 3) | 597.0 / 535.8 / 187.8 | 604.8 / 529.6 / 188.2 (+1.3 / −1.2 / +0.2%) |
+
+The boot-guard margin is what changed in practice: the hook's 10 GiB host floor had aborted three boots on
+2026-10-05/06, and it now clears by ~188 GiB. **Prose-knee C8 is bimodal on this lane** — each rep lands fast
+(~620–632) or slow (~556–583) on every arm — so S0's −3.4% C8 was mode luck; C8 is now gated on ≥ 4 reps.
+
+### Candidate (not promoted) — config C on vLLM nightly-39983a5e
+
+`vllm/vllm-openai@sha256:a3bc7f09…2623` + hook v21 + off60 + `--kv-cache-dtype fp8_ds_mla` + `FLASHMLA_MEGA_ATTN_DSV41`
++ `--no-swa-bounded-replay` + the v23 alloc env + a managed autotune store (`vllm-cache-p2-39983a5e`, 210/210 preloaded).
+Card P2f, 19:09–20:18, v23 live → C → v23 restart; bars fixed in the runner before launch. **PASSED GATES — NOT
+PROMOTED (pending James).**
+
+| gate | bar | config C vs v23 | |
+|---|---|---|---|
+| per-class decode wall-clock (5 classes × C1/C8, two v23 controls) | ≥ ctl mean − max(2%, 1.5 × ctl spread), every cell | 20/20 cells, +0.5 … +12.6% | PASS |
+| GSM8K-200 | ≥ A − 1.5 pt | 95.5 vs 97.0 (−1.5) | **PASS, at the bar** |
+| BFCL dev (600) | ≥ A − 1 pt | 92.50 vs 92.33 | PASS |
+| BFCL held-out (1,311) | ≥ A − 1 pt | 77.65 vs 77.65 | PASS |
+| gauntlet | 12/12 | 12/12 | PASS |
+| RT C1 real text, mean of 3 | ≥ CTL − 2% | 197.8 vs 186.4 (+6.1%) | PASS |
+| knee6 C8, 4 reps per arm | ≥ CTL − 2% | 656.5 vs 605.2 (+8.5%) | PASS |
+| margin-weighted TF flips (Card P2, same image, replay on) | W ≤ 3.85 | 3.11, 0 confident agent/tool flips | PASS |
+
+Not gated: TTFT 8K 0.430 vs 0.645 s · cold ~53K prefill 30.5K vs 24.0K tok/s (+27%) · KV 3,878,024 tokens (+55%) ·
+knee r2 C16 1,075 vs 944 (+14%) · engine step ~6% faster at equal acceptance in every class.
+
+**GSM8K caveat.** −1.5 pt is exactly the line, the 3 flips all go one way, and config C writes **+48% completion
+tokens** on GSM8K (mean 293.5 vs 198.3; v23 restart vs live is +6%). Two of the three flipped items are long C outputs.
+n = 200 cannot separate 1.5 pt from noise (p = 0.25); the full 1,319-item run per arm has not been done. Structured C1
+acceptance −2.6 / −3.6 pts trips the investigation trigger (explanation not verified). The 8-prompt fixture's code
+−4.7 pts, which failed P2b–P2e under the old rule, does not reproduce on 40 real prompts per class (within 0.4 pt).
+
+How it was reached: P2 (replay on) failed warm replay r2 −10.9% — vllm#58132 SWA bounded replay makes a prefix-hit
+request cost a cold one; the replay-on variant is parked (TTFT 8K 0.28 s, cold prefill ~×1.9, warm replay r2 −6…−11%).
+P2b → P2e then ruled out the #56893 MXFP8 KV record, the drafter's and the target's attention kernels and MegaAttn fused
+cast, and a desk check ruled out the aux-capture path (same tensor as the 1017 reference). Kept stopped as
+`dsv41-vllm-1017-P2b-n39983a5e-noreplay-EXP-FAIL-P2f-PASS`.
+
+### FAILED — Card P1, prefill CUDA graphs to 8,192 tokens
+
+| arm | capture sizes | graph memory | KV tokens | verdict |
+|---|---|---|---|---|
+| v22 control | 1 … 128 | 1.29 GiB | 2,504,891 | — |
+| CG8K | + 256 … 8192 | 8.21 GiB | none — boot died (KV −1.6 GiB) | **FAILED** |
+| CG2K | + 256 … 2048 | 3.63 GiB | 1,420,753 (−43%; bar: loss ≤ 0.3M) | **FAILED** |
+
+Graph memory is super-linear in the top capture size and charged to KV; the capture list is part of the FlashInfer
+autotune hash (new hash, provisional boot). Reopens only with an HBM source.
+
+### C1 headline: mean of 3, acceptance next to it, split by class
+
+The index headline is now the mean of three real-text C1 runs with `acceptance_len` (1 + accepted / draft steps, bonus
+token included), plus a per-class split (`docs/benchmarking.md`, "C1 headline rule"). v23: **188.2 tok/s, 2.99 tokens/step**
+(190.8 / 189.1 / 184.8). Per class on the per-class instrument (40 real prompts per class, forced 256 tokens, decode only,
+C1): prose 232.3 / 3.09 · structured 250.3 / 3.27 · code 293.4 / 4.33 · shell_ops 316.9 / 4.42 · tool_json 300.0 / 3.98
+(tok/s / tokens per step). The two instruments use different prompts and output lengths (CNN/DM 8.2K in, 1,024 out vs
+real Hermes contexts, 256 out), so compare within one column.
+
+Also delivered: `longgen_cell.py` (after original-el8's `long-gen.py`), a long-generation cell; dry run 2,048 tokens at
+219 tok/s decode, acceptance 3.52. The 60K-token cell has not been run.
 
 ## Measured, not adopted — Grace-only MegaMoE via el8's M3 hook, and 32 seats (2026-10-18, 23:04–01:52)
 
@@ -264,7 +347,7 @@ Operating it: `docker update --restart unless-stopped dsv41-vllm-v13-1M-ksched-B
 
 ## What this runs
 
-[`deepseek-ai/DeepSeek-V4.1-Flash`](https://huggingface.co/deepseek-ai/DeepSeek-V4.1-Flash) @ `df42c109`, **as shipped** — 510 GB of MXFP4 routed experts, FP8 Engram table, FP8 attention. Nothing is re-quantized. It does not fit the ~250 GiB of HBM the GB300 exposes, so this recipe puts 60 GiB of expert weights (v12; v11 used 70) and the 189 GiB Engram table in Grace LPDDR5X and lets the GPU read them over NVLink-C2C through vLLM's UVA offload backend. Full native context (1,048,576 tokens) stays on. The in-checkpoint DSpark drafter runs at k=5.
+[`deepseek-ai/DeepSeek-V4.1-Flash-1017`](https://huggingface.co/deepseek-ai/DeepSeek-V4.1-Flash-1017) @ `1bae0e10` (since 2026-10-17; `df42c109` before), **as shipped** — 510 GB of MXFP4 routed experts, FP8 Engram table, FP8 attention. Nothing is re-quantized. It does not fit the ~250 GiB of HBM the GB300 exposes, so this recipe puts 60 GiB of expert weights (v12; v11 used 70) and the 189 GiB Engram table in Grace LPDDR5X and lets the GPU read them over NVLink-C2C through vLLM's UVA offload backend. Full native context (1,048,576 tokens) stays on. The in-checkpoint DSpark drafter runs at k=5.
 
 The result is a single-box agent lane: prose decode is C2C-bound at ~89 tok/s, but the text agents actually emit — shell, code, tool-call JSON — runs 140–160 tok/s because the drafter accepts 64–91% of its guesses there. The number to quote is the one for your workload.
 
@@ -284,10 +367,10 @@ Profile: [`hardware/dgx-station-gb300.yaml`](../../../hardware/dgx-station-gb300
 
 | | pin |
 |---|---|
-| Image | `vllm/vllm-openai:nightly-2671fedfc7ae604761990603fc736c0c4f21de57` @ `sha256:91c875065792e9b79dfec5019e5017f96b1511eed292e7ec15182444b23efe66` (vLLM nightly `2671fedf`, 2026-09-13 — last before the #56633 mHC-fold drift; **this is the v20 pin**) |
-| vLLM | `0.29.1rc1.dev9+g2671fedfc` (v18 and earlier: `0.1.dev20904+g179dd0fa9` on the day-0 `deepseekv41-flash-0909` image) |
-| Libraries | torch 2.13.0+cu130 · transformers 5.17.0 · flashinfer 0.6.18 · triton 3.7.1 |
-| Model | `deepseek-ai/DeepSeek-V4.1-Flash` @ `df42c109f1defefcbfcedbe7d905718a12266e40`, 510,313,343,553 bytes, byte-verified |
+| Image | `vllm/vllm-openai:deepseekv41-flash-0909` @ `sha256:00d577a6a63281e15336029d5bcee4e9a2cf182214a4f20ba6111b1c8e79893d` (day-0 build; serving v21 → v22 → **v23**). PRIOR documented release v20: `nightly-2671fedf…` @ `sha256:91c87506…`. Candidate, not this pin: `nightly-39983a5e` @ `sha256:a3bc7f09…` (config C, 2026-10-18) |
+| vLLM | `0.1.dev20904+g179dd0fa9` (v20 was `0.29.1rc1.dev9+g2671fedfc`) |
+| Libraries | torch 2.13.0+cu130 · transformers 5.17.0 · flashinfer 0.6.18 · triton 3.7.1 · env `PYTORCH_CUDA_ALLOC_CONF=pinned_max_cached_size_mb:1024` (v23) |
+| Model | `deepseek-ai/DeepSeek-V4.1-Flash-1017` @ `1bae0e1088993b9b82de08f59de5be5a34e42170`, 253 files, 510,311,114,235 bytes (stat sum 2026-10-18); previous `df42c109…`, 510,313,343,553 bytes, byte-verified |
 
 ### Upstream watch (2026-09-20 evening) — one item bears on the parked v19 finding
 
@@ -315,6 +398,16 @@ Full lock: [`results/…/software-lock.txt`](results/2026-09-10-v11-1M-k5-lpt614
 
 ## Launch
 
+v23, the serving launch (one `docker run`; edit the model/cache/hook paths at the top):
+
+```bash
+bash results/2026-10-18-v23-pinexact-host/scripts/launch_v23.sh dsv41-vllm-1017-v23-pinexact-BOUND-REF
+# = v22 + -e PYTORCH_CUDA_ALLOC_CONF=pinned_max_cached_size_mb:1024 ; hash-hit boot ~5 min
+bash scripts/smoke_vllm.sh
+```
+
+The older env-driven form (v18 shown; v22/v23 change `KSCHED` to `[[1,8,5],[9,24,1]]` and add the env var):
+
 ```bash
 MODEL=/models/DeepSeek-V4.1-Flash-df42c109f1defefcbfcedbe7d905718a12266e40 \
 TAG=v18-many-seat OFFGB=60 UTIL=0.97 SEQS=24 SPEC=dspark:5 KSCHED='[[1,4,5],[5,24,1]]' CTX=1048576 \
@@ -325,7 +418,7 @@ bash scripts/launch-dsv41-vllm.sh
 bash scripts/smoke_vllm.sh
 ```
 
-The server command inside the container:
+The server command inside the container (v23: `PYTORCH_CUDA_ALLOC_CONF=pinned_max_cached_size_mb:1024` in the env, schedule `[[1,8,5],[9,24,1]]`; v18 shown):
 
 ```
 vllm serve /model --served-model-name dsv41-flash-uva --trust-remote-code --tensor-parallel-size 1 \
@@ -341,6 +434,7 @@ vllm serve /model --served-model-name dsv41-flash-uva --trust-remote-code --tens
 
 Flags that matter, and why:
 
+- **`PYTORCH_CUDA_ALLOC_CONF=pinned_max_cached_size_mb:1024`** (v23). Pins allocations above 1 GiB at exact size instead of the next power of two: the two 94.4 GiB Engram tables stop costing 128 GiB each. −75 GiB pinned host, +~186 GiB at the hook's boot guard, zero GPU-side change.
 - **`--max-num-seqs 24`** (v18). At 16 this lane queued on a 35-seat workload — warm agent-turn p50 27 s at 24 streams — while KV usage peaked at 16%. 24 slots: 0.55 s. Do not fix the same symptom with a lower `--long-prefill-token-threshold`: 2048 cost idle prefill −47% and prose p10 −29% (v16).
 - **`--cudagraph-capture-sizes 1 2 4 6 8 12 16 18 24 32 40 48 64 96 128`** (v18). Token counts, not sequence counts. Default graphs for 24 slots cost 4.1 GiB and KV fell to 1.79M; this list costs 2.4 GiB and KV is 2.50M with decode unchanged. A list that tops out at 24 (v17b) leaves every batch above 12 seqs uncaptured.
 
@@ -358,17 +452,47 @@ FlashInfer autotunes the MXFP4 MoE kernels and caches the result under a hash of
 
 | gate | how | last pass |
 |---|---|---|
-| schema | `scripts/check_recipe.py` | 2026-09-11 |
-| digest | image sha256 matches; `/model` is the `df42c109` revision, byte-verified | 2026-09-11 |
+| schema | `scripts/check_recipe.py` | 2026-10-18 |
+| digest | image `sha256:00d577a6…` (0909) by `docker image inspect`; `/model` is the 1017 revision `1bae0e10`; hook `b5e4f4f8…` read inside the container | 2026-10-18 |
 | health | `/v1/models` 200; log shows `Available KV cache memory: 10.05 GiB`, `Loaded 210 configs`; `smoke_vllm.sh` 5/5 | 2026-09-11 |
 | quality | smoke (arith 323, count 1–60, prose, parsed `tool_call`, thinking→`36`); **Hermes harness 10/10** tool calls with correct answers and side effects ([harness-summary.md](results/2026-09-12-v12-1M-k5-off60-util97/harness-summary.md) (v12 re-run 2026-09-12, 10/10)). No requant, so no divergence gate. | 2026-09-11 |
-| performance | `knee.sh` C1 within 5% of 89.2 tok/s warm vs a same-window v11 control (79.5) | 2026-09-12 |
+| performance | v23: bracketed CTL → CAND → CTL, RT C1/C4/C16 and replay r2 within −2%, knee6 C8/C6 on ≥ 4 reps within −2% (Card S0/S0c) | 2026-10-18 |
+| fidelity (v23) | greedy non-tool parity 16/16 vs both controls; gauntlet 12/12; BFCL dev 92.33 / held-out 77.65; GSM8K-200 97.0 | 2026-10-18 |
+
+### Promotion gates (amended 2026-10-18, accepted by James)
+
+- **Per-class DSpark acceptance is an investigation trigger, not a gate.** Any class moving more than 2 pts — on the
+  8-prompt agent fixture or on the per-class instrument's `/metrics` acceptance — requires a written explanation before
+  promotion. It does not block by itself. (Why: the 8-prompt fixture flagged code −4.7 pts on every nightly variant; 40
+  real prompts per class did not reproduce it.)
+- **The gate for drafter-side changes is per-class decode wall-clock**: `perclass_run.sh` with the frozen prompt set
+  (sha1 `618898aa`, real Hermes transcript turns, private), forced length 256, C1 and C8, r1/r2. For every class × cell,
+  candidate mean ≥ control mean − max(2%, 1.5 × the control's same-config spread); same-window v23 control, bracketed
+  when a boot is involved; all 10 cells must pass. Instrument: [`results/2026-10-18-p2-nightly-39983a5e-gate/scripts/perclass/`](results/2026-10-18-p2-nightly-39983a5e-gate/scripts/perclass/).
+- **Fidelity gates unchanged:** BFCL ≥ control − 1 pt (dev and the frozen held-out sibling), GSM8K, margin-weighted
+  teacher-forced flips, gauntlet 12/12. Speed bars outside the drafter question (RT harness, replay, knee) unchanged.
+- **C1 headlines** are a mean of 3 with acceptance alongside and a per-class split (`docs/benchmarking.md`).
 
 **On instruments.** `knee.sh` runs each concurrency twice and the two runs agree within ~1%; it is the decision metric. `replay.py` replays 24 real agent turns and is useful as a workload-shaped smoke test, but at temperature 0 it swings **±17 tok/s** run to run (batched MoE + speculative decode are not bit-deterministic). We published an overnight "win" on it and retracted it the next morning when the knee said the opposite. Bench on the tight instrument.
 
 ## Results
 
-### v18 — Many Seat (rollback lane)
+### v23 — Pin Exact (serving since 2026-10-18 10:21 CDT)
+
+Bundle: [`results/2026-10-18-v23-pinexact-host/`](results/2026-10-18-v23-pinexact-host/README.md). Real-text harness = RonanLabs `kbench_chat_ds.py` (CNN/DM ~8.2K in, 1,024 forced, thinking off, T=0, nonce, 0% prefix hits). Not slot-capped below C24.
+
+| cell | v23 | window |
+|---|---|---|
+| RT C1, mean of 3 (accept/step) | **188.2 (2.99)** | S0c promotion boot; later controls 186.1 (2.91) live, 186.8 (2.94) restart |
+| RT C4 / C16 / C32 output | 325.1 / 523.5 / 506.5 | Card S0 |
+| TTFT 8K (RT C1 median) | 0.643 / 0.647 s | Card P2f A / D |
+| knee6 C8, 4 reps | 596.5 / 614.0 (bimodal reps) | Card P2f A / D |
+| knee r2 C1 / C8 / C16 (prose) | 192.2 / 618.5 / 944.4 | Card P2f A |
+| cold ~53K-token prefill | 24.1K tok/s | Card P2f A |
+| replay r2, 4 workers | 438 | Card S0 |
+| pinned host / KV tokens | 252.79 GiB / 2,504,891 | Card S0 |
+
+### v18 — Many Seat (superseded; v22 is the rollback since 2026-10-18)
 
 Same-window idle knee re-check 2026-09-18 (v17 ×2 then v18 ×2, box otherwise idle) with a same-afternoon v15 control. Knee prompt class **prose**, T=0, 192 tokens. Not slot-capped at C16 (`--max-num-seqs 24`). Bundle: [`results/2026-09-18-many-seat-v16-v17-v18/`](results/2026-09-18-many-seat-v16-v17-v18/).
 
@@ -517,7 +641,7 @@ Zero preemptions at 972K; HBM peaked at 243 GiB. Warm prefix on an 8.8K-token sy
 
 ## Known limits
 
-See `limits:` in [`recipe.yaml`](recipe.yaml). The short version: decode is C2C + kernel bound and the offloaded-expert byte count is the lever (~0.76 tok/s per GiB moved into HBM; v12 spends the last HBM headroom on it and pays in KV); quote the tok/s for your content class, not the best one; the autotune hash trap is real; `reasoning_effort: medium` is rejected by the template (use `low|high|xhigh|max`); ~110 GB of host shmem is unaccounted for and the host has no room for a second big model.
+See `limits:` in [`recipe.yaml`](recipe.yaml). 2026-10-18 additions: the per-class acceptance rule is amended (trigger, not gate); vLLM nightly-39983a5e config C passed its gates and is a candidate, not the runtime (GSM8K at its bar, +48% completion tokens); P1 prefill graphs failed on KV; prose-knee C8 is bimodal (gate on ≥ 4 reps); the 0909 image renders thinking-mode `reasoning_effort` low/high as 25/50 where the 1017 checkpoint's encoder uses 50/75. The short version: decode is C2C + kernel bound and the offloaded-expert byte count is the lever (~0.76 tok/s per GiB moved into HBM; v12 spends the last HBM headroom on it and pays in KV); quote the tok/s for your content class, not the best one; the autotune hash trap is real; `reasoning_effort: medium` is rejected by the template (use `low|high|xhigh|max`); ~110 GB of host shmem was unaccounted for (corrected in part on 2026-10-18: 75 GiB of pinned memory was power-of-two rounding, removed by v23; v23 leaves ~200 GiB MemAvailable).
 
 ## What didn't work
 
@@ -525,9 +649,11 @@ See `limits:` in [`recipe.yaml`](recipe.yaml). The short version: decode is C2C 
 
 ## Rollback
 
-Every bound config is kept as a stopped container `dsv41-vllm-<tag>`. `docker stop` the lane, `docker start` the previous one; ~4 min. Production surfaces on other ports are never part of this lane.
+v23 → v22: `docker stop dsv41-vllm-1017-v23-pinexact-BOUND-REF && docker start dsv41-vllm-1017-v22-ksched1to8-RETIRED-REF` (~5 min, autotune hash hit). Every bound config is kept as a stopped container `dsv41-vllm-<tag>`. `docker stop` the lane, `docker start` the previous one; ~4 min. Production surfaces on other ports are never part of this lane.
 
 ## Credits
+
+2026-10-18 round: briefs, bars and write-up by Milo (Hermes, claude-fable-5-1); worker runs by claude-opus-5-5 subagents from those briefs; original-el8 for the P1 (prefill graphs) and P5 (long-generation cell) ideas; the Opus 5.5 review behind the per-class rule amendment; Ronan (RonanLabsAI) for the real-text RT harness; vLLM upstream for nightly-39983a5e, #58132, #56893 and the managed autotune store.
 
 Campaign design, briefs, win bars, and verdicts: **Milo** (James Meadlock's Handler agent, Hermes `milo` profile, session model anthropic/claude-fable-5.1) with James. Worker runs (E1–E5 windows, recipe PRs): Grok 4.6 via xAI and claude-fable-5.1 via Nous, from Milo's written briefs; every number here was read back from the worker's JSON. The pin-hot-experts idea: James, in conversation with Grok.
 

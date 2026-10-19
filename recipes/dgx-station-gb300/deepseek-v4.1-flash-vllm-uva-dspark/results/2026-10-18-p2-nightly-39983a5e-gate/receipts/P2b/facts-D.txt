@@ -1,0 +1,19 @@
+(APIServer pid=1) INFO 10-18 17:37:50 [vllm.py:734] Auto-enabling VLLM_USE_BREAKABLE_CUDAGRAPH=1. Set VLLM_USE_BREAKABLE_CUDAGRAPH=0 to opt out.
+(EngineCore pid=364) INFO 10-18 17:37:58 [core.py:123] Initializing a V1 LLM engine (v0.1.dev20904+g179dd0fa9) with config: model='/model', speculative_config=SpeculativeConfig(method='dspark', model='/model', num_spec_tokens=5), tokenizer='/model', skip_tokenizer_init=False, tokenizer_mode=deepseek_v41, revision=None, tokenizer_revision=None, trust_remote_code=True, dtype=torch.bfloat16, max_seq_
+(EngineCore pid=364) INFO 10-18 17:37:59 [gpu_worker.py:436] Using V2 Model Runner
+(EngineCore pid=364) INFO 10-18 17:38:00 [attention.py:140] Using DeepSeek's fp8_ds_mla KV cache format.
+(EngineCore pid=364) PIN_HOT installed PIN_MODE=split dump_dir=~/pin-hot-experts/e2a DECODE_T=16 MAX_N=49152 target=vllm.model_executor.layers.fused_moe.experts.trtllm_mxfp4_moe rowmap=/w/rowmap-static-v1.json freeze=- counter=- split_fused=True
+(EngineCore pid=364) INFO 10-18 17:40:48 [model_runner.py:408] Model loading took 226.77 GiB memory and 168.623372 seconds
+(EngineCore pid=364) PIN_HOT rehome layer=9 name=language_model.model.layers.9.ffn.experts uva=True hot_w1=(295, 4608, 2560) cold_w1=(89, 4608, 2560) hbm_free=23.08GiB host_avail=197.52GiB
+(EngineCore pid=364) PIN_HOT rehome done layers=40 HBM_expert=206.61GiB pinned_expert=62.33GiB hbm_free=23.08GiB host_avail=197.52GiB (expect ~206.6 / ~62.4)
+(EngineCore pid=364) INFO 10-18 17:41:39 [model_runner.py:974] Graph capturing finished in 11 secs, took 1.29 GiB
+(EngineCore pid=364) INFO 10-18 17:41:39 [gpu_worker.py:632] Available KV cache memory: 5.26 GiB
+(EngineCore pid=364) INFO 10-18 17:41:40 [kv_cache_utils.py:2321] GPU KV cache size: 2,504,891 tokens, Maximum concurrency for 1,048,576 tokens per request: 2.39x
+(EngineCore pid=364) INFO 10-18 17:41:44 [kernel_warmup.py:333] Using FlashInfer autotune cache file: /root/.cache/vllm/flashinfer_autotune_cache/0.6.18/103a/62426808ae2b0ddbdfbf2278702ac4e367078b9884817c169ddee40495c4e6a6/autotune_configs.json
+(EngineCore pid=364) 2026-10-18 17:41:44,290 - INFO - autotuner.py:2789 - flashinfer.jit: [Autotuner]: Loaded 189 configs from /root/.cache/vllm/flashinfer_autotune_cache/0.6.18/103a/62426808ae2b0ddbdfbf2278702ac4e367078b9884817c169ddee40495c4e6a6/autotune_configs.json
+(EngineCore pid=364) 2026-10-18 17:41:44,292 - INFO - autotuner.py:972 - flashinfer.jit: [Autotuner]: Autotuning process starts ...
+(EngineCore pid=364) 2026-10-18 17:41:49,683 - INFO - autotuner.py:995 - flashinfer.jit: [Autotuner]: Autotuning process ends
+(EngineCore pid=364) 2026-10-18 17:41:49,696 - INFO - autotuner.py:2652 - flashinfer.jit: [Autotuner]: Saved 189 configs to /root/.cache/vllm/flashinfer_autotune_cache/0.6.18/103a/62426808ae2b0ddbdfbf2278702ac4e367078b9884817c169ddee40495c4e6a6/autotune_configs.json (0 new, 189 from previous config)
+(EngineCore pid=364) INFO 10-18 17:42:07 [model_runner.py:974] Graph capturing finished in 18 secs, took 1.08 GiB
+TUNEWINDOW 17:41:44 17:41:49
+STORE_ENTRIES 210

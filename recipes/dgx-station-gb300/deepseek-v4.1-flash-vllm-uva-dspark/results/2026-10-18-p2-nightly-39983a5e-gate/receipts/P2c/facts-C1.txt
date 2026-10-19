@@ -1,0 +1,21 @@
+PIN_HOT installed PIN_MODE=split dump_dir=~/pin-hot-experts/e2a DECODE_T=16 MAX_N=49152 target=vllm.model_executor.layers.fused_moe.experts.trtllm_mxfp4_moe rowmap=/w/rowmap-static-v1.json freeze=- counter=- split_fused=True
+(APIServer pid=1) INFO 10-18 18:16:21 [cache.py:360] Using fp8_ds_mla data type to store kv cache. It reduces the GPU memory footprint and boosts the performance. Meanwhile, it may cause accuracy drop without a proper scaling factor
+PIN_HOT installed PIN_MODE=split dump_dir=~/pin-hot-experts/e2a DECODE_T=16 MAX_N=49152 target=vllm.model_executor.layers.fused_moe.experts.trtllm_mxfp4_moe rowmap=/w/rowmap-static-v1.json freeze=- counter=- split_fused=True
+(EngineCore pid=917) INFO 10-18 18:16:39 [gpu_worker.py:510] Using V2 Model Runner
+(EngineCore pid=917) INFO 10-18 18:17:00 [attention.py:170] Using DeepSeek's fp8_ds_mla KV cache format.
+(EngineCore pid=917) INFO 10-18 18:17:07 [mxfp4.py:818] Using 'FLASHINFER_TRTLLM_MXFP4_MXFP8' Mxfp4 MoE backend.
+(EngineCore pid=917) INFO 10-18 18:19:39 [utils.py:27] Using the target model's FLASHMLA_MEGA_ATTN_DSV41 attention backend for the DeepSeek-V4 DSpark drafter.
+(EngineCore pid=917) INFO 10-18 18:19:57 [model_runner.py:429] Model loading took 226.75 GiB memory and 186.931990 seconds
+PIN_HOT rehome layer=9 name=language_model.model.layers.9.ffn.experts uva=True hot_w1=(295, 4608, 2560) cold_w1=(89, 4608, 2560) hbm_free=23.00GiB host_avail=196.28GiB
+PIN_HOT rehome done layers=40 HBM_expert=206.61GiB pinned_expert=62.33GiB hbm_free=23.00GiB host_avail=196.28GiB (expect ~206.6 / ~62.4)
+(EngineCore pid=917) INFO 10-18 18:22:37 [model_runner.py:1140] Graph capturing finished in 68 secs, took 1.35 GiB
+(EngineCore pid=917) INFO 10-18 18:22:38 [gpu_worker.py:763] Available KV cache memory: 7.5 GiB
+(EngineCore pid=917) INFO 10-18 18:22:38 [kv_cache_utils.py:1101] GPU KV cache size: 3,572,679 tokens, Maximum concurrency for 1,048,576 tokens per request: 3.41x
+(EngineCore pid=917) INFO 10-18 18:23:58 [kernel_warmup.py:461] Using FlashInfer managed autotune cache (root=/root/.cache/vllm/fi-autotune-v2)
+2026-10-18 18:23:58,634 - INFO - autotuner.py:1048 - flashinfer.jit: [Autotuner]: Autotuning process starts ...
+2026-10-18 18:23:59,507 - INFO - autotune_cache.py:495 - flashinfer.jit: [Autotuner]: Managed autotune cache attached for this process: ManagedAutotuneCache(env_dir='/root/.cache/vllm/fi-autotune-v2/v2/fd6e12df2b959586', hits=0, misses=0)
+2026-10-18 18:23:59,722 - INFO - autotune_cache.py:528 - flashinfer.jit: [Autotuner]: Preloaded 210/210 managed cache entries into memory
+2026-10-18 18:24:07,316 - INFO - autotuner.py:1071 - flashinfer.jit: [Autotuner]: Autotuning process ends
+(EngineCore pid=917) INFO 10-18 18:24:44 [model_runner.py:1140] Graph capturing finished in 21 secs, took 1.26 GiB
+TUNEWINDOW 18:23:58 18:24:07
+STORE_ENTRIES 210

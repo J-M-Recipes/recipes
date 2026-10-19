@@ -1,0 +1,66 @@
+2026-10-18 10:42:10 CDT ===== CARD P2 START (image sha256:a3bc7f09c1e2e72e068021feb75118c92e98c538706caa0c5d1acc0bb9252623, REF=dsv41-vllm-1017-v23-pinexact-BOUND-REF, off60, CONFIRM=0) =====
+2026-10-18 10:42:11 CDT preflight OK: MemAvailable=194.9GiB store_entries=0
+2026-10-18 10:42:11 CDT FACTS CTL1: replay_line=0 replay_off=0 rehome=1 | autotune: Loaded=Loaded 189 configs saved=1 starts=1 window=15:17:47->15:17:52 managed= store_entries=0 | GPU KV cache size: 2,504,891 tokens, Maximum concurrency for | L9 host_avail=197.69GiB | layers=40 HBM_expert=206.61GiB pinned_expert=62.33GiB hbm_free=23.08GiB host_avail=197.69GiB (expect ~206.6 / ~62.4)
+2026-10-18 10:42:11 CDT strays: 2581079 256.7GiB VLLM::EngineCore |2580607 1.2GiB /usr/bin/python3 /usr/local/bin/vllm|3898 0.6GiB /usr/bin/containerd |2581078 0.3GiB /usr/bin/python3 -c| MemAvailable=194.9GiB
+2026-10-18 10:42:11 CDT HOSTMEM CTL1 live: meminfo MemAvailable: 194.88 GiB;cgroup memory.current 416.53 GiB;cgroup shmem 252.79 GiB;pinned_devzero maps=192 size_gib=252.79 rss_gib=252.79;
+2026-10-18 10:42:20 CDT TF CTL1: [CTL1] wrote tf-CTL1.jsonl: docs=39 errors=0 positions=79544 wall=9s
+2026-10-18 10:42:20 CDT FLIPGATE CTL1-vs-Rref: GATE PASS hi_agent_tool=0 hi_prose_pct=0.011 W=1.878 W_calib=3.077 skipped_docs=0
+2026-10-18 10:44:19 CDT BFCL CTL1: BFCL CTL1 [dev]: all 554/600 = 0.9233 | simple_python 0.9275 | multiple 0.915 | errors 0 | 119s
+2026-10-18 10:44:27 CDT COLD CTL1: PREFILL target=8192 prompt_tokens=6700 ttft_s=[0.35, 0.35, 0.35] tok_s=[18909, 19265, 19115] mean_tok_s=19096;PREFILL target=65536 prompt_tokens=53164 ttft_s=[2.2, 2.19, 2.19] tok_s=[24133, 24288, 24195] mean_tok_s=24206;
+2026-10-18 10:48:08 CDT RT CTL1: c1-r1 agg=196.27 out=174.76 ttft=0.65 acc=3.08 ; c1-r2 agg=183.03 out=164.14 ttft=0.65 acc=2.867 ; c1-r3 agg=189.15 out=168.94 ttft=0.65 acc=2.992 ; c4 agg=327.93 out=293.05 ttft=1.16 acc=2.93 ; c16 agg=532.0 out=482.35 ttft=2.01 acc=1.793 ; c32 agg=942.07 out=502.24 ttft=7.92 acc=1.979
+2026-10-18 10:50:13 CDT WINDOW CTL1: [P2-CTL1-r1] conc= 1: 192.4 agg tok/s 192.39 per-stream (runs 191.5/193.3);[P2-CTL1-r1] conc= 8: 622.0 agg tok/s 77.75 per-stream (runs 618.6/625.5);[P2-CTL1-r1] conc=16: 938.0 agg tok/s 58.63 per-stream (runs 941.0/935.1);[P2-CTL1-r2] conc= 1: 192.4 agg tok/s 192.36 per-stream (runs 191.5/193.2);[P2-CTL1-r2] conc= 8: 596.5 agg tok/s 74.56 per-stream (runs 612.0/581.0);[P2-CTL1-r2] conc=16: 944.4 agg tok/s 59.02 per-stream (runs 945.2/943.6);[P2-CTL1-k6] conc= 1: 192.5 agg tok/s 192.47 per-strea
+2026-10-18 10:50:13 CDT REPLAY CTL1: r1 343.0 acc 0.532 ; r2 414.8 acc 0.577 ; 
+2026-10-18 10:50:13 CDT FIXTURE CTL1: {'prose': 0.252, 'structured': 0.489, 'code': 0.696, 'shell_ops': 0.8, 'tool_json': 0.773}
+2026-10-18 10:50:23 CDT GAUNTLET CTL1: 12 / 12
+2026-10-18 10:50:23 CDT HOSTMEM CTL1 steady: meminfo MemAvailable: 194.55 GiB;cgroup memory.current 416.61 GiB;cgroup shmem 252.79 GiB;pinned_devzero maps=192 size_gib=252.79 rss_gib=252.79;
+2026-10-18 10:50:23 CDT ERRCOUNT CTL1 0 (whole container log)
+2026-10-18 10:50:23 CDT stop-and-keep dsv41-vllm-1017-v23-pinexact-BOUND-REF
+2026-10-18 10:50:35 CDT strays: 3898 0.6GiB /usr/bin/containerd |4228 0.2GiB /usr/bin/dockerd -H|4855 0.1GiB /usr/bin/gnome-shell |3891 0.1GiB /usr/sbin/tailscaled --state=/var/lib/tailscale/tailscaled.state| MemAvailable=464.9GiB
+2026-10-18 10:50:35 CDT HOSTMEM CAND-off60 pre: meminfo MemAvailable: 464.87 GiB;
+2026-10-18 10:50:36 CDT store entries before CAND boot: 0
+launched dsv41-vllm-1017-P2-n39983a5e-hook-EXP (image a3bc7f09, off60, cache ~/dsv41/vllm-cache-p2-39983a5e)
+2026-10-18 10:50:38 CDT launched dsv41-vllm-1017-P2-n39983a5e-hook-EXP off60 image sha256:a3bc7f09c1e2e72e068021feb75118c92e98c538706caa0c5d1acc0bb9252623
+2026-10-18 10:50:38 CDT   dsv41-vllm-1017-P2-n39983a5e-hook-EXP waiting 0 min: store_entries=0 MemAvail=464.9GiB last=[]
+2026-10-18 10:55:41 CDT   dsv41-vllm-1017-P2-n39983a5e-hook-EXP waiting 5 min: store_entries=0 MemAvail=195.1GiB last=[PIN_HOT rehome done layers=40 HBM_expert=206.61GiB pinned_expert=62.33GiB hbm_free=23.00GiB host_avail=195.30GiB (expect ~206.6 / ~62.4)]
+2026-10-18 11:00:42 CDT   dsv41-vllm-1017-P2-n39983a5e-hook-EXP waiting 10 min: store_entries=9 MemAvail=191.9GiB last=[2026-10-18 15:59:26,512 - INFO - autotune_cache.py:495 - flashinfer.jit: [Autotuner]: Managed autotune cache attached for this process: ManagedAutotuneCache(env]
+2026-10-18 11:05:44 CDT   dsv41-vllm-1017-P2-n39983a5e-hook-EXP waiting 15 min: store_entries=129 MemAvail=191.2GiB last=[2026-10-18 15:59:26,512 - INFO - autotune_cache.py:495 - flashinfer.jit: [Autotuner]: Managed autotune cache attached for this process: ManagedAutotuneCache(env]
+2026-10-18 11:10:46 CDT   dsv41-vllm-1017-P2-n39983a5e-hook-EXP waiting 20 min: store_entries=205 MemAvail=190.9GiB last=[2026-10-18 15:59:26,512 - INFO - autotune_cache.py:495 - flashinfer.jit: [Autotuner]: Managed autotune cache attached for this process: ManagedAutotuneCache(env]
+2026-10-18 11:11:16 CDT BOUND dsv41-vllm-1017-P2-n39983a5e-hook-EXP after 1238s
+2026-10-18 11:11:16 CDT boot->ready CAND 1240s (off60, dsv41-vllm-1017-P2-n39983a5e-hook-EXP)
+2026-10-18 11:11:16 CDT FACTS CAND: replay_line=1 replay_off=0 rehome=1 | autotune: Loaded= saved=0 starts=1 window=15:59:25->16:10:48 managed= store_entries=210 | GPU KV cache size: 3,455,569 tokens, Maximum concurrency for | L9 host_avail=195.30GiB | layers=40 HBM_expert=206.61GiB pinned_expert=62.33GiB hbm_free=23.00GiB host_avail=195.30GiB (expect ~206.6 / ~62.4)
+2026-10-18 11:11:16 CDT HOSTMEM CAND bound: meminfo MemAvailable: 189.77 GiB;cgroup memory.current 418.87 GiB;cgroup shmem 252.79 GiB;pinned_devzero maps=192 size_gib=252.79 rss_gib=252.79;
+2026-10-18 11:11:43 CDT TF CAND: [CAND] wrote tf-CAND.jsonl: docs=39 errors=0 positions=79544 wall=27s
+2026-10-18 11:11:44 CDT FLIPGATE CAND-vs-CTL1: GATE PASS hi_agent_tool=0 hi_prose_pct=0.011 W=3.110 W_calib=3.078 skipped_docs=0
+2026-10-18 11:11:44 CDT FLIPGATE CAND-vs-Rref: GATE PASS hi_agent_tool=0 hi_prose_pct=0.009 W=3.106 W_calib=3.077 skipped_docs=0
+2026-10-18 11:13:44 CDT BFCL CAND: BFCL CAND [dev]: all 554/600 = 0.9233 | simple_python 0.9275 | multiple 0.915 | errors 0 | 121s
+2026-10-18 11:13:50 CDT COLD CAND: PREFILL target=8192 prompt_tokens=6653 ttft_s=[0.16, 0.16, 0.15] tok_s=[41574, 42291, 43331] mean_tok_s=42398;PREFILL target=65536 prompt_tokens=53114 ttft_s=[2.86, 1.11, 1.12] tok_s=[18582, 47893, 47583] mean_tok_s=38019;
+2026-10-18 11:17:03 CDT RT CAND: c1-r1 agg=200.54 out=189.25 ttft=0.29 acc=2.969 ; c1-r2 agg=204.79 out=194.0 ttft=0.28 acc=3.063 ; c1-r3 agg=192.92 out=183.24 ttft=0.28 acc=2.909 ; c4 agg=344.69 out=320.19 ttft=0.55 acc=2.844 ; c16 agg=602.62 out=562.43 ttft=0.95 acc=1.792 ; c32 agg=1084.63 out=588.11 ttft=4.64 acc=1.973
+2026-10-18 11:19:09 CDT WINDOW CAND: [P2-CAND-r1] conc= 1: 200.1 agg tok/s 200.12 per-stream (runs 199.4/200.8);[P2-CAND-r1] conc= 8: 662.7 agg tok/s 82.84 per-stream (runs 680.6/644.9);[P2-CAND-r1] conc=16: 1070.3 agg tok/s 66.90 per-stream (runs 1069.8/1070.9);[P2-CAND-r2] conc= 1: 200.2 agg tok/s 200.22 per-stream (runs 199.4/201.1);[P2-CAND-r2] conc= 8: 661.7 agg tok/s 82.72 per-stream (runs 679.6/643.8);[P2-CAND-r2] conc=16: 1069.1 agg tok/s 66.82 per-stream (runs 1068.1/1070.1);[P2-CAND-k6] conc= 1: 199.5 agg tok/s 199.49 per
+2026-10-18 11:19:09 CDT REPLAY CAND: r1 333.7 acc 0.549 ; r2 372.1 acc 0.577 ; 
+2026-10-18 11:19:09 CDT FIXTURE CAND: {'prose': 0.306, 'structured': 0.427, 'code': 0.627, 'shell_ops': 0.8, 'tool_json': 0.721}
+2026-10-18 11:19:25 CDT GAUNTLET CAND: 12 / 12
+2026-10-18 11:19:25 CDT HOSTMEM CAND steady: meminfo MemAvailable: 188.67 GiB;cgroup memory.current 418.96 GiB;cgroup shmem 252.79 GiB;pinned_devzero maps=192 size_gib=252.79 rss_gib=252.79;
+2026-10-18 11:19:25 CDT ERRCOUNT CAND 0 (whole container log)
+2026-10-18 11:19:25 CDT stop-and-keep dsv41-vllm-1017-P2-n39983a5e-hook-EXP
+2026-10-18 11:19:38 CDT strays: 3898 0.6GiB /usr/bin/containerd |4228 0.2GiB /usr/bin/dockerd -H|4855 0.1GiB /usr/bin/gnome-shell |3891 0.1GiB /usr/sbin/tailscaled --state=/var/lib/tailscale/tailscaled.state| MemAvailable=461.8GiB
+2026-10-18 11:19:39 CDT   dsv41-vllm-1017-v23-pinexact-BOUND-REF waiting 0 min: store_entries=210 MemAvail=461.8GiB last=[]
+2026-10-18 11:24:42 CDT BOUND dsv41-vllm-1017-v23-pinexact-BOUND-REF after 303s
+2026-10-18 11:24:42 CDT boot->ready CTL2 304s
+2026-10-18 11:24:42 CDT FACTS CTL2: replay_line=0 replay_off=0 rehome=1 | autotune: Loaded=Loaded 189 configs saved=1 starts=1 window=16:24:05->16:24:10 managed= store_entries=210 | GPU KV cache size: 2,504,891 tokens, Maximum concurrency for | L9 host_avail=198.02GiB | layers=40 HBM_expert=206.61GiB pinned_expert=62.33GiB hbm_free=23.08GiB host_avail=198.02GiB (expect ~206.6 / ~62.4)
+2026-10-18 11:24:42 CDT HOSTMEM CTL2 bound: meminfo MemAvailable: 195.45 GiB;cgroup memory.current 416.40 GiB;cgroup shmem 252.79 GiB;pinned_devzero maps=192 size_gib=252.79 rss_gib=252.79;
+2026-10-18 11:24:54 CDT TF CTL2: [CTL2] wrote tf-CTL2.jsonl: docs=39 errors=0 positions=79544 wall=11s
+2026-10-18 11:24:54 CDT FLIPGATE CTL2-vs-CTL1: GATE PASS hi_agent_tool=0 hi_prose_pct=0.005 W=1.551 W_calib=3.078 skipped_docs=0
+2026-10-18 11:24:54 CDT FLIPGATE CAND-vs-CTL2: GATE PASS hi_agent_tool=0 hi_prose_pct=0.008 W=3.165 W_calib=3.276 skipped_docs=0
+2026-10-18 11:26:51 CDT BFCL CTL2: BFCL CTL2 [dev]: all 555/600 = 0.925 | simple_python 0.9275 | multiple 0.92 | errors 0 | 117s
+2026-10-18 11:26:59 CDT COLD CTL2: PREFILL target=8192 prompt_tokens=6675 ttft_s=[0.4, 0.34, 0.33] tok_s=[16838, 19885, 20023] mean_tok_s=18915;PREFILL target=65536 prompt_tokens=53203 ttft_s=[2.19, 2.17, 2.16] tok_s=[24321, 24540, 24529] mean_tok_s=24463;
+2026-10-18 11:30:40 CDT RT CTL2: c1-r1 agg=187.87 out=168.2 ttft=0.64 acc=2.934 ; c1-r2 agg=188.49 out=168.65 ttft=0.65 acc=2.968 ; c1-r3 agg=183.96 out=165.02 ttft=0.64 acc=2.907 ; c4 agg=330.41 out=296.38 ttft=0.87 acc=2.968 ; c16 agg=531.68 out=483.4 ttft=1.84 acc=1.789 ; c32 agg=942.38 out=506.41 ttft=7.86 acc=1.962
+2026-10-18 11:32:45 CDT WINDOW CTL2: [P2-CTL2-r1] conc= 1: 192.5 agg tok/s 192.48 per-stream (runs 191.7/193.3);[P2-CTL2-r1] conc= 8: 590.3 agg tok/s 73.79 per-stream (runs 624.5/556.2);[P2-CTL2-r1] conc=16: 943.5 agg tok/s 58.97 per-stream (runs 943.1/943.9);[P2-CTL2-r2] conc= 1: 192.3 agg tok/s 192.27 per-stream (runs 191.5/193.0);[P2-CTL2-r2] conc= 8: 590.2 agg tok/s 73.77 per-stream (runs 597.8/582.5);[P2-CTL2-r2] conc=16: 947.3 agg tok/s 59.21 per-stream (runs 947.0/947.5);[P2-CTL2-k6] conc= 1: 192.5 agg tok/s 192.46 per-strea
+2026-10-18 11:32:45 CDT REPLAY CTL2: r1 322.8 acc 0.59 ; r2 420.1 acc 0.579 ; 
+2026-10-18 11:32:45 CDT FIXTURE CTL2: {'prose': 0.252, 'structured': 0.489, 'code': 0.696, 'shell_ops': 0.8, 'tool_json': 0.773}
+2026-10-18 11:33:02 CDT GAUNTLET CTL2: 12 / 12
+2026-10-18 11:33:02 CDT HOSTMEM CTL2 steady: meminfo MemAvailable: 194.73 GiB;cgroup memory.current 416.47 GiB;cgroup shmem 252.79 GiB;pinned_devzero maps=192 size_gib=252.79 rss_gib=252.79;
+2026-10-18 11:33:02 CDT ERRCOUNT CTL2 0 (whole container log)
+2026-10-18 11:33:02 CDT VERDICT: **Verdict: FAIL** — misses: replay r2 >= -2%, fixture accept per class within 2 pts
+2026-10-18 11:33:03 CDT kept dsv41-vllm-1017-P2-n39983a5e-hook-EXP-FAIL (stopped)
+2026-10-18 11:33:03 CDT FINAL dsv41 running=[dsv41-vllm-1017-v23-pinexact-BOUND-REF ] bound=1
+2026-10-18 11:33:03 CDT ===== CARD P2 END (lane = dsv41-vllm-1017-v23-pinexact-BOUND-REF) =====

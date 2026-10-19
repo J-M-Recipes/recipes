@@ -1,0 +1,68 @@
+2026-10-18 12:12:29 CDT FACTS A: replay_line=0 replay_off=0 rehome=1 | autotune: Loaded=Loaded 189 configs starts=1 window=16:24:05->16:24:10 managed= store_entries=210 | GPU KV cache size: 2,504,891 tokens, Maximum concurrency for | layers=40 HBM_expert=206.61GiB pinned_expert=62.33GiB hbm_free=23.08GiB host_avail=198.02GiB (expect ~206.6 / ~62.4)
+2026-10-18 12:12:29 CDT HOSTMEM A live: meminfo MemAvailable: 192.60 GiB;pinned_devzero maps=192 size_gib=252.79 rss_gib=252.79;
+2026-10-18 12:13:27 CDT RT A: c1-r1 agg=188.15 ttft=0.64 acc=2.934 ; c1-r2 agg=190.39 ttft=0.64 acc=2.993 ; c1-r3 agg=185.15 ttft=0.64 acc=2.92
+2026-10-18 12:13:42 CDT REPLAY-STD A r1: [P2b-A-r1] REPLAY n=4: agg 420.1 tok/s over 14s, 6044 tokens; accept=60.4% acc/step=3.02; tool turns 24 emitted=16 per-req 110.2 tok/s; text turns 24 per-req 112.6 tok/s
+2026-10-18 12:13:57 CDT REPLAY-STD A r2: [P2b-A-r2] REPLAY n=4: agg 440.7 tok/s over 15s, 6754 tokens; accept=58.1% acc/step=2.90; tool turns 24 emitted=13 per-req 113.9 tok/s; text turns 24 per-req 119.2 tok/s
+2026-10-18 12:14:26 CDT REPLAY-FL A r1: [P2b-A-FL-r1] REPLAY-FL n=4 fl=256: agg 432.0 tok/s over 28.4s, 12288 tokens, exact=True; TPOT mean 8.1 ms med 7.4 ms; TTFT med r0 0.3087 r1 0.1161; accept=53.0% acc/step=2.65
+2026-10-18 12:14:50 CDT REPLAY-FL A r2: [P2b-A-FL-r2] REPLAY-FL n=4 fl=256: agg 509.4 tok/s over 24.1s, 12288 tokens, exact=True; TPOT mean 7.11 ms med 6.8 ms; TTFT med r0 0.1154 r1 0.1028; accept=56.7% acc/step=2.84
+2026-10-18 12:15:12 CDT FIXX3 A: prose accept=0.2468;structured accept=0.468;code accept=0.7837;shell_ops accept=0.7703;tool_json accept=0.8311;
+2026-10-18 12:15:21 CDT FIXROT A rot0 [prose structured code shell_ops tool_json]: prose 181.3 tok/s accept=25.2%;structured 232.6 tok/s accept=48.9%;code 252.3 tok/s accept=69.6%;shell_ops 262.4 tok/s accept=80.0%;tool_json 299.8 tok/s accept=73.3%;
+2026-10-18 12:15:30 CDT FIXROT A rot1 [structured code shell_ops tool_json prose]: structured 232.2 tok/s accept=48.9%;code 252.3 tok/s accept=69.6%;shell_ops 262.4 tok/s accept=80.0%;tool_json 299.9 tok/s accept=73.3%;prose 181.6 tok/s accept=25.2%;
+2026-10-18 12:15:39 CDT FIXROT A rot2 [code shell_ops tool_json prose structured]: code 252.2 tok/s accept=69.6%;shell_ops 262.2 tok/s accept=80.0%;tool_json 299.8 tok/s accept=73.3%;prose 181.6 tok/s accept=25.2%;structured 232.6 tok/s accept=48.9%;
+2026-10-18 12:15:44 CDT COLD64K A: PREFILL target=65536 prompt_tokens=53109 ttft_s=[2.16, 2.17] tok_s=[24563, 24531] mean_tok_s=24547;
+2026-10-18 12:15:44 CDT HOSTMEM A steady: meminfo MemAvailable: 192.64 GiB;pinned_devzero maps=192 size_gib=252.79 rss_gib=252.79;
+2026-10-18 12:15:44 CDT ERRCOUNT A 0 (since 2026-10-18T17:12:29Z)
+2026-10-18 12:15:56 CDT HOSTMEM B pre: meminfo MemAvailable: 463.89 GiB;
+2026-10-18 12:15:56 CDT store entries before B start: 210
+2026-10-18 12:21:31 CDT BOUND dsv41-vllm-1017-P2-n39983a5e-hook-EXP-FAIL after 333s
+2026-10-18 12:21:31 CDT boot->ready B 335s (store-loaded restart)
+2026-10-18 12:21:31 CDT FACTS B: replay_line=1 replay_off=0 rehome=1 | autotune: Loaded= starts=1 window=17:20:44->17:20:52 managed=Preloaded 210/210 store_entries=210 | GPU KV cache size: 3,455,569 tokens, Maximum concurrency for | layers=40 HBM_expert=206.61GiB pinned_expert=62.33GiB hbm_free=23.00GiB host_avail=196.96GiB (expect ~206.6 / ~62.4)
+2026-10-18 12:21:31 CDT HOSTMEM B bound: meminfo MemAvailable: 195.57 GiB;pinned_devzero maps=192 size_gib=252.79 rss_gib=252.79;
+2026-10-18 12:21:31 CDT store entries after B bind: 210 (before 210)
+2026-10-18 12:22:23 CDT RT B: c1-r1 agg=195.53 ttft=0.28 acc=2.911 ; c1-r2 agg=197.18 ttft=0.28 acc=2.932 ; c1-r3 agg=199.32 ttft=0.28 acc=2.99
+2026-10-18 12:22:49 CDT REPLAY-STD B r1: [P2b-B-r1] REPLAY n=4: agg 229.7 tok/s over 25s, 5644 tokens; accept=60.0% acc/step=3.00; tool turns 24 emitted=15 per-req 56.3 tok/s; text turns 24 per-req 61.7 tok/s
+2026-10-18 12:23:06 CDT REPLAY-STD B r2: [P2b-B-r2] REPLAY n=4: agg 382.9 tok/s over 17s, 6430 tokens; accept=59.4% acc/step=2.97; tool turns 24 emitted=14 per-req 100.2 tok/s; text turns 24 per-req 101.3 tok/s
+2026-10-18 12:23:32 CDT REPLAY-FL B r1: [P2b-B-FL-r1] REPLAY-FL n=4 fl=256: agg 476.0 tok/s over 25.8s, 12288 tokens, exact=True; TPOT mean 7.42 ms med 6.8 ms; TTFT med r0 0.2119 r1 0.2079; accept=59.3% acc/step=2.96
+2026-10-18 12:23:59 CDT REPLAY-FL B r2: [P2b-B-FL-r2] REPLAY-FL n=4 fl=256: agg 463.6 tok/s over 26.5s, 12288 tokens, exact=True; TPOT mean 7.65 ms med 7.5 ms; TTFT med r0 0.2056 r1 0.2077; accept=55.0% acc/step=2.75
+2026-10-18 12:24:20 CDT FIXX3 B: prose accept=0.2487;structured accept=0.4515;code accept=0.7363;shell_ops accept=0.7737;tool_json accept=0.8294;
+2026-10-18 12:24:30 CDT FIXROT B rot0 [prose structured code shell_ops tool_json]: prose 217.0 tok/s accept=30.6%;structured 236.2 tok/s accept=42.7%;code 261.9 tok/s accept=62.7%;shell_ops 283.0 tok/s accept=80.0%;tool_json 242.2 tok/s accept=69.4%;
+2026-10-18 12:24:39 CDT FIXROT B rot1 [structured code shell_ops tool_json prose]: structured 235.5 tok/s accept=42.7%;code 262.0 tok/s accept=62.7%;shell_ops 282.7 tok/s accept=80.0%;tool_json 244.4 tok/s accept=69.7%;prose 217.6 tok/s accept=30.6%;
+2026-10-18 12:24:48 CDT FIXROT B rot2 [code shell_ops tool_json prose structured]: code 261.5 tok/s accept=62.7%;shell_ops 283.1 tok/s accept=80.0%;tool_json 240.9 tok/s accept=68.6%;prose 217.7 tok/s accept=30.6%;structured 236.2 tok/s accept=42.7%;
+2026-10-18 12:24:51 CDT COLD64K B: PREFILL target=65536 prompt_tokens=53111 ttft_s=[1.16, 1.13] tok_s=[45641, 46994] mean_tok_s=46318;
+2026-10-18 12:24:51 CDT HOSTMEM B steady: meminfo MemAvailable: 195.40 GiB;pinned_devzero maps=192 size_gib=252.79 rss_gib=252.79;
+2026-10-18 12:24:51 CDT ERRCOUNT B 0 (since 2026-10-18T17:15:56Z)
+2026-10-18 12:25:03 CDT HOSTMEM C-off60 pre: meminfo MemAvailable: 465.64 GiB;
+2026-10-18 12:25:03 CDT store entries before C boot: 210
+2026-10-18 12:33:49 CDT BOUND dsv41-vllm-1017-P2b-n39983a5e-noreplay-EXP after 524s
+2026-10-18 12:33:49 CDT boot->ready C 526s (off60, dsv41-vllm-1017-P2b-n39983a5e-noreplay-EXP)
+2026-10-18 12:33:49 CDT FACTS C: replay_line=0 replay_off=0 rehome=1 | autotune: Loaded= starts=1 window=17:32:59->17:33:07 managed=Preloaded 210/210 store_entries=210 | GPU KV cache size: 3,878,024 tokens, Maximum concurrency for | layers=40 HBM_expert=206.61GiB pinned_expert=62.33GiB hbm_free=23.00GiB host_avail=196.52GiB (expect ~206.6 / ~62.4)
+2026-10-18 12:33:49 CDT HOSTMEM C bound: meminfo MemAvailable: 192.37 GiB;pinned_devzero maps=192 size_gib=252.79 rss_gib=252.79;
+2026-10-18 12:33:49 CDT store entries after C bind: 210
+2026-10-18 12:34:43 CDT RT C: c1-r1 agg=202.57 ttft=0.43 acc=2.972 ; c1-r2 agg=200.44 ttft=0.43 acc=2.971 ; c1-r3 agg=191.57 ttft=0.43 acc=2.871
+2026-10-18 12:35:10 CDT REPLAY-STD C r1: [P2b-C-r1] REPLAY n=4: agg 194.5 tok/s over 26s, 4973 tokens; accept=60.7% acc/step=3.04; tool turns 24 emitted=16 per-req 48.3 tok/s; text turns 24 per-req 50.8 tok/s
+2026-10-18 12:35:23 CDT REPLAY-STD C r2: [P2b-C-r2] REPLAY n=4: agg 419.0 tok/s over 12s, 5175 tokens; accept=56.8% acc/step=2.84; tool turns 24 emitted=17 per-req 118.8 tok/s; text turns 24 per-req 114.1 tok/s
+2026-10-18 12:35:51 CDT REPLAY-FL C r1: [P2b-C-FL-r1] REPLAY-FL n=4 fl=256: agg 445.3 tok/s over 27.6s, 12288 tokens, exact=True; TPOT mean 7.76 ms med 7.4 ms; TTFT med r0 0.3352 r1 0.1987; accept=54.9% acc/step=2.74
+2026-10-18 12:36:13 CDT REPLAY-FL C r2: [P2b-C-FL-r2] REPLAY-FL n=4 fl=256: agg 548.4 tok/s over 22.4s, 12288 tokens, exact=True; TPOT mean 6.62 ms med 6.0 ms; TTFT med r0 0.1164 r1 0.0955; accept=56.5% acc/step=2.83
+2026-10-18 12:36:35 CDT FIXX3 C: prose accept=0.2487;structured accept=0.4515;code accept=0.7363;shell_ops accept=0.7737;tool_json accept=0.8713;
+2026-10-18 12:36:44 CDT FIXROT C rot0 [prose structured code shell_ops tool_json]: prose 217.6 tok/s accept=30.6%;structured 236.8 tok/s accept=42.7%;code 262.4 tok/s accept=62.7%;shell_ops 283.4 tok/s accept=80.0%;tool_json 285.5 tok/s accept=79.6%;
+2026-10-18 12:36:52 CDT FIXROT C rot1 [structured code shell_ops tool_json prose]: structured 236.1 tok/s accept=42.7%;code 262.4 tok/s accept=62.7%;shell_ops 283.5 tok/s accept=80.0%;tool_json 336.6 tok/s accept=80.0%;prose 218.4 tok/s accept=30.6%;
+2026-10-18 12:37:01 CDT FIXROT C rot2 [code shell_ops tool_json prose structured]: code 261.9 tok/s accept=62.7%;shell_ops 283.3 tok/s accept=80.0%;tool_json 337.2 tok/s accept=80.0%;prose 218.4 tok/s accept=30.6%;structured 236.8 tok/s accept=42.7%;
+2026-10-18 12:37:05 CDT COLD64K C: PREFILL target=65536 prompt_tokens=53080 ttft_s=[1.78, 1.72] tok_s=[29903, 30822] mean_tok_s=30362;
+2026-10-18 12:37:05 CDT HOSTMEM C steady: meminfo MemAvailable: 192.18 GiB;pinned_devzero maps=192 size_gib=252.79 rss_gib=252.79;
+2026-10-18 12:37:05 CDT ERRCOUNT C 0 (since 2026-10-18T17:25:04.476007935Z)
+2026-10-18 12:42:12 CDT BOUND dsv41-vllm-1017-v23-pinexact-BOUND-REF after 293s
+2026-10-18 12:42:12 CDT boot->ready D 295s
+2026-10-18 12:42:12 CDT FACTS D: replay_line=0 replay_off=0 rehome=1 | autotune: Loaded=Loaded 189 configs starts=1 window=17:41:44->17:41:49 managed= store_entries=210 | GPU KV cache size: 2,504,891 tokens, Maximum concurrency for | layers=40 HBM_expert=206.61GiB pinned_expert=62.33GiB hbm_free=23.08GiB host_avail=197.52GiB (expect ~206.6 / ~62.4)
+2026-10-18 12:42:12 CDT HOSTMEM D bound: meminfo MemAvailable: 196.05 GiB;pinned_devzero maps=192 size_gib=252.79 rss_gib=252.79;
+2026-10-18 12:43:12 CDT RT D: c1-r1 agg=186.77 ttft=0.65 acc=2.94 ; c1-r2 agg=191.35 ttft=0.65 acc=3.03 ; c1-r3 agg=185.26 ttft=0.65 acc=2.961
+2026-10-18 12:43:35 CDT REPLAY-STD D r1: [P2b-D-r1] REPLAY n=4: agg 272.4 tok/s over 22s, 6097 tokens; accept=54.3% acc/step=2.72; tool turns 24 emitted=14 per-req 74.0 tok/s; text turns 24 per-req 65.2 tok/s
+2026-10-18 12:43:48 CDT REPLAY-STD D r2: [P2b-D-r2] REPLAY n=4: agg 412.9 tok/s over 13s, 5546 tokens; accept=58.2% acc/step=2.91; tool turns 24 emitted=15 per-req 109.2 tok/s; text turns 24 per-req 101.0 tok/s
+2026-10-18 12:44:16 CDT REPLAY-FL D r1: [P2b-D-FL-r1] REPLAY-FL n=4 fl=256: agg 442.1 tok/s over 27.8s, 12288 tokens, exact=True; TPOT mean 7.97 ms med 7.4 ms; TTFT med r0 0.3101 r1 0.1083; accept=53.5% acc/step=2.68
+2026-10-18 12:44:42 CDT REPLAY-FL D r2: [P2b-D-FL-r2] REPLAY-FL n=4 fl=256: agg 481.6 tok/s over 25.5s, 12288 tokens, exact=True; TPOT mean 7.57 ms med 7.4 ms; TTFT med r0 0.1326 r1 0.1603; accept=51.8% acc/step=2.59
+2026-10-18 12:45:05 CDT FIXX3 D: prose accept=0.2468;structured accept=0.468;code accept=0.7837;shell_ops accept=0.7703;tool_json accept=0.8609;
+2026-10-18 12:45:14 CDT FIXROT D rot0 [prose structured code shell_ops tool_json]: prose 180.6 tok/s accept=25.2%;structured 232.1 tok/s accept=48.9%;code 251.0 tok/s accept=69.6%;shell_ops 260.9 tok/s accept=80.0%;tool_json 298.5 tok/s accept=73.3%;
+2026-10-18 12:45:23 CDT FIXROT D rot1 [structured code shell_ops tool_json prose]: structured 231.3 tok/s accept=48.9%;code 250.9 tok/s accept=69.6%;shell_ops 261.0 tok/s accept=80.0%;tool_json 298.5 tok/s accept=73.3%;prose 181.2 tok/s accept=25.2%;
+2026-10-18 12:45:32 CDT FIXROT D rot2 [code shell_ops tool_json prose structured]: code 250.7 tok/s accept=69.6%;shell_ops 260.3 tok/s accept=80.0%;tool_json 298.3 tok/s accept=73.3%;prose 181.2 tok/s accept=25.2%;structured 231.7 tok/s accept=48.9%;
+2026-10-18 12:45:37 CDT COLD64K D: PREFILL target=65536 prompt_tokens=53124 ttft_s=[2.23, 2.21] tok_s=[23870, 24093] mean_tok_s=23981;
+2026-10-18 12:45:37 CDT HOSTMEM D steady: meminfo MemAvailable: 195.81 GiB;pinned_devzero maps=192 size_gib=252.79 rss_gib=252.79;
+2026-10-18 12:45:37 CDT ERRCOUNT D 0 (since 2026-10-18T17:37:17Z)

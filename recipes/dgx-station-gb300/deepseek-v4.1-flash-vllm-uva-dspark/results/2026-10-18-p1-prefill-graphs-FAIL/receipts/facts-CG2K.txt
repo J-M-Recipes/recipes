@@ -1,0 +1,13 @@
+(APIServer pid=1) INFO 10-18 10:07:13 [api_utils.py:286] non-default args: {'model_tag': '/model', 'enable_auto_tool_choice': True, 'tool_call_parser': 'deepseek_v41', 'host': '0.0.0.0', 'port': 30006, 'model': '/model', 'trust_remote_code': True, 'max_model_len': 1048576, 'served_model_name': ['dsv41-flash-uva'], 'reasoning_parser': 'deepseek_v41', 'gpu_memory_utilization': 0.97, 'offload_backend
+(EngineCore pid=364) INFO 10-18 10:07:32 [core.py:123] Initializing a V1 LLM engine (v0.1.dev20904+g179dd0fa9) with config: model='/model', speculative_config=SpeculativeConfig(method='dspark', model='/model', num_spec_tokens=5), tokenizer='/model', skip_tokenizer_init=False, tokenizer_mode=deepseek_v41, revision=None, tokenizer_revision=None, trust_remote_code=True, dtype=torch.bfloat16, max_seq_
+(EngineCore pid=364) PIN_HOT installed PIN_MODE=split dump_dir=~/pin-hot-experts/e2a DECODE_T=16 MAX_N=49152 target=vllm.model_executor.layers.fused_moe.experts.trtllm_mxfp4_moe rowmap=/w/rowmap-static-v1.json freeze=- counter=- split_fused=True
+(EngineCore pid=364) INFO 10-18 10:10:48 [model_runner.py:408] Model loading took 226.77 GiB memory and 192.972713 seconds
+(EngineCore pid=364) PIN_HOT rehome done layers=40 HBM_expert=206.61GiB pinned_expert=62.33GiB hbm_free=23.08GiB host_avail=11.58GiB (expect ~206.6 / ~62.4)
+(EngineCore pid=364) INFO 10-18 10:13:32 [model_runner.py:974] Graph capturing finished in 59 secs, took 3.63 GiB
+(EngineCore pid=364) INFO 10-18 10:13:33 [gpu_worker.py:632] Available KV cache memory: 2.98 GiB
+(EngineCore pid=364) INFO 10-18 10:13:33 [gpu_worker.py:647] CUDA graph memory profiling is enabled (default since v0.21.0). The current --gpu-memory-utilization=0.9700 is equivalent to --gpu-memory-utilization=0.9539 without CUDA graph memory profiling. To maintain the same effective KV cache size as before, increase --gpu-memory-utilization to 0.9861. To disable, set VLLM_MEMORY_PROFILER_ESTIMAT
+(EngineCore pid=364) INFO 10-18 10:13:33 [kv_cache_utils.py:2321] GPU KV cache size: 1,420,753 tokens, Maximum concurrency for 1,048,576 tokens per request: 1.35x
+(EngineCore pid=364) 2026-10-18 10:14:10,443 - INFO - autotuner.py:972 - flashinfer.jit: [Autotuner]: Autotuning process starts ...
+(EngineCore pid=364) 2026-10-18 10:29:07,084 - INFO - autotuner.py:995 - flashinfer.jit: [Autotuner]: Autotuning process ends
+(EngineCore pid=364) INFO 10-18 10:29:23 [model_runner.py:974] Graph capturing finished in 16 secs, took 2.46 GiB
+(EngineCore pid=364) INFO 10-18 10:29:23 [gpu_worker.py:804] CUDA graph pool memory: 2.46 GiB (actual), 4.02 GiB (estimated), difference: 1.56 GiB (63.5%).
