@@ -1,0 +1,43 @@
+{
+ "models": {
+  "ids": [
+   "deepseek-v4.1-flash-spark-vllm"
+  ],
+  "max_model_len": 1048576,
+  "pass": true
+ },
+ "smoke": {
+  "content": "LANE_C_OK",
+  "reasoning": "",
+  "usage": {
+   "prompt_tokens": 15,
+   "total_tokens": 20,
+   "completion_tokens": 5,
+   "prompt_tokens_details": null,
+   "completion_tokens_details": {
+    "reasoning_tokens": 0
+   }
+  },
+  "seconds": 0.25,
+  "pass": true
+ },
+ "tool": {
+  "tool_calls": [
+   {
+    "id": "chatcmpl-tool-82cfd9c39a1140fc",
+    "type": "function",
+    "function": {
+     "name": "get_weather",
+     "arguments": "{\"city\": \"Paris\"}"
+    }
+   }
+  ],
+  "finish_reason": "tool_calls",
+  "final": "Right now in Paris it's 17\u00b0C with light rain.",
+  "pass": true
+ },
+ "preemptions": [
+  "vllm:num_preemptions_total{engine=\"0\",model_name=\"deepseek-v4.1-flash-spark-vllm\"} 0.0"
+ ]
+}
+FUNCTIONAL_GATES PASS

@@ -1,0 +1,32 @@
+[B3-c1] warmup
+  C1 coding        agg  112.53 tok/s  per-stream 127.48  ttft 0.215s
+  C1 json          agg   81.12 tok/s  per-stream 100.22  ttft 0.207s
+  C1 narrative     agg   54.50 tok/s  per-stream 59.05  ttft 0.221s
+  C1 prose         agg   64.07 tok/s  per-stream 71.73  ttft 0.226s
+  C1 math          agg  108.36 tok/s  per-stream 123.21  ttft 0.23s
+  C1 reasoning     agg   78.70 tok/s  per-stream 86.55  ttft 0.241s
+  C1 summary       agg   58.28 tok/s  per-stream 68.15  ttft 0.374s
+  C1 format        agg   99.96 tok/s  per-stream 125.57  ttft 0.222s
+  C1 ceiling_count agg  128.92 tok/s  per-stream 146.36  ttft 0.227s
+Prompt set `v1` (identical across boots), temperature 0, thinking off. Tokens from the server's usage block; TTFT = first token delta.
+
+### Throughput by concurrency (8 categories; the counting ceiling is excluded)
+
+| C | aggregate tok/s | per-stream tok/s | mean TTFT (s) |
+|---|---|---|---|
+| C1 | 82.19 | 95.25 | 0.242 |
+
+### Per-stream tok/s by category
+
+| category | C1 |
+|---|---|
+| coding | 127.48 |
+| json | 100.22 |
+| narrative | 59.05 |
+| prose | 71.73 |
+| math | 123.21 |
+| reasoning | 86.55 |
+| summary | 68.15 |
+| format | 125.57 |
+| ceiling_count | 146.36 |
+wrote ~/bench-r2/B3/bench-B3-c1.json and .md
