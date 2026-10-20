@@ -1,0 +1,87 @@
+<!doctype html>
+<html><head><meta charset="utf-8">
+<style>
+  html,body{margin:0;background:#0b0f14;}
+  .card{width:1200px;box-sizing:border-box;padding:36px 44px;background:linear-gradient(160deg,#0b0f14 0%,#0f1620 100%);color:#e6edf3;font-family:Inter,-apple-system,Segoe UI,Helvetica,Arial,sans-serif;border:1px solid #1e2a38;border-radius:14px;}
+  .mono{font-family:"JetBrains Mono",SFMono-Regular,Menlo,Consolas,monospace;}
+  .top{display:flex;justify-content:space-between;align-items:flex-start;}
+  h1{margin:0;font-size:38px;font-weight:800;letter-spacing:-0.5px;}
+  .sub{margin-top:6px;font-size:15px;color:#9fb0c3;}
+  .brand{text-align:right;font-size:13px;color:#9fb0c3;line-height:1.5;white-space:nowrap}
+  .brand b{color:#6ee7b7;font-size:16px;letter-spacing:1px}
+  .pills{display:flex;flex-wrap:wrap;gap:8px;margin:18px 0 22px}
+  .pill{border:1px solid #2a3a4d;background:#111a25;border-radius:999px;padding:6px 12px;font-size:13px;color:#cfd9e4}
+  .pill b{color:#fff;font-weight:600}
+  .pill.type{border-color:#6ee7b7;color:#6ee7b7}
+  .grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px}
+  .box{background:#111a25;border:1px solid #1e2a38;border-radius:10px;padding:16px 18px}
+  .lbl{font-size:11px;letter-spacing:1.6px;text-transform:uppercase;color:#7f93a8;margin-bottom:6px}
+  .hero{font-size:56px;font-weight:800;line-height:1;color:#fff}
+  .hero small{font-size:18px;font-weight:500;color:#9fb0c3;margin-left:6px}
+  .note{font-size:12px;color:#9fb0c3;margin-top:8px;line-height:1.4}
+  .row2{display:grid;grid-template-columns:1.2fr 1fr 1fr;gap:14px;margin-top:14px}
+  .kv{font-size:14px;line-height:1.75}
+  .kv b{color:#fff;font-weight:600}
+  .acc span{display:inline-block;margin-right:12px}
+  .fid{margin-top:14px;background:#0e1a17;border:1px solid #1f4d3d;border-radius:10px;padding:16px 18px}
+  .fid .lbl{color:#6ee7b7}
+  .fid ul{margin:0;padding-left:0;list-style:none;display:grid;grid-template-columns:1fr 1fr;gap:6px 24px;font-size:14px;line-height:1.5}
+  .ok::before{content:"✓ ";color:#6ee7b7;font-weight:700}
+  .pend::before{content:"◌ ";color:#f59e0b;font-weight:700}
+  .pend{color:#d9c58a}
+  .meas::before{content:"≈ ";color:#93c5fd;font-weight:700}
+  .pend-inline{color:#f59e0b;font-size:0.6em;font-weight:600;letter-spacing:1px}
+  .foot{display:flex;justify-content:space-between;margin-top:18px;font-size:12px;color:#7f93a8}
+  .foot .mono{color:#9fb0c3}
+  .fid li.pair { list-style: none; margin: 6px 0 2px -18px; padding: 10px 12px; border: 1px solid rgba(255,255,255,.14); border-radius: 8px; background: rgba(255,255,255,.04); }
+  .fid li.pair .big { font-size: 20px; font-weight: 700; color: #e8f0ff; letter-spacing: -.2px; }
+  .fid li.pair .sep { color: rgba(255,255,255,.35); margin: 0 6px; }
+  .fid li.pair .dim { font-size: 11.5px; color: rgba(255,255,255,.62); }
+</style></head><body>
+<div class="card">
+  <div class="top">
+    <div>
+      <h1>DeepSeek-V4.1-Flash-1017 · 4× DGX Spark · vLLM fork</h1>
+      <div class="sub">Native 1017 weights, TP4 across four GB10s on one CRS804: Owen&#x27;s spark-ds41f r6x (LIL vLLM fork + TileLang + sparknet) on our switch / 4 KiB-page shape. 1M context. Lane C; the SGLang sibling is Lane B.</div>
+    </div>
+    <div class="brand"><b>J-M-RECIPES</b><br>v1 (2026-10-20 · 1017 @ 1bae0e10 · image c1c93733e852 · spark-ds41f fc3ee36d · sparknet 0.3.0 @ 3bc8d10) · 2026-10-20<br>status: experimental</div>
+  </div>
+  <div class="pills">
+<span class="pill type"><b>MoE+Engram</b> · 384 routed + 1 shared expert, 6 active · Engram tables on disk · in-checkpoint DSpark draft</span>
+<span class="pill"><b>552B</b> total · <b>8B prefill / 16B decode</b> active</span>
+<span class="pill">checkpoint <b>510.3 GB</b> · rev <span class="mono">1bae0e10</span></span>
+<span class="pill">weights <b>as shipped · MXFP4 experts / FP8 attention+dense+Engram · nothing re-quantized</b></span>
+<span class="pill">engine <b>vLLM (fork) <span class="mono">19f2c20ed4d64ae22bd009ceacadd85e2a81e354</span> · vLLM 0.29.1rc1 fork (LIL karmic-kraken-beta 19f2c20e) · TileLang attn/linear/MoE · sparknet one-shot RoCE ≤2 MiB · local build</b></span>
+<span class="pill">memory <b>72.19 GiB/rank weights+draft · KV 8 GiB/rank = 6,537,516-token pool (6.23× at 1M) · graphs 1.98 GiB · head host floor 24.0 GiB</b></span>
+  </div>
+  <div class="grid">
+<div class="box"><div class="lbl">Decode · C1, mean of 2 (8-category v1 mix, per stream)</div><div class="hero">104.3<small>tok/s</small></div><div class="note">104.23 / 104.30 (C0ctl2) · T=0, thinking off · coding 133 · format 149 · prose 79 · narrative 62 · SGLang sibling 95.6</div></div>
+<div class="box"><div class="lbl">Decode · C6 aggregate</div><div class="hero">289<small>tok/s</small></div><div class="note">288.94 single run (C0ctl2) · C4 230.9 · 56.8 per stream · max-num-seqs 16, not slot-capped · SGLang sibling 252.8</div></div>
+<div class="box"><div class="lbl">Cold prefill · 93K prompt</div><div class="hero">6.0K<small>tok/s</small></div><div class="note">5,998 median of 3 (C0ctl2) · quiet A/B 5,993 vs SGLang 6,219 · 300K needles 5,462 / 5,471 / 5,453</div></div>
+  </div>
+  <div class="row2">
+<div class="box"><div class="lbl">Guesser</div><div class="kv"><b>DSpark</b> · in-checkpoint MTP draft, 1017 revision<br>k = 5 · greedy draft · block rejection · adaptive verify (row cost 0.035)<br><span class="acc">accept: <span>coding <b>83%</b></span> <span>format <b>91%</b></span> <span>math <b>70%</b></span> <span>json <b>56%</b></span> <span>prose <b>41%</b></span> <span>narrative <b>31%</b></span> <span>all, C1 <b>61%</b></span></span></div></div>
+<div class="box"><div class="lbl">Long context, mixed traffic &amp; boot</div><div class="kv">needles 20K · 131K · 300K×3: <b>PASS · 5.8K / 5.7K / 5.46K tok/s · no first-touch dip</b><br>short-chat TTFT behind cold 93K: <b>3.03 s (SGLang sibling 1.7–1.8 s)</b><br>warm boot → HTTP ready: <b>89–101 s (cold JIT cache 351 s)</b></div></div>
+<div class="box"><div class="lbl">Round-2 ladder — one change per boot, keep bar +2%: nothing kept</div><div class="kv">CED skip overlay (Owen): <b>93K +0.9% · 300K +1.6% · outputs identical → revert</b><br>max-parallel-prefills 2: <b>C4 −8.3% · C6 −10.8% → revert</b><br>NVFP4 draft head + Markov: <b>C1 +1.7% · C6 −2.8% → revert</b><br>cross-pod contention (93K): <b>5,993 → 6,009 with SGLang pod prefilling: none</b></div></div>
+  </div>
+  <div class="fid"><div class="lbl">Output fidelity — does the recipe change what the model says?</div>
+    <ul>
+<li class="ok">Weights as shipped: 48/48 shard sha256 == Hub LFS etags (spark5 bytes, re-verified after copy); sparks 6–8 size-identical</li>
+<li class="ok">Speculation is target-verified (block rejection against the full model)</li>
+<li class="meas">Arm-to-arm identity only: greedy probe 40/40, qeval content 75/75, bench C1 signature 9/9 vs control — reproducibility, not fidelity</li>
+<li class="ok">Tool calling: get_weather call + tool-result round on every boot (1/1 per boot — small sample)</li>
+<li class="pend">Teacher-forced Δlogprob vs the original</li>
+<li class="pend">Public benchmark run by us</li>
+    </ul>
+  </div>
+  <div class="fid"><div class="lbl">Agent claim card — fixed protocol, held-out sibling, cost per solved task</div>
+    <ul>
+<li class="pend">harness card pending — protocol hash, held-out sibling suite, cost per solved task</li>
+    </ul>
+  </div>
+  <div class="foot">
+    <span>recipe <span class="mono">recipes/dgx-spark-4x/deepseek-v4.1-flash-vllm-tp4-sparknet</span> · run <span class="mono">2026-10-19-vllm-ladder-r2</span></span>
+    <span>github.com/J-M-Recipes/recipes · al-engr.com · @jmeadlock</span>
+  </div>
+</div>
+</body></html>

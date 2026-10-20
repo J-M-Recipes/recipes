@@ -1,0 +1,303 @@
+[Mon Oct 19 06:42:05 PM CDT 2026] B0 doctor
+=== doctor (DeepSeek-V4.1-Flash · 4× Spark · TP4 · SGLang) ===
+head:     spark-290c / milo @ 10.0.0.1
+workers:  milo@spark2 spark3 spark4  (10.0.0.2 10.0.0.3 10.0.0.4)
+image:    dsv41-4x-spark:canary-roce  (base lmsysorg/sglang:dev-dsv41)
+model:    ~/models/DeepSeek-V4.1-Flash-1017
+parallel: nnodes=4 TP=4 EP=1  ctx=1048576  util=0.78 (head 0.78)
+offload:  nvme  cache=4GiB  spec=DSPARK-5  port=8888
+
+head: ACTIVE HCAs: rocep1s0f0,roceP2p1s0f0
+head: socket interfaces OK
+ssh: Could not resolve hostname spark2: Temporary failure in name resolution
+[1;33m[!][0m spark2: network check failed
+spark3: ACTIVE HCAs: rocep1s0f0,roceP2p1s0f0
+spark3: socket interfaces OK
+spark4: ACTIVE HCAs: rocep1s0f0,roceP2p1s0f0
+spark4: socket interfaces OK
+[0;32m[+][0m GPU: GPU 0: NVIDIA GB10 (UUID: GPU-86529dcf-e816-cd88-6a8e-9e285d26d074)
+[0;32m[+][0m SSH key ~/.ssh/id_ed25519
+[0;32m[+][0m host arch: aarch64 (GB10 expects aarch64)
+[0;32m[+][0m overlay image present (arm64)
+[0;32m[+][0m checkpoint OK (48 / 48 shards, 476G)
+[1;33m[!][0m NFSv4 not listening yet — ./start.sh share will start or reuse the exporter
+[0;32m[+][0m weights: spark2/spark3 use docker NFS volume dsv41-weights (head ~/models/DeepSeek-V4.1-Flash-1017); no rsync/SSHFS
+[0;32m[+][0m TP4 note: heads, o_groups, draft experts and vocab all divide by 4; no padding (DSV41_TP_PAD=0).
+[0;31m[x][0m SSH to spark2 FAILED
+[0;32m[+][0m SSH spark3 OK → spark3
+GPU 0: NVIDIA GB10 (UUID: GPU-8a70e4c8-b361-99dd-af46-5daaa4eda959)
+IB_OK
+[1;33m[!][0m spark3: weights missing/incomplete or volume dsv41-weights unavailable (NFS_SHARE=1)
+[0;32m[+][0m SSH spark4 OK → spark4
+GPU 0: NVIDIA GB10 (UUID: GPU-91b2ba78-f712-53f1-d712-3a8a8448e2d3)
+IB_OK
+[1;33m[!][0m spark4: weights missing/incomplete or volume dsv41-weights unavailable (NFS_SHARE=1)
+[0;31m[x][0m doctor found blocking issues
+doctor rc=1
+[Mon Oct 19 06:42:10 PM CDT 2026] B0 share
+[0;32m[+][0m === share spark1 checkpoint over NFSv4 on ConnectX ===
+ssh: Could not resolve hostname spark2: Temporary failure in name resolution
+share rc=255
+[Mon Oct 19 06:42:10 PM CDT 2026] B0 serve
+=== doctor (DeepSeek-V4.1-Flash · 4× Spark · TP4 · SGLang) ===
+head:     spark-290c / milo @ 10.0.0.1
+workers:  milo@spark2 spark3 spark4  (10.0.0.2 10.0.0.3 10.0.0.4)
+image:    dsv41-4x-spark:canary-roce  (base lmsysorg/sglang:dev-dsv41)
+model:    ~/models/DeepSeek-V4.1-Flash-1017
+parallel: nnodes=4 TP=4 EP=1  ctx=1048576  util=0.78 (head 0.78)
+offload:  nvme  cache=4GiB  spec=DSPARK-5  port=8888
+
+head: ACTIVE HCAs: rocep1s0f0,roceP2p1s0f0
+head: socket interfaces OK
+ssh: Could not resolve hostname spark2: Temporary failure in name resolution
+[1;33m[!][0m spark2: network check failed
+spark3: ACTIVE HCAs: rocep1s0f0,roceP2p1s0f0
+spark3: socket interfaces OK
+spark4: ACTIVE HCAs: rocep1s0f0,roceP2p1s0f0
+spark4: socket interfaces OK
+[0;32m[+][0m GPU: GPU 0: NVIDIA GB10 (UUID: GPU-86529dcf-e816-cd88-6a8e-9e285d26d074)
+[0;32m[+][0m SSH key ~/.ssh/id_ed25519
+[0;32m[+][0m host arch: aarch64 (GB10 expects aarch64)
+[0;32m[+][0m overlay image present (arm64)
+[0;32m[+][0m checkpoint OK (48 / 48 shards, 476G)
+[1;33m[!][0m NFSv4 not listening yet — ./start.sh share will start or reuse the exporter
+[0;32m[+][0m weights: spark2/spark3 use docker NFS volume dsv41-weights (head ~/models/DeepSeek-V4.1-Flash-1017); no rsync/SSHFS
+[0;32m[+][0m TP4 note: heads, o_groups, draft experts and vocab all divide by 4; no padding (DSV41_TP_PAD=0).
+[0;31m[x][0m SSH to spark2 FAILED
+[0;32m[+][0m SSH spark3 OK → spark3
+GPU 0: NVIDIA GB10 (UUID: GPU-8a70e4c8-b361-99dd-af46-5daaa4eda959)
+IB_OK
+[1;33m[!][0m spark3: weights missing/incomplete or volume dsv41-weights unavailable (NFS_SHARE=1)
+[0;32m[+][0m SSH spark4 OK → spark4
+GPU 0: NVIDIA GB10 (UUID: GPU-91b2ba78-f712-53f1-d712-3a8a8448e2d3)
+IB_OK
+[1;33m[!][0m spark4: weights missing/incomplete or volume dsv41-weights unavailable (NFS_SHARE=1)
+[1;33m[!][0m doctor: issues found
+[0;32m[+][0m image missing on spark2 — building
+[0;32m[+][0m === build dsv41-4x-spark:canary-roce from ~/dsv41-4x-spark (Dockerfile.canary-roce) ===
+dev-dsv41: Pulling from lmsysorg/sglang
+76fd055477b6: Already exists
+2ed23d91404d: Already exists
+b69841cb303c: Already exists
+f96e895ae754: Already exists
+4f4fb700ef54: Already exists
+4efc2d488f5a: Already exists
+730c8029606b: Already exists
+1b32cf91a1bf: Already exists
+639485f1f45f: Already exists
+063065dd5a0b: Already exists
+1868124c7d5b: Already exists
+9c6b8f5a26d7: Already exists
+4f4fb700ef54: Already exists
+17071d079121: Already exists
+801ff5d640da: Already exists
+4f4fb700ef54: Already exists
+8640daab2ea2: Pulling fs layer
+102bc6901843: Pulling fs layer
+7e5b5e7f31ba: Pulling fs layer
+4f4fb700ef54: Pulling fs layer
+665556e17d50: Pulling fs layer
+8606b2f00151: Pulling fs layer
+860a421d11d8: Pulling fs layer
+b95df1ef27a4: Pulling fs layer
+ed1eadebfd2b: Pulling fs layer
+8f80ead18c25: Pulling fs layer
+4f4fb700ef54: Waiting
+665556e17d50: Waiting
+8606b2f00151: Waiting
+b95df1ef27a4: Waiting
+ed1eadebfd2b: Waiting
+860a421d11d8: Waiting
+8f80ead18c25: Waiting
+37fe4034bf0b: Pulling fs layer
+37fe4034bf0b: Waiting
+baadc1021831: Pulling fs layer
+baadc1021831: Waiting
+e5f9492550ee: Pulling fs layer
+27a8546dbc4d: Pulling fs layer
+e5f9492550ee: Waiting
+27a8546dbc4d: Waiting
+3b05c674cb96: Pulling fs layer
+3b05c674cb96: Waiting
+300e0c4f4c86: Pulling fs layer
+cd5cf262829e: Pulling fs layer
+300e0c4f4c86: Waiting
+cd5cf262829e: Waiting
+a2472dc2ed78: Pulling fs layer
+53993aeda1d4: Pulling fs layer
+9403888dda42: Pulling fs layer
+a2472dc2ed78: Waiting
+5507ab6e372a: Pulling fs layer
+f145a36911ef: Pulling fs layer
+53993aeda1d4: Waiting
+9403888dda42: Waiting
+336b0985d637: Pulling fs layer
+f145a36911ef: Waiting
+5507ab6e372a: Waiting
+9a403182b609: Pulling fs layer
+e6b9e6976188: Pulling fs layer
+de3a8ba2b6fb: Pulling fs layer
+9a403182b609: Waiting
+e6b9e6976188: Waiting
+de3a8ba2b6fb: Waiting
+16f975a6c494: Pulling fs layer
+5faf1f44160e: Pulling fs layer
+16f975a6c494: Waiting
+5faf1f44160e: Waiting
+1874585ce668: Pulling fs layer
+094d711e0330: Pulling fs layer
+353cb888eca1: Pulling fs layer
+acde6b8783ba: Pulling fs layer
+e6c8f2275a84: Pulling fs layer
+638f16df1bb8: Pulling fs layer
+c7f39dfcd56e: Pulling fs layer
+75aea6c0040c: Pulling fs layer
+8c0cced4861f: Pulling fs layer
+cae6d1627c85: Pulling fs layer
+1874585ce668: Waiting
+dbd4f843747e: Pulling fs layer
+353cb888eca1: Waiting
+acde6b8783ba: Waiting
+e6c8f2275a84: Waiting
+638f16df1bb8: Waiting
+094d711e0330: Waiting
+75aea6c0040c: Waiting
+8c0cced4861f: Waiting
+cae6d1627c85: Waiting
+2af80612dd45: Pulling fs layer
+5cc56134315b: Pulling fs layer
+dbd4f843747e: Waiting
+2af80612dd45: Waiting
+932e9389a23b: Pulling fs layer
+137243a2481a: Pulling fs layer
+5cc56134315b: Waiting
+932e9389a23b: Waiting
+a67c24605218: Pulling fs layer
+aa80d3953641: Pulling fs layer
+137243a2481a: Waiting
+a67c24605218: Waiting
+c723037212ff: Pulling fs layer
+aa80d3953641: Waiting
+864a61280035: Pulling fs layer
+e2789f919837: Pulling fs layer
+c723037212ff: Waiting
+864a61280035: Waiting
+22483d12ccaa: Pulling fs layer
+54dd5b40d868: Pulling fs layer
+58359e5e621f: Pulling fs layer
+22483d12ccaa: Waiting
+e2789f919837: Waiting
+54dd5b40d868: Waiting
+58359e5e621f: Waiting
+102bc6901843: Verifying Checksum
+102bc6901843: Download complete
+4f4fb700ef54: Verifying Checksum
+4f4fb700ef54: Download complete
+665556e17d50: Verifying Checksum
+665556e17d50: Download complete
+8640daab2ea2: Verifying Checksum
+8640daab2ea2: Download complete
+8606b2f00151: Verifying Checksum
+8606b2f00151: Download complete
+860a421d11d8: Verifying Checksum
+860a421d11d8: Download complete
+b95df1ef27a4: Verifying Checksum
+b95df1ef27a4: Download complete
+7e5b5e7f31ba: Verifying Checksum
+7e5b5e7f31ba: Download complete
+37fe4034bf0b: Verifying Checksum
+37fe4034bf0b: Download complete
+8f80ead18c25: Verifying Checksum
+8f80ead18c25: Download complete
+baadc1021831: Verifying Checksum
+baadc1021831: Download complete
+e5f9492550ee: Verifying Checksum
+e5f9492550ee: Download complete
+27a8546dbc4d: Verifying Checksum
+27a8546dbc4d: Download complete
+ed1eadebfd2b: Verifying Checksum
+ed1eadebfd2b: Download complete
+300e0c4f4c86: Verifying Checksum
+300e0c4f4c86: Download complete
+a2472dc2ed78: Verifying Checksum
+a2472dc2ed78: Download complete
+cd5cf262829e: Verifying Checksum
+cd5cf262829e: Download complete
+53993aeda1d4: Verifying Checksum
+53993aeda1d4: Download complete
+5507ab6e372a: Download complete
+f145a36911ef: Download complete
+336b0985d637: Verifying Checksum
+336b0985d637: Download complete
+8640daab2ea2: Pull complete
+102bc6901843: Pull complete
+9a403182b609: Download complete
+e6b9e6976188: Verifying Checksum
+e6b9e6976188: Download complete
+de3a8ba2b6fb: Verifying Checksum
+de3a8ba2b6fb: Download complete
+16f975a6c494: Verifying Checksum
+16f975a6c494: Download complete
+5faf1f44160e: Verifying Checksum
+5faf1f44160e: Download complete
+1874585ce668: Verifying Checksum
+1874585ce668: Download complete
+094d711e0330: Verifying Checksum
+094d711e0330: Download complete
+353cb888eca1: Verifying Checksum
+353cb888eca1: Download complete
+3b05c674cb96: Verifying Checksum
+3b05c674cb96: Download complete
+7e5b5e7f31ba: Pull complete
+e6c8f2275a84: Verifying Checksum
+e6c8f2275a84: Download complete
+4f4fb700ef54: Pull complete
+665556e17d50: Pull complete
+8606b2f00151: Pull complete
+860a421d11d8: Pull complete
+b95df1ef27a4: Pull complete
+638f16df1bb8: Verifying Checksum
+638f16df1bb8: Download complete
+ed1eadebfd2b: Pull complete
+c7f39dfcd56e: Verifying Checksum
+c7f39dfcd56e: Download complete
+8f80ead18c25: Pull complete
+37fe4034bf0b: Pull complete
+baadc1021831: Pull complete
+e5f9492550ee: Pull complete
+27a8546dbc4d: Pull complete
+9403888dda42: Verifying Checksum
+9403888dda42: Download complete
+75aea6c0040c: Verifying Checksum
+75aea6c0040c: Download complete
+8c0cced4861f: Verifying Checksum
+8c0cced4861f: Download complete
+acde6b8783ba: Verifying Checksum
+acde6b8783ba: Download complete
+dbd4f843747e: Verifying Checksum
+dbd4f843747e: Download complete
+2af80612dd45: Verifying Checksum
+2af80612dd45: Download complete
+5cc56134315b: Verifying Checksum
+5cc56134315b: Download complete
+932e9389a23b: Verifying Checksum
+932e9389a23b: Download complete
+137243a2481a: Download complete
+a67c24605218: Verifying Checksum
+a67c24605218: Download complete
+aa80d3953641: Verifying Checksum
+aa80d3953641: Download complete
+c723037212ff: Verifying Checksum
+c723037212ff: Download complete
+864a61280035: Verifying Checksum
+864a61280035: Download complete
+cae6d1627c85: Verifying Checksum
+cae6d1627c85: Download complete
+22483d12ccaa: Verifying Checksum
+22483d12ccaa: Download complete
+54dd5b40d868: Verifying Checksum
+54dd5b40d868: Download complete
+58359e5e621f: Verifying Checksum
+58359e5e621f: Download complete
+e2789f919837: Verifying Checksum
+e2789f919837: Download complete

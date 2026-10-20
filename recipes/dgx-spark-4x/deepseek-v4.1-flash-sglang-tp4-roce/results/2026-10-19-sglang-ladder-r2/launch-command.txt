@@ -1,0 +1,18 @@
+# Serving arm B1a = knapcio v2.4 production block (.env.tp4.B0) + ONE override appended to EXTRA_CONTAINER_ENV:
+#   EXTRA_CONTAINER_ENV="$EXTRA_CONTAINER_ENV DSV41_INDEXER_LOGITS_BUDGET_BYTES=1073741824"
+# On the box (spark1, lane dir = knapcio tree): cp .env.tp4.B0 .env.tp4; append the line above; ./start-tp4.sh serve
+# Recipe form (scripts/env.tp4.recipe already carries the override):
+SPARK_HOSTS="spark1 spark2 spark3 spark4" STACK_DIR=$HOME/dsv41-4x-spark bash scripts/launch-sglang-tp4.sh serve
+#
+# Rendered env of the measured boot: raw/B1a/B1a.rendered-env.txt ; serving boot: raw/chain/serve-b1a.sh + serve-b1a.log
+# Engine argv recorded by boot.py (raw/boot/state-tp4-launch.json; head rank 0; workers --node-rank 1..3):
+python3 -m sglang.launch_server --model-path /models/DeepSeek-V4.1-Flash --served-model-name deepseek-v4.1-flash \
+  --trust-remote-code --load-format safetensors --tp 4 --ep-size 1 --attention-backend dsv4 --moe-runner-backend flashinfer_mxfp4 \
+  --mem-fraction-static 0.78 --chunked-prefill-size 8192 --context-length 1048576 --max-running-requests 16 \
+  --cuda-graph-max-bs-decode 16 --random-seed 0 --enable-decoder-swa-bounded-replay --tool-call-parser deepseekv41 \
+  --reasoning-parser deepseek-v41 --host 0.0.0.0 --port 8888 --speculative-algorithm DSPARK --speculative-dspark-block-size 5 \
+  --nnodes 4 --node-rank 0 --dist-init-addr 10.0.0.1:20000 --max-total-tokens 8000000 --watchdog-timeout 1800 \
+  --min-free-slots-delay 1 --enable-deepseek-v4-fp4-indexer --enable-cache-report --sleep-on-idle --swa-prefix-tails 128 \
+  --prefill-decode-interval 2 --fp8-gemm-backend flashinfer_cutlass
+# NOTE launch.json "revision": "fb2764a5..." is boot.py's hard-coded REVISION constant, not the mounted checkpoint.
+# The 1017 checkpoint (1bae0e10...) is what is mounted at /models/DeepSeek-V4.1-Flash (MODEL_DIR in the env).

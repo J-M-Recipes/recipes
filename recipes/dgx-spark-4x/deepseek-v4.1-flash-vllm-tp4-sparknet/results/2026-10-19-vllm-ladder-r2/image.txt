@@ -1,0 +1,16 @@
+image: vllm-ds41f-kkref:19f2c20ed4d6-r6x  (local build on each of sparks 5-8; not pullable)
+image_id: sha256:c1c93733e852722507c1ba4a0601ff691f88064d3a56f79da5732c27aa2302cb  (identical on spark5, spark6, spark7, spark8; docker image inspect 2026-10-20)
+created: 2026-10-19T05:25:49Z (spark5)
+base: docker.io/vllm/vllm-openai@sha256:3cf14c52765a0f0c2f09035e05fa79e1e4b2f9788b64afa90fa41c1ff12d29cf (nightly-af1c01499b289be555c475669ba50a88e96d846e)
+engine_reports: vLLM 0.29.1rc1.dev187+gaf1c01499 (the base nightly's version string; the serving tree is the fork on PYTHONPATH /opt/spark3/candidate/vllm)
+deployment: christopherowen/spark-ds41f @ fc3ee36d659ed882ed2a9458f1d5502882441c51 ("Promote r6x for TP4 (#407)"), label org.opencontainers.image.revision
+dockerfile: docker/Dockerfile in spark-ds41f @ fc3ee36d (build command: raw/build/ds41f-buildcmd.sh)
+pinned trees (image labels local.spark3.*; = config expected_labels, all six matched):
+  vllm        local-inference-lab/vllm integration/karmic-kraken-beta rev 19f2c20ed4d64ae22bd009ceacadd85e2a81e354 patch-head 7316c7f9fae1 tree 4d6851c8bb1397a55254ba88905a87d9785b98dc
+  b12x        local-inference-lab/b12x integration/karmic-kraken-beta rev 236ddff04a5f5064084b46464800b70b34ec7d8c patch-head 69e5795e2141 tree 1a647a311ca55d45070ab83d60668d9c8fb8886c
+  nccl        NVIDIA/nccl v2.30.7-1 rev 73cf112295c33aee2b895f329f592f2a9b4b0f97 patch-head eeacf1c6343f tree 6af10aa730a64fcee8781d62340a9c9184e79469
+  tilelang    tile-ai/tilelang main rev b95ee4ffb52ae26e15619cad38c6f41e7e0a2b46 patch-head a0e66d71fe76 tree 222b895d04ee6cd75179155d06e0c0d450636f51 (0.1.15)
+  tile_kernels deepseek-ai/TileKernels main rev 66258df6175d2f630ffecb04c5ab66bff8a2ae6a patch-head edfa64d018bc tree cb2fa41c8af290204c81c547ed678ebf957cca53 (2.0.0)
+  sparknet    christopherowen/dgx-spark-networking timeout-stop rev 3bc8d10104a5012244a0424d7dfc1107a72eafab tree f72599fa212e894d67ee114553e628ab05daf2da
+              version 0.3.0 (pyproject + sparknet.__version__ at 3bc8d10; 3 commits past the 0.3.0 release; upstream main is now 0.4.0, NOT in this image)
+build: ~2h16m per node, capped buildx builder (raw/build/ds41f-build.sh)

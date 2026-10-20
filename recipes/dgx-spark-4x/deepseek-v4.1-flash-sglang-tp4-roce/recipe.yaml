@@ -1,0 +1,244 @@
+schema: jm-recipe/v1
+id: dgx-spark-4x/deepseek-v4.1-flash-sglang-tp4-roce
+title: DeepSeek-V4.1-Flash-1017 on 4x DGX Spark, SGLang dsv4.1 TP4 over 200G RoCE (knapcio v2.4 + RoCEnante), DSpark k=5, 1M context
+summary: >-
+  GhettoRak's SGLang lane (Lane B) for DeepSeek-V4.1-Flash-1017, native weights (MXFP4 experts, FP8 dense, 48/48 shards
+  sha256 == Hub), served TP4 across Sparks 1-4 on one CRS804 with knapcio's v2.4 production stack (SGLang dsv4.1 branch
+  f80c91a4b + rhys101's RoCEnante one-shot all-reduce + knapcio adapters, EP1, Engram from NVMe) and one documented
+  override (indexer logits budget 1 GiB). 1,048,576-token context, 16 slots, KV pool 5.2-5.4M tokens. Round 2 (six
+  one-change boots, 2026-10-19/20) found no lever: C1 96 tok/s per stream on the 8-class mix (coding 134, prose 74),
+  C6 253 aggregate, 93K cold prefill 6.2K tok/s, 300K needles 4.0-4.7K after a slow first touch, and the lowest
+  short-chat TTFT behind a long prefill (1.8 s). Sibling vLLM lane dgx-spark-4x/deepseek-v4.1-flash-vllm-tp4-sparknet
+  wins decode and long prefill; this lane wins mixed traffic and stays closest to upstream SGLang.
+status: experimental
+owners:
+- jmeadlock
+- milo
+updated: '2026-10-20'
+tags:
+- deepseek-v4.1-flash
+- mxfp4
+- sglang
+- dgx-spark
+- gb10
+- tp4
+- roce
+- rocenante
+- dspark
+- speculative-decoding
+- 1m-context
+model:
+  name: DeepSeek-V4.1-Flash-1017
+  params: 552B backbone (MoE, 384 routed + 1 shared expert, 6 active, 40 layers) + 196B Engram   # model card; same checkpoint as the GB300 recipe
+  repo: https://huggingface.co/deepseek-ai/DeepSeek-V4.1-Flash-1017
+  revision: 1bae0e1088993b9b82de08f59de5be5a34e42170
+  quantization: >-
+    As shipped, nothing re-quantized: routed experts MXFP4 (FP4 + UE8M0 block scales), attention/dense/Engram FP8
+    (block 32x32). 48 safetensors, 510,296,708,312 bytes; 48/48 shard sha256 == Hub LFS oid at this revision
+    (results/2026-10-19-sglang-ladder-r2/raw/weights/hub-lfs-compare.txt). One copy on spark1, shared to ranks 1-3 over
+    NFSv4 on the fabric (NFS_SHARE=1). That copy was restored from spark5 on 2026-10-19 21:08-21:21 after a boot without
+    SKIP_PREPARE overwrote shards (see limits) and re-checked 48/48. Engram served from NVMe-packed per-rank shards
+    (OFFLOAD_MODE=nvme) with a 4 GiB row cache. config.json byte-identical to the GB300 recipe's copy.
+  draft:
+    repo: https://huggingface.co/deepseek-ai/DeepSeek-V4.1-Flash-1017 (in-checkpoint DSpark/MTP head, 3 nextn layers)
+    revision: 1bae0e1088993b9b82de08f59de5be5a34e42170
+    method: DSpark block 5 (SGLang --speculative-algorithm DSPARK --speculative-dspark-block-size 5), folded sampling, fp8 draft head, adaptive verify cap conf:0.1, block verification for sampled rows; target-verified (lossless at T=0)
+hardware:
+  profile: hardware/dgx-spark-4x.yaml
+  nominal:
+    unified_memory_gb_per_node: 128
+    nodes: 4
+  observed:
+    gpu: NVIDIA GB10 x4
+    driver: '595.84'
+    cuda: 13.0 (container, torch 2.13.0+cu130) on 13.2 host
+    gpu_memory_visible_gib: 121.69
+    host_memory_gib: 121.7
+    os: Ubuntu 24.04.4 LTS (DGX OS 7.2.3)
+    kernel: 6.17.0-1031-nvidia
+    snapshot: results/2026-10-19-sglang-ladder-r2/system.json
+  required_settings:
+  - Sparks 1-4 of the CRS804 rack (fabric 10.0.0.1-4 / 10.0.1.1-4, MTU 9000, lossy RoCEv2, both CX-7 PCI domains in NCCL_IB_HCA and B12X_ROCE_HCA, GID 3). Head spark1, API :8888. Lane C (vLLM) runs on Sparks 5-8 through the same switch; a 2026-10-20 A/B showed no cross-pod prefill contention.
+  - GPU clocks capped 2200 MHz on all nodes (nvidia-smi -lgc 0,2200 systemd unit); clocks.gr under load 2190.
+  - Before every boot drop_caches + compact_memory and gate MemAvailable (the round-2 chain gated at >= 100 GiB and read 118 GiB on all four). THP read madvise on all four nodes on 2026-10-20; the chain did not set it.
+  - SKIP_PREPARE=1 in the env, always (see limits). The launcher in scripts/ refuses to start without it.
+runtime:
+  engine: SGLang
+  engine_version: dsv4.1 branch at f80c91a4b (2026-09-16) inside lmsysorg/sglang:dev-dsv41 (package metadata still reads 0.0.0.dev1+gda64c5cbb, the base image's commit); torch 2.13.0+cu130, flashinfer 0.6.18, NCCL 2.30.7
+  engine_commit: f80c91a4b
+  container:
+    image: dsv41-4x-spark:canary-roce
+    digest: sha256:609343dd905f07999d9a60fa6fdc9801d83cb9a4b07a3c62d49d0531f63e4782
+    dockerfile: results/2026-10-19-sglang-ladder-r2/Dockerfile.canary-roce
+    dockerfile_sha256: dbd1cfbfb3d4f17c9d278a7b74dcb623ca5cf0109ba0a8192788ddfdc88e0c8c
+    base_image: >-
+      Local build on each node, not pullable; digest is the docker image ID (identical on spark1-4, created
+      2026-10-18T10:45 CDT). Base lmsysorg/sglang:dev-dsv41 (image ID sha256:381b27ff..., 2026-09-11) with its python tree
+      replaced by the SGLang dsv4.1 branch at f80c91a4b + rhys101's SG17 RoCEnante overlay (TP4-adapted) + b12x (SG17
+      rev) + b12x_next (b12x main a7d7d29b) + knapcio adapters, from knapcio/DeepSeek-V4.1-Flash-4x-DGX-Spark-TP4 v2.4
+      (CHANGELOG 2026-10-12; merge 37c85527). Our lane dir is a non-git copy; its content is consistent with
+      27616beca58690ea3120ad687e721c1c7e735412 (lacks the 2026-10-17 ring commits) but the exact commit was not recorded.
+  key_libraries:
+    torch: 2.13.0+cu130
+    flashinfer: 0.6.18 (MXFP4 MoE runner flashinfer_mxfp4 + fp8 GEMM flashinfer_cutlass; routed MoE on b12x_next at EP1)
+    nccl: 2.30.7 (prefill/large collectives; decode all-reduce/all-gather <= 2 MiB on RoCEnante)
+    b12x_next: a7d7d29b
+launch:
+  script: scripts/launch-sglang-tp4.sh
+  command: SPARK_HOSTS="spark1 spark2 spark3 spark4" STACK_DIR=$HOME/dsv41-4x-spark bash scripts/launch-sglang-tp4.sh serve  (renders scripts/env.tp4.recipe to $STACK_DIR/.env.tp4 and execs knapcio's ./start-tp4.sh serve; exact engine argv in results/2026-10-19-sglang-ladder-r2/launch-command.txt)
+  health: "curl -fs http://<head>:8888/v1/models ; engine log must show 'RoCEnante ready: world=4 hcas=rocep1s0f0,roceP2p1s0f0 gid_index=3 max_size=2097152', 'max_total_num_tokens=' between 4.5M and 5.9M, and 'The server is fired up'; then BASE_URL=http://<head>:8888 python3 scripts/gates.py <outdir>"
+  warmup: boot.py runs its own smoke (state-tp4/smoke.json, '42') and warm-up; the battery discards nothing else. First 300K-class prompt after a boot is 25-40% slow (first-touch) - discard it.
+  notable_flags:
+  - TP 4, EP 1 (every rank holds a 576-wide slice of all 384 experts; routed MoE on b12x_next), --attention-backend dsv4, --moe-runner-backend flashinfer_mxfp4, --fp8-gemm-backend flashinfer_cutlass, --enable-decoder-swa-bounded-replay.
+  - --context-length 1048576 --max-running-requests 16 --cuda-graph-max-bs-decode 16 --max-total-tokens 8000000 --mem-fraction-static 0.78 (head 0.78) --chunked-prefill-size 8192 --swa-prefix-tails 128 --prefill-decode-interval 2 --min-free-slots-delay 1 --sleep-on-idle --enable-cache-report.
+  - --speculative-algorithm DSPARK --speculative-dspark-block-size 5; env SGLANG_DSPARK_FOLDED_SAMPLING=2 DSV41_DRAFT_TAU=0.7 DSV41_DRAFT_HEAD_FP8=1 DSV41_BLOCK_VERIFY=1 DSV41_VERIFY_CAP=conf:0.1 DSV41_CERT_HEAD=1.
+  - Transport SGLANG_ROCE_ALLREDUCE=1 SGLANG_ROCE_MAX_SIZE=2097152 DSV41_ROCE_GATHER=2097152 B12X_ROCE_HCA=rocep1s0f0,roceP2p1s0f0; NCCL_IB_HCA both PFs, NCCL_IB_GID_INDEX=3, NCCL_BUFFSIZE=1048576 NCCL_LL128_BUFFSIZE=262144 NCCL_PROTO=^LL128 NCCL_MAX_NCHANNELS=8.
+  - The one override over knapcio v2.4 (arm B1a) - EXTRA_CONTAINER_ENV += DSV41_INDEXER_LOGITS_BUDGET_BYTES=1073741824 (adapter default 2 GiB). Head MemAvailable floor 11.5-11.8 -> 14.9 GiB over the battery; speed within noise.
+  - VARIANT B2 capacity - --swa-prefix-tails 64 instead of 128 gave the largest KV pool of the round (5,927,424) at unchanged speed; costs knapcio's 388K-session revisit cache. Offered, not default.
+  - Rendered env of the measured boot results/2026-10-19-sglang-ladder-r2/raw/B1a/B1a.rendered-env.txt; scripts/env.tp4.recipe sha256 40bcea6fe3f9f23aa4e5e865b066524cb755664b2f91eb65ea91f16a63f91e83; start-tp4.sh ada373a3..., boot.py 7fccb3cb... (knapcio v2.4 tree).
+metrics:
+- name: Single-stream decode, 8-class v41bench mix (per-stream)
+  value: 96.16
+  unit: tok/s
+  workload: C1, v41bench prompt set v1 (coding, format, json, math, narrative, prose, reasoning, summary; counting ceiling excluded), 200 max tokens, T=0, thinking off, /v1/completions with DeepSeek encoding; per-stream = mean of per-request decode tok/s (TTFT excluded)
+  aggregation: run 2 of 2 on the B1a battery boot (run 1 95.02); six round-2 boots 94.0-97.0 (12 runs)
+  by_class:
+  - { class: coding, value: 134.05, raw: raw/B1a/bench-B1a-main.md }
+  - { class: format, value: 129.36, raw: raw/B1a/bench-B1a-main.md }
+  - { class: math, value: 114.05, raw: raw/B1a/bench-B1a-main.md }
+  - { class: json, value: 105.03, raw: raw/B1a/bench-B1a-main.md }
+  - { class: reasoning, value: 85.95, raw: raw/B1a/bench-B1a-main.md }
+  - { class: prose, value: 73.98, raw: raw/B1a/bench-B1a-main.md }
+  - { class: summary, value: 65.78, raw: raw/B1a/bench-B1a-main.md }
+  - { class: narrative, value: 61.04, raw: raw/B1a/bench-B1a-main.md }
+  provenance:
+    run_id: 2026-10-19-sglang-ladder-r2
+    method: scripts/v41bench_tf.py --levels 1,2,3,4,5,6 (scripts/b-battery.sh)
+    raw: raw/B1a/bench-B1a-main.md
+- name: Single-stream decode, 8-class mix (aggregate tokens / wall)
+  value: 82.44
+  unit: tok/s
+  workload: C1, same instrument; aggregate = completion tokens / wall incl. TTFT (the column the Oct-18 post quoted as 84.8)
+  aggregation: run 2 of 2 (run 1 79.99); six boots 78.7-83.7
+  provenance:
+    run_id: 2026-10-19-sglang-ladder-r2
+    method: scripts/v41bench_tf.py
+    raw: raw/B1a/bench-B1a-main.md
+- name: 4-stream aggregate decode
+  value: 203.84
+  unit: tok/s
+  workload: C4, same prompt set, 16 slots configured (not slot-capped)
+  aggregation: single run; six boots 203.8-209.7
+  provenance:
+    run_id: 2026-10-19-sglang-ladder-r2
+    method: scripts/v41bench_tf.py
+    raw: raw/B1a/bench-B1a-main.md
+- name: 6-stream aggregate decode
+  value: 252.81
+  unit: tok/s
+  workload: C6, same prompt set, 16 slots configured (not slot-capped)
+  aggregation: single run; six boots 249.9-261.6
+  provenance:
+    run_id: 2026-10-19-sglang-ladder-r2
+    method: scripts/v41bench_tf.py
+    raw: raw/B1a/bench-B1a-main.md
+- name: Cold prefill, 93,335-token prompt
+  value: 6187
+  unit: tok/s
+  workload: unique-nonce prompt, max_tokens 1, T=0, no prefix-cache hit
+  aggregation: median of 3 (6,187 / 6,207 / 6,111); single shot in the v41bench ladder 5,847; serving boot quiet 6,219 (contention A/B); B0ctl window 3,304 is an unexplained outlier
+  provenance:
+    run_id: 2026-10-19-sglang-ladder-r2
+    method: scripts/prefill_reps.py 3 reps
+    raw: raw/B1a/prefill_reps.log
+- name: Cold prefill 93K, serving boot, quiet fabric
+  value: 6219
+  unit: tok/s
+  workload: same instrument on the B1a serving boot, lane C idle; 6,242 while lane C prefilled 93K back-to-back on the same switch
+  aggregation: median of 3 (5,996 / 6,236 / 6,219)
+  provenance:
+    run_id: 2026-10-19-sglang-ladder-r2
+    method: scripts/prefill_reps.py (raw/contention/run.sh)
+    raw: raw/contention/quiet-B.log
+- name: 300K needle prefill, runs 2-3
+  value: 4385
+  unit: tok/s
+  workload: long_check 300,000-token needle x3, PASS 3/3; prefill tok/s = prompt tokens / wall
+  aggregation: mean of runs 2-3 (4,029 / 4,741); run 1 3,484 reported separately (first-touch, 2.2-3.5K on every arm); 20K 5,283 and 131K 4,427 PASS
+  provenance:
+    run_id: 2026-10-19-sglang-ladder-r2
+    method: scripts/long_check.py
+    raw: raw/B1a/needles.log
+- name: Short-chat TTFT behind a cold 93K prefill
+  value: 1.77
+  unit: s
+  workload: mixed_probe - a short chat request issued while a 93K cold prefill is in flight (prefill-decode-interval 2 + DSV41_PREFILL_BYPASS=256)
+  aggregation: mean of 2 (1.719 / 1.812); idle baseline 0.21-0.36 s; vLLM sibling 3.03 s
+  provenance:
+    run_id: 2026-10-19-sglang-ladder-r2
+    method: scripts/mixed_probe.py
+    raw: raw/B1a/mixed.json
+- name: KV pool
+  value: 5353728
+  unit: tokens
+  workload: mem-fraction-static 0.78, max-total-tokens pin 8,000,000, swa-prefix-tails 128, 1,048,576 context
+  aggregation: B1a battery boot; serving boot 5,219,072; six boots 4,519,680-5,927,424 independent of arm (fast-loader variance)
+  provenance:
+    run_id: 2026-10-19-sglang-ladder-r2
+    method: engine log max_total_num_tokens
+    raw: raw/boot/B1a-boot-20261019T2125.log
+- name: Head MemAvailable floor over the battery
+  value: 14.86
+  unit: GiB
+  workload: memwatch on spark1 every 10 s through gates, qeval, needles to 300K, C1-C6, prefill reps, mixed
+  aggregation: minimum; B0 11.49, B0ctl 11.80 (2 GiB indexer budget)
+  provenance:
+    run_id: 2026-10-19-sglang-ladder-r2
+    method: chain memwatch-b.sh
+    raw: raw/B1a/memwatch-spark1.log
+- name: qeval content score
+  value: 71
+  unit: of 75 tasks
+  workload: 75 auto-scored tasks (code 24/25, format 7/7, json 6/8, math 13/14, prose 5/5, reason 16/16), C1, T=0
+  aggregation: single run; 71/75 on all six boots and on the vLLM sibling
+  provenance:
+    run_id: 2026-10-19-sglang-ladder-r2
+    method: scripts/qeval.py
+    raw: raw/B1a/qeval.log
+- name: Warm boot to HTTP-ready
+  value: 6.4
+  unit: min
+  workload: stop, hygiene, ./start-tp4.sh serve -> /v1/models 200 (04:43:38 -> 04:50:03 CDT 2026-10-20)
+  aggregation: serving boot; round-2 boots 5.6-6.75 min (chain-b.log); cold-JIT B0 ~8 min incl. doctor
+  provenance:
+    run_id: 2026-10-19-sglang-ladder-r2
+    method: serve-b1a.log timestamps
+    raw: raw/chain/serve-b1a.log
+verification:
+  gates:
+    schema: { how: "scripts/check_recipe.py passes", last_pass_utc: "2026-10-20T10:45:00Z", run_id: 2026-10-19-sglang-ladder-r2 }
+    digest: { how: "image ID sha256:609343dd905f... identical on spark1-4 (docker image inspect); 48/48 checkpoint shards sha256 == Hub LFS oid at 1bae0e10 (raw/weights/hub-lfs-compare.txt) after the 2026-10-19 restore (restore-ckpt.log CKPT_VERIFIED 48/48); Dockerfile.canary-roce sha256 dbd1cfbf...", last_pass_utc: "2026-10-20T10:30:00Z", run_id: 2026-10-19-sglang-ladder-r2 }
+    health: { how: "boot.py smoke on the serving boot ('42', state-tp4/smoke.json) and 75/75 qeval requests answered on every arm. PENDING - functional gates (/v1/models max_model_len, exact-reply smoke, get_weather tool call + tool-result round): gates.py exited rc=1 at its /metrics read (HTTP 404) on all six arms before writing results, so no tool-call result was recorded. Fixed in scripts/gates.py; not yet re-run.", run_id: 2026-10-19-sglang-ladder-r2 }
+    quality: { how: "PENDING teacher-forced delta-logprob vs a reference build, PENDING a public bench run by us. Measured: qeval content 71/75 on all six boots (same as the vLLM sibling); knapcio's own v2.4 release gate (not ours) KL 0.0045/0.0061 vs v2.3 and qeval 72/72/72.", run_id: 2026-10-19-sglang-ladder-r2 }
+    performance: { how: "scripts/b-battery.sh on a quiet lane: C1 per-stream within 3% of 96 (8-class mix), C6 within 4% of 253-262, 93K prefill-reps median >= 5.8K, 300K needles PASS with runs 2-3 >= 4.0K, mixed TTFT <= 2.5 s, head MemAvailable floor >= 13 GiB", last_pass_utc: "2026-10-20T02:43:40Z", run_id: 2026-10-19-sglang-ladder-r2 }
+limits:
+- "Round 2 found no lever. Six boots, one change each vs knapcio's v2.4 block, KEEP bar +2% on any headline metric with no regression > 2%: nothing cleared it. C1 and C6 moved within a +-3% noise band (C1 agg 78.7-83.7, C6 249.9-261.6). The published config is the authors' block plus one robustness override."
+- "HAZARD - SKIP_PREPARE. Any env that un-sets SKIP_PREPARE=1 makes boot.py snapshot_download its hard-coded REVISION fb2764a5... INTO MODEL_DIR. On 2026-10-19 (~20:27 CDT boot) this overwrote shards on spark1; the copy was restored from spark5 (21:08-21:21) and re-verified 48/48. scripts/launch-sglang-tp4.sh aborts unless the rendered env has SKIP_PREPARE=1 and HF_REVISION=1bae0e10."
+- "state-tp4/launch.json records revision fb2764a5cf321eaa5070ca8f9e892818f477c16d. That is boot.py's hard-coded constant, not the mounted checkpoint; MODEL_DIR (1017, 1bae0e10) is what is mounted at /models/DeepSeek-V4.1-Flash."
+- "B0ctl's 93K window (2026-10-19 20:04-20:21 CDT) read 3,145 single / 3,304 median while the same config read 5.0K (B0) and 6.1-6.2K in four later boots. A deliberate cross-pod A/B (2026-10-20 05:00-05:07) was NEGATIVE (B 6,219 -> 6,242 with lane C prefilling; C 5,993 -> 6,009), so it is not fabric contention. Unexplained outlier."
+- "300K first-touch: run 1 of the 300K needle is 2.2-3.5K tok/s on every arm; runs 2-3 reach 4.0-4.9K on B0, B1a, B1b and B2, but stay 2.5-2.7K on B0ctl (outlier window) and 3.0-3.1K on B3 (prefill-decode-interval 4). Report run 1 separately; do not average it in."
+- "NV_ERR_NO_MEMORY bursts in dmesg during B0's needle window (head, 271 events per the ladder notes) did not recur as a burst in later arms (dmesg counts only rotated). The 1 GiB indexer budget lifts the head MemAvailable floor 11.8 -> 14.9 GiB; that is why it is the serving default."
+- "KV pool varies by boot (4.52M-5.93M tokens) independent of the arm - knapcio's documented fast-loader variance. Only B2's +9% (swa-prefix-tails 64) is attributable."
+- "Decode trails the vLLM sibling: per-stream C1 96 vs 104, C6 253-262 vs 289. 300K prefill trails too (runs 2-3 4.0-4.9K vs 5.4K). 93K prefill is level (6.2K vs 6.0K)."
+- "Per-class DSpark acceptance not measured on this lane: SGLang serves no /metrics in this launch, and the shared spec_by_cat.py reads vLLM counters. Pending."
+- "Fidelity is thin: no teacher-forced comparison, no public bench run by us, tool-call gate not recorded (gates.py died at /metrics). qeval 71/75 is a content score, not a model-fidelity gate."
+- "Boot is slow next to the sibling: ~6.4 min warm (5.6-6.75 across round 2), ~8 min cold JIT, vs ~1.5 min warm for vLLM."
+- "Local image: dsv41-4x-spark:canary-roce is built on each node from the knapcio tree; the digest is a docker image ID, not a registry digest. The lane dir is a copy, not a clone; the exact knapcio commit is not recorded (content consistent with 27616bec)."
+rollback:
+  script: scripts/launch-sglang-tp4.sh
+  summary: "SPARK_HOSTS=... bash scripts/launch-sglang-tp4.sh stop (= knapcio ./start-tp4.sh stop; if a worker container survives, docker stop dsv41-worker on that node by name). Sparks 1-4 previously served Lane A (TensorFold EXL3), kept stopped with its containers; restore with its relaunch script (not published here). The vLLM sibling dgx-spark-4x/deepseek-v4.1-flash-vllm-tp4-sparknet serves the same checkpoint on Sparks 5-8."
+links:
+  blog: https://al-engr.com/dsv41-1017-three-way-tensorfold-sglang-vllm-4x-dgx-spark.html
+  sibling_recipe: recipes/dgx-spark-4x/deepseek-v4.1-flash-vllm-tp4-sparknet
+  upstream_stack: https://github.com/knapcio/DeepSeek-V4.1-Flash-4x-DGX-Spark-TP4 (v2.4; downstream of https://github.com/MiaAI-Lab/DeepSeek-v4.1-Flash-DGX-Sparks)
+  upstream_issue: https://github.com/sgl-project/sglang/pull/39187

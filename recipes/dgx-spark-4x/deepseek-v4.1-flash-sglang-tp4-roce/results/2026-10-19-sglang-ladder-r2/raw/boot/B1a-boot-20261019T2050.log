@@ -1,0 +1,43 @@
+=== doctor (DeepSeek-V4.1-Flash · 4× Spark · TP4 · SGLang) ===
+head:     spark-290c / milo @ 10.0.0.1
+workers:  milo@spark2 spark3 spark4  (10.0.0.2 10.0.0.3 10.0.0.4)
+image:    dsv41-4x-spark:canary-roce  (base lmsysorg/sglang:dev-dsv41)
+model:    ~/models/DeepSeek-V4.1-Flash-1017
+parallel: nnodes=4 TP=4 EP=1  ctx=1048576  util=0.78 (head 0.78)
+offload:  nvme  cache=4GiB  spec=DSPARK-5  port=8888
+
+head: ACTIVE HCAs: rocep1s0f0,roceP2p1s0f0
+head: socket interfaces OK
+spark2: ACTIVE HCAs: rocep1s0f0,roceP2p1s0f0
+spark2: socket interfaces OK
+spark3: ACTIVE HCAs: rocep1s0f0,roceP2p1s0f0
+spark3: socket interfaces OK
+spark4: ACTIVE HCAs: rocep1s0f0,roceP2p1s0f0
+spark4: socket interfaces OK
+[0;32m[+][0m GPU: GPU 0: NVIDIA GB10 (UUID: GPU-86529dcf-e816-cd88-6a8e-9e285d26d074)
+[0;32m[+][0m SSH key ~/.ssh/id_ed25519
+[0;32m[+][0m host arch: aarch64 (GB10 expects aarch64)
+[0;32m[+][0m overlay image present (arm64)
+[1;33m[!][0m partial checkpoint (46 / 48) — ./start.sh download
+[1;33m[!][0m NFSv4 not listening yet — ./start.sh share will start or reuse the exporter
+[0;32m[+][0m weights: spark2/spark3 use docker NFS volume dsv41-weights (head ~/models/DeepSeek-V4.1-Flash-1017); no rsync/SSHFS
+[0;32m[+][0m TP4 note: heads, o_groups, draft experts and vocab all divide by 4; no padding (DSV41_TP_PAD=0).
+[0;32m[+][0m SSH spark2 OK → spark-4b6e
+GPU 0: NVIDIA GB10 (UUID: GPU-3525a7e9-2411-47a7-0b2d-1e0d7b6b4681)
+IB_OK
+[1;33m[!][0m spark2: weights missing/incomplete or volume dsv41-weights unavailable (NFS_SHARE=1)
+[0;32m[+][0m SSH spark3 OK → spark3
+GPU 0: NVIDIA GB10 (UUID: GPU-8a70e4c8-b361-99dd-af46-5daaa4eda959)
+IB_OK
+[1;33m[!][0m spark3: weights missing/incomplete or volume dsv41-weights unavailable (NFS_SHARE=1)
+[0;32m[+][0m SSH spark4 OK → spark4
+GPU 0: NVIDIA GB10 (UUID: GPU-91b2ba78-f712-53f1-d712-3a8a8448e2d3)
+IB_OK
+[1;33m[!][0m spark4: weights missing/incomplete or volume dsv41-weights unavailable (NFS_SHARE=1)
+[1;33m[!][0m doctor: issues found
+[0;32m[+][0m === share spark1 checkpoint over NFSv4 on ConnectX ===
+[0;32m[+][0m building NFS image dsv41-nfs:local
+[0;32m[+][0m exporting ~/models/DeepSeek-V4.1-Flash-1017 via NFS (clients: 10.0.0.0/24,10.0.1.0/24)
+[0;32m[+][0m NFS server ready (dsv41-nfs)
+[0;32m[+][0m NFS volume dsv41-weights on spark2 → nfs://10.0.0.1:/
+[0;31m[x][0m spark2 cannot see the checkpoint over NFS. Check ACL (10.0.23.0/24 for spark3) and docker logs of the nfs exporter.

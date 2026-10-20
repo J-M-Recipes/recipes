@@ -1,0 +1,201 @@
+schema: jm-recipe/v1
+id: dgx-spark-4x/deepseek-v4.1-flash-vllm-tp4-sparknet
+title: DeepSeek-V4.1-Flash-1017 (native MXFP4/FP8) on 4x DGX Spark, vLLM fork (spark-ds41f r6x) TP4 over sparknet RoCE, 1M context
+summary: >-
+  Lane C of the split GhettoRak rack: DeepSeek-V4.1-Flash-1017 as shipped, served tensor-parallel 4 on Sparks 5-8 by
+  Christopher Owen's spark-ds41f r6x build (Local Inference Lab vLLM karmic-kraken-beta fork + TileLang kernels + sparknet
+  one-shot RoCE collectives, local image c1c93733e852) on our switch / 4 KiB-page shape tp4-switch-4k. 1,048,576-token
+  context, 6.54M-token KV pool, DSpark k=5. C1 104.3 tok/s per stream on the 8-category v1 mix, C6 289 tok/s aggregate,
+  6.0K tok/s cold prefill at 93K, 300K needles at 5.5K tok/s, warm boot ~90 s. A nine-arm one-change-per-boot ladder found
+  nothing that cleared +2%; this is Owen's config as shipped plus our shape. Sibling SGLang lane on Sparks 1-4:
+  dgx-spark-4x/deepseek-v4.1-flash-sglang-tp4-roce.
+status: experimental
+owners:
+- jmeadlock
+- milo
+updated: '2026-10-20'
+tags:
+- deepseek-v4.1-flash
+- deepseek-v4.1-flash-1017
+- vllm
+- tilelang
+- sparknet
+- dgx-spark
+- gb10
+- tp4
+- roce
+- dspark
+- long-context
+model:
+  name: DeepSeek-V4.1-Flash-1017
+  params: 552B backbone (MoE, 384 routed + 1 shared expert, 6 active; 8B activated per token in prefill / 16B in decode) + 196B Engram (model card)
+  repo: https://huggingface.co/deepseek-ai/DeepSeek-V4.1-Flash-1017
+  revision: 1bae0e1088993b9b82de08f59de5be5a34e42170
+  quantization: >-
+    as shipped - routed experts MXFP4, attention / dense / Engram FP8; nothing re-quantized. 48 safetensors shards,
+    510,296,708,312 bytes, identical size on all four nodes. spark5 copy hf-downloaded 2026-10-18; its 48 shard sha256
+    equal the Hub LFS etags, and the same bytes rsync'd to spark1 passed sha256sum -c 48/48 on 2026-10-19
+    (results/2026-10-19-vllm-ladder-r2/raw/weights/). Sparks 6-8 size-verified, not re-hashed in place.
+  draft:
+    repo: https://huggingface.co/deepseek-ai/DeepSeek-V4.1-Flash-1017 (in-checkpoint DSpark/MTP draft)
+    revision: 1bae0e1088993b9b82de08f59de5be5a34e42170
+    method: DSpark (MTP), num_speculative_tokens 5, draft TP4, greedy draft sampling, block rejection sampling, adaptive verification row cost 0.035 (r6x rule of the inputs, nothing timed at boot)
+hardware:
+  profile: hardware/dgx-spark-4x.yaml
+  nominal:
+    unified_memory_gb_per_node: 128
+    nodes: 4
+  observed:
+    gpu: NVIDIA GB10 x4 (spark5-8)
+    driver: '595.84'
+    cuda: '13.2'
+    gpu_memory_visible_gib: 121.69
+    host_memory_gib: 121.7
+    os: Ubuntu 24.04.5 LTS (DGX OS 7.2.3, OTA 7.6.0 per /etc/dgx-release)
+    kernel: 6.17.0-1031-nvidia
+    snapshot: results/2026-10-19-vllm-ladder-r2/system.json
+  required_settings:
+  - Switch fabric, not Owen's ring - both CX-7 PCI domains' f0 ports on separate /24s (rocep1s0f0 10.0.0.N, roceP2p1s0f0 10.0.1.N), NCCL_IB_HCA both PFs, NCCL_IB_MERGE_NICS 0, NCCL_CROSS_NIC 0, GID index 3, sparknet transport oneshot-direct (SPARKNET_ROCE_TOPOLOGY=direct).
+  - Kernel 6.17.0-1031 with 4 KiB pages and no memory-saver (Owen qualifies r6x on 7.0 / 64 KiB / memory-saver); KV fixed at --kv-cache-memory-bytes 8589934592 (Owen's ring shape uses 11274289152).
+  - Before every boot on all four nodes - sync, drop_caches 3, compact_memory 1; launcher refuses below 100 GiB MemAvailable (observed 114.8-117.6 GiB). GPU clocks capped 2200 MHz (nvidia-smi -lgc 0,2200); clocks.gr under load 2190 on all four.
+runtime:
+  engine: vLLM (fork)
+  engine_version: 0.29.1rc1.dev187+gaf1c01499 as reported (base nightly's string); serving tree = local-inference-lab/vllm integration/karmic-kraken-beta @ 19f2c20ed4d6 + spark-ds41f r6x patch chain (tree label 4d6851c8)
+  engine_commit: 19f2c20ed4d64ae22bd009ceacadd85e2a81e354
+  container:
+    image: vllm-ds41f-kkref:19f2c20ed4d6-r6x (local build on each node; not pullable)
+    digest: sha256:c1c93733e852722507c1ba4a0601ff691f88064d3a56f79da5732c27aa2302cb
+    base_image: >-
+      docker.io/vllm/vllm-openai@sha256:3cf14c52765a0f0c2f09035e05fa79e1e4b2f9788b64afa90fa41c1ff12d29cf
+      (nightly-af1c01499b28). Image Id above is the local image Id, identical on spark5-8; a rebuild elsewhere will not
+      reproduce it. Deployment repo christopherowen/spark-ds41f @ fc3ee36d659ed882ed2a9458f1d5502882441c51 (Promote r6x
+      for TP4, #407); Dockerfile = that repo's docker/Dockerfile at fc3ee36d, sha256
+      b486011291428f3170c004eb65751415c364fe43641c91625ef142c55dcad3ac (clean tree on spark5; not vendored here). Six pinned trees match the config's expected_labels (results/.../image.txt). Build ~2h16m per node.
+  key_libraries:
+    sparknet: 0.3.0 @ 3bc8d10104a5012244a0424d7dfc1107a72eafab, branch timeout-stop, tree f72599fa (3 commits past the 0.3.0 release; upstream main is now 0.4.0, not in this image)
+    nccl: v2.30.7-1 @ 73cf1122 + spark-ds41f patches (tree 6af10aa7)
+    tilelang: 0.1.15 @ b95ee4ff + patches (tree 222b895d)
+    tile_kernels: deepseek-ai/TileKernels 2.0.0 @ 66258df6 + patches (tree cb2fa41c)
+    b12x: local-inference-lab/b12x karmic-kraken-beta @ 236ddff0 + patches (tree 1a647a31; b12x loader)
+launch:
+  script: scripts/cluster.sh
+  command: SPARK_HOSTS="spark5 spark6 spark7 spark8" bash scripts/cluster.sh push && SPARK_HOSTS="spark5 spark6 spark7 spark8" bash scripts/cluster.sh up
+  health: BASE_URL=http://<head>:8002/v1 python3 scripts/gates.py <outdir>
+  warmup: none; the bench's first request per category is measured. Warm boot (AOT/JIT caches under $DS41F_DIR/cache populated by the first boot) reaches HTTP ready in 89-101 s.
+  notable_flags:
+  - Per-node launcher scripts/launch-vllm-tp4.sh <rank>, generated from the live head command by scripts/render_launcher.py; ranks 3,2,1 then 0; workers add --headless. Reproduces the live spark6 args exactly.
+  - --tensor-parallel-size 4 --nnodes 4 --distributed-executor-backend mp --load-format b12x --block-size 256 --enable-prefix-caching --enable-chunked-prefill --max-num-batched-tokens 8192 --long-prefill-token-threshold 8096 --prefix-cache-retention-interval 8192 --max-model-len 1048576 --max-num-seqs 16 --max-parallel-prefills 1 --gpu-memory-utilization 0.82 --kv-cache-memory-bytes 8589934592 (6,537,516 tokens).
+  - --attention-backend TILELANG --linear-backend tilelang --moe-backend tilelang, VLLM_DS41_KERNEL_BACKEND=tilelang; --compilation-config cudagraph_mode FULL_AND_PIECEWISE with capture sizes 1-96; --async-scheduling; --no-enable-flashinfer-autotune; B12X_AUTOTUNE=0.
+  - --engram-config table_memory disk, disk_resident_scales false, projection_tp true.
+  - --speculative-config method dspark, num_speculative_tokens 5, draft_tensor_parallel_size 4, draft_sample_method greedy, rejection_sample_method block, enable_adaptive_verification true, adaptive_verification_row_cost 0.035.
+  - --default-chat-template-kwargs thinking false; --generation-config vllm with override temperature 1.0 top_p 1.0 (server default sampling; the bench forces T=0); --reasoning-parser and --tool-call-parser deepseek_v41 with auto tool choice; keyless on port 8002.
+  - Shape tp4-switch-4k (git-ignored local shape in spark-ds41f config/cluster.laneC.local.json, published in results/.../raw/ds41f-local-config/) - sparknet oneshot-ring4 to oneshot-direct, NCCL_IB_HCA both f0 PFs, MERGE_NICS 0, CROSS_NIC 0, socket ifname enp1s0f0np0, KV 8 GiB; 4 channels and 4 MiB NCCL buffers inherited from Owen's tp4-ring; NCCL_SWITCHLESS_BIDIRECTIONAL removed (laneC-c0). Owen's topology checker refuses oneshot-direct on four nodes, so the rendered docker run is launched directly.
+metrics:
+- name: Single-stream decode, 8-category v1 mix (per stream)
+  value: 104.27
+  unit: tok/s
+  workload: C1, v41bench prompt set v1 (coding, format, json, math, narrative, prose, reasoning, summary; counting ceiling excluded), T=0, thinking off, unique leading tag per request; DSpark k=5
+  aggregation: mean of 2 runs (104.23 / 104.30) on C0ctl2, the shipped config's same-window control boot; aggregate C1 92.96. Per category C1 - coding 133.2, format 149.0, math 126.8, json 104.5, reasoning 101.3, prose 78.9, summary 78.8, narrative 62.0. Round-1 FINAL 103.50
+  provenance:
+    run_id: 2026-10-19-vllm-ladder-r2
+    method: scripts/v41bench_tf.py
+    raw: raw/C0ctl2/bench-C0ctl2-main.md
+- name: 4-stream aggregate decode, v1 mix
+  value: 230.94
+  unit: tok/s
+  workload: C4, same instrument; 67.7 per stream; max-num-seqs 16 (not slot-capped)
+  aggregation: single run, C0ctl2; Round-1 FINAL 229.54
+  provenance:
+    run_id: 2026-10-19-vllm-ladder-r2
+    method: scripts/v41bench_tf.py
+    raw: raw/C0ctl2/bench-C0ctl2-main.md
+- name: 6-stream aggregate decode, v1 mix
+  value: 288.94
+  unit: tok/s
+  workload: C6, same instrument; 56.8 per stream, mean TTFT 0.30 s; max-num-seqs 16 (not slot-capped); the ladder stops at C6
+  aggregation: single run, C0ctl2; Round-1 FINAL 286.61
+  provenance:
+    run_id: 2026-10-19-vllm-ladder-r2
+    method: scripts/v41bench_tf.py
+    raw: raw/C0ctl2/bench-C0ctl2-main.md
+- name: Cold prefill, 93,335-token prompt
+  value: 5998.4
+  unit: tok/s
+  workload: prefill_reps.py, unique-nonce token-id prompt of exactly 93,335 tokens, max_tokens 1, T=0, no prefix-cache hits
+  aggregation: median of 3 (5993.4 / 5998.4 / 6044.7), C0ctl2; 2K 4,518, 8K 5,987, 32K 6,165, 64K 6,099; quiet contention control 2026-10-20 5,993
+  provenance:
+    run_id: 2026-10-19-vllm-ladder-r2
+    method: scripts/prefill_reps.py
+    raw: raw/C0ctl2/prefill_reps.json
+- name: 300K-token needle, prefill + retrieval
+  value: 5462
+  unit: tok/s
+  workload: long_check.py, exact 300,000-token prompt, one needle, PASS in 54.9 s
+  aggregation: run 1 of 3 on C0ctl2 (5462 / 5471 / 5453, all PASS - no first-touch dip on this lane); 20K 5,822 PASS, 131K 5,724 PASS
+  provenance:
+    run_id: 2026-10-19-vllm-ladder-r2
+    method: scripts/long_check.py
+    raw: raw/C0ctl2/needles.log
+- name: Short-chat TTFT behind a cold 93K prefill
+  value: 3.026
+  unit: s
+  workload: mixed_probe.py - a short chat request sent while a cold 93,000-token prefill runs; idle TTFT 0.107 s
+  aggregation: mean of 2 (3.064 / 2.987), C0ctl2
+  provenance:
+    run_id: 2026-10-19-vllm-ladder-r2
+    method: scripts/mixed_probe.py
+    raw: raw/C0ctl2/mixed.json
+- name: DSpark acceptance at C1 (accepted / drafted tokens)
+  value: 0.6119
+  unit: ratio
+  workload: spec_by_cat.py, /metrics spec_decode deltas, 3 requests per category, k=5
+  aggregation: C0ctl2 all categories; per category format 0.909, coding 0.833, math 0.695, json 0.559, reasoning 0.539, prose 0.413, summary 0.390, narrative 0.314
+  provenance:
+    run_id: 2026-10-19-vllm-ladder-r2
+    method: scripts/spec_by_cat.py
+    raw: raw/C0ctl2/spec-acceptance-C1.md
+- name: KV pool
+  value: 6537516
+  unit: tokens
+  workload: --kv-cache-memory-bytes 8589934592 per rank, 1,048,576 max-model-len (6.23x concurrency at 1M); weights + draft 72.19 GiB per rank, CUDA graphs 1.98 GiB
+  aggregation: identical on every R2 boot
+  provenance:
+    run_id: 2026-10-19-vllm-ladder-r2
+    method: engine log
+    raw: raw/FINALr2/kv_tokens.txt
+- name: Warm boot to HTTP ready
+  value: 90
+  unit: s
+  workload: docker run on rank 0 after workers, to /v1/models 200; caches warm (weight load 20.6 s, model load 29.6 s, engine init 22.4 s on C0ctl2)
+  aggregation: serving boot FINALr2; range 89-101 s across the five R2 boots
+  provenance:
+    run_id: 2026-10-19-vllm-ladder-r2
+    method: scripts/cluster.sh readiness probe (ladder r2-arm.sh)
+    raw: raw/FINALr2/r2.log
+verification:
+  gates:
+    schema: { how: "scripts/check_recipe.py passes", last_pass_utc: "2026-10-20T10:45:00Z", run_id: 2026-10-19-vllm-ladder-r2 }
+    digest: { how: "image Id sha256:c1c93733e852... identical on spark5-8 (docker image inspect); six pinned tree labels == spark-ds41f expected_labels; checkpoint 48 shard sha256 == Hub LFS etags (spark5 bytes, verified 48/48 after rsync); sparks 6-8 size-identical", last_pass_utc: "2026-10-20T10:20:00Z", run_id: 2026-10-19-vllm-ladder-r2 }
+    health: { how: "scripts/gates.py: /v1/models, exact-reply smoke LANE_C_OK, get_weather tool call + tool-result round, 0 preemptions - FUNCTIONAL_GATES PASS on every boot incl. the serving boot FINALr2", last_pass_utc: "2026-10-20T02:10:42Z", run_id: 2026-10-19-vllm-ladder-r2 }
+    quality: { how: "PENDING: teacher-forced delta-logprob vs the original has not been run on this lane, and no public benchmark has been run by us. Same-engine evidence only - qeval 71/75 every arm with content identical to C0 75/75; 40-prompt greedy raw-completion probe 40/40 identical across every arm vs C0ctl2; bench C1 per-request token/char signature 9/9. These are reproducibility checks, not model-fidelity checks.", run_id: 2026-10-19-vllm-ladder-r2 }
+    performance: { how: "scripts/run_battery.sh full: C1 per-stream within 2% of 104.3, C6 within 3% of 289, 93K prefill within 2% of 6.0K", last_pass_utc: "2026-10-20T01:28:00Z", run_id: 2026-10-19-vllm-ladder-r2 }
+limits:
+- "Tuning found nothing. Round 2 (2026-10-20 01:14-02:12 UTC), one change per boot against a same-window control, keep bar +2% on any headline metric with no regression over 2%: C7ced (Owen's CED non-final-row skip overlay) +0.9% 93K, +1.6% 300K, +4.1% 131K single shot, outputs bit-identical - REVERT; Owen measured +10.6-11.1% on TP3, so the gain is shape-dependent. C8pp2 (--max-parallel-prefills 2) C4 -8.3%, C6 -10.8%, TTFT not improved - REVERT (C8pp2b not run). C9nvfp4 (NVFP4 draft head + Markov) C1 +1.7%, C6 -2.8% - REVERT. Round 1 (2026-10-19, nine arms, per the published post; receipts left on spark5, not mirrored) - NIC merge/cross-NIC, NCCL channels 4 to 8, NCCL buffers 4 to 16 MiB, KV 8.6 / 9.2 GiB, max-num-batched-tokens 16384, row cost 0.05 / 0.02 - all within about 2% or worse; a single-rail diagnostic cost 14% of 93K prefill."
+- "Cold JIT: the first boot on an empty $DS41F_DIR/cache took 351 s and read 7.7% lower 93K prefill than the same config rebooted warm (Round 1). Benchmark warm boots only; the 89-101 s figure assumes a populated cache."
+- "Mixed traffic: a short chat behind a cold 93K prefill waits ~3.0 s for its first token (max-parallel-prefills 1, chunk 8192). The SGLang sibling answers in 1.7-1.9 s there. Raising parallel prefills cost 8-11% of C4/C6 and did not help TTFT."
+- "1M context is configured and the KV pool holds 6.23 full-length sequences, but the deepest needle run is 300,000 tokens (3/3 PASS). One needle per length; retrieval, not long-context reasoning."
+- "Not stock vLLM and not pullable - a local build of a fork of a pre-release vLLM nightly, ~2h16m per node. The image Id will not match anyone else's build; pin by the six tree labels and the deployment commit."
+- "Our shape is unqualified upstream: Owen qualifies r6x on a switchless four-node ring, kernel 7.0, 64 KiB pages, memory-saver. tp4-switch-4k runs over a switch on 6.17 / 4 KiB pages with an 8 GiB KV budget per rank; Owen's topology checker refuses oneshot-direct on four nodes."
+- "Hygiene: the R2 runner dropped caches and compacted memory before each boot but did not set THP to never; THP is madvise on spark5-8 (checked 2026-10-20). NV_ERR_NO_MEMORY counts in dmesg did not rise in any arm."
+- "Cross-pod contention is not a factor at single-stream long-prefill load: C 93K 5,993 quiet vs 6,009 while the SGLang pod on Sparks 1-4 prefilled back-to-back (2026-10-20 05:00-05:07 CDT). Not tested - both pods under concurrent multi-stream load."
+- "Quality is unverified against the original model: no teacher-forced delta-logprob, no public benchmark by us. The identity checks above show the arms did not change outputs relative to each other."
+rollback:
+  script: scripts/cluster.sh
+  summary: "SPARK_HOSTS=... bash scripts/cluster.sh down (docker stop dsv41-karmic-kraken on all four, container kept). The other published DeepSeek-V4.1 lanes - SGLang on 4x Spark (dgx-spark-4x/deepseek-v4.1-flash-sglang-tp4-roce) and one GB300 (dgx-station-gb300/deepseek-v4.1-flash-vllm-uva-dspark)."
+links:
+  blog: https://al-engr.com/dsv41-1017-three-way-tensorfold-sglang-vllm-4x-dgx-spark.html
+  sibling_recipe: recipes/dgx-spark-4x/deepseek-v4.1-flash-sglang-tp4-roce
+  related_recipe: recipes/dgx-station-gb300/deepseek-v4.1-flash-vllm-uva-dspark
+  upstream_stack: https://github.com/christopherowen/spark-ds41f (fc3ee36d659ed882ed2a9458f1d5502882441c51, r6x)
+  upstream_vllm: https://github.com/local-inference-lab/vllm (integration/karmic-kraken-beta @ 19f2c20ed4d6)
+  upstream_sparknet: https://github.com/christopherowen/dgx-spark-networking (timeout-stop @ 3bc8d10, 0.3.0)

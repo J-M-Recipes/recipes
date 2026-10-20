@@ -1,0 +1,10 @@
+image dsv41-4x-spark:canary-roce (local build on each node, not pullable; no RepoDigests)
+image_id sha256:609343dd905f07999d9a60fa6fdc9801d83cb9a4b07a3c62d49d0531f63e4782 (docker image inspect, identical on spark1-4, 2026-10-20)
+image_created 2026-10-18T10:45:29-05:00
+dockerfile Dockerfile.canary-roce sha256 dbd1cfbfb3d4f17c9d278a7b74dcb623ca5cf0109ba0a8192788ddfdc88e0c8c (knapcio v2.4 tree, spark1 lane dir)
+base_image lmsysorg/sglang:dev-dsv41 image_id sha256:381b27ffa19bfbade2bf69bb103395e59a7e82ab0adf176b15b492e9df5aaf7b (created 2026-09-11)
+sglang_tree SGLang dsv4.1 branch at f80c91a4b (2026-09-16) replaces the base image's python tree; + rhys101 SG17 RoCEnante overlay (TP4-adapted) + b12x (SG17 rev) + b12x_next (b12x main a7d7d29b) + knapcio adapters
+stack knapcio/DeepSeek-V4.1-Flash-4x-DGX-Spark-TP4 v2.4 (CHANGELOG top entry 2026-10-12); lane dir is a non-git copy (2026-10-18 ~10:20 CDT); content consistent with 27616beca58690ea3120ad687e721c1c7e735412 (lacks the 2026-10-17 ring commits) - not git-verified
+start-tp4.sh sha256 ada373a38b16b7c57f821046d5f346fbfb6007b93d1030a562304c7d5e169bde ; boot.py sha256 7fccb3cb38ba533078a219967db7d616bf5071f7a440e481f4d9df925d1796ad
+running container dsv41-head (spark1) id efd8d0e9ea09, started 2026-10-20T09:44:06Z, image sha256:609343dd905f; dsv41-worker on spark2-4 same image id
+model deepseek-ai/DeepSeek-V4.1-Flash-1017 1bae0e1088993b9b82de08f59de5be5a34e42170 48 safetensors shards, model dir 510,311,114,212 bytes (du -sb spark1); sha256 48/48 vs raw/weights/sha256-1017.txt after the 10-19 restore (raw/weights/restore-ckpt.log)
