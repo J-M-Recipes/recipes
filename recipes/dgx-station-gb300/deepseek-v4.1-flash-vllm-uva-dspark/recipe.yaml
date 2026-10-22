@@ -2,6 +2,10 @@ schema: jm-recipe/v1
 id: dgx-station-gb300/deepseek-v4.1-flash-vllm-uva-dspark
 title: DeepSeek-V4.1-Flash at 1M context on one DGX Station GB300 (vLLM UVA expert offload + DSpark)
 summary: >
+  SERVING MOVED 2026-10-22: :30006 now runs the sidecar sibling
+  (recipes/dgx-station-gb300/deepseek-v4.1-flash-vllm-uva-dspark-sidecar — same checkpoint and image plus the
+  chassis' RTX PRO 6000 computing the cold experts; C1 279.5 vs 187.5 tok/s, C16 3.0x). This recipe is the
+  stopped rollback and the reference for a GB300 with no second GPU.
   The 510 GB DeepSeek-V4.1-Flash checkpoint (MXFP4 experts, FP8 Engram) does not fit 250 GiB of HBM.
   This recipe serves it from one GB300 by offloading 60 GiB of routed-expert weights to Grace memory over
   NVLink-C2C with vLLM's UVA backend, keeps the full 1,048,576-token context, and runs the in-checkpoint
@@ -592,6 +596,7 @@ rollback:
 
 links:
   blog: https://al-engr.com/gb300-deepseek-flash-41-testing.html
+  sibling_recipe_sidecar: recipes/dgx-station-gb300/deepseek-v4.1-flash-vllm-uva-dspark-sidecar
   vllm_recipe_upstream: https://recipes.vllm.ai/deepseek-ai/DeepSeek-V4.1-Flash
   vllm_pr_partial_prefill: https://github.com/vllm-project/vllm/pull/52084
   vllm_issue_starvation: https://github.com/vllm-project/vllm/issues/51454

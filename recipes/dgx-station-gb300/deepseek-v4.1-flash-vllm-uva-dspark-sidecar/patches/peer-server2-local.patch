@@ -1,0 +1,78 @@
+# peer-server2-local.patch — original-el8's peer tier-2 server, made runnable in our containers.
+#
+# Apply to original-el8/dgx-station-gb300-research @87af662,
+#   deepseek-v4.1-flash/m3/sidecar/peer_server2.py
+# producing the file the sidecar container runs as /sc/peer_server2_local.py:
+#
+#   cp peer_server2.py peer_server2_local.py
+#   patch -p0 peer_server2_local.py < patches/peer-server2-local.patch     # or apply by hand, it is 5 hunks
+#
+# Hunk 1-4: box-local paths (hook dir, model dir, b12x dir, log dir) -> the container mounts /w, /model,
+#           /b12x, /logs. Nothing numerical changes.
+# Hunk 5 (the one that matters): acknowledge the completed sequence counter FIRST and do the bookkeeping
+#           (stats, bucket-override read, stats-file write, progress print) afterwards. In the upstream order
+#           the GB300 spins on words[1] while the sidecar writes a stats file every ~2 s, which showed up as
+#           periodic multi-ms waits under load. Behaviour of the kernels is unchanged; the handshake order is.
+#
+@@ -21,7 +21,7 @@
+ import triton
+ import triton.language as tl
+ 
+-sys.path.insert(0, "<hook-dir>")
++sys.path.insert(0, "/w")
+ import peer_tier2 as pt  # noqa: E402
+ 
+ import b12x.moe.fused_moe as fm  # noqa: E402
+@@ -66,13 +66,13 @@
+ def main():
+     p = argparse.ArgumentParser()
+     p.add_argument("--rowmap", required=True)
+-    p.add_argument("--model", default="<model-dir>")
++    p.add_argument("--model", default="/model")
+     p.add_argument("--layers", type=int, default=40)
+     a = p.parse_args()
+ 
+     dev = torch.device("cuda", 0)
+     torch.cuda.set_device(dev)
+-    sys.path.insert(0, "<b12x-dir>")
++    sys.path.insert(0, "/b12x")
+     from benchmarks.moe_preparation import request_for_capacity
+ 
+     tensor = tensor_reader(a.model)
+@@ -226,12 +226,12 @@
+     print("serving", flush=True)
+     last, served, busy, rows_total, stale = int(words[0]), 0, 0.0, 0, 0
+     # Per-bucket latency stats (graph replay through sync), dumped every ~2 s; touch STATS_RESET to clear.
+-    STATS_FILE = "<logs-dir>/peer_stats.json"
+-    STATS_RESET = "<logs-dir>/peer_stats.reset"
++    STATS_FILE = "/logs/peer_stats.json"
++    STATS_RESET = "/logs/peer_stats.reset"
+     stats, last_dump = {}, 0.0
+     base_bucket_of = [0] + [next(m for m in BUCKETS if m >= r) for r in range(1, rows_max + 1)]
+     bucket_of = base_bucket_of
+-    BUCKET_OVERRIDE = "<logs-dir>/peer_buckets.json"
++    BUCKET_OVERRIDE = "/logs/peer_buckets.json"
+     while True:
+         seq = int(words[0])
+         if seq == last:
+@@ -254,6 +254,11 @@
+                 graphs[(layer, m)].replay()
+                 out_host[: rows * H].copy_(out_buf[:rows].view(-1), non_blocking=True)
+             torch.cuda.synchronize()
++        # Acknowledge FIRST (Milo 2026-10-22, Fable 5.1 review): the GB300 is spinning on words[1]; stats, the bucket-override
++        # read, the stats-file write and print below are bookkeeping and must not sit between the result and the ack.
++        words[1] = seq
++        last = seq
++        if rows > 0:
+             dt = time.perf_counter() - t0
+             busy += dt
+             served += 1
+@@ -284,8 +289,6 @@
+             if served % 2000 == 0:
+                 print(f"served {served} cold layer calls, mean {busy / served * 1e6:.1f} us, "
+                       f"mean rows {rows_total / served:.1f}", flush=True)
+-        words[1] = seq
+-        last = seq
+ 
+ 
+ if __name__ == "__main__":
