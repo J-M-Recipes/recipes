@@ -1,0 +1,31 @@
+# Hardware profile: 2x NVIDIA DGX Spark (GB10) — a two-node cut of the 8-node CRS804 rack ("GhettoRak"), 200G RoCE
+# Same nodes, switch and fabric settings as hardware/dgx-spark-8x.yaml and dgx-spark-4x.yaml; this profile is the
+# 2-node (TP2) pair used when the rack is split further (first use: Sparks 5-6, 2026-10-21). Values under `observed`
+# come from scripts/collect_system_snapshot.sh on each node (results bundles keep both).
+slug: dgx-spark-2x
+name: 2x NVIDIA DGX Spark (GB10), CRS804 200G RoCE fabric (two-node pair)
+vendor: NVIDIA (nodes), MikroTik (switch)
+form_factor: desk cluster, one node per wire-rack deck; other rack nodes run unrelated jobs on the same switch
+nominal:
+  gpu: NVIDIA GB10 (Blackwell, SM121) x2
+  unified_memory_gb_per_node: 128      # LPDDR5X shared by CPU and GPU
+  memory_bandwidth_gbs_per_node: 273
+  nic: ConnectX-7, two QSFP56 cages per node, one 200G port per PCI domain cabled (rocep1s0f0 + roceP2p1s0f0)
+  switch: MikroTik CRS804-4DDQ, 4x QSFP56-DD 400G, each broken out 2x200G
+observed:                              # 2026-10-21/22, Sparks 5-6
+  gpu: NVIDIA GB10
+  memory_total_gib_per_node: 121.69    # torch total_bytes 130,663,231,488 in Flare's export plan; nvidia-smi memory.total reads [N/A] on GB10
+  driver: "595.84"
+  cuda: "13.2"
+  os: Ubuntu 24.04.5 LTS (DGX OS 7.2.3 build) on Sparks 5-6
+  kernel: 6.17.0-1031-nvidia           # apt-held; 7.0.0-1019 breaks NCCL/RoCE memory registration
+  page_size_kib: 4
+  thp: madvise
+  fabric: per node enp1s0f0np0 10.0.0.N/24 + enP2p1s0f0np0 10.0.1.N/24, MTU 9000, lossy RoCEv2 (PFC off), forced 200G
+  gpu_clock_cap_mhz: 2200              # gb10-clocklock.service (nvidia-smi -lgc 0,2200) on both nodes; sm clock read 2190
+notes:
+  - Unified memory is the whole game. Host page cache consumes CUDA-visible memory 1:1; drop caches and compact memory before every export and serve.
+  - "nvidia-smi memory.total / power.limit read [N/A] on GB10; record memory from torch and power at the wall."
+  - "Each QSFP cage shows up as two ~100G PCIe functions on ONE 200G wire. Engines that take an HCA list need both PCI domains' f0 ports (Flare picked 'rocep1s0f0,roceP2p1s0f0', 2 rails per peer, on its own)."
+  - Two nodes have ~546 GB/s of memory bandwidth between them; a TP2 decode step reads half the weights per node, so single-stream decode sits well below the 4-node pod on the same model family.
+  - Clock cap 2200 MHz is kept rack-wide (power strip budget); it costs a few percent of prefill versus uncapped (community data).

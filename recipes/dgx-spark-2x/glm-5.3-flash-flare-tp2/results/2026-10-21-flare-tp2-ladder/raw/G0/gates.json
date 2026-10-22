@@ -1,0 +1,118 @@
+{
+ "models": {
+  "object": "list",
+  "data": [
+   {
+    "id": "GLM-5.3-Flash",
+    "object": "model",
+    "created": 1792623790,
+    "owned_by": "local",
+    "root": "GLM-5.3-Flash-NVFP4-MXFP8-CSF-QAD-dec48abd",
+    "parent": null,
+    "max_model_len": 1048576,
+    "permission": [
+     {
+      "id": "modelperm-1792623790-0",
+      "object": "model_permission",
+      "created": 1792623790,
+      "allow_create_engine": false,
+      "allow_sampling": true,
+      "allow_logprobs": true,
+      "allow_search_indices": false,
+      "allow_view": true,
+      "allow_fine_tuning": false,
+      "organization": "*",
+      "group": null,
+      "is_blocking": false
+     }
+    ],
+    "flare": {
+     "vocab_size": 154880,
+     "max_top_logprobs": 20,
+     "max_concurrency": 4,
+     "prefill_chunk_size": 4096,
+     "default_max_tokens": 1048576,
+     "sampling_defaults": {
+      "seed": 0,
+      "temperature": 1.0,
+      "top_p": 0.949999988079071,
+      "min_p": 0.0,
+      "repetition_penalty": 1.0,
+      "presence_penalty": 0.0,
+      "frequency_penalty": 0.0,
+      "top_k": -1
+     },
+     "sampling_ranges": {
+      "temperature": {
+       "min": 0.949999988079071,
+       "max": 1.0
+      },
+      "top_k": null,
+      "top_p": {
+       "min": 0.949999988079071,
+       "max": 1.0
+      },
+      "min_p": null,
+      "repetition_penalty": null,
+      "presence_penalty": null,
+      "frequency_penalty": null
+     },
+     "max_images_per_prompt": 0,
+     "max_image_tokens_per_prompt": 0,
+     "image_feature_window_tokens": 0,
+     "max_image_tokens_per_image": 0,
+     "max_image_pixels": 0,
+     "max_image_bytes": 0,
+     "input_modalities": [
+      "text"
+     ],
+     "output_modalities": [
+      "text"
+     ]
+    }
+   }
+  ]
+ },
+ "smoke": {
+  "content": null,
+  "reasoning": "The user has asked me to reply with exactly \"PONG-7319\". This appears to be a simple test or ping-pong style request. There's nothing harmful about this. The instruction is clear: reply with exactly t",
+  "usage": {
+   "prompt_tokens": 22,
+   "completion_tokens": 64,
+   "total_tokens": 86,
+   "prompt_tokens_details": {
+    "cached_tokens": 0
+   }
+  },
+  "s": 2.02,
+  "pass": false
+ },
+ "thinking_default": {
+  "has_reasoning": true,
+  "content": "**391**",
+  "usage": {
+   "prompt_tokens": 22,
+   "completion_tokens": 32,
+   "total_tokens": 54,
+   "prompt_tokens_details": {
+    "cached_tokens": 9
+   }
+  }
+ },
+ "tool": {
+  "tool_calls": [
+   {
+    "id": "call_chatcmpl-686534-3_0_0",
+    "type": "function",
+    "function": {
+     "name": "get_weather",
+     "arguments": "{\"city\":\"Paris\"}"
+    }
+   }
+  ],
+  "finish": "tool_calls",
+  "pass": true
+ },
+ "pass": false
+}
+GATES FAIL smoke False tool True thinking_default True

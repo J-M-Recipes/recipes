@@ -1,0 +1,31 @@
+CHAIN START Wed Oct 21 07:13:09 PM CDT 2026 pkg=W8 arm=W8k3 maxc=8 flags=--mtp-draft-tokens 3
+READY after 15s Wed Oct 21 07:13:32 PM CDT 2026
+[rank 0 spark5] [    OK    ] Plan cache.  per GPU: 89.71 GiB loaded · 19.39 GiB cache budget  0.0s
+[rank 0 spark5] [ PENDING  ] Allocate cache.  0.0s
+[rank 1 spark6] [ PENDING  ] Plan cache.  0.0s
+[rank 1 spark6] [    OK    ] Plan cache.  per GPU: 89.68 GiB loaded · 19.58 GiB cache budget  0.0s
+[rank 1 spark6] [ PENDING  ] Allocate cache.  0.0s
+[rank 1 spark6] [    OK    ] Allocate cache.  19.4 GiB · 5965312 KV tokens · 64 shared snapshot slots · limited by memory  0.6s
+[rank 0 spark5] [    OK    ] Allocate cache.  19.4 GiB · 5965312 KV tokens · 64 shared snapshot slots · limited by memory  0.7s
+[rank 0 spark5] [    OK    ] Start server.  http://0.0.0.0:8003 · 1048576 tokens/request  0.7s
+2026-10-21 19:13:32 BATTERY START tag=W8k3 model=GLM-5.3-Flash maxc=8
+2026-10-21 19:13:37 GATES PASS smoke True tool True thinking_default True
+2026-10-21 19:14:09 PROSE C1: C=1 per-stream mean 34.5 tok/s, aggregate 34.5 tok/s, ttft mean 0.03s
+2026-10-21 19:14:23 PROSE C1: C=1 per-stream mean 35.8 tok/s, aggregate 35.8 tok/s, ttft mean 0.02s
+2026-10-21 19:14:44 PROSE C2: C=2 per-stream mean 25.3 tok/s, aggregate 50.7 tok/s, ttft mean 0.31s
+2026-10-21 19:15:14 PROSE C4: C=4 per-stream mean 17.5 tok/s, aggregate 70.0 tok/s, ttft mean 0.66s
+2026-10-21 19:16:03 PROSE C8: C=8 per-stream mean 10.9 tok/s, aggregate 87.0 tok/s, ttft mean 1.27s
+2026-10-21 19:16:17 CODE C1: C=1 per-stream mean 39.4 tok/s, aggregate 39.4 tok/s, ttft mean 0.02s
+2026-10-21 19:16:30 CODE C1: C=1 per-stream mean 37.1 tok/s, aggregate 37.1 tok/s, ttft mean 0.02s
+2026-10-21 19:16:51 CODE C2: C=2 per-stream mean 25.2 tok/s, aggregate 50.3 tok/s, ttft mean 0.07s
+2026-10-21 19:17:21 CODE C4: C=4 per-stream mean 17.1 tok/s, aggregate 68.3 tok/s, ttft mean 0.10s
+2026-10-21 19:18:17 CODE C8: C=8 per-stream mean 9.3 tok/s, aggregate 74.1 tok/s, ttft mean 0.19s
+2026-10-21 19:18:31 JSON C1: C=1 per-stream mean 38.5 tok/s, aggregate 38.5 tok/s, ttft mean 0.35s
+2026-10-21 19:18:44 JSON C1: C=1 per-stream mean 38.8 tok/s, aggregate 38.8 tok/s, ttft mean 0.02s
+2026-10-21 19:19:02 JSON C2: C=2 per-stream mean 28.5 tok/s, aggregate 57.0 tok/s, ttft mean 0.34s
+2026-10-21 19:19:29 JSON C4: C=4 per-stream mean 20.0 tok/s, aggregate 80.0 tok/s, ttft mean 0.66s
+2026-10-21 19:20:03 JSON C8: C=8 per-stream mean 16.1 tok/s, aggregate 129.0 tok/s, ttft mean 1.25s
+2026-10-21 19:23:38 faceoff rc=0 RESULT ~/flare-prep-glm/results/W8k3/faceoff.json {"prefill_8000": 2046.4, "prefill_32000": 2294.2, "prefill_100000": 2376.1, "decode_structured_count": 6500000.0, "decode_prose": 6500000.0, "concurrent_aggregate_effective_tok_s": 2298.4}
+2026-10-21 19:29:41 decode_fix rc=0 RESULT {"structured_count|default(max)": 38.2, "prose|default(max)": 37.1, "structured_count|low": 38.4, "prose|low": 34.2}
+2026-10-21 19:29:41 BATTERY END
+CHAIN END OK Wed Oct 21 07:29:41 PM CDT 2026

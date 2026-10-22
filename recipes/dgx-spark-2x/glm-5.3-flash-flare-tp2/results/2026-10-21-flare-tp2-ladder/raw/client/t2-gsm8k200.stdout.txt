@@ -1,0 +1,97 @@
+╭──────────────────────────── NVIDIA P2P Override ─────────────────────────────╮
+│ Effective: no                                                                │
+│ Configured file: no (/etc/modprobe.d/nvidia-p2p-override.conf)               │
+│ Runtime: ForceP2P=; RMForceP2PType=; RMPcieP2PType=;                         │
+│ GrdmaPciTopoCheckOverride=; EnableResizableBar=; DmaRemapPeerMmio=           │
+│ Suggested modprobe line:                                                     │
+│ options nvidia                                                               │
+│ NVreg_RegistryDwords="ForceP2P=0x11;RMForceP2PType=1;RMPcieP2PType=2;GrdmaPc │
+│ iTopoCheckOverride=1;EnableResizableBar=1"                                   │
+│ Apply requires NVIDIA module reload or reboot after stopping GPU workloads.  │
+╰──────────────────────────────────────────────────────────────────────────────╯
+╭─────────────────────────────── Configuration ────────────────────────────────╮
+│ GSM8K Accuracy Benchmark                                                     │
+│ Model: GLM-5.3-Flash @ spark5:8003                                     │
+│ Prompt: profile:gsm8k                                                        │
+│ Dataset: gsm8k_test (1319 items, sha256 3730d312f6e34405…)                   │
+│ Concurrency: 30                                                              │
+│ Measured runs: 200 | Max tokens: 131072                                      │
+│ Scoring: per-item final number vs GSM8K reference                            │
+│ Sampling: temperature 0 | Watchdog: stall 600s, wall-clock off               │
+╰──────────────────────────────────────────────────────────────────────────────╯
+
+╭────────────────────────────── Completion Stats ──────────────────────────────╮
+│ GSM8K Accuracy Benchmark                                                     │
+│ Every request is a different problem from the pinned GSM8K test set, scored  │
+│ by exact final-number match against the reference answer. Accuracy with a    │
+│ Wilson 95% interval is the headline metric; completion tokens show reasoning │
+│ cost. Use --compare-baseline for paired A/B comparison across quantizations. │
+│ Built-in profile run at fixed concurrency C=30.                              │
+╰──────────────────────────────────────────────────────────────────────────────╯
+Profile                                             
+╭────────────────┬─────────────────────────────────╮
+│ field          │ value                           │
+├────────────────┼─────────────────────────────────┤
+│ profile        │ gsm8k                           │
+│ prompt         │ dataset:gsm8k_test (1319 items) │
+│ prompt chars   │ 400                             │
+│ dataset        │ gsm8k_test (200/1319 items)     │
+│ requested runs │ 200                             │
+│ concurrency    │ 30                              │
+│ max tokens     │ 131072                          │
+│ scoring        │ dataset_gsm8k                   │
+│ dataset sha256 │ 3730d312f6e34405                │
+╰────────────────┴─────────────────────────────────╯
+Concurrency Results                                                             
+╭───┬───────┬─────────────┬──────┬─────────┬──────────┬──────────┬─────────┬───╮
+│ … │ done… │       score │ sta… │ output… │ output … │ aggrega… │ avg re… │ … │
+├───┼───────┼─────────────┼──────┼─────────┼──────────┼──────────┼─────────┼───┤
+│ … │ 200/… │ EXACT 193 … │ ★★★… │     198 │      304 │     13.7 │    70.4 │ … │
+╰───┴───────┴─────────────┴──────┴─────────┴──────────┴──────────┴─────────┴───╯
+Selected C=30                                      
+╭────────────────────────────┬────────────────────╮
+│ metric                     │              value │
+├────────────────────────────┼────────────────────┤
+│ completed                  │            200/200 │
+│ score                      │ EXACT 193 / FAIL 7 │
+│ stars                      │      ★★★★★★★★★★ 👍 │
+│ accuracy                   │   96.50% (193/200) │
+│ Wilson 95% CI              │    92.95% – 98.29% │
+│ hit max_tokens             │                  0 │
+│ completion tokens avg      │                222 │
+│ completion tokens p50      │                198 │
+│ completion tokens p90      │                304 │
+│ completion tokens p99      │                545 │
+│ elapsed avg                │              70.4s │
+│ TTFT avg                   │             54.05s │
+│ aggregate gen tok/s        │               13.7 │
+│ mean per-request gen tok/s │               13.8 │
+╰────────────────────────────┴────────────────────╯
+Failed Final Answers                                                            
+╭─────┬────────────┬────┬────────┬───────┬─────────────────────────────────────╮
+│   # │ item       │  C │ tokens │ score │ final answer                        │
+├─────┼────────────┼────┼────────┼───────┼─────────────────────────────────────┤
+│  14 │ gsm8k-0085 │ 30 │    195 │ FAIL  │ 48 (expected 44, got 48) | 48       │
+│ 127 │ gsm8k-0830 │ 30 │    541 │ FAIL  │ 18.8 (expected 1128, got 18.8) |    │
+│     │            │    │        │       │ 18.8                                │
+│ 131 │ gsm8k-0857 │ 30 │    250 │ FAIL  │ 26000 (expected 14000, got 26000) | │
+│     │            │    │        │       │ 26000                               │
+│ 147 │ gsm8k-0962 │ 30 │    139 │ FAIL  │ 600 (expected 1000, got 600) | 600  │
+│ 159 │ gsm8k-1042 │ 30 │    465 │ FAIL  │ 3.5 (expected 3, got 3.5) | 3.50    │
+│ 160 │ gsm8k-1048 │ 30 │    406 │ FAIL  │ 9860.78 (expected 7400, got         │
+│     │            │    │        │       │ 9860.78) | 9860.78                  │
+│ 167 │ gsm8k-1094 │ 30 │    459 │ FAIL  │ 22.22 (expected 25, got 22.22) |    │
+│     │            │    │        │       │ 22.22%                              │
+╰─────┴────────────┴────┴────────┴───────┴─────────────────────────────────────╯
+Interpretation: every measured request is a distinct pinned dataset item, so the
+correctness rate is dataset accuracy, not a resample pass-rate; the Wilson 95% 
+interval reflects item-count resolution. TRUNC would flag requests that hit the 
+max_tokens limit before answering (none here). For quantization A/B tests keep 
+engine version and flags identical, run the same profile against each endpoint, 
+and pass --compare-baseline to get paired per-item deltas with an exact McNemar 
+significance test. Completion-token inflation and max_tokens hits are early 
+damage signals even before accuracy moves.
+
+Results saved to 
+~/hermes/spark-flare-glm-tp2/results/WIN-final/t2-gsm8k200.js
+on

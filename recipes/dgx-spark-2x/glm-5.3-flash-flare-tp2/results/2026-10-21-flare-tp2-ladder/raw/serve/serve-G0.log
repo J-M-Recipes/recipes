@@ -1,0 +1,172 @@
+SERVE START Wed Oct 21 05:58:05 PM CDT 2026 pkg=~/flare/cache/flare/runtime/glm53-fp4local-tp2-G0.safetensors fp=ad1072878c977def9d56301cf885908b62092118013006b03ae607e8db0f25d8 flags=
+
+Signing key acceptance
+Publisher:  Local development signer (local-development)
+Identity:   Local development key; verified by no publisher
+Signature:  Valid
+Source:     local-development
+License:    lil-license-1.0
+Stored data: Not checked (--verify-weights to check)
+
+Signing key:
+ad1072878c977def9d56301cf885908b62092118013006b03ae607e8db0f25d8
+
+Executable GPU code can access your process and data.
+Local development package; not an official published checkpoint.
+Typing the publisher namespace agrees to the license terms at the link above.
+Only approve a signing key you independently trust.
+Signing key accepted for local-development.
+
+placement of glm (gb10, 2 hosts):
+rank 0 on spark5: gpu 0 NVIDIA GB10 (cached)
+rank 1 on spark6: gpu 0 NVIDIA GB10 (not cached)
+spark5: using installed flare ~/.local/lib/flare-agent/flare
+spark6: using installed flare ~/.local/lib/flare-agent/flare
+group glm-20261021T225807Z-4a72: 2 ranks, rendezvous 10.0.0.5:29800
+  rank 0 on spark5: gpu 0 NVIDIA GB10
+  rank 1 on spark6: gpu 0 NVIDIA GB10
+spark6: fetching 84.4 GiB from spark5, then verifying
+spark6: received and verified 84.4 GiB
+group glm-20261021T225807Z-4a72 started; once loaded, rank zero on spark5 serves http://10.0.0.5:8003
+[rank 0 spark5] [ PENDING  ] Verify package.  0.0s
+[rank 1 spark6] [ PENDING  ] Verify package.  0.0s
+[rank 0 spark5] [    OK    ] Verify package.  signatures  0.0s
+[rank 0 spark5] [ PENDING  ] Wait for tensor-parallel hosts.  0.0s
+[rank 1 spark6] [    OK    ] Verify package.  signatures  0.0s
+[rank 1 spark6] Signing key acceptance
+[rank 1 spark6] Publisher:  Local development signer (local-development)
+[rank 1 spark6] Identity:   Local development key; verified by no publisher
+[rank 1 spark6] Signature:  Valid
+[rank 1 spark6] Source:     local-development
+[rank 1 spark6] License:    lil-license-1.0
+[rank 1 spark6] Stored data: Not checked (--verify-weights to check)
+[rank 1 spark6] Signing key:
+[rank 1 spark6] ad1072878c977def9d56301cf885908b62092118013006b03ae607e8db0f25d8
+[rank 1 spark6] Executable GPU code can access your process and data.
+[rank 1 spark6] Local development package; not an official published checkpoint.
+[rank 1 spark6] Typing the publisher namespace agrees to the license terms at the link above.
+[rank 1 spark6] Only approve a signing key you independently trust.
+[rank 1 spark6] Signing key accepted for local-development.
+[rank 1 spark6] [ PENDING  ] Join rank zero.  0.0s
+[rank 0 spark5] Rank 1 joined
+[rank 0 spark5] [    OK    ] Wait for tensor-parallel hosts.  1 peer ranks at 0.0.0.0:29800  0.1s
+[rank 0 spark5] [ PENDING  ] Prepare model.  0.0s
+[rank 1 spark6] [    OK    ] Join rank zero.  rank 1 of 2 at 10.0.0.5:29800  0.0s
+[rank 1 spark6] [ PENDING  ] Prepare model.  0.0s
+[rank 0 spark5] [    OK    ] Prepare model.  1 rank  0.0s
+[rank 0 spark5] [ PENDING  ] Initialize GPU.  0.0s
+[rank 1 spark6] [    OK    ] Prepare model.  1 rank  0.0s
+[rank 1 spark6] [ PENDING  ] Initialize GPU.  0.0s
+[rank 1 spark6] [    OK    ] Initialize GPU.  GPU 0 · SM121  0.3s
+[rank 1 spark6] [ PENDING  ] Allocate model memory.  0.0s
+[rank 0 spark5] [    OK    ] Initialize GPU.  GPU 0 · SM121  0.3s
+[rank 0 spark5] [ PENDING  ] Allocate model memory.  0.0s
+[rank 0 spark5] [    OK    ] Allocate model memory.  86.7 GiB GPU · 0.2 GiB host  2.5s
+[rank 0 spark5] [ PENDING  ] Load weights.  0.0s
+[rank 1 spark6] [    OK    ] Allocate model memory.  86.7 GiB GPU · 0.2 GiB host  5.6s
+[rank 1 spark6] [ PENDING  ] Load weights.  0.0s
+[rank 0 spark5] [    OK    ] Load weights.  84.0 GiB  7.3s
+[rank 0 spark5] [ PENDING  ] Prepare kernels.  0.0s
+[rank 0 spark5] [    OK    ] Prepare kernels.  1467 kernels  0.6s
+[rank 0 spark5] [ PENDING  ] Prepare execution.  0.0s
+[rank 0 spark5] [    OK    ] Prepare execution.  concurrency 4  0.5s
+[rank 1 spark6] [    OK    ] Load weights.  84.0 GiB  6.8s
+[rank 1 spark6] [ PENDING  ] Prepare kernels.  0.0s
+[rank 1 spark6] [    OK    ] Prepare kernels.  1467 kernels  0.5s
+[rank 1 spark6] [ PENDING  ] Prepare execution.  0.0s
+[rank 1 spark6] [    OK    ] Prepare execution.  concurrency 4  0.5s
+[rank 0 spark5] [ PENDING  ] Plan cache.  0.0s
+[rank 0 spark5] [    OK    ] Plan cache.  per GPU: 88.87 GiB loaded · 20.16 GiB cache budget  0.0s
+[rank 0 spark5] [ PENDING  ] Allocate cache.  0.0s
+[rank 1 spark6] [ PENDING  ] Plan cache.  0.0s
+[rank 1 spark6] [    OK    ] Plan cache.  per GPU: 88.49 GiB loaded · 20.26 GiB cache budget  0.0s
+[rank 1 spark6] [ PENDING  ] Allocate cache.  0.0s
+[rank 1 spark6] [    OK    ] Allocate cache.  20.1 GiB · 6299136 KV tokens · 32 shared snapshot slots · limited by memory  0.9s
+[rank 1 spark6] [ PENDING  ] Connect RoCE transport.  0.0s
+[rank 0 spark5] [    OK    ] Allocate cache.  20.1 GiB · 6299136 KV tokens · 32 shared snapshot slots · limited by memory  4.6s
+[rank 0 spark5] [ PENDING  ] Read model configuration.  0.0s
+[rank 0 spark5] [    OK    ] Read model configuration.  GLM-5.3-Flash-NVFP4-MXFP8-CSF-QAD-dec48abd  0.0s
+[rank 0 spark5] [ PENDING  ] Load tokenizer.  0.0s
+[rank 0 spark5] [ PENDING  ] Connect RoCE transport.  0.0s
+[rank 0 spark5] [    OK    ] Connect RoCE transport.  2 rails per peer over roceP2p1s0f0,rocep1s0f0  0.1s
+[rank 1 spark6] [    OK    ] Connect RoCE transport.  2 rails per peer over roceP2p1s0f0,rocep1s0f0  3.8s
+[rank 1 spark6] Serving rank 1 of 2 for rank zero at 10.0.0.5:29800
+[rank 0 spark5] [    OK    ] Load tokenizer.  154880 token vocabulary  0.5s
+[rank 0 spark5] [ PENDING  ] Start server.  0.0s
+[rank 0 spark5] [    OK    ] Start server.  http://0.0.0.0:8003 · 1048576 tokens/request  0.6s
+[rank 0 spark5] [ PENDING  ] Shut down server.  0.0s
+[rank 1 spark6] exited with status 0
+[rank 0 spark5] [    OK    ] Shut down server.  1.5s
+[rank 0 spark5] exited with status 0
+group glm-20261021T225807Z-4a72 exited
+SERVE EXIT 0 Wed Oct 21 06:12:05 PM CDT 2026
+SERVE START Wed Oct 21 07:46:06 PM CDT 2026 pkg=~/flare/cache/flare/runtime/glm53-fp4local-tp2-G0.safetensors fp=ad1072878c977def9d56301cf885908b62092118013006b03ae607e8db0f25d8 flags=
+placement of glm (gb10, 2 hosts):
+rank 0 on spark5: gpu 0 NVIDIA GB10 (cached)
+rank 1 on spark6: gpu 0 NVIDIA GB10 (not cached)
+spark5: using installed flare ~/.local/lib/flare-agent/flare
+spark6: using installed flare ~/.local/lib/flare-agent/flare
+group glm-20261022T004608Z-c450: 2 ranks, rendezvous 10.0.0.5:29800
+  rank 0 on spark5: gpu 0 NVIDIA GB10
+  rank 1 on spark6: gpu 0 NVIDIA GB10
+spark6: fetching 0.0 GiB from spark5, then verifying
+spark6: received and verified 0.0 GiB
+group glm-20261022T004608Z-c450 started; once loaded, rank zero on spark5 serves http://10.0.0.5:8003
+[rank 0 spark5] [ PENDING  ] Verify package.  0.0s
+[rank 1 spark6] [ PENDING  ] Verify package.  0.0s
+[rank 0 spark5] [    OK    ] Verify package.  signatures  0.0s
+[rank 0 spark5] [ PENDING  ] Wait for tensor-parallel hosts.  0.0s
+[rank 1 spark6] [    OK    ] Verify package.  signatures  0.0s
+[rank 1 spark6] [ PENDING  ] Join rank zero.  0.0s
+[rank 0 spark5] Rank 1 joined
+[rank 0 spark5] [    OK    ] Wait for tensor-parallel hosts.  1 peer ranks at 0.0.0.0:29800  0.1s
+[rank 0 spark5] [ PENDING  ] Prepare model.  0.0s
+[rank 1 spark6] [    OK    ] Join rank zero.  rank 1 of 2 at 10.0.0.5:29800  0.1s
+[rank 1 spark6] [ PENDING  ] Prepare model.  0.0s
+[rank 0 spark5] [    OK    ] Prepare model.  1 rank  0.0s
+[rank 0 spark5] [ PENDING  ] Initialize GPU.  0.0s
+[rank 1 spark6] [    OK    ] Prepare model.  1 rank  0.0s
+[rank 1 spark6] [ PENDING  ] Initialize GPU.  0.0s
+[rank 1 spark6] [    OK    ] Initialize GPU.  GPU 0 · SM121  0.3s
+[rank 1 spark6] [ PENDING  ] Allocate model memory.  0.0s
+[rank 0 spark5] [    OK    ] Initialize GPU.  GPU 0 · SM121  0.3s
+[rank 0 spark5] [ PENDING  ] Allocate model memory.  0.0s
+[rank 0 spark5] [    OK    ] Allocate model memory.  86.7 GiB GPU · 0.2 GiB host  2.2s
+[rank 0 spark5] [ PENDING  ] Load weights.  0.0s
+[rank 1 spark6] [    OK    ] Allocate model memory.  86.7 GiB GPU · 0.2 GiB host  2.4s
+[rank 1 spark6] [ PENDING  ] Load weights.  0.0s
+[rank 0 spark5] [    OK    ] Load weights.  84.0 GiB  7.1s
+[rank 0 spark5] [ PENDING  ] Prepare kernels.  0.0s
+[rank 1 spark6] [    OK    ] Load weights.  84.0 GiB  7.2s
+[rank 1 spark6] [ PENDING  ] Prepare kernels.  0.0s
+[rank 0 spark5] [    OK    ] Prepare kernels.  1467 kernels  0.5s
+[rank 0 spark5] [ PENDING  ] Prepare execution.  0.0s
+[rank 1 spark6] [    OK    ] Prepare kernels.  1467 kernels  0.5s
+[rank 1 spark6] [ PENDING  ] Prepare execution.  0.0s
+[rank 0 spark5] [    OK    ] Prepare execution.  concurrency 4  0.5s
+[rank 1 spark6] [    OK    ] Prepare execution.  concurrency 4  0.6s
+[rank 0 spark5] [ PENDING  ] Plan cache.  0.0s
+[rank 0 spark5] [    OK    ] Plan cache.  per GPU: 89.09 GiB loaded · 20.19 GiB cache budget  0.0s
+[rank 0 spark5] [ PENDING  ] Allocate cache.  0.0s
+[rank 1 spark6] [ PENDING  ] Plan cache.  0.0s
+[rank 1 spark6] [    OK    ] Plan cache.  per GPU: 88.88 GiB loaded · 20.20 GiB cache budget  0.0s
+[rank 1 spark6] [ PENDING  ] Allocate cache.  0.0s
+[rank 1 spark6] [    OK    ] Allocate cache.  20.2 GiB · 6315008 KV tokens · 32 shared snapshot slots · limited by memory  0.6s
+[rank 1 spark6] [ PENDING  ] Connect RoCE transport.  0.0s
+[rank 0 spark5] [    OK    ] Allocate cache.  20.2 GiB · 6315008 KV tokens · 32 shared snapshot slots · limited by memory  0.6s
+[rank 0 spark5] [ PENDING  ] Read model configuration.  0.0s
+[rank 0 spark5] [    OK    ] Read model configuration.  GLM-5.3-Flash-NVFP4-MXFP8-CSF-QAD-dec48abd  0.0s
+[rank 0 spark5] [ PENDING  ] Load tokenizer.  0.0s
+[rank 0 spark5] [ PENDING  ] Connect RoCE transport.  0.0s
+[rank 1 spark6] [    OK    ] Connect RoCE transport.  2 rails per peer over roceP2p1s0f0,rocep1s0f0  0.1s
+[rank 1 spark6] Serving rank 1 of 2 for rank zero at 10.0.0.5:29800
+[rank 0 spark5] [    OK    ] Connect RoCE transport.  2 rails per peer over roceP2p1s0f0,rocep1s0f0  0.1s
+[rank 0 spark5] [    OK    ] Load tokenizer.  154880 token vocabulary  0.5s
+[rank 0 spark5] [ PENDING  ] Start server.  0.0s
+[rank 0 spark5] [    OK    ] Start server.  http://0.0.0.0:8003 · 1048576 tokens/request  0.6s
+[rank 0 spark5] [ PENDING  ] Shut down server.  0.0s
+[rank 0 spark5] [    OK    ] Shut down server.  0.4s
+[rank 1 spark6] exited with status 0
+[rank 0 spark5] exited with status 0
+group glm-20261022T004608Z-c450 exited
+SERVE EXIT 0 Wed Oct 21 08:01:22 PM CDT 2026

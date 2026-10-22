@@ -1,0 +1,86 @@
+<!doctype html>
+<html><head><meta charset="utf-8">
+<style>
+  html,body{margin:0;background:#0b0f14;}
+  .card{width:1200px;box-sizing:border-box;padding:36px 44px;background:linear-gradient(160deg,#0b0f14 0%,#0f1620 100%);color:#e6edf3;font-family:Inter,-apple-system,Segoe UI,Helvetica,Arial,sans-serif;border:1px solid #1e2a38;border-radius:14px;}
+  .mono{font-family:"JetBrains Mono",SFMono-Regular,Menlo,Consolas,monospace;}
+  .top{display:flex;justify-content:space-between;align-items:flex-start;}
+  h1{margin:0;font-size:38px;font-weight:800;letter-spacing:-0.5px;}
+  .sub{margin-top:6px;font-size:15px;color:#9fb0c3;}
+  .brand{text-align:right;font-size:13px;color:#9fb0c3;line-height:1.5;white-space:nowrap}
+  .brand b{color:#6ee7b7;font-size:16px;letter-spacing:1px}
+  .pills{display:flex;flex-wrap:wrap;gap:8px;margin:18px 0 22px}
+  .pill{border:1px solid #2a3a4d;background:#111a25;border-radius:999px;padding:6px 12px;font-size:13px;color:#cfd9e4}
+  .pill b{color:#fff;font-weight:600}
+  .pill.type{border-color:#6ee7b7;color:#6ee7b7}
+  .grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px}
+  .box{background:#111a25;border:1px solid #1e2a38;border-radius:10px;padding:16px 18px}
+  .lbl{font-size:11px;letter-spacing:1.6px;text-transform:uppercase;color:#7f93a8;margin-bottom:6px}
+  .hero{font-size:56px;font-weight:800;line-height:1;color:#fff}
+  .hero small{font-size:18px;font-weight:500;color:#9fb0c3;margin-left:6px}
+  .note{font-size:12px;color:#9fb0c3;margin-top:8px;line-height:1.4}
+  .row2{display:grid;grid-template-columns:1.2fr 1fr 1fr;gap:14px;margin-top:14px}
+  .kv{font-size:14px;line-height:1.75}
+  .kv b{color:#fff;font-weight:600}
+  .acc span{display:inline-block;margin-right:12px}
+  .fid{margin-top:14px;background:#0e1a17;border:1px solid #1f4d3d;border-radius:10px;padding:16px 18px}
+  .fid .lbl{color:#6ee7b7}
+  .fid ul{margin:0;padding-left:0;list-style:none;display:grid;grid-template-columns:1fr 1fr;gap:6px 24px;font-size:14px;line-height:1.5}
+  .ok::before{content:"✓ ";color:#6ee7b7;font-weight:700}
+  .pend::before{content:"◌ ";color:#f59e0b;font-weight:700}
+  .pend{color:#d9c58a}
+  .meas::before{content:"≈ ";color:#93c5fd;font-weight:700}
+  .pend-inline{color:#f59e0b;font-size:0.6em;font-weight:600;letter-spacing:1px}
+  .foot{display:flex;justify-content:space-between;margin-top:18px;font-size:12px;color:#7f93a8}
+  .foot .mono{color:#9fb0c3}
+  .fid li.pair { list-style: none; margin: 6px 0 2px -18px; padding: 10px 12px; border: 1px solid rgba(255,255,255,.14); border-radius: 8px; background: rgba(255,255,255,.04); }
+  .fid li.pair .big { font-size: 20px; font-weight: 700; color: #e8f0ff; letter-spacing: -.2px; }
+  .fid li.pair .sep { color: rgba(255,255,255,.35); margin: 0 6px; }
+  .fid li.pair .dim { font-size: 11.5px; color: rgba(255,255,255,.62); }
+</style></head><body>
+<div class="card">
+  <div class="top">
+    <div>
+      <h1>GLM-5.3-Flash · 2× DGX Spark · NVIDIA Flare TP2</h1>
+      <div class="sub">local-inference-lab CSF-QAD (NVFP4 experts / MXFP8) on Flare 47581cc across Sparks 5–6 over 200G RoCE. One 8-seat package (speculative capacity 48) served with 3 MTP drafts at a fixed verify width; recipe defaults stop drafting at 4 users. 1M context, ~6.1M KV tokens.</div>
+    </div>
+    <div class="brand"><b>J-M-RECIPES</b><br>v1 (2026-10-22 · Flare 47581cc · CSF-QAD @ dec48abd · 9-arm ladder, frozen winner rule → W8k3na, confirmed as WIN) · 2026-10-22<br>status: experimental</div>
+  </div>
+  <div class="pills">
+<span class="pill type"><b>MoE+MTP</b> · 288 routed experts, 8 active · hybrid KDA + DSA + MLA attention · in-checkpoint MTP head</span>
+<span class="pill"><b>320B</b> total · <b>18B</b> active</span>
+<span class="pill">checkpoint <b>177.8 GB</b> · rev <span class="mono">dec48abd</span></span>
+<span class="pill">weights <b>community requant · NVFP4 experts (CSF scales) / MXFP8 elsewhere · QAD · not the original weights</b></span>
+<span class="pill">engine <b>NVIDIA Flare (flare-local-inference) <span class="mono">47581ccac82660953a5b59cb04b2750d64edc97d</span> · Flare 47581cc (main 5f37bd1 cannot run it: #17, #7) · flare 0.1.0 host binary · torch 2.14.1+cu132 · flashinfer 0.7.1 fork · local image 13331331</b></span>
+<span class="pill">memory <b>per rank 88.6 GB weights · 5.1 GB graphs · 19.7 GiB KV → 6.08M tok · 1,048,576 ctx · 8 seats · head MemAvailable 7–8 GiB</b></span>
+  </div>
+  <div class="grid">
+<div class="box"><div class="lbl">Decode · C1 per stream (prose / code / JSON, thinking on)</div><div class="hero">39.4<small>tok/s</small></div><div class="note">mean of 6 · 37.0 / 39.1 / 42.3 · reasoning + answer tokens · recipe defaults 37.4 · temp clamped 0.95</div></div>
+<div class="box"><div class="lbl">Decode · C8 aggregate</div><div class="hero">106.8<small>tok/s</small></div><div class="note">all 8 seats · C4 77.5 (defaults 56.2, no drafting at 4 users) · defaults cannot seat 8</div></div>
+<div class="box"><div class="lbl">Cold prefill · ~32K-token prompt</div><div class="hero">2276<small>tok/s</small></div><div class="note">8K 2,040 · 100K 2,354 · 3×18K together 2,296 · Aug 29 two-Spark vLLM NVFP4 1,354</div></div>
+  </div>
+  <div class="row2">
+<div class="box"><div class="lbl">Guesser</div><div class="kv"><b>MTP (built-in)</b> · in-checkpoint MTP layer (CSF-QAD @ dec48abd)<br>package k=5, capacity 48 · served k=3, fixed verify width 4 (--no-mtp-adaptive-verification)<br><span class="acc">accept: <span>accepted / drafting round <b>1.77 of 3</b></span> <span>defaults (adaptive, cap 6) <b>1.02</b></span></span></div></div>
+<div class="box"><div class="lbl">Long context, quality, agents</div><div class="kv">needles 30K / 121K / 284K / 570K: <b>4/4 correct · 570K in 268 s · MemAvailable 7 → 7 GiB</b><br>GSM8K-200: <b>193/200 = 96.5% (same ckpt on GB300 Flare 97–98%)</b><br>Hermes 20-hop tool chain: <b>3/3 · median 34.1 s</b></div></div>
+<div class="box"><div class="lbl">Ladder, boot &amp; hazards</div><div class="kv">9 arms, frozen rule: <b>W8k3na; adaptive verify chose width 1 for most batch ≥ 4 rounds</b><br>export / first serve / relaunch: <b>~39 min / 315 s / 15–90 s</b><br>not on main: <b>5f37bd1&#x27;s NVIDIA FP4-Local pin fails to load (#17); multi-host ABI 10 vs 9 (#7)</b></div></div>
+  </div>
+  <div class="fid"><div class="lbl">Output fidelity — does the recipe change what the model says?</div>
+    <ul>
+<li class="ok">Checkpoint as local-inference-lab shipped it: 38/38 LFS files sha256 == Hub at dec48abd (a community requant of Z.ai&#x27;s weights, not the originals)</li>
+<li class="ok">Speculation is target-verified: MTP drafts are accepted only by the full model</li>
+<li class="ok">Tool-call gate (get_weather, valid argument) on all 9 arms; exact-reply smoke on 8 of 9 (G0&#x27;s 64-token cap was eaten by thinking)</li>
+<li class="meas">GSM8K-200 96.5% (193/200), run by us; same checkpoint under Flare on one GB300 194–196/200</li>
+<li class="pend">Teacher-forced Δlogprob vs a reference — Flare clamps GLM temperature ≥ 0.95, so no greedy parity on this engine</li>
+    </ul>
+  </div>
+  <div class="fid"><div class="lbl">Agent claim card — fixed protocol, held-out sibling, cost per solved task</div>
+    <ul>
+<li class="pend">harness card pending — protocol hash, held-out sibling suite, cost per solved task</li>
+    </ul>
+  </div>
+  <div class="foot">
+    <span>recipe <span class="mono">recipes/dgx-spark-2x/glm-5.3-flash-flare-tp2</span> · run <span class="mono">2026-10-21-flare-tp2-ladder</span></span>
+    <span>github.com/J-M-Recipes/recipes · al-engr.com · @jmeadlock</span>
+  </div>
+</div>
+</body></html>
