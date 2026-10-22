@@ -1,0 +1,16 @@
+FROM nvidia/cuda:13.2.1-devel-ubuntu24.04
+ARG FLARE_REV=47581ccac82660953a5b59cb04b2750d64edc97d
+ENV DEBIAN_FRONTEND=noninteractive PATH=/root/.cargo/bin:/root/.local/bin:/usr/local/cuda/bin:$PATH
+RUN apt-get update && apt-get install -y --no-install-recommends \
+      build-essential cmake ninja-build pkg-config protobuf-compiler libssl-dev \
+      python3.12 python3.12-dev python3.12-venv liburing-dev git curl ca-certificates nasm \
+      libibverbs-dev libibverbs1 ibverbs-providers librdmacm-dev numactl \
+    && rm -rf /var/lib/apt/lists/*
+RUN curl -sSf https://sh.rustup.rs | sh -s -- -y --profile minimal --default-toolchain stable
+RUN curl -LsSf https://astral.sh/uv/install.sh | sh
+WORKDIR /opt
+RUN git clone https://github.com/NVIDIA/flare-local-inference flare && cd flare && git checkout -q ${FLARE_REV}
+WORKDIR /opt/flare
+RUN cargo build --release --manifest-path flare/Cargo.toml 2>&1 | tail -5 && ls -la flare/target/release/flare
+RUN uv sync --locked --extra prepare --extra test 2>&1 | tail -20
+RUN .venv/bin/python -c "import torch, flashinfer, ignition; print(torch.__version__, torch.version.cuda)"

@@ -1,0 +1,247 @@
+schema: jm-recipe/v1
+id: dgx-spark-2x/glm-5.3-flash-flare-tp2
+title: GLM-5.3-Flash on 2x DGX Spark, NVIDIA Flare TP2 over 200G RoCE (47581cc, CSF-QAD NVFP4/MXFP8), 8 seats, MTP k=3 fixed width, 1M context
+summary: >-
+  NVIDIA Flare (flare-local-inference @ 47581cc) serving GLM-5.3-Flash tensor-parallel across two DGX Sparks (Sparks 5-6
+  of the CRS804 rack) from local-inference-lab's NVFP4/MXFP8 CSF-QAD checkpoint (38/38 LFS files sha256 == Hub). GLM at TP2
+  is accepted by the recipe but not on upstream's exercised-end-to-end list, and main (5f37bd1) cannot run it (#17, #7).
+  Recipe defaults give 37.4 tok/s for one user but cap speculation at 6 tokens, so four users get no drafting (56 tok/s
+  combined). The serving config, one 8-seat package (speculative capacity 48) run with --mtp-draft-tokens 3
+  --no-mtp-adaptive-verification, holds one user at 39.4 and lifts four users to 77.5 and eight to 106.8 tok/s combined
+  (thinking on, reasoning + answer tokens). Cold prefill 2.0-2.4K tok/s (8K-100K), KV 6.1M tokens, 570K needle correct,
+  GSM8K-200 96.5%, Hermes 20-hop 3/3, warm relaunch 15 s.
+status: experimental
+owners:
+- jmeadlock
+- milo
+updated: '2026-10-22'
+tags:
+- glm-5.3-flash
+- nvfp4
+- mxfp8
+- flare
+- dgx-spark
+- gb10
+- tp2
+- roce
+- mtp
+- speculative-decoding
+- 1m-context
+model:
+  name: GLM-5.3-Flash (local-inference-lab NVFP4-MXFP8-CSF-QAD)
+  params: 320B total / 18B active (MoE, 288 routed experts, 8 active; hybrid KDA + DSA + MLA attention)   # as on the GB300 GLM-5.3-Flash recipe
+  repo: https://huggingface.co/local-inference-lab/GLM-5.3-Flash-NVFP4-MXFP8-CSF-QAD
+  revision: dec48abd33efa73c3bb7c95b74eee10cad34f9be
+  quantization: >-
+    Community requantization of zai-org/GLM-5.3-Flash, not the original weights: NVFP4 routed experts with lossless CSF
+    scale compression, MXFP8 elsewhere, quantization-aware distilled (QAD). 49 files, 177,750,845,553 bytes (Hub tree);
+    38/38 LFS files sha256 == Hub LFS oid on spark5 (results/2026-10-21-flare-tp2-ladder/raw/weights/hub-lfs-compare.txt).
+    This is the checkpoint Flare 47581cc pins for glm53 (ignition/recipes/glm53/recipe.py) and the one our GB300 Flare
+    TP1 run used. Only rank 0 holds it on disk; rank 1 pulls its tensor ranges from rank 0 during export. License:
+    Local Inference Lab License 1.0 (LICENSES/ in the repo). NOT the checkpoint main now pins
+    (nvidia/GLM-5.3-Flash-FP4-Local@76348dd, which fails to load - see limits).
+  draft:
+    repo: https://huggingface.co/local-inference-lab/GLM-5.3-Flash-NVFP4-MXFP8-CSF-QAD (in-checkpoint MTP layer)
+    revision: dec48abd33efa73c3bb7c95b74eee10cad34f9be
+    method: GLM's built-in MTP head; package built with --mtp-draft-tokens 5 --speculative-token-capacity 48, served with --mtp-draft-tokens 3 --no-mtp-adaptive-verification (fixed verify width 4); target-verified, but Flare clamps GLM sampling to temperature/top-p in [0.95, 1.0], so nothing here ran greedy
+hardware:
+  profile: hardware/dgx-spark-2x.yaml
+  nominal:
+    unified_memory_gb_per_node: 128
+    nodes: 2
+  observed:
+    gpu: NVIDIA GB10 x2
+    driver: '595.84'
+    cuda: 13.2 (container nvcc 13.2.78, torch 2.14.1+cu132) on 13.2 host
+    gpu_memory_visible_gib: 121.69
+    host_memory_gib: 121.7
+    os: Ubuntu 24.04.5 LTS (DGX OS 7.2.3)
+    kernel: 6.17.0-1031-nvidia
+    snapshot: results/2026-10-21-flare-tp2-ladder/system.json
+  required_settings:
+  - Sparks 5 (rank 0, fabric 10.0.0.5) and 6 (rank 1, 10.0.0.6) of the CRS804 rack, MTU 9000, lossy RoCEv2; Flare found both CX-7 PCI domains (rocep1s0f0, roceP2p1s0f0, 2 rails) without configuration. Sparks 1-4 (DSV4.1 SGLang TP4) and 7-8 (an unrelated image-generation stack) stayed up on the same switch.
+  - GPU clocks capped 2200 MHz on both nodes (gb10-clocklock.service, nvidia-smi -lgc 0,2200); sm clock read 2190.
+  - drop_caches + compact_memory on both nodes before every export and serve (scripts do it; need passwordless sudo for those two writes). Head MemAvailable while serving the tuned package is 7-8 GiB - do not run anything else large on these nodes.
+  - Export containers need --security-opt seccomp=unconfined (b12x loader io_uring), --ulimit memlock=-1, /dev/infiniband, IPC_LOCK, SYS_NICE, host network.
+  - Both ranks need the same ~/.config/flare/agent.token (>= 32 random bytes, mode 600) mounted into the export container, or the checkpoint-range channel refuses the peer.
+runtime:
+  engine: NVIDIA Flare (flare-local-inference)
+  engine_version: 47581ccac82660953a5b59cb04b2750d64edc97d (2026-10-20); native flare 0.1.0 binary + ignition exporter from the same tree
+  engine_commit: 47581ccac82660953a5b59cb04b2750d64edc97d
+  container:
+    image: flare-prep:47581cc
+    digest: sha256:13331331a915c0fb19e54c5fe051274bc30b461d47d6a2ab1595dfc482de3a06
+    dockerfile: Dockerfile.flare-47581cc
+    dockerfile_sha256: 75625f721824ad5362586e77f71f984c263f6be2e52c486a0ef71d17afdc86d2
+    base_image: >-
+      Local build, not pullable; digest is the docker image ID (identical on spark5/spark6, created
+      2026-10-20T19:38-05:00 on spark1 and moved with docker save | docker load). FROM nvidia/cuda:13.2.1-devel-ubuntu24.04,
+      Rust stable, uv; clones NVIDIA/flare-local-inference at FLARE_REV, cargo build --release, uv sync --locked --extra
+      prepare. The image is only for export (ignition); serving runs the host flare binary copied out of it
+      (sha256 3a4a7e28..., results/2026-10-21-flare-tp2-ladder/image.txt) as an Orbit agent on each node.
+  key_libraries:
+    torch: 2.14.1+cu132
+    flashinfer: 0.7.1 (Flare's locked fork)
+    flare: 0.1.0 @ 47581cc (host binary sha256 3a4a7e286bf3b4dc7637adffa969ad7f00a1b435f2f8867d0e76b73dd7ae4cbb)
+launch:
+  script: scripts/serve-arm.sh
+  command: >-
+    One-time per package: on rank 0 `RDV=<rank0-fabric-ip>:29630 CONC=8 CAP=48 bash scripts/export-arm.sh W8 rank0` and on
+    rank 1 `RDV=... bash scripts/export-arm.sh W8 peer` (about 39 min; writes ~177 GB). Then on rank 0:
+    `FP=<signer fingerprint> NODES="<rank0-ssh> <rank1-ssh>" CLUSTER=<orbit cluster> RANK0=<rank0 node name>
+    bash scripts/serve-arm.sh W8 --mtp-draft-tokens 3 --no-mtp-adaptive-verification` (wraps `flare orbit run
+    <rank0>:<package> --cluster <cluster> --name glm --gpus 0 --host 0.0.0.0 --port 8003 --served-model-name GLM-5.3-Flash
+    --dangerously-approve-key $FP --dangerously-accept-publisher local-development <flags>`). Agents first:
+    `flare agent install --accept-first --listen <fabric-ip>:29900` on both nodes and an orbit cluster holding both.
+  health: "curl -fs http://<rank0>:8003/v1/models shows GLM-5.3-Flash, max_model_len 1048576, flare.max_concurrency 8; serve log shows 'Allocate cache ... ~19.7 GiB · ~6.07M KV tokens · 64 shared snapshot slots' on both ranks and rank 1 'RoCE ... 2 rails'; then python3 scripts/tools/glm_gates.py http://<rank0>:8003/v1 must print GATES PASS (exact-reply smoke + get_weather tool call)."
+  warmup: none needed; the battery's first two calls are discarded warm-ups (probe at C1 and at max concurrency, 128 tokens).
+  notable_flags:
+  - Export (package) - --ranks 2 --max-concurrency 8 --speculative-token-capacity 48 --mtp-draft-tokens 5 --prefill-chunk-size 4096; 37 forwards / 80 graphs; recipe defaults otherwise (context parallel on, 1,048,576 tokens per request).
+  - Serve (runtime) - --mtp-draft-tokens 3 --no-mtp-adaptive-verification. Fixed verify width k+1 = 4 at every batch size; adaptive mode picked width 1 for most rounds at batch >= 4 even when the graphs existed.
+  - Default capacity is max(pow2(concurrency), drafts + 1) = 6 at concurrency 4, and Flare only captures a speculative graph when batch x width <= capacity, so the recipe default cannot draft at 4 users (1,624/1,624 batch-4 rounds at width 1).
+  - VARIANT W8 adaptive (no runtime flags) - same package, best single-user prose (36.5) but 4 users 66 and 8 users 79 tok/s combined.
+  - VARIANT W8na (--no-mtp-adaptive-verification, 5 drafts) - best counting rate (62 tok/s answer-only) but one-user prose 29.7 (-18%).
+  - "--scheduler-policy throughput moved nothing outside noise (arms W8tp, R)."
+  - If you change --speculative-token-capacity or concurrency, move ~/.cache/flare/kernels/forwards aside before exporting or warm-up can fail on a binding mismatch.
+metrics:
+- name: Single-user decode, 3 prompt classes (per-stream, thinking on)
+  value: 39.43
+  unit: tok/s
+  workload: C1, probe.py chat API streamed, max_tokens 512, prompts prose (branch predictor), code (LRU cache + tests), JSON (40 city objects); default reasoning effort (max), so tokens are reasoning + answer; rate = completion tokens / (end - first token); temperature clamped to 0.95 by Flare
+  aggregation: mean of 6 (2 runs x 3 classes) on the WIN confirmation boot; rule-winner arm W8k3na 39.27; recipe defaults G0 37.40
+  acceptance_len: 2.77
+  by_class:
+  - { class: prose, value: 36.95 }
+  - { class: code, value: 39.05 }
+  - { class: json, value: 42.3 }
+  provenance:
+    run_id: 2026-10-21-flare-tp2-ladder
+    method: scripts/arm_battery.sh (scripts/tools/probe.py); acceptance_len = 1 + flare_accepted_draft_tokens_total / flare_draft_request_rounds_total after the probe phase
+    raw: raw/WIN/battery.log
+- name: 4-user aggregate decode
+  value: 77.5
+  unit: tok/s
+  workload: C4, same instrument, mean over the 3 classes (68.5 / 77.4 / 86.6); 8 seats configured, not slot-capped
+  aggregation: single run per class; W8k3na 77.4; recipe defaults G0 56.2
+  provenance:
+    run_id: 2026-10-21-flare-tp2-ladder
+    method: scripts/arm_battery.sh
+    raw: raw/WIN/battery.log
+- name: 8-user aggregate decode
+  value: 106.8
+  unit: tok/s
+  workload: C8 = all 8 seats, same instrument, mean over the 3 classes (92.5 / 103.9 / 123.9); slot-capped at 8 by the package
+  aggregation: single run per class; W8k3na 106.3; recipe defaults cannot seat 8
+  provenance:
+    run_id: 2026-10-21-flare-tp2-ladder
+    method: scripts/arm_battery.sh
+    raw: raw/WIN/battery.log
+- name: Answer-only decode, count to 300
+  value: 55.5
+  unit: tok/s
+  workload: decode_fix.py - 'Print integers 1 through 300 separated only by commas', reasoning_effort low (0 reasoning tokens emitted), max_tokens 4096, rate from first delta of any kind
+  aggregation: median of 2; default (max) effort 54.7; W8 adaptive 38.2; W8na 62.0
+  provenance:
+    run_id: 2026-10-21-flare-tp2-ladder
+    method: scripts/tools/decode_fix.py
+    raw: raw/WIN/decode_fix.json
+- name: Answer-only decode, 450-word prose
+  value: 31.2
+  unit: tok/s
+  workload: decode_fix.py prose fixture, reasoning_effort low (0 reasoning tokens), same method
+  aggregation: median of 2; default (max) effort 44.0 (thinks the whole 4,096-token budget); W8 adaptive 34.1; W8na 25.0
+  provenance:
+    run_id: 2026-10-21-flare-tp2-ladder
+    method: scripts/tools/decode_fix.py
+    raw: raw/WIN/decode_fix.json
+- name: Cold prefill, ~32K-token prompt
+  value: 2275.8
+  unit: tok/s
+  workload: quant_faceoff.py (byte-identical to the Aug 29 two-Spark GLM post's probe), unique prefix, prompt tokens / TTFT
+  aggregation: faceoff summary on WIN; 8K 2,039.6, 100K 2,353.9; all nine arms 2,268-2,311 at 32K
+  provenance:
+    run_id: 2026-10-21-flare-tp2-ladder
+    method: scripts/tools/quant_faceoff.py
+    raw: raw/WIN/faceoff.json
+- name: 3 concurrent cold 18K prompts, aggregate effective prefill
+  value: 2295.5
+  unit: tok/s
+  workload: quant_faceoff concurrent_prefill_3x18k; total prompt tokens / slowest TTFT
+  aggregation: single run on WIN; 18,451-18,457 prompt tokens each, TTFT 23.9 / 24.0 / 24.1 s (they finish together)
+  provenance:
+    run_id: 2026-10-21-flare-tp2-ladder
+    method: scripts/tools/quant_faceoff.py
+    raw: raw/WIN/faceoff.json
+- name: KV pool
+  value: 6076928
+  unit: tokens
+  workload: serve-time 'Allocate cache' on both ranks, 19.7 GiB per rank, 64 snapshot slots, 1,048,576 tokens per request
+  aggregation: WIN boot; W8-package boots 5.95-6.08M; G0 package 6.30-6.32M
+  provenance:
+    run_id: 2026-10-21-flare-tp2-ladder
+    method: serve log
+    raw: raw/serve/serve-W8.log
+- name: Longest verified needle
+  value: 569598
+  unit: prompt tokens
+  workload: glm_needles.py - six-digit code at 60% depth in numbered filler, nonce prefix, reasoning_effort low; 30,099 / 121,035 / 284,252 / 569,598 tokens all correct
+  aggregation: single run each; 570K read in 268.1 s (2,125 tok/s effective); head MemAvailable 7 GiB before and after
+  provenance:
+    run_id: 2026-10-21-flare-tp2-ladder
+    method: scripts/tools/glm_needles.py (scripts/final_box.sh)
+    raw: raw/WIN/needles.log
+- name: GSM8K-200
+  value: 96.5
+  unit: '% exact final number'
+  workload: llm-inference-bench v0.7.7 (c71ec1f2) --test-profile gsm8k --profile-runs 200; temperature requested 0, clamped to 0.95
+  aggregation: 193/200, Wilson 95% 93.0-98.3; 0 truncated, 0 errors; same checkpoint on one GB300 under Flare 194/200 and 196/200
+  provenance:
+    run_id: 2026-10-21-flare-tp2-ladder
+    method: scripts/final_client.sh
+    raw: raw/client/t2-gsm8k200.json
+- name: Hermes 20-hop tool chain, median wall
+  value: 34.1
+  unit: s
+  workload: Hermes Agent (hermes chat -Q, terminal tool) follows 20 files one read per call to a nonce; 3 reps
+  aggregation: 3/3 correct, walls 58.2 / 33.1 / 34.1 s (first includes a cold client)
+  provenance:
+    run_id: 2026-10-21-flare-tp2-ladder
+    method: scripts/hermes-bench/gauntlet_reps.py
+    raw: raw/client/gauntlet.log
+- name: Warm relaunch to HTTP-ready
+  value: 15
+  unit: s
+  workload: arm_chain.sh - orbit stop, drop caches, orbit run of an already-distributed package, poll /v1/models every 15 s
+  aggregation: WIN and R boots; other relaunches 30-90 s; first serve of a package 315 s (rank 1 fetches 84.4 GiB from rank 0)
+  provenance:
+    run_id: 2026-10-21-flare-tp2-ladder
+    method: chain log 'READY after'
+    raw: raw/chain/chain-WIN.log
+verification:
+  gates:
+    schema: { how: "scripts/check_recipe.py passes", last_pass_utc: "2026-10-22T10:00:00Z", run_id: 2026-10-21-flare-tp2-ladder }
+    digest: { how: "Checkpoint 38/38 LFS files sha256 == Hub LFS oid at dec48abd (raw/weights/hub-lfs-compare.txt, local sha256sum 2026-10-22). Image ID sha256:13331331... identical on both nodes; host flare binary sha256 3a4a7e28... on both. Package signer fingerprint checked by flare at every orbit run.", last_pass_utc: "2026-10-22T09:30:00Z", run_id: 2026-10-21-flare-tp2-ladder }
+    health: { how: "glm_gates.py: /v1/models, exact-reply smoke (PONG-7319 with reasoning_effort low), get_weather tool call with a valid city argument. GATES PASS on all eight arms after G0; G0 recorded smoke FAIL because its gate script then capped the reply at 64 tokens and thinking used them all (tool call passed); the script was fixed before W8.", last_pass_utc: "2026-10-22T01:50:00Z", run_id: 2026-10-21-flare-tp2-ladder }
+    quality: { how: "Measured: GSM8K-200 193/200 (same checkpoint on GB300 Flare TP1 194-196/200), needles to 570K 4/4, Hermes 20-hop 3/3. PENDING: teacher-forced delta-logprob vs a reference (Flare clamps temperature >= 0.95, so no greedy parity is possible on this engine).", run_id: 2026-10-21-flare-tp2-ladder }
+    performance: { how: "scripts/arm_battery.sh on a quiet lane: C1 mean of 6 within 5% of 39.4, C4 within 5% of 77.5, C8 within 5% of 106.8, 32K cold prefill >= 2.2K tok/s, GATES PASS. The WIN confirmation boot reproduced the rule winner W8k3na within 0.5% on all three.", last_pass_utc: "2026-10-22T02:04:24Z", run_id: 2026-10-21-flare-tp2-ladder }
+limits:
+- "Not main. At flare-local-inference main 5f37bd1 (2026-10-21) the glm53 recipe pins nvidia/GLM-5.3-Flash-FP4-Local@76348dd, whose config.json only nests the linear-attention fields under linear_attn_config; the loader reads flat linear_num_heads and export dies in the first second (ValueError: GLM linear_num_heads requires 64, got None). Reported as NVIDIA/flare-local-inference#17. Multi-host packages exported at main also fail at serve on RoCE proxy ABI 10 vs 9 (#7). Re-run this recipe on main once both are fixed."
+- "GLM at TP2 is not on upstream's exercised-end-to-end list (docs/model-preparation.md at 5f37bd1: 'Qwen TP1 and TP2 and GLM TP4'). It ran for 3.5 hours of benches here without a failed request in our logs; that is the extent of the evidence."
+- "Not greedy, not thinking-off. Flare clamps GLM temperature and top-p to [0.95, 1.0] (temperature 0 becomes 0.95), and the chat template ignores enable_thinking: false; reasoning_effort low/high/max is the only control (default max). Battery tok/s counts reasoning and answer tokens together."
+- "quant_faceoff.py decode rows are invalid on this model (they time from the first answer token, which never arrives inside its 650-token cap while GLM thinks; faceoff.json shows 6.5e6 / 3.25e6 tok/s). Use decode_fix.json for decode; prefill and concurrent-prefill rows are valid."
+- "Adaptive vs fixed verification is a trade measured on three prompts and one checkpoint: fixed width 6 (5 drafts) wins counting and concurrency and loses 18% one-user prose; fixed width 4 (3 drafts) kept one-user rates and won every concurrency. GB10 only; the GB300 was not tested fixed-width."
+- "C4/C8 cells are single runs (C1 cells two). Treat +-5% as noise; four arms (W8, W8k3na, W8tp, R) were within 4% of each other on one-user rate and the frozen rule (best C1 mean; within 3% ranked by C8) picked W8k3na."
+- "KV pool varies by boot (W8 package 5.95-6.08M tokens, G0 6.30-6.32M); serving with 8 seats costs ~4% KV vs the 4-seat default."
+- "Head node MemAvailable is 7-8 GiB while serving; the node cannot host anything else of size."
+- "The export plan's 'revision' field (4951c40a...) for a local checkpoint directory is not a Hub revision (the Hub rejects it as an invalid rev); the mounted directory is dec48abd, verified by sha256."
+- "Local image, not pullable; the digest is a docker image ID. Packages are signed by a local-development key, so readers must export their own (the package file is not portable without the signer)."
+- "Comparisons to other two-Spark GLM-5.3-Flash lanes (vLLM NVFP4 / EXL3 + DFlash2, al-engr.com 2026-08-29) are cross-date and cross-pair; prefill and KV comparisons hold, decode comparisons are method-close, not identical."
+rollback:
+  script: scripts/stop.sh
+  summary: "CLUSTER=<orbit cluster> bash scripts/stop.sh stops the orbit group 'glm' on both ranks; packages under ~/.cache/flare/runtime stay. Before this recipe, Sparks 5-6 ran an unrelated image-generation stack (restarted with its own script, not published here). To go back to recipe defaults, serve the G0 package (CONC=4, no CAP) with no runtime flags."
+links:
+  blog: https://al-engr.com/glm53-flash-flare-tp2-2x-dgx-spark.html
+  upstream_engine: https://github.com/NVIDIA/flare-local-inference/tree/47581ccac82660953a5b59cb04b2750d64edc97d
+  upstream_issue: https://github.com/NVIDIA/flare-local-inference/issues/17
+  upstream_issue_multihost: https://github.com/NVIDIA/flare-local-inference/issues/7
+  related_recipe: recipes/dgx-station-gb300/glm-5.3-flash-nvfp4-dflash2

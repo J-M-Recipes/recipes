@@ -1,0 +1,47 @@
+# card.yaml — at-a-glance card sidecar. Rendered by scripts/render_card.py; never hand-edit card.html.
+# Every number traces to recipe.yaml metrics or results/2026-10-21-flare-tp2-ladder/. Unknown = pending (amber).
+title: "GLM-5.3-Flash · 2× DGX Spark · NVIDIA Flare TP2"
+subtitle: "local-inference-lab CSF-QAD (NVFP4 experts / MXFP8) on Flare 47581cc across Sparks 5–6 over 200G RoCE. One 8-seat package (speculative capacity 48) served with 3 MTP drafts at a fixed verify width; recipe defaults stop drafting at 4 users. 1M context, ~6.1M KV tokens."
+version: "v1 (2026-10-22 · Flare 47581cc · CSF-QAD @ dec48abd · 9-arm ladder, frozen winner rule → W8k3na, confirmed as WIN)"
+run_id: 2026-10-21-flare-tp2-ladder
+handles: "github.com/J-M-Recipes/recipes · al-engr.com · @jmeadlock"
+
+model:
+  type: MoE+MTP
+  type_detail: "288 routed experts, 8 active · hybrid KDA + DSA + MLA attention · in-checkpoint MTP head"
+  total_params: 320B
+  active_params: "18B"            # as on the GB300 GLM-5.3-Flash recipe
+  checkpoint_gb: 177.8            # 177,750,845,553 B (Hub tree at dec48abd); 38/38 LFS sha256 == Hub
+  weights_short: "community requant · NVFP4 experts (CSF scales) / MXFP8 elsewhere · QAD · not the original weights"
+  engine_extra: "Flare 47581cc (main 5f37bd1 cannot run it: #17, #7) · flare 0.1.0 host binary · torch 2.14.1+cu132 · flashinfer 0.7.1 fork · local image 13331331"
+  memory: "per rank 88.6 GB weights · 5.1 GB graphs · 19.7 GiB KV → 6.08M tok · 1,048,576 ctx · 8 seats · head MemAvailable 7–8 GiB"
+
+hero:
+  c1:      { value: 39.4, unit: tok/s, class: "prose / code / JSON, thinking on", label: "Decode · C1 per stream", note: "mean of 6 · 37.0 / 39.1 / 42.3 · reasoning + answer tokens · recipe defaults 37.4 · temp clamped 0.95" }
+  c16:     { value: 106.8, unit: tok/s, label: "Decode · C8 aggregate", note: "all 8 seats · C4 77.5 (defaults 56.2, no drafting at 4 users) · defaults cannot seat 8" }
+  prefill: { value: 2276, unit: tok/s, label: "Cold prefill · ~32K-token prompt", note: "8K 2,040 · 100K 2,354 · 3×18K together 2,296 · Aug 29 two-Spark vLLM NVFP4 1,354" }
+
+guesser:
+  name: MTP (built-in)
+  source: "in-checkpoint MTP layer (CSF-QAD @ dec48abd)"
+  schedule: "package k=5, capacity 48 · served k=3, fixed verify width 4 (--no-mtp-adaptive-verification)"
+  accept: { "accepted / drafting round": "1.77 of 3", "defaults (adaptive, cap 6)": "1.02" }
+
+secondary:
+  - label: "Long context, quality, agents"
+    items:
+      "needles 30K / 121K / 284K / 570K": "4/4 correct · 570K in 268 s · MemAvailable 7 → 7 GiB"
+      "GSM8K-200": "193/200 = 96.5% (same ckpt on GB300 Flare 97–98%)"
+      "Hermes 20-hop tool chain": "3/3 · median 34.1 s"
+  - label: "Ladder, boot & hazards"
+    items:
+      "9 arms, frozen rule": "W8k3na; adaptive verify chose width 1 for most batch ≥ 4 rounds"
+      "export / first serve / relaunch": "~39 min / 315 s / 15–90 s"
+      "not on main": "5f37bd1's NVIDIA FP4-Local pin fails to load (#17); multi-host ABI 10 vs 9 (#7)"
+
+fidelity:
+  - { status: pass,     text: "Checkpoint as local-inference-lab shipped it: 38/38 LFS files sha256 == Hub at dec48abd (a community requant of Z.ai's weights, not the originals)" }
+  - { status: pass,     text: "Speculation is target-verified: MTP drafts are accepted only by the full model" }
+  - { status: pass,     text: "Tool-call gate (get_weather, valid argument) on all 9 arms; exact-reply smoke on 8 of 9 (G0's 64-token cap was eaten by thinking)" }
+  - { status: measured, text: "GSM8K-200 96.5% (193/200), run by us; same checkpoint under Flare on one GB300 194–196/200" }
+  - { status: pending,  text: "Teacher-forced Δlogprob vs a reference — Flare clamps GLM temperature ≥ 0.95, so no greedy parity on this engine" }
