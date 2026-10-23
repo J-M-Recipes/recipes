@@ -32,6 +32,30 @@ Boot 2026-10-23 10:54:38 UTC → HTTP ready 10:56:19 UTC (101 s), on Sparks 5–
 - KV pool **8,580,566** tokens (8.18× at 1M).
 - qeval 71/75, greedy 40/40 identical, 0 preemptions, teacher-forced **PASS 0.0**.
 
+## Second boot (11:55 UTC, same launch line)
+
+A deliberate stop/start cycle produced an independent boot of the identical configuration, which is what lets the
+recipe say "two boots agree" rather than "one boot said":
+
+| | boot 1 (10:54) | boot 2 (11:55) | spread |
+|---|---:|---:|---:|
+| C1 aggregate tok/s | 93.89 | 94.34 | +0.5% |
+| C4 / C6 aggregate | 233.16 / 291.75 | 234.55 / 290.15 | +0.6% / −0.5% |
+| 93K cold prefill | 5,338.1 | 5,372.0 | +0.6% |
+| KV pool | 8,580,566 | 8,580,566 | — |
+| qeval | 71 | 71 | — |
+| boot s | 101 | 101 | — |
+| MemAvailable floor GiB | 20.79 | 21.08 | — |
+| preemptions | 0 | 0 | — |
+| 413K mixed short-turn TTFT | 0.93–1.49 s (11 samples, L20) | 0.901 / 1.352 / 0.935 / 1.262 s | reproduces |
+
+Receipts: `boot2-summary.json`, `boot2-v41bench-main.json`, `boot2-concurrency.json`, `boot2-greedy40.json`,
+`boot2-gates-functional.json`, `boot2-verdict.json`.
+
+Note the pattern worth remembering: C1 repeats to ~0.6% across boots, which is why only paired C1 claims are quoted
+here. C4 and above moved by more than their own CI in earlier A/A work, so a single boot's C4+ number is a sample,
+not a measurement.
+
 ## What this round did NOT measure
 
 - No needles at 300K on this config (the 3/3 PASS is the 2026-10-20 shape).
