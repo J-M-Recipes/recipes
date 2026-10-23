@@ -44,7 +44,7 @@
       <h1>DeepSeek-V4.1-Flash · 1× DGX Station GB300 + RTX PRO 6000 sidecar</h1>
       <div class="sub">The 89 cold experts per layer don&#x27;t live in Grace — they live on the second GPU in the chassis, and they are computed there. Full 1M context, 3× the C16 decode of Grace offload.</div>
     </div>
-    <div class="brand"><b>J-M-RECIPES</b><br>v25 sidecar · serving since 2026-10-22 04:34 CDT · re-promoted 06:02 (ack-first fix) · 48 h soak open · rollback = v23 Grace-offload, stopped · 2026-10-22<br>status: experimental</div>
+    <div class="brand"><b>J-M-RECIPES</b><br>v25 sidecar + KV 8.5 GiB · 48 h soak to 10-24 18:52 CDT · 2026-10-22<br>status: experimental</div>
   </div>
   <div class="pills">
 <span class="pill type"><b>MoE</b> · 384 routed experts + Engram; 295 hot in HBM, 89 computed on the RTX 6000</span>
@@ -52,7 +52,7 @@
 <span class="pill">checkpoint <b>510.3 GB</b> · rev <span class="mono">1bae0e10</span></span>
 <span class="pill">weights <b>as shipped · MXFP4 experts / FP8 attn+Engram · nothing re-quantized</b></span>
 <span class="pill">engine <b>vLLM <span class="mono">af7f9488c</span> · nightly-af7f9488 (sha256:3af6a45b) on BOTH GPUs · el8 hook @87af662 · b12x @2cc7f66a · vllm#58132 bounded replay</b></span>
-<span class="pill">memory <b>206.6 GiB hot experts in HBM + 66.2 GiB cold experts on the card · KV 2.537M tok at 1M ctx · host carries Engram only</b></span>
+<span class="pill">memory <b>206.6 GiB hot experts in HBM + 66.2 GiB cold experts on the card · KV declared 8.5 GiB = 4.40M tok (4.2× one 1M request; 4×1M co-resident at 75%) · host carries Engram only</b></span>
   </div>
   <div class="grid">
 <div class="box"><div class="lbl">Decode · C1, mean of 2 boots (real text, 8.2K in / 1,024 out)</div><div class="hero">279.5<small>tok/s</small></div><div class="note">276.8 / 282.2 on two independent boots; incumbent 187.5 · acceptance 2.96 tok/step, TTFT 0.19 s · per-class C1: prose 295 · structured 299 · code 409 · shell 414 · tool-JSON 367</div></div>
@@ -84,7 +84,7 @@
   </div>
   <div class="foot">
     <span>recipe <span class="mono">recipes/dgx-station-gb300/deepseek-v4.1-flash-vllm-uva-dspark-sidecar</span> · run <span class="mono">2026-10-22-v25-sidecar</span></span>
-    <span>github.com/J-M-Recipes/recipes · al-engr.com · sidecar recipe lineage: RonanLabsAI (dgx-station-frontier) + original-el8 hook — credited in the README</span>
+    <span>github.com/J-M-Recipes/recipes · al-engr.com · sidecar recipe + kbench harness: RonanLabsAI (dgx-station-frontier) · hook: original-el8 — credited in the README</span>
   </div>
 </div>
 </body></html>

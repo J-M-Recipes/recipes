@@ -1,0 +1,16 @@
+# KV1 serving boot (2026-10-22 18:43-18:52 CDT): lines grepped from `docker logs` of the BOUND container; vLLM stamps UTC.
+(APIServer pid=1) INFO 10-22 23:45:29 [api_utils.py:286] non-default args: {'model_tag': '/model', 'enable_auto_tool_choice': True, 'tool_call_parser': 'deepseek_v41', 'host': '0.0.0.0', 'port': 30006, 'model': '/model', 'trust_remote_code': True, 'max_model_len': 1048576, 'served_model_name': ['dsv41-flash-uva'], 'reasoning_parser': 'deepseek_v41', 'enable_expert_parallel': True, 'gpu_memory_utilization': 0.97, 'kv_cache_memory_bytes': 9126805504, 'kv_cache_dtype': 'fp8_ds_mla', 'enable_prefix_caching': True, 'max_num_batched_tokens': 8192, 'max_num_seqs': 32, 'long_prefill_token_threshold': 
+MEGA_PEER patched vllm.models.deepseek_v4.nvidia.model.DeepseekV4MegaMoEExperts (peer mode 2, check 0)
+MEGA_PEER patched vllm.models.deepseek_v4.nvidia.model.DeepseekV4MegaMoEExperts (peer mode 2, check 0)
+(EngineCore pid=359) INFO 10-22 23:45:42 [gpu_worker.py:479] Using V2 Model Runner
+(EngineCore pid=359) INFO 10-22 23:45:46 [attention.py:158] Using DeepSeek's fp8_ds_mla KV cache format.
+MEGA_PEER rowmap /w/rowmap-static-v1.json: 40 layers
+MEGA_PEER layer 0 (language_model.model.layers.0.ffn.experts): 295 hot experts in MegaMoE, 89 cold on the host; peer mode 2
+(EngineCore pid=359) INFO 10-22 23:45:59 [model.py:766] Decoder SWA bounded replay: in eager prefill steps, layers 21-39 run on each request's last 128 tokens only.
+(EngineCore pid=359) INFO 10-22 23:48:47 [interface.py:692] Setting kv cache block size to 128 for FLASHMLA_MEGA_ATTN_DSV41/DEEPSEEK_SPARSE_SWA/DEEPSEEK_V41_INDEXER/CompressorBackend backend(s).
+(EngineCore pid=359) INFO 10-22 23:48:56 [gpu_worker.py:603] Initial free memory 249.12 GiB, reserved 8.5 GiB memory for KV Cache as specified by kv_cache_memory_bytes config and skipped memory profiling. This does not respect the gpu_memory_utilization config. Only use kv_cache_memory_bytes config when you want manual control of KV cache memory size. If OOM'ed, check the difference of initial free memory between the current run and the previous run where kv_cache_memory_bytes is suggested and update it correspondingly.
+(EngineCore pid=359) INFO 10-22 23:48:56 [kv_cache_utils.py:2408] GPU KV cache size: 4,400,013 tokens, Maximum concurrency for 1,048,576 tokens per request: 4.20x
+2026-10-22 23:49:20,662 - INFO - autotuner.py:3691 - flashinfer.jit: [Autotuner]: Loaded 159 configs from /root/.cache/vllm/flashinfer_autotune_cache/0.7.0/103a/55775c43941836151a6e0c40beec6e1a0442ad7fb32b306037b8d93b063089f7/autotune_configs.json
+(EngineCore pid=359) INFO 10-22 23:52:23 [core.py:380] init engine (profile, create kv cache, warmup model) took 216.17 s
+(EngineCore pid=359) INFO 10-22 23:52:23 [kv_cache_utils.py:738] kv cache group sizes [32, 32, 32, 32, 128, 8]
+(EngineCore pid=359) INFO 10-22 23:52:23 [kv_cache_utils.py:739] kv lcm block sizes 128

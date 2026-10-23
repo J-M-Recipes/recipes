@@ -16,7 +16,7 @@ Same box, same checkpoint, same harness, bracketed controls in one window:
 | TTFT, 8.2K prompt | 0.66 s | **0.19 s** |
 | Cold 64K prefill | 23,439 tok/s | **50,119 tok/s** |
 | 1M-token prompt, first token | 81.4 s (12,262 tok/s) | **33.2 s** (30,069 tok/s) |
-| KV pool at 1M ctx, util 0.97 | 2,504,891 tokens | 2,537,081 tokens |
+| KV pool at 1M ctx | 2,504,891 tokens (util 0.97) | **4,400,013 tokens** (`--kv-cache-memory` 8.5 GiB; 2,537,081 at util 0.97) |
 | Host memory pinned | ~253 GiB (Engram + cold experts) | Engram only — cold experts are on the card |
 | Extra process you must keep alive | — | one sidecar container + a fail-closed watchdog |
 | Wins on | simplicity, no second GPU, prefill is throttled the same | decode at every concurrency, TTFT, long-context reads |
@@ -106,15 +106,21 @@ export RTX_UUID=$(nvidia-smi -L   | awk -F'[( )]' '/RTX PRO 6000/{print $2}')
 # 1. the card: 40 layers of cold experts, 560 CUDA graphs, ~68 GB, ~46 s
 bash scripts/launch-sidecar.sh sidecar
 
-# 2. the GB300: vLLM with the hook, 295 hot / 89 cold, 1M context, 32 seats
-bash scripts/launch-sidecar.sh server
+# 2. the GB300: vLLM with the hook, 295 hot / 89 cold, 1M context, 32 seats, KV pool declared at 8.5 GiB
+EXTRA="--kv-cache-memory 9126805504" bash scripts/launch-sidecar.sh server
 ```
 
 Defaults you may need: `M3_DIR` (`~/dsv41/m3` — hook checkout, overlay tree, logs, `local/peer_server2_local.py`),
 `B12X_DIR` (`~/dsv41/b12x`), `MODEL_DIR`, `CACHE_DIR` (`~/dsv41/cache-a`), `ROWMAP`
 (`rowmap-static-v1.json` = 295/89), `NAME`, `SEQS` (32), `GPU_UTIL` (0.97), `MAXLEN` (1048576), `PORT` (30006),
-`PEER_SPINS` (2e9), `REPLAY_OVERLAY` (1). `bash scripts/launch-sidecar.sh stop` stops server-then-sidecar and
-keeps both containers.
+`PEER_SPINS` (2e9), `REPLAY_OVERLAY` (1), `EXTRA` (empty). `bash scripts/launch-sidecar.sh stop` stops
+server-then-sidecar and keeps both containers.
+
+**`EXTRA` carries the KV size and defaults to empty.** Without it the pool is whatever util 0.97 leaves after
+vLLM's memory profile (4.9 GiB = 2,537,081 tokens) and nothing errors. With it, the boot log must say
+`reserved 8.5 GiB memory for KV Cache as specified by kv_cache_memory_bytes config` and
+`GPU KV cache size: 4,400,013 tokens, Maximum concurrency for 1,048,576 tokens per request: 4.20x`.
+`docker start` of an existing container keeps its flags; only fresh launches need `EXTRA`.
 
 **Bring-up gate** (do this once per new map/image — it is what proves the sidecar path is numerically right):
 
@@ -143,16 +149,49 @@ bash scripts/soak_check.sh <ssh-host> "$NAME"     # one health sample from anoth
 | gate | how | bar |
 |---|---|---|
 | bring-up numerics | `scripts/gate_cosine.py` on a check-mode boot | 40/40 layers, ≥32 rows, min cos ≥ 0.999, 0 timeouts — measured **0.99906** |
-| lane health | both containers up, `/v1/models`, watchdog `trip=null`, `words[2]=0` | `scripts/soak_check.sh` prints `OK` |
+| lane health | both containers up, `/v1/models`, watchdog `trip=null`, `words[2]=0`, boot KV line 4,400,013 tokens | `scripts/soak_check.sh` prints `OK` |
+| KV capacity | four ~1M contexts resident at once, 16K tokens decoded each (`results/2026-10-22-kv85/scripts/kv2_coresident.py`) | 4 running / 0 waiting, 0 preemptions, 0 errors, 0 trips, 0 timeouts — measured KV peak **75.3%** |
 | output quality | teacher-forced flips vs a same-map floor, BFCL dev+held-out, GSM8K-1319, 500-needle, gauntlet, reasoning-effort vocabulary, one image request | SC2's 12 pre-registered gates |
 | drafter | per-class decode wall-clock, 20 cells × {C1, C8} | no cell worse than −3% vs both controls |
 | speed | bracketed ladders with a control on each side | knee C1 ≥ 198, knee C16 ≥ 974, sidecar C16 ≥ Grace-only +3% |
-| soak | 48 h, sampled every 5 min | no timeout, no trip, no stall |
+| soak | 48 h, sampled every 5 min — restarted with the KV change: 2026-10-22 18:52 → 2026-10-24 18:52 CDT | no timeout, no trip, no stall |
 
 Nothing here is promoted on throughput alone: the cosine gate and the 0-timeout soak are pass/fail, and a
 timeout is treated as a correctness bug rather than a slow request.
 
 ## Results
+
+### KV pool declared at 8.5 GiB (2026-10-22 evening, `results/2026-10-22-kv85/`)
+
+The lane as first promoted let `--gpu-memory-utilization 0.97` size the KV pool: 4.9 GiB after weights
+(233.5 GiB), activation (3.9) and CUDA graphs (1.2). vLLM's own boot line said 10.37 GiB would "fully utilize"
+the GPU. Declaring the pool with `--kv-cache-memory 9126805504` (8.5 GiB) changes nothing else — same image,
+same autotune store, same kernels:
+
+| | util 0.97 | **8.5 GiB declared** |
+|---|--:|--:|
+| KV tokens at 1M max-model-len | 2,537,081 | **4,400,013** (+73%) |
+| 1M-token requests at once (boot line) | 2.42× | **4.20×** |
+| C1 decode, real text 8.2K/1,024 | 279.5 (mean of 2 boots) | **275.1** (mean of 6, sd 5.2) |
+| C16 decode | 1,576.9 | **1,575.9** |
+| 1M needle, first token | 33.2 s | 35.5 s (recalled; 1M-depth decode 256 tok/s) |
+
+The C1/C16 rows are not a same-window A/B — the kernels and tune store are identical, and the gap is inside
+live FlashInfer tuning's boot-to-boot spread.
+
+**Stress, on the live lane:** a ~1M needle + a cold 131K prompt + C16 all at once (all pass), then four ~990K
+prompts each decoding 16,000 tokens so all four are resident together — **4 running / 0 waiting, KV usage peak
+75.3%**, 0 preemptions, 0 engine errors, 0 watchdog trips, sidecar timeout counter unchanged at 0. The GB300 sat
+at **255,308 of 256,703 MiB** at the peak (1,395 MiB free). That margin is why we stopped at 8.5: 9.5 GiB would buy
++0.5M tokens and leave ~370 MiB, and an out-of-memory on this lane is a crash, not a slowdown.
+
+The speed cells use **RonanLabsAI's `kbench_chat_ds.py`**, the same harness as every other real-text number in
+this recipe.
+
+Side finding: a cold ~1M prefill holds up the queue — the 131K prompt next to it waited 34 s for its first token
+and the C16 aggregate fell to 718 tok/s while the 1M prompt was read. See Known limits.
+
+### The sidecar round (`results/2026-10-22-v25-sidecar/`)
 
 Bundle: [`results/2026-10-22-v25-sidecar/`](results/2026-10-22-v25-sidecar/) — `throughput.csv` (every cell
 with its arm and receipt), `power-by-phase.csv`, `system.json`, and the raw verdicts.
@@ -176,7 +215,8 @@ harness on every arm — do not mix the two.
 
 **Long context (SC5):** 999,303-token prompt → first token in **33.23 s** (30,069 tok/s), needle recalled;
 128K cold prefill 2.61 s; C16 after 1M 32/32 at 1,565.9 agg; C1 decode after 1M 276.5 vs 279.5 before. KV pool
-2,537,081 tokens = 2.42× one 1M request.
+2,537,081 tokens = 2.42× one 1M request at util 0.97 (superseded: 4,400,013 / 4.20× with the declared 8.5 GiB
+pool above).
 
 **Against Ronan's published lane — context, not a competition.** On the cells his 1017 sidecar log publishes for
 the same harness, this lane reads C1 279.5 vs 273.6, C4 693.2 vs 689.1, C16 1,576.9 vs 1,545.5, C32 2,400.3 vs
@@ -216,6 +256,16 @@ in prefill (2,062 incumbent); RTX p99 ≤ 194 W against its 300 W cap. Full tabl
 * **Replay ON vs OFF is one rep**: agent replay r2 612.1 OFF vs 480.3 ON, but TTFT is better ON (0.19 vs 0.29 s).
   The lane runs ON. The +27% is not a law until repeated.
 * **vLLM v0.31.0 was NOT adopted** — quality identical, but knee C8 read −3.8% and the runaway cell tripped.
+* **KV is declared, so vLLM no longer checks activation headroom at boot.** Measured margin: 1,395 MiB free on
+  the GB300 at the stressed peak. Vision requests and C32 prefill bursts were not in that stress. 9.5 GiB was
+  declined (~370 MiB would remain).
+* **`EXTRA` defaults to empty** — a fresh launch without `EXTRA="--kv-cache-memory 9126805504"` silently serves
+  2,537,081 tokens. Check the boot's KV line.
+* **A cold 1M prefill stalls everything behind it** (131K neighbour: 34 s to first token; C16 aggregate 1,576 →
+  718 tok/s while it ran). Keep long batch jobs off the interactive lane, or accept the stall.
+* **KV routes not taken:** KV quantization (`nvfp4_ds_mla`) changes numerics; more cold experts on the card
+  (89 → 99/109 per layer, +3.6M/+7.3M tokens) is modeled at −5 to −11% C1; HiSparse host-resident KV exists in
+  this image but is not wired for DeepSeek-V4.1 or the MegaAttn backend.
 * **Boot 527 s warm**; 46–50 s of it is the sidecar. Cold JIT caches are ~30 min.
 * **The Docker Hub tag is gone**; the digest is the only reliable pull.
 
@@ -229,6 +279,10 @@ bash scripts/launch-sidecar.sh stop
 # 3. bring the previous lane back (kept, stopped, same box)
 docker start dsv41-vllm-1017-v23-pinexact-RETIRED-REF     # binds in ~260 s
 ```
+
+To undo only the KV change, start the kept util-0.97 pair instead (sidecar first, then server):
+`docker start dsv41-vllm-1017-v25-sidecar-kv4.9-KEPT-rtx && docker start dsv41-vllm-1017-v25-sidecar-kv4.9-KEPT`
+(it bound in ~7 min on the reference box).
 
 With no previous lane on the box, the fallback is the GB300-only sibling recipe
 ([`../deepseek-v4.1-flash-vllm-uva-dspark`](../deepseek-v4.1-flash-vllm-uva-dspark)): same checkpoint, Grace
@@ -247,7 +301,8 @@ This recipe is a productionised descendant of someone else's recipe, and the ord
   plus `results/sidecar-ab.md`, `results/long-context-1m.md`, `logs/dsv41-1017/*`, Apache-2.0). His published
   1017 sidecar cells on that harness — C1 273.6 / C4 689.1 / C16 1,545.5 / C32 2,276.6 — are the bar we
   measured our own lane against; we land within a couple of percent of them (see Results), which is the
-  honest read: **the mechanism is his.**
+  honest read: **the mechanism is his.** The KV round (`results/2026-10-22-kv85/`) was measured on his harness
+  and his CNN/DM prompt pool too.
 * **[original-el8](https://github.com/original-el8/dgx-station-gb300-research)** — the M3 hook (hot/cold split
   inside DeepGEMM MegaMoE, cold path on the FlashInfer TRT-LLM kernel), `peer_tier2`/`peer_fused2`, and the
   `rowmap-static-v1.json` map this recipe ships unmodified, @87af662, Apache-2.0. Without the hook there is no

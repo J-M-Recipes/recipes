@@ -1,0 +1,20 @@
+2026-10-22 19:07:07 CDT ===== CARD KV2 START (A: stress live 8.5 GiB; B: R1b 9.5 GiB) =====
+2026-10-22 19:07:08 CDT STATE A_SPEED
+2026-10-22 19:07:08 CDT A: KV 4400013 tokens, watchdog armed=yes
+2026-10-22 19:08:45 CDT SPEED A: {"c1": [278.36, 268.73, 276.78, 282.62, 275.91, 268.11], "c1_mean": 275.09, "c1_sd": 5.17, "c16_agg": 1575.88, "c16_ok": 32, "c16_np": 32}
+2026-10-22 19:08:45 CDT STATE A_STRESS
+2026-10-22 19:08:45 CDT S1 A: 1M needle + cold 128K + C16 concurrently (w2=0 trips=0
+0 MemAvail=178.7)
+2026-10-22 19:09:48 CDT S1 A done in 63s: FIT A-s1: needle http=200 pt=999588 ttft=40.12s prefill=24916 tok/s recall=PASS finish=stop post_probe=PASS depth_decode=78.1 tok/s (ttft 2.51s) | 128K: PREFILL target=161800 prompt_tokens=130978 ttft_s=[33.96] tok_s=[3857] mean_tok_s=3857 | C16: 32 / 32 agg 718.27
+2026-10-22 19:09:48 CDT S2 A: 4 concurrent ~1M needles (distinct seeds)
+2026-10-22 19:11:58 CDT S2 A done in 130s
+2026-10-22 19:11:58 CDT    FIT A-s2-1: needle http=200 pt=999026 ttft=38.81s prefill=25741 tok/s recall=PASS finish=stop post_probe=PASS depth_decode=None tok/s (ttft Nones)
+2026-10-22 19:11:58 CDT    FIT A-s2-2: needle http=200 pt=998923 ttft=65.7s prefill=15204 tok/s recall=PASS finish=stop post_probe=PASS depth_decode=None tok/s (ttft Nones)
+2026-10-22 19:11:58 CDT    FIT A-s2-3: needle http=200 pt=999252 ttft=93.24s prefill=10717 tok/s recall=PASS finish=stop post_probe=PASS depth_decode=None tok/s (ttft Nones)
+2026-10-22 19:11:58 CDT    FIT A-s2-4: needle http=200 pt=999313 ttft=86.42s prefill=11564 tok/s recall=PASS finish=stop post_probe=PASS depth_decode=None tok/s (ttft Nones)
+2026-10-22 19:11:58 CDT STRESS CHECKS A: {"errs": 0, "w2_before": "0", "w2_after": "0", "trips_before": 0
+0, "trips_after": 0
+0, "gpu_peak_mib": 255308, "up": 1, "health": 1} 
+2026-10-22 19:11:58 CDT A VERDICT: FAIL {"S1_1m": "PASS", "S1_c16": "PASS", "S1_128k": "PASS", "S2_4x1m": "PASS", "no_errors": "FAIL", "no_trip": "PASS", "no_timeouts": "PASS", "alive": "FAIL"} c1_ratio None c16_ratio None kv 4400013 peak None
+2026-10-22 19:11:58 CDT STATE A_FAIL
+2026-10-22 19:11:58 CDT A failed: 8.5 GiB lane stays as is (it is production); B skipped. James decides.

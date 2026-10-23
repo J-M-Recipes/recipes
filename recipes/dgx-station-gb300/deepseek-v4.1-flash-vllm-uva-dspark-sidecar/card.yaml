@@ -2,9 +2,9 @@
 # Every number here traces to recipe.yaml metrics or results/2026-10-22-v25-sidecar/. Unmeasured = pending.
 title: "DeepSeek-V4.1-Flash · 1× DGX Station GB300 + RTX PRO 6000 sidecar"
 subtitle: "The 89 cold experts per layer don't live in Grace — they live on the second GPU in the chassis, and they are computed there. Full 1M context, 3× the C16 decode of Grace offload."
-version: "v25 sidecar · serving since 2026-10-22 04:34 CDT · re-promoted 06:02 (ack-first fix) · 48 h soak open · rollback = v23 Grace-offload, stopped"
+version: "v25 sidecar + KV 8.5 GiB · 48 h soak to 10-24 18:52 CDT"
 run_id: 2026-10-22-v25-sidecar
-handles: "github.com/J-M-Recipes/recipes · al-engr.com · sidecar recipe lineage: RonanLabsAI (dgx-station-frontier) + original-el8 hook — credited in the README"
+handles: "github.com/J-M-Recipes/recipes · al-engr.com · sidecar recipe + kbench harness: RonanLabsAI (dgx-station-frontier) · hook: original-el8 — credited in the README"
 
 model:
   type: MoE
@@ -14,7 +14,7 @@ model:
   checkpoint_gb: 510.3
   weights_short: "as shipped · MXFP4 experts / FP8 attn+Engram · nothing re-quantized"
   engine_extra: "nightly-af7f9488 (sha256:3af6a45b) on BOTH GPUs · el8 hook @87af662 · b12x @2cc7f66a · vllm#58132 bounded replay"
-  memory: "206.6 GiB hot experts in HBM + 66.2 GiB cold experts on the card · KV 2.537M tok at 1M ctx · host carries Engram only"
+  memory: "206.6 GiB hot experts in HBM + 66.2 GiB cold experts on the card · KV declared 8.5 GiB = 4.40M tok (4.2× one 1M request; 4×1M co-resident at 75%) · host carries Engram only"
 
 hero:
   c1:      { value: 279.5, unit: tok/s, class: "real text, 8.2K in / 1,024 out", label: "Decode · C1, mean of 2 boots", note: "276.8 / 282.2 on two independent boots; incumbent 187.5 · acceptance 2.96 tok/step, TTFT 0.19 s · per-class C1: prose 295 · structured 299 · code 409 · shell 414 · tool-JSON 367" }
