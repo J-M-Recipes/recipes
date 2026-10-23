@@ -9,11 +9,15 @@ summary: >-
   6.0K tok/s cold prefill at 93K, 300K needles at 5.5K tok/s, warm boot ~90 s. A nine-arm one-change-per-boot ladder found
   nothing that cleared +2%; this is Owen's config as shipped plus our shape. Sibling SGLang lane on Sparks 1-4:
   dgx-spark-4x/deepseek-v4.1-flash-sglang-tp4-roce.
-status: experimental
+  Adopted 2026-10-23: KV 10.5 GiB/rank (8.58M-token pool, +31%), 32 seats, late admission at layer 20 (Owen's 0222
+  overlay, mounted) and sparknet 0.5.0 (mounted over the image's 0.3.0). C1 105.21 tok/s per stream / 93.89 aggregate,
+  C4 233.16, C6 291.75, warm-cache turn 2.147 s (from 3.14 s), 93K cold prefill 5,338. Teacher-forced quality gate PASS
+  (5,485 positions, |dlogp| = 0.0).
+status: verified
 owners:
 - jmeadlock
 - milo
-updated: '2026-10-20'
+updated: '2026-10-23'
 tags:
 - deepseek-v4.1-flash
 - deepseek-v4.1-flash-1017
@@ -56,7 +60,7 @@ hardware:
     snapshot: results/2026-10-19-vllm-ladder-r2/system.json
   required_settings:
   - Switch fabric, not Owen's ring - both CX-7 PCI domains' f0 ports on separate /24s (rocep1s0f0 10.0.0.N, roceP2p1s0f0 10.0.1.N), NCCL_IB_HCA both PFs, NCCL_IB_MERGE_NICS 0, NCCL_CROSS_NIC 0, GID index 3, sparknet transport oneshot-direct (SPARKNET_ROCE_TOPOLOGY=direct).
-  - Kernel 6.17.0-1031 with 4 KiB pages and no memory-saver (Owen qualifies r6x on 7.0 / 64 KiB / memory-saver); KV fixed at --kv-cache-memory-bytes 8589934592 (Owen's ring shape uses 11274289152).
+  - Kernel 6.17.0-1031 with 4 KiB pages and no memory-saver (Owen qualifies r6x on 7.0 / 64 KiB / memory-saver); KV fixed at --kv-cache-memory-bytes 11274289152 per rank (10.5 GiB; 8,580,566-token pool) - adopted 2026-10-22, same as Owen's ring shape.
   - Before every boot on all four nodes - sync, drop_caches 3, compact_memory 1; launcher refuses below 100 GiB MemAvailable (observed 114.8-117.6 GiB). GPU clocks capped 2200 MHz (nvidia-smi -lgc 0,2200); clocks.gr under load 2190 on all four.
 runtime:
   engine: vLLM (fork)
@@ -72,7 +76,7 @@ runtime:
       for TP4, #407); Dockerfile = that repo's docker/Dockerfile at fc3ee36d, sha256
       b486011291428f3170c004eb65751415c364fe43641c91625ef142c55dcad3ac (clean tree on spark5; not vendored here). Six pinned trees match the config's expected_labels (results/.../image.txt). Build ~2h16m per node.
   key_libraries:
-    sparknet: 0.3.0 @ 3bc8d10104a5012244a0424d7dfc1107a72eafab, branch timeout-stop, tree f72599fa (3 commits past the 0.3.0 release; upstream main is now 0.4.0, not in this image)
+    sparknet: 0.3.0 @ 3bc8d10104a5012244a0424d7dfc1107a72eafab vendored in the image; the serving lane mounts 0.5.0 (tag ed6af327, 2026-10-22) over /usr/local/lib/python3.12/dist-packages/sparknet from overlays/sparknet-0.5.0/. Not on PyPI - never pip-installable.
     nccl: v2.30.7-1 @ 73cf1122 + spark-ds41f patches (tree 6af10aa7)
     tilelang: 0.1.15 @ b95ee4ff + patches (tree 222b895d)
     tile_kernels: deepseek-ai/TileKernels 2.0.0 @ 66258df6 + patches (tree cb2fa41c)
@@ -84,14 +88,69 @@ launch:
   warmup: none; the bench's first request per category is measured. Warm boot (AOT/JIT caches under $DS41F_DIR/cache populated by the first boot) reaches HTTP ready in 89-101 s.
   notable_flags:
   - Per-node launcher scripts/launch-vllm-tp4.sh <rank>, generated from the live head command by scripts/render_launcher.py; ranks 3,2,1 then 0; workers add --headless. Reproduces the live spark6 args exactly.
-  - --tensor-parallel-size 4 --nnodes 4 --distributed-executor-backend mp --load-format b12x --block-size 256 --enable-prefix-caching --enable-chunked-prefill --max-num-batched-tokens 8192 --long-prefill-token-threshold 8096 --prefix-cache-retention-interval 8192 --max-model-len 1048576 --max-num-seqs 16 --max-parallel-prefills 1 --gpu-memory-utilization 0.82 --kv-cache-memory-bytes 8589934592 (6,537,516 tokens).
-  - --attention-backend TILELANG --linear-backend tilelang --moe-backend tilelang, VLLM_DS41_KERNEL_BACKEND=tilelang; --compilation-config cudagraph_mode FULL_AND_PIECEWISE with capture sizes 1-96; --async-scheduling; --no-enable-flashinfer-autotune; B12X_AUTOTUNE=0.
+  - --tensor-parallel-size 4 --nnodes 4 --distributed-executor-backend mp --load-format b12x --block-size 256 --enable-prefix-caching --enable-chunked-prefill --max-num-batched-tokens 8192 --long-prefill-token-threshold 3856 --prefix-cache-retention-interval 8192 --max-model-len 1048576 --max-num-seqs 32 --max-parallel-prefills 1 --gpu-memory-utilization 0.82 --kv-cache-memory-bytes 11274289152 (8,580,566 tokens).
+  - Two read-only overlay mounts from overlays/ - four late-admission files over $VLLM_TREE/vllm/ and sparknet 0.5.0 over the vendored package, plus --env VLLM_LATE_ADMISSION_LAYER=20. Leaving that variable unset is off; the model has 40 decoder layers and any value >= 40 fails at boot.
+  - --attention-backend TILELANG --linear-backend tilelang --moe-backend tilelang, VLLM_DS41_KERNEL_BACKEND=tilelang; --compilation-config cudagraph_mode FULL_AND_PIECEWISE with capture sizes 1-192; --async-scheduling; --no-enable-flashinfer-autotune; B12X_AUTOTUNE=0.
   - --engram-config table_memory disk, disk_resident_scales false, projection_tp true.
   - --speculative-config method dspark, num_speculative_tokens 5, draft_tensor_parallel_size 4, draft_sample_method greedy, rejection_sample_method block, enable_adaptive_verification true, adaptive_verification_row_cost 0.035.
   - --default-chat-template-kwargs thinking false; --generation-config vllm with override temperature 1.0 top_p 1.0 (server default sampling; the bench forces T=0); --reasoning-parser and --tool-call-parser deepseek_v41 with auto tool choice; keyless on port 8002.
   - Shape tp4-switch-4k (git-ignored local shape in spark-ds41f config/cluster.laneC.local.json, published in results/.../raw/ds41f-local-config/) - sparknet oneshot-ring4 to oneshot-direct, NCCL_IB_HCA both f0 PFs, MERGE_NICS 0, CROSS_NIC 0, socket ifname enp1s0f0np0, KV 8 GiB; 4 channels and 4 MiB NCCL buffers inherited from Owen's tp4-ring; NCCL_SWITCHLESS_BIDIRECTIONAL removed (laneC-c0). Owen's topology checker refuses oneshot-direct on four nodes, so the rendered docker run is launched directly.
 metrics:
-- name: Single-stream decode, 8-category v1 mix (per stream)
+- name: Single-stream decode, 8-category v1 mix (per stream) - ADOPTED CONFIG
+  value: 105.21
+  unit: tok/s
+  workload: C1, v41bench prompt set v1 (8 categories), T=0, thinking off, unique leading tag per request; DSpark k=5; late admission at layer 20 + sparknet 0.5.0, 32 seats, KV 10.5 GiB
+  aggregation: single boot 2026-10-23 10:54-11:10 UTC; aggregate C1 93.89 tok/s, mean TTFT 0.158 s. For reference the 2026-10-20 C0ctl2 shipped-config boot read 104.27 per stream / 92.96 aggregate at 16 seats and KV 8 GiB
+  provenance:
+    run_id: 2026-10-23-adopted-l20-net
+    method: scripts/run_battery.sh (campaign instrument v41bench_tf.py)
+    raw: bench-L20-NET-adopted-main.json
+- name: Concurrency ladder, aggregate decode (ADOPTED CONFIG)
+  value: 291.75
+  unit: tok/s
+  workload: C6 of the same v41bench v1 mix on the adopted boot; C2 153.35, C3 181.05, C4 233.16, C5 261.66; per stream C4 68.43, C6 57.30; mean TTFT C1 0.158, C4 0.231, C6 0.286 s
+  aggregation: single run 2026-10-23; the C0ctl2 comparison at 16 seats / 8 GiB was 230.94 and 288.94
+  provenance:
+    run_id: 2026-10-23-adopted-l20-net
+    method: scripts/run_battery.sh
+    raw: bench-L20-NET-adopted-main.json
+- name: Cold prefill, 93,335-token prompt (ADOPTED CONFIG)
+  value: 5338.1
+  unit: tok/s
+  workload: prefill_reps.py, unique-nonce token-id prompt of exactly 93,335 tokens, max_tokens 1, T=0, no prefix-cache hits
+  aggregation: single run 2026-10-23 at 32 seats / long-prefill-token-threshold 3856. The lower number than 2026-10-20's 5,998 is the seat change (16 to 32, chunk threshold 8096 to 3856), not a regression; halving the threshold to 1928 lands at 4,668 tok/s (a further -13%) and was declined for that reason
+  provenance:
+    run_id: 2026-10-23-adopted-l20-net
+    method: scripts/prefill_reps.py
+    raw: bench-L20-NET-adopted-main.json
+- name: Warm-cache guest turn, 68K cached prefix plus 1.5K suffix
+  value: 2.147
+  unit: s
+  workload: mixed_warm.py - a real prefix-cache hit (68,000-token shared prefix already resident, new 1.5K-token suffix), median of 5 samples on the adopted config
+  aggregation: 2.082 / 2.147 / 1.875 / 2.381 / 3.379 s on 2026-10-23. The same probe read about 3.14 s on the 8 GiB / 16-seat control, 2.20 s with late admission alone, and 1.50 s with late admission plus the 1928 chunk threshold (declined for its prefill cost)
+  provenance:
+    run_id: 2026-10-23-adopted-l20-net
+    method: scripts/mixed_warm.py
+    raw: mixed-warm-cache.json
+- name: Teacher-forced quality gate vs the 8 GiB control
+  value: 0.0
+  unit: max absolute delta logprob
+  workload: 45 held-out segments, 5,485 forced positions, temp-0 baselines from the kept W1-control container, candidate = adopted config, same machine
+  aggregation: PASS - p99 absolute delta 0.0 (bar 0.05 or less), max 0.0 (bar 0.5 or less), self-repeat exactly 0.0 on both sides, top-1 agreement 1.0, perplexity 3.470555355873363 identical. The limit is that teacher forcing does not exercise T>0 sampling under a different batch mix
+  provenance:
+    run_id: 2026-10-23-adopted-l20-net
+    method: spark-recipe-r5/prep/noninf.sh plus noninferiority.py
+    raw: teacher-forced-verdict.json
+- name: Streaming short-chat concurrency ladder (separate instrument)
+  value: 380.39
+  unit: tok/s aggregate at 32 streams
+  workload: 192-token streaming chat, temp 0, thinking off; levels 1/4/8/16/24/32 give aggregate 68.27/144.35/214.30/289.02/342.84/380.39, per stream 72.97/41.76/29.86/21.35/16.70/14.04, p50 TTFT 0.194-1.096 s, 0 errors
+  aggregation: single run 2026-10-23. Not comparable to the v41bench C1-C6 rows above - different prompt set and different token budget
+  provenance:
+    run_id: 2026-10-23-adopted-l20-net
+    method: concurrency probe (192-token streaming chat)
+    raw: concurrency.json
+- name: Single-stream decode, 8-category v1 mix (per stream) (2026-10-20, 16 seats / KV 8 GiB - historical)
   value: 104.27
   unit: tok/s
   workload: C1, v41bench prompt set v1 (coding, format, json, math, narrative, prose, reasoning, summary; counting ceiling excluded), T=0, thinking off, unique leading tag per request; DSpark k=5
@@ -100,7 +159,7 @@ metrics:
     run_id: 2026-10-19-vllm-ladder-r2
     method: scripts/v41bench_tf.py
     raw: raw/C0ctl2/bench-C0ctl2-main.md
-- name: 4-stream aggregate decode, v1 mix
+- name: 4-stream aggregate decode, v1 mix (2026-10-20, 16 seats / KV 8 GiB - historical)
   value: 230.94
   unit: tok/s
   workload: C4, same instrument; 67.7 per stream; max-num-seqs 16 (not slot-capped)
@@ -109,7 +168,7 @@ metrics:
     run_id: 2026-10-19-vllm-ladder-r2
     method: scripts/v41bench_tf.py
     raw: raw/C0ctl2/bench-C0ctl2-main.md
-- name: 6-stream aggregate decode, v1 mix
+- name: 6-stream aggregate decode, v1 mix (2026-10-20, 16 seats / KV 8 GiB - historical)
   value: 288.94
   unit: tok/s
   workload: C6, same instrument; 56.8 per stream, mean TTFT 0.30 s; max-num-seqs 16 (not slot-capped); the ladder stops at C6
@@ -118,7 +177,7 @@ metrics:
     run_id: 2026-10-19-vllm-ladder-r2
     method: scripts/v41bench_tf.py
     raw: raw/C0ctl2/bench-C0ctl2-main.md
-- name: Cold prefill, 93,335-token prompt
+- name: Cold prefill, 93,335-token prompt (2026-10-20, 16 seats / KV 8 GiB - historical)
   value: 5998.4
   unit: tok/s
   workload: prefill_reps.py, unique-nonce token-id prompt of exactly 93,335 tokens, max_tokens 1, T=0, no prefix-cache hits
@@ -174,21 +233,25 @@ metrics:
     raw: raw/FINALr2/r2.log
 verification:
   gates:
-    schema: { how: "scripts/check_recipe.py passes", last_pass_utc: "2026-10-20T10:45:00Z", run_id: 2026-10-19-vllm-ladder-r2 }
+    schema: { how: "scripts/check_recipe.py passes", last_pass_utc: "2026-10-23T11:40:00Z", run_id: 2026-10-23-adopted-l20-net }
     digest: { how: "image Id sha256:c1c93733e852... identical on spark5-8 (docker image inspect); six pinned tree labels == spark-ds41f expected_labels; checkpoint 48 shard sha256 == Hub LFS etags (spark5 bytes, verified 48/48 after rsync); sparks 6-8 size-identical", last_pass_utc: "2026-10-20T10:20:00Z", run_id: 2026-10-19-vllm-ladder-r2 }
     health: { how: "scripts/gates.py: /v1/models, exact-reply smoke LANE_C_OK, get_weather tool call + tool-result round, 0 preemptions - FUNCTIONAL_GATES PASS on every boot incl. the serving boot FINALr2", last_pass_utc: "2026-10-20T02:10:42Z", run_id: 2026-10-19-vllm-ladder-r2 }
-    quality: { how: "PENDING: teacher-forced delta-logprob vs the original has not been run on this lane, and no public benchmark has been run by us. Same-engine evidence only - qeval 71/75 every arm with content identical to C0 75/75; 40-prompt greedy raw-completion probe 40/40 identical across every arm vs C0ctl2; bench C1 per-request token/char signature 9/9. These are reproducibility checks, not model-fidelity checks.", run_id: 2026-10-19-vllm-ladder-r2 }
-    performance: { how: "scripts/run_battery.sh full: C1 per-stream within 2% of 104.3, C6 within 3% of 289, 93K prefill within 2% of 6.0K", last_pass_utc: "2026-10-20T01:28:00Z", run_id: 2026-10-19-vllm-ladder-r2 }
+    quality: { how: "PASS on the adopted config 2026-10-23 - teacher-forced against per-token temp-0 baselines from the kept 8 GiB control container: 45 segments, 5,485 forced positions, p99 and max absolute delta logprob both 0.0, self-repeat exactly 0.0 on both sides, top-1 agreement 1.0, perplexity identical. Plus qeval 71/75 (same 4 misses as C0), 40-prompt greedy probe 40/40 byte-identical, 0 preemptions. Limit - teacher forcing does not exercise T>0 sampling under a different batch mix, and no public benchmark has been run by us.", last_pass_utc: "2026-10-23T11:10:26Z", run_id: 2026-10-23-adopted-l20-net }
+    performance: { how: "scripts/run_battery.sh full on the adopted config: C1 per stream 105.21, C1 aggregate 93.89, C4 233.16, C6 291.75, mean TTFT C1 0.158 / C4 0.231 / C6 0.286 s, 93K cold prefill 5,338, warm-cache guest turn 2.147 s, warm boot 101 s. scripts/verify_launcher.py renders the launcher with a stub docker and diffs it against the live container - 80/80 args, 103/103 env pairs, 8 mounts, ranks 1 and 3 checked the same day", last_pass_utc: "2026-10-23T11:10:26Z", run_id: 2026-10-23-adopted-l20-net }
 limits:
 - "Tuning found nothing. Round 2 (2026-10-20 01:14-02:12 UTC), one change per boot against a same-window control, keep bar +2% on any headline metric with no regression over 2%: C7ced (Owen's CED non-final-row skip overlay) +0.9% 93K, +1.6% 300K, +4.1% 131K single shot, outputs bit-identical - REVERT; Owen measured +10.6-11.1% on TP3, so the gain is shape-dependent. C8pp2 (--max-parallel-prefills 2) C4 -8.3%, C6 -10.8%, TTFT not improved - REVERT (C8pp2b not run). C9nvfp4 (NVFP4 draft head + Markov) C1 +1.7%, C6 -2.8% - REVERT. Round 1 (2026-10-19, nine arms, per the published post; receipts left on spark5, not mirrored) - NIC merge/cross-NIC, NCCL channels 4 to 8, NCCL buffers 4 to 16 MiB, KV 8.6 / 9.2 GiB, max-num-batched-tokens 16384, row cost 0.05 / 0.02 - all within about 2% or worse; a single-rail diagnostic cost 14% of 93K prefill."
 - "Cold JIT: the first boot on an empty $DS41F_DIR/cache took 351 s and read 7.7% lower 93K prefill than the same config rebooted warm (Round 1). Benchmark warm boots only; the 89-101 s figure assumes a populated cache."
-- "Mixed traffic: a short chat behind a cold 93K prefill waits ~3.0 s for its first token (max-parallel-prefills 1, chunk 8192). The SGLang sibling answers in 1.7-1.9 s there. Raising parallel prefills cost 8-11% of C4/C6 and did not help TTFT."
+- "Mixed traffic, measured two ways. A guest turn over an already-cached 68K prefix (the shape the lane actually sees) is 2.147 s median on the adopted config, down from about 3.14 s. A short turn arriving behind a 413K COLD prefill is 1.196 s with late admission at layer 20 versus 1.885 s without, so the queue-jump works on this lane; the older ~3.0 s figure was measured behind a cold 93K prefill with parallel-prefills 1 and a 8096 chunk threshold, a different shape."
+- "Seats, and why prefill reads lower than the 2026-10-20 publication: the lane now runs 32 seats with long-prefill-token-threshold 3856 (was 16 seats / 8096), because it serves guests rather than a single stream. That is what moves 93K cold prefill from 5,998 to 5,338 tok/s. It is a deliberate trade, not drift. Halving the threshold again to 1928 buys 4,668 tok/s (further -13%) and 1.50 s warm-cache turns; declined 2026-10-23 to keep cold-prefill throughput."
+- "Late admission at layer 20 costs contested C8 TTFT. A single-wave C8 TTFT read 0.463 s against 0.359-0.364 s on three control boots. That is not dismissed as noise and it is not a proven regression either - only C1 paired results survive boot-to-boot comparison on this rig (an A/A C6 comparison excludes zero by -1.19%). C4 and above need the interleaved harness before anyone quotes them."
+- "The overlays are unmounted copies of upstream work. If Owen lands late admission or sparknet 0.6.0 upstream, this recipe's overlays are behind by construction; SHA256SUMS plus overlays/README.md record exactly which commits they came from."
+- "Sparknet 0.5.0 must be mounted on all four ranks. A partial rollout fails at collective setup rather than degrading, which is loud but worth knowing before a rolling restart."
 - "1M context is configured and the KV pool holds 6.23 full-length sequences, but the deepest needle run is 300,000 tokens (3/3 PASS). One needle per length; retrieval, not long-context reasoning."
 - "Not stock vLLM and not pullable - a local build of a fork of a pre-release vLLM nightly, ~2h16m per node. The image Id will not match anyone else's build; pin by the six tree labels and the deployment commit."
 - "Our shape is unqualified upstream: Owen qualifies r6x on a switchless four-node ring, kernel 7.0, 64 KiB pages, memory-saver. tp4-switch-4k runs over a switch on 6.17 / 4 KiB pages with an 8 GiB KV budget per rank; Owen's topology checker refuses oneshot-direct on four nodes."
 - "Hygiene: the R2 runner dropped caches and compacted memory before each boot but did not set THP to never; THP is madvise on spark5-8 (checked 2026-10-20). NV_ERR_NO_MEMORY counts in dmesg did not rise in any arm."
 - "Cross-pod contention is not a factor at single-stream long-prefill load: C 93K 5,993 quiet vs 6,009 while the SGLang pod on Sparks 1-4 prefilled back-to-back (2026-10-20 05:00-05:07 CDT). Not tested - both pods under concurrent multi-stream load."
-- "Quality is unverified against the original model: no teacher-forced delta-logprob, no public benchmark by us. The identity checks above show the arms did not change outputs relative to each other."
+- "Quality is verified against the SERVING CONTROL, not against DeepSeek's original as a different engine would see it. The teacher-forced gate compares the adopted config to the 8 GiB control container on the same box: delta 0.0 everywhere. That proves the config change is lossless relative to what this lane already served. It does not prove the lane matches the model card, and no public benchmark has been run by us."
 rollback:
   script: scripts/cluster.sh
   summary: "SPARK_HOSTS=... bash scripts/cluster.sh down (docker stop dsv41-karmic-kraken on all four, container kept). The other published DeepSeek-V4.1 lanes - SGLang on 4x Spark (dgx-spark-4x/deepseek-v4.1-flash-sglang-tp4-roce) and one GB300 (dgx-station-gb300/deepseek-v4.1-flash-vllm-uva-dspark)."

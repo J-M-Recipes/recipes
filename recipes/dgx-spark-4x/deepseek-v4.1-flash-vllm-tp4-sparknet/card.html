@@ -44,7 +44,7 @@
       <h1>DeepSeek-V4.1-Flash-1017 · 4× DGX Spark · vLLM fork</h1>
       <div class="sub">Native 1017 weights, TP4 across four GB10s on one CRS804: Owen&#x27;s spark-ds41f r6x (LIL vLLM fork + TileLang + sparknet) on our switch / 4 KiB-page shape. 1M context. Lane C; the SGLang sibling is Lane B.</div>
     </div>
-    <div class="brand"><b>J-M-RECIPES</b><br>v1 (2026-10-20 · 1017 @ 1bae0e10 · image c1c93733e852 · spark-ds41f fc3ee36d · sparknet 0.3.0 @ 3bc8d10) · 2026-10-20<br>status: experimental</div>
+    <div class="brand"><b>J-M-RECIPES</b><br>v2 (2026-10-23 · 1017 @ 1bae0e10 · image c1c93733e852 · spark-ds41f fc3ee36d · late admission @ layer 20 + sparknet 0.5.0 @ ed6af327, mounted) · 2026-10-23<br>status: verified</div>
   </div>
   <div class="pills">
 <span class="pill type"><b>MoE+Engram</b> · 384 routed + 1 shared expert, 6 active · Engram tables on disk · in-checkpoint DSpark draft</span>
@@ -52,25 +52,26 @@
 <span class="pill">checkpoint <b>510.3 GB</b> · rev <span class="mono">1bae0e10</span></span>
 <span class="pill">weights <b>as shipped · MXFP4 experts / FP8 attention+dense+Engram · nothing re-quantized</b></span>
 <span class="pill">engine <b>vLLM (fork) <span class="mono">19f2c20ed4d64ae22bd009ceacadd85e2a81e354</span> · vLLM 0.29.1rc1 fork (LIL karmic-kraken-beta 19f2c20e) · TileLang attn/linear/MoE · sparknet one-shot RoCE ≤2 MiB · local build</b></span>
-<span class="pill">memory <b>72.19 GiB/rank weights+draft · KV 8 GiB/rank = 6,537,516-token pool (6.23× at 1M) · graphs 1.98 GiB · head host floor 24.0 GiB</b></span>
+<span class="pill">memory <b>72.19 GiB/rank weights+draft · KV 10.5 GiB/rank = 8,580,566-token pool (8.18× at 1M) · graphs 1.98 GiB · head host floor 20.70 GiB</b></span>
   </div>
   <div class="grid">
-<div class="box"><div class="lbl">Decode · C1, mean of 2 (8-category v1 mix, per stream)</div><div class="hero">104.3<small>tok/s</small></div><div class="note">104.23 / 104.30 (C0ctl2) · T=0, thinking off · coding 133 · format 149 · prose 79 · narrative 62 · SGLang sibling 95.6</div></div>
-<div class="box"><div class="lbl">Decode · C6 aggregate</div><div class="hero">289<small>tok/s</small></div><div class="note">288.94 single run (C0ctl2) · C4 230.9 · 56.8 per stream · max-num-seqs 16, not slot-capped · SGLang sibling 252.8</div></div>
-<div class="box"><div class="lbl">Cold prefill · 93K prompt</div><div class="hero">6.0K<small>tok/s</small></div><div class="note">5,998 median of 3 (C0ctl2) · quiet A/B 5,993 vs SGLang 6,219 · 300K needles 5,462 / 5,471 / 5,453</div></div>
+<div class="box"><div class="lbl">Decode · C1, adopted config (8-category v1 mix, per stream)</div><div class="hero">105.2<small>tok/s</small></div><div class="note">105.21 per stream / 93.89 aggregate, 2026-10-23 · T=0, thinking off · +0.9% vs the 2026-10-20 control 104.27 · SGLang sibling 95.6</div></div>
+<div class="box"><div class="lbl">Decode · C6 aggregate</div><div class="hero">292<small>tok/s</small></div><div class="note">291.75 single run 2026-10-23 · C4 233.16 · 57.3 per stream · mean TTFT 0.286 s · 32 seats · SGLang sibling 252.8</div></div>
+<div class="box"><div class="lbl">Cold prefill · 93K prompt</div><div class="hero">5.3K<small>tok/s</small></div><div class="note">5,338 (2026-10-23, 32 seats / chunk 3856) · 5,998 at 16 seats / 8096 on 2026-10-20 · the seat change is the difference, not drift · SGLang 6,219</div></div>
   </div>
   <div class="row2">
 <div class="box"><div class="lbl">Guesser</div><div class="kv"><b>DSpark</b> · in-checkpoint MTP draft, 1017 revision<br>k = 5 · greedy draft · block rejection · adaptive verify (row cost 0.035)<br><span class="acc">accept: <span>coding <b>83%</b></span> <span>format <b>91%</b></span> <span>math <b>70%</b></span> <span>json <b>56%</b></span> <span>prose <b>41%</b></span> <span>narrative <b>31%</b></span> <span>all, C1 <b>61%</b></span></span></div></div>
-<div class="box"><div class="lbl">Long context, mixed traffic &amp; boot</div><div class="kv">needles 20K · 131K · 300K×3: <b>PASS · 5.8K / 5.7K / 5.46K tok/s · no first-touch dip</b><br>short-chat TTFT behind cold 93K: <b>3.03 s (SGLang sibling 1.7–1.8 s)</b><br>warm boot → HTTP ready: <b>89–101 s (cold JIT cache 351 s)</b></div></div>
+<div class="box"><div class="lbl">Long context, mixed traffic &amp; boot</div><div class="kv">needles 20K · 131K · 300K×3: <b>PASS · 5.8K / 5.7K / 5.46K tok/s · no first-touch dip</b><br>short-chat TTFT behind cold 93K: <b>3.03 s (SGLang sibling 1.7–1.8 s)</b><br>warm boot → HTTP ready: <b>101 s (2026-10-23); 89–101 s across the 2026-10-20 boots; cold JIT cache 351 s</b><br>C8 TTFT, late admission @ layer 20: <b>0.463 s vs 0.359–0.364 s on three controls — unresolved, needs the interleaved harness</b></div></div>
 <div class="box"><div class="lbl">Round-2 ladder — one change per boot, keep bar +2%: nothing kept</div><div class="kv">CED skip overlay (Owen): <b>93K +0.9% · 300K +1.6% · outputs identical → revert</b><br>max-parallel-prefills 2: <b>C4 −8.3% · C6 −10.8% → revert</b><br>NVFP4 draft head + Markov: <b>C1 +1.7% · C6 −2.8% → revert</b><br>cross-pod contention (93K): <b>5,993 → 6,009 with SGLang pod prefilling: none</b></div></div>
   </div>
   <div class="fid"><div class="lbl">Output fidelity — does the recipe change what the model says?</div>
     <ul>
 <li class="ok">Weights as shipped: 48/48 shard sha256 == Hub LFS etags (spark5 bytes, re-verified after copy); sparks 6–8 size-identical</li>
 <li class="ok">Speculation is target-verified (block rejection against the full model)</li>
-<li class="meas">Arm-to-arm identity only: greedy probe 40/40, qeval content 75/75, bench C1 signature 9/9 vs control — reproducibility, not fidelity</li>
+<li class="ok">Teacher-forced Δlogprob vs the 8 GiB control container, 5,485 forced positions: p99 and max 0.0, perplexity identical, self-repeat 0.0 — lossless vs what the lane already served</li>
+<li class="meas">Arm-to-arm identity: greedy probe 40/40, qeval content 75/75, bench C1 signature 9/9 vs control — reproducibility</li>
 <li class="ok">Tool calling: get_weather call + tool-result round on every boot (1/1 per boot — small sample)</li>
-<li class="pend">Teacher-forced Δlogprob vs the original</li>
+<li class="meas">Guest-turn latency: 2.147 s median warm-cache (68K resident prefix + 1.5K suffix), from ~3.14 s; 1.196 s behind a 413K cold prefill with late admission</li>
 <li class="pend">Public benchmark run by us</li>
     </ul>
   </div>
@@ -80,7 +81,7 @@
     </ul>
   </div>
   <div class="foot">
-    <span>recipe <span class="mono">recipes/dgx-spark-4x/deepseek-v4.1-flash-vllm-tp4-sparknet</span> · run <span class="mono">2026-10-19-vllm-ladder-r2</span></span>
+    <span>recipe <span class="mono">recipes/dgx-spark-4x/deepseek-v4.1-flash-vllm-tp4-sparknet</span> · run <span class="mono">2026-10-23-adopted-l20-net</span></span>
     <span>github.com/J-M-Recipes/recipes · al-engr.com · @jmeadlock</span>
   </div>
 </div>
