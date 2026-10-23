@@ -181,6 +181,12 @@ raw-completion probe matches 40/40; bench C1 per-request token/char signature ma
 | per stream tok/s | 105.21 | 87.18 | 71.69 | 68.43 | 61.08 | 57.30 |
 | mean TTFT s | 0.158 | 0.189 | 0.218 | 0.231 | 0.253 | 0.286 |
 
+**Second boot of the same config the same morning** (11:55 UTC, after a deliberate stop/start cycle, same launch line):
+C1 **94.34** aggregate, C4 **234.55**, C6 **290.15**, 93K prefill **5,372.0**, qeval 71, boot 101 s, KV pool 8,580,566,
+MemAvailable floor 21.08 GiB, 0 preemptions. Every headline lands within ~0.6% of the table above, which is the
+boot-to-boot repeatability this lane does have at C1. The 413K mixed probe reproduced too: short-turn TTFT
+**0.901 / 1.352 / 0.935 / 1.262 s**, all far below the control's 1.885 s. Receipts: `boot2-*` in the same results dir.
+
 - 93K cold prefill **5,338.1** tok/s (one rep, 32 seats / threshold 3856).
 - Warm-cache guest turn (68K resident prefix + 1.5K suffix) **2.147 s** median of 5 (2.08 / 2.15 / 2.38 / 1.88 / 3.38).
 - Short turn behind a 413K **cold** prefill: **1.196 s** with L20 (every sample 0.93–1.49 s) vs 1.885 s with no overlay

@@ -100,7 +100,7 @@ metrics:
   value: 105.21
   unit: tok/s
   workload: C1, v41bench prompt set v1 (8 categories), T=0, thinking off, unique leading tag per request; DSpark k=5; late admission at layer 20 + sparknet 0.5.0, 32 seats, KV 10.5 GiB
-  aggregation: single boot 2026-10-23 10:54-11:10 UTC; aggregate C1 93.89 tok/s, mean TTFT 0.158 s. For reference the 2026-10-20 C0ctl2 shipped-config boot read 104.27 per stream / 92.96 aggregate at 16 seats and KV 8 GiB
+  aggregation: two boots 2026-10-23 (10:54 and 11:55 UTC), C1 105.21 then 105.6 per stream; aggregate C1 93.89 / 94.34 tok/s, mean TTFT 0.158 s. For reference the 2026-10-20 C0ctl2 shipped-config boot read 104.27 per stream / 92.96 aggregate at 16 seats and KV 8 GiB
   provenance:
     run_id: 2026-10-23-adopted-l20-net
     method: scripts/run_battery.sh (campaign instrument v41bench_tf.py)
@@ -109,7 +109,7 @@ metrics:
   value: 291.75
   unit: tok/s
   workload: C6 of the same v41bench v1 mix on the adopted boot; C2 153.35, C3 181.05, C4 233.16, C5 261.66; per stream C4 68.43, C6 57.30; mean TTFT C1 0.158, C4 0.231, C6 0.286 s
-  aggregation: single run 2026-10-23; the C0ctl2 comparison at 16 seats / 8 GiB was 230.94 and 288.94
+  aggregation: two boots 2026-10-23 - C4 233.16 then 234.55, C6 291.75 then 290.15 (within 0.6%); the C0ctl2 comparison at 16 seats / 8 GiB was 230.94 and 288.94
   provenance:
     run_id: 2026-10-23-adopted-l20-net
     method: scripts/run_battery.sh
@@ -118,7 +118,7 @@ metrics:
   value: 5338.1
   unit: tok/s
   workload: prefill_reps.py, unique-nonce token-id prompt of exactly 93,335 tokens, max_tokens 1, T=0, no prefix-cache hits
-  aggregation: single run 2026-10-23 at 32 seats / long-prefill-token-threshold 3856. The lower number than 2026-10-20's 5,998 is the seat change (16 to 32, chunk threshold 8096 to 3856), not a regression; halving the threshold to 1928 lands at 4,668 tok/s (a further -13%) and was declined for that reason
+  aggregation: two boots 2026-10-23 - 5,338.1 then 5,372.0 - at 32 seats / long-prefill-token-threshold 3856. The lower number than 2026-10-20's 5,998 is the seat change (16 to 32, chunk threshold 8096 to 3856), not a regression; halving the threshold to 1928 lands at 4,668 tok/s (a further -13%) and was declined for that reason
   provenance:
     run_id: 2026-10-23-adopted-l20-net
     method: scripts/prefill_reps.py
