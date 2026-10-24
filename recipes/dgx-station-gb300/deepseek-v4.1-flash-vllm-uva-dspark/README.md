@@ -1,7 +1,36 @@
 # DeepSeek-V4.1-Flash at 1M context on one DGX Station GB300
 
+**2026-10-22 — the lane moved.** `:30006` now serves the **sidecar sibling**
+([`../deepseek-v4.1-flash-vllm-uva-dspark-sidecar`](../deepseek-v4.1-flash-vllm-uva-dspark-sidecar)):
+same checkpoint and same image, plus the RTX PRO 6000 in the chassis computing the 89 cold experts per layer —
+C1 279.5 vs 187.5 tok/s here, C16 3.0×, TTFT 0.19 vs 0.66 s. This recipe remains the reference for a GB300 with
+no second GPU, and v23 below is kept stopped as the rollback.
+
 **Serving on `:30006` since 2026-10-18 10:21 CDT: Pin Exact, v23** (v22 + exact-size pinned host allocations: pinned host 328.0 → 252.8 GiB, boot-guard margin 12 → 198 GiB, decode and greedy non-tool output unchanged; **188.2 tok/s C1 real text, accept 2.99/step**; BFCL held-out 77.65; see the 2026-10-18 round) · rollback **v22** (k=5 band to 8 sequences, 2026-10-17) · **candidate, not promoted:** vLLM nightly-39983a5e "config C" passed all seven pre-registered gates (+6% C1, TTFT 8K 0.43 s, KV +55%; GSM8K exactly at its bar), pending James · previous **Fused Split, v21** (2026-09-27: v18 launch on the 0909 image + hook v21 — `split_ids()` as one Triton kernel; **182.8 tok/s C1 prose, +6.2 % vs v18 bracketing controls 171.8 / 172.5**, C8 687 (+4.6 %), C16 993 (+4.0 %), non-tool greedy 16/16 vs both controls; held-out BFCL on v21 pending; see Round 12) · documented release **Clean Nightly, v20** (2026-09-21: vLLM nightly `2671fedf` — the last before the #56633 mHC-fold drift — + v15 hook + off54 + fp8_ds_mla + v18's 24-seat/cudagraph flags; **181 tok/s C1 prose (+5.1% pair mean vs v18)**, KV 2.55M tokens, C24 warm agent p95 2.4–2.8 s vs 3.4; **held-out BFCL live sibling 78.8% vs v18 78.9%**, dev 92.7–93.5%; tools 64/64 ×3; $0.008 per 1000 solved tasks; see Round 11b) · rollback **Many Seat, v18** (2026-09-18: v15 hook + `--max-num-seqs 24` + token-sized `--cudagraph-capture-sizes`; 172 tok/s C1 prose, KV 2.50M tokens, C24 warm agent turn 0.55 s p50; **BFCL v4 tool-call exact-match 93.3%**) · **v19 "Nightly" was promoted and reverted on 2026-09-20** (see Round 10) · previous **v15 Pin Hot Experts** (retired 2026-09-18) · **v14 Sixty-K Agent** (retired 2026-09-17) · Historical **v13: 90 tok/s single-stream prose · 140–160 tok/s on agent/code text · 429 agg tok/s at C16** (v12: 89 / 140–160 / 311 · v11: 82 / 130–150 / 287) · 972K-token prompt prefilled in 85 s · Hermes tool-calling 10/10
 
+
+## 2026-10-23 round — adaptive expert residency (hook v26ar.1): released as EXPERIMENTAL, not promoted
+
+v23's 295-hot / 89-cold split per layer was fixed at boot (`rowmap-static-v1.json`, fitted on agent traffic). Hook v26ar.1 makes the split follow live traffic. **Same image, weights, flags, and starting map as v23**; only the hook directory and its env change. Write-up: [We Built the Counter](https://al-engr.com/gb300-adaptive-expert-residency.html). Receipts, hook, diffs, and harness: [`results/2026-10-23-ar-adaptive-residency/`](results/2026-10-23-ar-adaptive-residency/).
+
+How it works:
+- **Count:** one masked `tl.atomic_add(..., sem="relaxed")` per routed pick, inside the existing split kernel, into a fixed `int32 [40, 384]` table. No new launch, no new graph node.
+- **Decide:** a side thread reads the table every 64 steps and keeps an EWMA (500-step half-life). It picks swaps of the hottest cold expert vs the coldest hot one (1.5× margin, ≤ 2 per layer per read).
+- **Apply:** the September swap path runs them between steps (≤ 8 per step, ~150 µs each), with a stale-decision guard.
+- **Control:** a JSON ctrl file sets freeze, count, budgets, and `restore_map`.
+
+| C1 unless noted, median after 60 s | v23 map (frozen) | adaptive | Δ | cold share |
+|---|---:|---:|---:|---|
+| Japanese/German essays (2 boots) | 89.95 | 189.4 / 189.8 | +111 % | 28.3 % → 0.3 % |
+| agent English | 195.65 | 218.45 / 219.29 | +12 % | 2.17 % → 0.45 % |
+| mixed, C1 aggregate | 133.1 | 194.1 | +46 % | 17.2 % → 0.72 % |
+| mixed, C4 aggregate | 236.6 | 431.0 | +82 % | 16.6 % → 0.67 % |
+
+- **Cost:** counter 2–6 µs/step (relaxed; acq_rel was 25–78 µs). Same-boot A/B over 12 pairs: −0.21 % ± 0.36 %. KV unchanged at 2,495,694 tokens. TTFT 2k/8k/31k: 0.19 / 0.46 / 1.38–1.50 s.
+- **Fidelity:** unit tests 6/6. The 50-prompt greedy parity set matches the fixed-map capture within lane noise (49/50, the same noisy `agent-tool-1` prompt), including after a static → 15,382-swap → restore round trip. With a different hot set, one extra near-tie prompt flipped; we don't claim bit-identity across maps.
+- **Not done before promotion:** soak (p99 on swap steps), gauntlet, BFCL, long-context check.
+- **Against the sidecar sibling, same workloads, same night:** the sidecar lane is still faster on this box: mixed C1 208.9 vs 194.1, C4 560.4 vs 431.0 (held-out prompts), JP/DE C1 186 vs 189, agent 244 vs 219. Adaptive v23 is the better answer when you have **only** the GB300. See the sibling's 2026-10-23 round.
+- **Launch (experimental):** the v23 launch line with the hook directory swapped for `results/2026-10-23-ar-adaptive-residency/hook/` (plus the unchanged v19 files) and the env from `harness/launch_ar.sh`. It boots frozen (counting only); `touch $RUN/GO`, then `echo '{"freeze": false, "baseline": true}' > $RUN/ctrl.json`. Freeze again or `{"restore_map": true}` to return to the boot map.
 
 ## 2026-10-18 round — v23 promoted, nightly config C passes its gates (not promoted), P1 fails
 

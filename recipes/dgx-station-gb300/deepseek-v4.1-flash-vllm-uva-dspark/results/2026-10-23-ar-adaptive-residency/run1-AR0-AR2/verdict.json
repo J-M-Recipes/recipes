@@ -1,0 +1,215 @@
+{
+ "run": "$HOME/dsv41/ar/run",
+ "AR0": {
+  "pass": true,
+  "tests": {
+   "T1_split_count_equivalence": true,
+   "T2_graph_counts": true,
+   "T3_queue_policy": true,
+   "T4_guarded_apply": true,
+   "T5_drain_telemetry": true
+  }
+ },
+ "AR1": {
+  "count_on_median": 239.351,
+  "count_off_median": 241.8035,
+  "delta_pct_median": -1.014,
+  "paired_delta_pct_median": -0.985,
+  "off_spread_pct": 2.378,
+  "same_tokens": true,
+  "gate_overhead_le_0p5pct": false,
+  "ttft": [
+   {
+    "words": 1500,
+    "rep": 0,
+    "prompt_tokens": 2005,
+    "ttft_s": 1.2868,
+    "prefill_tok_s": 1558.1
+   },
+   {
+    "words": 1500,
+    "rep": 1,
+    "prompt_tokens": 1972,
+    "ttft_s": 0.1892,
+    "prefill_tok_s": 10422.8
+   },
+   {
+    "words": 6000,
+    "rep": 0,
+    "prompt_tokens": 7863,
+    "ttft_s": 0.4703,
+    "prefill_tok_s": 16719.1
+   },
+   {
+    "words": 6000,
+    "rep": 1,
+    "prompt_tokens": 7842,
+    "ttft_s": 0.3915,
+    "prefill_tok_s": 20030.7
+   },
+   {
+    "words": 24000,
+    "rep": 0,
+    "prompt_tokens": 31181,
+    "ttft_s": 3.2266,
+    "prefill_tok_s": 9663.7
+   },
+   {
+    "words": 24000,
+    "rep": 1,
+    "prompt_tokens": 31301,
+    "ttft_s": 1.4931,
+    "prefill_tok_s": 20963.8
+   }
+  ],
+  "sanity": {
+   "ok": true,
+   "n_drains": 81,
+   "sel_per_step_median": 1645.1,
+   "cum_cold_share": 0.08048080224149197,
+   "last": {
+    "ts": 1792806381.335,
+    "host_steps": 5267,
+    "dsteps": 64,
+    "sel": 65880,
+    "cold": 1568,
+    "cold_share": 0.023800850030358228,
+    "cum_cold_share": 0.08048080224149197,
+    "swaps": 0,
+    "pending": 0,
+    "queued": 0,
+    "stale": 0,
+    "freeze": true,
+    "count_on": true
+   }
+  }
+ },
+ "AR2_frozen": {
+  "jpde_1": {
+   "n": 44,
+   "tok_s_median_all": 89.95,
+   "tok_s_median_post60": 89.95,
+   "cold_share_all": 0.2821,
+   "cold_share_post60": 0.2832
+  },
+  "agent": {
+   "n": 91,
+   "tok_s_median_all": 195.64,
+   "tok_s_median_post60": 195.65,
+   "cold_share_all": 0.022,
+   "cold_share_post60": 0.0217
+  },
+  "jpde_2": {
+   "n": 44,
+   "tok_s_median_all": 89.95,
+   "tok_s_median_post60": 89.95,
+   "cold_share_all": 0.2807,
+   "cold_share_post60": 0.2833
+  }
+ },
+ "AR2_adaptive": {
+  "jpde_1": {
+   "n": 82,
+   "tok_s_median_all": 189.17,
+   "tok_s_median_post60": 189.43,
+   "cold_share_all": 0.0064,
+   "cold_share_post60": 0.0031
+  },
+  "agent": {
+   "n": 98,
+   "tok_s_median_all": 218.36,
+   "tok_s_median_post60": 218.45,
+   "cold_share_all": 0.0063,
+   "cold_share_post60": 0.0045
+  },
+  "jpde_2": {
+   "n": 83,
+   "tok_s_median_all": 188.56,
+   "tok_s_median_post60": 188.61,
+   "cold_share_all": 0.0042,
+   "cold_share_post60": 0.0036
+  }
+ },
+ "AR2_compare": {
+  "jpde_1": {
+   "tok_s_post60_frozen": 89.95,
+   "tok_s_post60_adaptive": 189.43,
+   "tok_s_delta_pct": 110.59,
+   "cold_post60_frozen": 0.2832,
+   "cold_post60_adaptive": 0.0031
+  },
+  "agent": {
+   "tok_s_post60_frozen": 195.65,
+   "tok_s_post60_adaptive": 218.45,
+   "tok_s_delta_pct": 11.65,
+   "cold_post60_frozen": 0.0217,
+   "cold_post60_adaptive": 0.0045
+  },
+  "jpde_2": {
+   "tok_s_post60_frozen": 89.95,
+   "tok_s_post60_adaptive": 188.61,
+   "tok_s_delta_pct": 109.68,
+   "cold_post60_frozen": 0.2833,
+   "cold_post60_adaptive": 0.0036
+  }
+ },
+ "AR2_parity": {
+  "label": "pre vs post swap",
+  "exact": 49,
+  "n": 50,
+  "first_misses": [
+   {
+    "id": "agent-tool-1",
+    "group": "agent",
+    "content_equal": false,
+    "tools_equal": false,
+    "first_div_char": 39,
+    "a_head": "I'll check both. First, let me see what access I have to that host.  ",
+    "b_head": "I'll check both. First, let me see what's available locally.  ",
+    "a_tools": [
+     {
+      "name": "terminal",
+      "arguments": "{\"command\": \"which docker ssh 2>&1; echo \\\"---\\\"; docker ps 2>&1 | head -5\"}"
+     },
+     {
+      "name": "terminal",
+      "arguments": "{\"command\": \"timeout 5 ping -c 1 station.lan 2>&1; echo \\\"---\\\"; timeout 5 ssh -o BatchMode=yes -o ConnectTimeout=4 station.lan 'echo ok' 2>&1\"}"
+     }
+    ],
+    "b_tools": [
+     {
+      "name": "terminal",
+      "arguments": "{\"command\": \"which docker ssh 2>&1; echo \\\"---\\\"; docker ps 2>&1 | head -5\"}"
+     }
+    ],
+    "a_finish": "tool_calls",
+    "b_finish": "tool_calls"
+   }
+  ]
+ },
+ "swaps_logged": 4158,
+ "telemetry_last": {
+  "ts": 1792807544.381,
+  "host_steps": 90687,
+  "dsteps": 66,
+  "sel": 225936,
+  "cold": 26251,
+  "cold_share": 0.1161877699879612,
+  "cum_cold_share": 0.07166360023335684,
+  "swaps": 4157,
+  "pending": 0,
+  "queued": 0,
+  "stale": 0,
+  "freeze": true,
+  "count_on": true
+ },
+ "gates": {
+  "AR0_unit": true,
+  "AR1_overhead": false,
+  "AR2_jpde_speed_ge_5pct": true,
+  "AR2_agent_no_regress_3pct": true,
+  "AR2_jpde_cold_halved": true,
+  "AR2_parity_exact": false
+ },
+ "verdict": "FAIL"
+}

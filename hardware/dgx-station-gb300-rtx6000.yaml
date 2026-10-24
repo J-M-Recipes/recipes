@@ -1,0 +1,38 @@
+# Hardware profile: NVIDIA DGX Station GB300 with an RTX PRO 6000 Max-Q add-in card
+# Values under `observed` come from scripts/collect_system_snapshot.sh on the actual machine (2026-10-22);
+# `nominal` is the spec sheet and is informational only. Recipes pin against `observed`.
+slug: dgx-station-gb300-rtx6000
+name: NVIDIA DGX Station GB300 + RTX PRO 6000 Max-Q (expert sidecar)
+vendor: NVIDIA
+form_factor: desktop workstation (one chassis, two GPUs)
+nominal:
+  compute_gpu: NVIDIA GB300 Blackwell Ultra
+  compute_gpu_memory_gb: 288        # HBM3e spec sheet
+  sidecar_gpu: NVIDIA RTX PRO 6000 Blackwell Max-Q Workstation Edition
+  sidecar_gpu_memory_gb: 96         # 300 W Max-Q variant, 325 W max limit
+  host_memory_gb: 496               # LPDDR5X on the Grace CPU
+  cpu: NVIDIA Grace, 72x Arm Neoverse V2
+  cpu_gpu_link: NVLink-C2C (coherent)
+  gpu_gpu_link: "PCIe through the Grace root complex; peer-to-peer is NOT supported (SYS topology, topo -p2p r = NS), so every byte between the two GPUs goes through host memory (/dev/shm)"
+observed:                           # 2026-10-22, driver 595.91.07
+  compute_gpu: NVIDIA GB300
+  gpu_memory_visible_gib: 250.7     # nvidia-smi memory.total = 256,703 MiB; the spec's 288 GB is not what you get
+  compute_gpu_power_cap_w: 1300
+  sidecar_gpu: NVIDIA RTX PRO 6000 Blackwell Max-Q Workstation Edition
+  sidecar_gpu_memory_visible_gib: 95.6   # 97,887 MiB
+  sidecar_gpu_power_cap_w: 300      # max 325
+  host_memory_gib: 494.5
+  cpu: Neoverse-V2 (aarch64)
+  os: Ubuntu 24.04.5 LTS
+  kernel: 7.0.0-1019-nvidia-64k
+  driver: "595.91.07"
+  cuda: "13.2"
+  docker: "29.1.3"
+  coherent_gpu_memory_mode: driver
+  vsloshd: inactive
+  station_power_budget_w: 1600      # fixed Station total shared by the GB300 module and the add-in card
+notes:
+  - "The RTX card is VGA-class and also drives the display/JetKVM. DGX OS's docker device policy (/usr/libexec/dgx-desktop-docker-gpus.sh) deliberately hides it from containers, so --gpus cannot see it: generate a CDI spec (nvidia-ctk cdi generate --output=/etc/cdi/nvidia.yaml, enable cdi in daemon.json if the Docker version needs it) and pin the card by UUID with --device nvidia.com/gpu=<RTX UUID>. The launcher refuses to start the sidecar if the card already holds >=2,048 MiB."
+  - "P2P between the two GPUs is unsupported on this board. The sidecar protocol therefore moves only activations (5.3 KB up / 10 KB down per cold row) through /dev/shm; 55 GB/s pinned PCIe is not a decode bottleneck."
+  - "Power is a shared, capped resource and it is measurable in the results: the GB300 hits sw_power_cap in 89% of 1 s samples during a 64K prefill on this lane (65% on the GB300-only lane before it) and its SM clock drops to a 1,980 MHz median. The speed numbers in this recipe were measured under that throttling."
+  - "Host memory is the constraint the sidecar removes: the GB300-only recipe pins ~253 GiB of host memory for Engram + cold experts; here the cold experts live on the card, so the host carries Engram only."

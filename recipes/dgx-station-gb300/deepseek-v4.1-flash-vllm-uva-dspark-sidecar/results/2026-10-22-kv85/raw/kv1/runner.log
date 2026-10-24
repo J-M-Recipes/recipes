@@ -1,0 +1,36 @@
+2026-10-22 18:43:35 CDT ===== CARD KV1 (explicit --kv-cache-memory 8.5 GiB) START =====
+2026-10-22 18:43:36 CDT preflight: MemAvailable=180.2GiB RTX=66213MiB LANE up; owner note written
+2026-10-22 18:43:36 CDT STATE BOOTING
+2026-10-22 18:43:36 CDT watchdog (pid 1282031) disarmed
+2026-10-22 18:43:36 CDT stop-and-keep dsv41-vllm-1017-v25-sidecar-BOUND-REF -> dsv41-vllm-1017-v25-sidecar-kv4.9-KEPT  (LANE DARK begins)
+sidecar dsv41-vllm-1017-v25-sidecar-BOUND-REF-rtx starting on RTX GPU-d07eb6e6-7053-42a7-6811-7bb833266182 rowmap=rowmap-static-v1.json; waiting for 'serving' (Ronan: 40 layers in 45 s, 560 graphs, ~76 GB at 99 cold)
+prepared 40 layers in 47s; 68.4 GB allocated
+captured 560 graphs; 68.4 GB allocated
+serving
+-rw-r--r-- 1 root root 127541248 Oct 22 18:44 /dev/shm/vllm_peer_tier2
+66213 MiB, 91.10 W
+launched dsv41-vllm-1017-v25-sidecar-BOUND-REF (peer v2, rowmap=rowmap-static-v1.json seqs=32 util=0.97 maxlen=1048576 overlay=1 PEER_CHECK=0 COLD_TRT=0) log ~/dsv41/m3/logs/dsv41-vllm-1017-v25-sidecar-BOUND-REF.log
+2026-10-22 18:45:03 CDT   waiting 0 min: MemAvail=462.0GiB RTX=66213MiB last=[]
+2026-10-22 18:50:05 CDT   waiting 5 min: MemAvail=182.3GiB RTX=66213MiB last=[2026-10-22 23:49:20,662 - INFO - autotuner.py:1046 - flashinfer.jit: [Autotuner]: Autotuning process starts ...]
+2026-10-22 18:52:26 CDT BOUND dsv41-vllm-1017-v25-sidecar-BOUND-REF after 443s
+2026-10-22 18:52:26 CDT LANE DARK ends after 518s
+2026-10-22 18:52:26 CDT STATE BOUND
+2026-10-22 18:52:26 CDT FACTS: kv_tokens=4400013 concurrency=4.20x peer2=2 rowmap40=1 replay=1 kvflag=0 RTX=66213MiB
+2026-10-22 18:54:58 CDT LOAD pre: ok 65 err 0 tok/s 218.9
+2026-10-22 18:54:58 CDT STATE FIT
+2026-10-22 18:55:40 CDT FIT: FIT kv1: needle http=200 pt=998363 ttft=35.45s prefill=28161 tok/s recall=PASS finish=stop post_probe=PASS depth_decode=256.1 tok/s (ttft 2.48s)
+2026-10-22 18:58:11 CDT LOAD post: ok 64 err 0 tok/s 215.4
+2026-10-22 18:58:11 CDT VERDICT: PASS
+    KV1 RESULT PASS
+    KV tokens 4,400,013 (baseline 2,537,081); concurrency 1M = 4.20x
+      capacity     PASS  KV 4,400,013 tokens (baseline 2,537,081; bar >= 4,000,000 = +58%)
+      flag         PASS  explicit --kv-cache-memory visible in non-default args
+      fit_1m       PASS  needle http=200 pt=998363 ttft=35.45s recall=True finish=stop
+      fit_after    PASS  post probe 'OK'
+      depth_decode PASS  1M-depth decode 256.1 tok/s ttft=2.48s
+      decode_self  PASS  C1 after/before 1M = 0.984 (bar >= 0.97)
+      errors       PASS  load err pre=0 post=0
+engine-error lines: 0
+2026-10-22 18:58:14 CDT WATCHDOG: 2026-10-22 18:58:11 CDT start v2 mode=enforce server=dsv41-vllm-1017-v25-sidecar-BOUND-REF sidecar=dsv41-vllm-1017-v25-sidecar-BOUND-REF-rtx rollback=None stall=2.0s interval=1.0s {"t": 1792713493.266
+2026-10-22 18:58:14 CDT STATE PASS
+2026-10-22 18:58:14 CDT ===== CARD KV1 DONE (PASS) =====

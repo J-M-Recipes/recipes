@@ -1,0 +1,31 @@
+# hook-lock — sha256 of every non-image file the serving lane mounts, read INSIDE the running containers
+# (docker exec <container> sha256sum <path>), 2026-10-22. Use this to prove your checkout matches the one
+# that produced this recipe's numbers. Nothing here is vendored in this repo: the hook is
+# original-el8/dgx-station-gb300-research @87af662dd0a70f72c250c2085cf12eea2be8d882 (Apache-2.0) and
+# b12x is local-inference-lab/b12x @2cc7f66aaef76a9c7cbb660a1efb865cf3f26c88 (Apache-2.0).
+
+# GB300 server container (/w = .../m3/hook, mounted read-only)
+be50bdc1994ed35a073daf3d09fa82fe1003079fe5b99dd9b343fe912850d1ea  /w/mega_peer_hook.py
+e8c889cf9daf7361d4159a56f4e7c519325937bef5547421fc49139ba5e7e321  /w/sitecustomize.py
+e5693caa8a7a8352f82047ed7de94e58a9e71ad1d27df3d1dd38fd0d54f183aa  /w/peer_tier2.py
+919e12f144e3a08c04cb106d877b40011c788c379497f3b3d82f50a8f37e6e47  /w/peer_fused2.py
+550c3202b7a0b6c78865efdc0a246490b2810f8e60ac50d617e0cc72aaa9faf9  /w/rowmap-static-v1.json
+49675c262d73c4936b1992a79f8b3865bd48cfd24e6329e0bd2a0c4788820821  /w/ll_gemm.py
+99689e8fd8f41998b496241662cd85b095d9f8cb3405ac3b72e9f55c5621450f  /w/mxfp8_splitk.py
+
+# vllm#58132 decoder bounded-replay overlay (five files bind-mounted over the image's dist-packages)
+5c51794afb12def59c3e19d01714487ba59978191bbcf4ae4ba9efaff5cbd061  .../vllm/config/cache.py
+bd5fecbde5bc859ec9c82b8ee4d8ac768c9eb15f7f977cbfa56ff04f55f8e851  .../vllm/models/deepseek_v41/decoder_replay_layers.py
+1b5b2127e198df6fe3e36e77bf786bb391ebe32dd75669a35b0cbeaceb1f4227  .../vllm/models/deepseek_v41/nvidia/model.py
+cec1f21d25c5b0200c0dfba6084ec36d59877223cd82e38cf2307cacc4e84a3e  .../vllm/models/deepseek_v41/nvidia/model_state.py
+ff2c16614dc694f0c07a45929def3c76f30cb547f897b57c18c70bb99587171c  .../vllm/models/deepseek_v41/nvidia/vl_model.py
+
+# RTX sidecar container (/sc = .../m3/local, mounted read-only)
+77b24c455c37a552f706e3e8ae8c9b03d7394697a7bf711c4250a00360d17516  /sc/peer_server2_local.py
+#   = original-el8 peer_server2.py + patches/peer-server2-local.patch (sha256 of the patch file is in recipe.yaml)
+
+# notes
+# - /w/rowmap-static-v1.json is el8's tracked file, unmodified (git status clean apart from an untracked
+#   rowmap-static-v1-h285.json we added for the 285/99 placement arm).
+# - MEGA_FI_TUNE_FILE is EMPTY on this lane: FlashInfer tactics are live-tuned at boot, so boot-to-boot C1
+#   varies a few percent. Two boots that each live-tune are not a controlled pair; bracket with controls instead.

@@ -1,0 +1,14 @@
+cell,arm,decode_agg_tps,ttft_s,acceptance_len,source,note
+RT-C1,kv8.5-run1,278.36,,,raw/kv2/A-c1-1-r1.json,"kbench_chat_ds (RonanLabsAI) 8.2K in / 1,024 forced, thinking off, pool r1"
+RT-C1,kv8.5-run2,268.73,,,raw/kv2/A-c1-1-r2.json,pool r2
+RT-C1,kv8.5-run3,276.78,,,raw/kv2/A-c1-1-r3.json,pool r3
+RT-C1,kv8.5-run4,282.62,,,raw/kv2/A-c1-2-r1.json,pool r1 repeat
+RT-C1,kv8.5-run5,275.91,,,raw/kv2/A-c1-2-r2.json,pool r2 repeat
+RT-C1,kv8.5-run6,268.11,,,raw/kv2/A-c1-2-r3.json,pool r3 repeat
+RT-C1,kv8.5-mean,275.09,,,raw/kv2/A-speed.txt,"mean of 6, sd 5.17"
+RT-C16,kv8.5,1575.88,,,raw/kv2/A-c16.json,"32/32 ok, pool try2"
+S1-C16-under-1M-prefill,kv8.5,718.27,0.97,2.663,raw/kv2/A-s1-c16.json,"concurrent with a ~1M cold prefill + 131K prefill; 71.7% prefix hits"
+S1-128K-under-1M-prefill,kv8.5,,33.96,,raw/kv2/A-s1-cold128k.txt,"130,978-token cold prompt queued behind a ~1M prefill"
+S1-1M-needle,kv8.5,,40.12,,raw/kv2/A-s1-fit.json,"999,588 tokens, recalled; 1M-depth decode 78.1 tok/s while C16 ran"
+KV1-1M-needle,kv8.5,,35.45,,raw/kv1/fit.json,"998,363 tokens, recalled; 1M-depth decode 256.1 tok/s"
+coresident-4x1M,kv8.5,,"39.2/67.1/96.8/121.7",,raw/coresident/summary.json,"4 x ~990K prompts + 16,000 forced tokens each; per-stream decode 123.7/111.8/142.3/269.1; KV peak 75.3%"

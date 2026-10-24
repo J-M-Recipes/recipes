@@ -1,0 +1,23 @@
+# v25 sidecar lane — boot facts
+# Excerpt of the promotion boot log (~/dsv41/m3/logs/promote-v25-boot.log + peer_server2.log),
+# transcribed from the running containers on 2026-10-22. Image sha256:3af6a45b…, 1017 weights,
+# hook original-el8 @87af662, rowmap-static-v1.json (295 hot / 89 cold), MEGA_PEER=2 MEGA_COLD_TRT=0.
+
+MEGA_PEER patched vllm.models.deepseek_v4.nvidia.model.DeepseekV4MegaMoEExperts (peer mode 2, check 0)
+MEGA_PEER layer 0 (language_model.model.layers.0.ffn.experts): 295 hot experts in MegaMoE, 89 cold on the host; peer mode 2
+(EngineCore pid=908) INFO 10-22 09:27:37 [attention.py:158] Using DeepSeek's fp8_ds_mla KV cache format.
+(EngineCore pid=908) INFO 10-22 09:30:59 [kv_cache_utils.py:2408] GPU KV cache size: 2,537,081 tokens, Maximum concurrency for 1,048,576 tokens per request: 2.42x
+INFO:     Application startup complete.
+(EngineCore pid=908) INFO 10-22 09:27:50 [model.py:766] Decoder SWA bounded replay: in eager prefill steps, layers 21-39 run on each request's last 128 tokens only.
+(EngineCore pid=908) INFO 10-22 09:34:18 [core.py:380] init engine (profile, create kv cache, warmup model) took 220.45 s
+
+Capturing CUDA graphs (PIECEWISE):   0%|          | 0/21 [00:00<?, ?it/s]2026-10-22 09:30:49,003 - WARNING - autotuner.py:2271 - flashinfer.jit: [AutoTuner]: No tuned config covers mxfp8_gemm input_shapes=((128, 5120), (5120, 1792), (20480,), (286720,), (0,), (128, 1792), (41943040,)); falling back to runner=CuteDSLMxfp8GemmRunner tactic=-1.  This shape is outside the tuning bucket range -- expand tuning_buckets / max_num_tokens during the next tuning pass to avoid this perf cliff.
+(EngineCore pid=908) INFO 10-22 09:30:59 [model_runner.py:1069] Graph capturing finished in 11 secs, took 1.32 GiB
+---sidecar---
+prepared 40 layers in 46s; 68.4 GB allocated
+captured 560 graphs; 68.4 GB allocated
+serving
+---promotion---
+2026-10-22 04:34:29 CDT BOUND dsv41-vllm-1017-v25-sidecar-BOUND-REF after 547s (LANE DARK ends)
+2026-10-22 04:34:29 CDT FACTS: GPU KV cache size: 2,537,081 tokens, Maximum concurrency for 1,048,576 tokens per request: 2.42x | replay_line=1 | RTX 66213 MiB
+2026-10-22 04:34:33 CDT ===== PROMOTE v25 DONE (lane = dsv41-vllm-1017-v25-sidecar-BOUND-REF + dsv41-vllm-1017-v25-sidecar-BOUND-REF-rtx; rollback dsv41-vllm-1017-v23-pinexact-RETIRED-REF) =====

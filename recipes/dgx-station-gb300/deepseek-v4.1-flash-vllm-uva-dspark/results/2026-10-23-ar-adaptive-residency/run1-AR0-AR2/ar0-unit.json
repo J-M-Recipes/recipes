@@ -1,0 +1,99 @@
+{
+  "hook": "/w/pin_hot_experts_hook.py",
+  "ts": "2026-10-24T01:36:02",
+  "tests": {
+    "T1_split_count_equivalence": {
+      "ok": true,
+      "rows": [
+        {
+          "T": 1,
+          "same_as_base": true,
+          "same_as_torch": true,
+          "counts_ok": true,
+          "flag_off_ok": true
+        },
+        {
+          "T": 6,
+          "same_as_base": true,
+          "same_as_torch": true,
+          "counts_ok": true,
+          "flag_off_ok": true
+        },
+        {
+          "T": 24,
+          "same_as_base": true,
+          "same_as_torch": true,
+          "counts_ok": true,
+          "flag_off_ok": true
+        },
+        {
+          "T": 48,
+          "same_as_base": true,
+          "same_as_torch": true,
+          "counts_ok": true,
+          "flag_off_ok": true
+        },
+        {
+          "T": 96,
+          "same_as_base": true,
+          "same_as_torch": true,
+          "counts_ok": true,
+          "flag_off_ok": true
+        }
+      ]
+    },
+    "T2_graph_counts": {
+      "ok": true,
+      "counts_eq_50x": true,
+      "flag_off_frozen": true,
+      "flag_on_resumes": true,
+      "graph_outputs_ok": true
+    },
+    "T3_queue_policy": {
+      "ok": true,
+      "queued": 1,
+      "item": {
+        "layer": 0,
+        "in_id": 376,
+        "out_id": 150,
+        "hot_row": 7,
+        "cold_row": 3,
+        "ewma_in": 50.0,
+        "ewma_out": 1.0,
+        "ewma_coolest_hot": 1.0,
+        "step": 0
+      },
+      "busy_queued": 0,
+      "frozen_queued": 0
+    },
+    "T4_guarded_apply": {
+      "ok": true,
+      "applied": 1,
+      "rows_moved": true,
+      "map_flipped": true,
+      "mirror": true,
+      "eids": true,
+      "stale_refused": true,
+      "barrier_cap": true
+    },
+    "T5_drain_telemetry": {
+      "ok": true,
+      "telemetry": {
+        "ts": 1792805778.449,
+        "host_steps": 64,
+        "dsteps": 64,
+        "sel": 100,
+        "cold": 10,
+        "cold_share": 0.1,
+        "cum_cold_share": 0.1,
+        "swaps": 1,
+        "pending": 0,
+        "queued": 0,
+        "stale": 0,
+        "freeze": true,
+        "count_on": true
+      }
+    }
+  },
+  "pass": true
+}

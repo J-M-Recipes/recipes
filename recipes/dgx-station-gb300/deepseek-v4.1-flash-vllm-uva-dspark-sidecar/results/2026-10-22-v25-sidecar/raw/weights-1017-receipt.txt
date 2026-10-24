@@ -1,0 +1,24 @@
+# Checkpoint provenance — DeepSeek-V4.1-Flash-1017, revision 1bae0e1088993b9b82de08f59de5be5a34e42170
+#
+# Read on the Station, 2026-10-22, from the directory the lane bind-mounts at /model.
+# There is no upstream SHA256SUMS in the repo, so this is a size/identity receipt, not a per-shard hash
+# comparison: every shard was already byte-verified once on this platform by the GB300-only recipe
+# (../deepseek-v4.1-flash-vllm-uva-dspark, run 2026-09-10-v11-1M-k5-lpt6144 and successors), and the
+# lane mounts that same on-disk directory. The total byte count below matches that recipe's receipt exactly.
+
+path: /models/DeepSeek-V4.1-Flash-1017-1bae0e1088993b9b82de08f59de5be5a34e42170  (bind-mounted at /model)
+top_level_entries: 56
+safetensors_shards: 49          # model-00001-of-00048 … plus the Engram shard set
+total_bytes: 510311114235       # 510.3 GB; identical to the sibling recipe's recorded 510,311,114,235 B
+files: 253                       # recursive count, this revision
+
+sha256:
+8be45ce0476004a3f529fd896115a4a2e800a129ad2d3ec05b16050f52e21879  config.json
+74b0686a3d2891980d5e303251b075a3bccae2c2ff650747db2620a649b98fa8  model.safetensors.index.json
+
+notes:
+  - Nothing is re-quantized in this recipe: routed experts are MXFP4 with E8M0 block scales, attention and
+    Engram are FP8, exactly as shipped.
+  - The sidecar reads individual expert tensors straight out of these shards
+    (layers.{L}.ffn.experts.{e}.w1/w3/w2.{weight,scale}) — no conversion step, no second copy of the weights.
+  - The draft head (mtp.{0,1,2}.*) is in-checkpoint in the same revision.

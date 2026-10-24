@@ -1,0 +1,121 @@
+{
+ "result": "PASS",
+ "kv_tokens": 4400013,
+ "baseline": 2537081,
+ "gates": {
+  "capacity": [
+   "PASS",
+   "KV 4,400,013 tokens (baseline 2,537,081; bar >= 4,000,000 = +58%)"
+  ],
+  "flag": [
+   "PASS",
+   "explicit --kv-cache-memory visible in non-default args"
+  ],
+  "fit_1m": [
+   "PASS",
+   "needle http=200 pt=998363 ttft=35.45s recall=True finish=stop"
+  ],
+  "fit_after": [
+   "PASS",
+   "post probe 'OK'"
+  ],
+  "depth_decode": [
+   "PASS",
+   "1M-depth decode 256.1 tok/s ttft=2.48s"
+  ],
+  "decode_self": [
+   "PASS",
+   "C1 after/before 1M = 0.984 (bar >= 0.97)"
+  ],
+  "errors": [
+   "PASS",
+   "load err pre=0 post=0"
+  ]
+ },
+ "fit": {
+  "tag": "kv1",
+  "target": 1000000,
+  "maxlen": 1048576,
+  "ans_tokens": 256,
+  "t0": 1792713298.1683645,
+  "warm_http": 200,
+  "sizing": [
+   {
+    "words": 888000,
+    "tokens": 998363,
+    "err": null
+   }
+  ],
+  "seed": 326420625,
+  "needle": {
+   "t_send": 1792713300.3822672,
+   "t_end": 1792713336.1271539,
+   "http": 200,
+   "error": null,
+   "prompt_tokens": 998363,
+   "completion_tokens": 16,
+   "finish_reason": "stop",
+   "ttft_s": 35.45,
+   "wall_s": 35.74,
+   "prefill_tok_s": 28160.813850463874,
+   "recall": true,
+   "beta_found": true,
+   "alpha_found": true,
+   "content": "BETA=a30e52db ALPHA=77679f29",
+   "reasoning_has_markers": false,
+   "words": 888000
+  },
+  "post_probe": {
+   "http": 200,
+   "ok": true,
+   "content": "OK",
+   "error": null
+  },
+  "depth_decode": {
+   "http": 200,
+   "error": null,
+   "prompt_tokens": 998334,
+   "completion_tokens": 256,
+   "ttft_s": 2.48,
+   "decode_tok_s": 256.1,
+   "note": "same prefix as the needle prompt; TTFT << needle TTFT means the prefix cache hit"
+  },
+  "t1": 1792713340.153256
+ },
+ "load_pre": {
+  "phase": "kv1_c1_pre",
+  "conc": 1,
+  "duration_s": 150.0,
+  "window": [
+   1792713151.2063603,
+   1792713296.2063603
+  ],
+  "t_start": 1792713146.2063603,
+  "t_end": 1792713298.0967925,
+  "requests": 65,
+  "ok": 65,
+  "errors": 0,
+  "error_samples": [],
+  "completion_tokens": 33280,
+  "output_tok_s_total": 219.10530858089538,
+  "output_tok_s_window_completed": 218.9241379310345
+ },
+ "load_post": {
+  "phase": "kv1_c1_post",
+  "conc": 1,
+  "duration_s": 150.0,
+  "window": [
+   1792713345.20698,
+   1792713490.20698
+  ],
+  "t_start": 1792713340.20698,
+  "t_end": 1792713491.1162353,
+  "requests": 64,
+  "ok": 64,
+  "errors": 0,
+  "error_samples": [],
+  "completion_tokens": 32768,
+  "output_tok_s_total": 217.13711291067182,
+  "output_tok_s_window_completed": 215.39310344827587
+ }
+}

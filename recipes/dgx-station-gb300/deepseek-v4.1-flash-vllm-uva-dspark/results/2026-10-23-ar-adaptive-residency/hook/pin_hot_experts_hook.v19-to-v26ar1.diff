@@ -1,0 +1,117 @@
+--- hook-v26ar/orig/pin_hot_experts_hook.py	2026-10-23 20:22:30
++++ hook-v26ar1/pin_hot_experts_hook.py	2026-10-23 20:50:23
+@@ -7,6 +7,10 @@
+ PIN_MODE=adaptive — split + cheap id snapshot + EWMA slow row swaps.
+ PIN_COUNTER=d1 (default) — per-layer snap[L,:T].copy_(ids), no cursor.
+ PIN_COUNTER=ring — legacy E4 index_copy_ ring (9.6% C1, do not serve).
++PIN_COUNTER=atomic — v26ar: one masked atomic_add per routed lane inside the
++                    split kernel (no extra graph nodes; E1 GB300: 0.20% of a
++                    14.6 ms C1 step). Side-thread drain + guarded swaps.
++                    Runtime control via PIN_CTRL json (count/freeze/budgets).
+ 
+ Graph-safe on the hot path: no allocation / .item() / host sync inside a
+ CUDA-graph body. Count dumps are eager-only. Adaptive D1 writes are
+@@ -73,6 +77,16 @@
+ if COUNTER == "d0":
+     COUNTER = "d1"
+ N_MOE_LAYERS = 40
++# v26ar: PIN_COUNTER=atomic -- one masked tl.atomic_add per routed lane inside
++# the split kernel we already launch every MoE layer (no extra CUDA-graph
++# nodes; E4/E4b failed on node count, not bandwidth). A device flag gates it so
++# counting can be toggled at runtime for a same-boot A/B.
++COUNT_TMAX = int(os.environ.get("PIN_COUNT_TMAX", str(RING_TMAX)))
++SWAPS_PER_BARRIER = int(os.environ.get("PIN_SWAPS_PER_BARRIER", "8"))
++CTRL_PATH = os.environ.get("PIN_CTRL", "")
++TELEMETRY = os.environ.get("PIN_TELEMETRY", "")
++_cnt = None  # int32 [N_MOE_LAYERS, E] cumulative routed-lane counts (device)
++_cnt_on = None  # int32 [1] device flag, 1 = count
+ 
+ _LOG = lambda m: sys.stderr.write(f"PIN_HOT {m}\n")
+ 
+@@ -501,13 +515,40 @@
+         tl.store(hot_ptr + offs, tl.where(is_hot, rm, neg1), mask=m)
+         tl.store(cold_ptr + offs, tl.where(is_cold, -rm - 1, neg1), mask=m)
+ 
+-    def launch(ids, row_map):
++    @triton.jit
++    def _skc(ids_ptr, rm_ptr, hot_ptr, cold_ptr, cnt_ptr, flag_ptr, N,
++             BLOCK: tl.constexpr):
++        # Identical outputs to _sk, plus one masked RMW per valid lane into
++        # this layer's [E] count row when the device flag is set.
++        pid = tl.program_id(0)
++        offs = pid * BLOCK + tl.arange(0, BLOCK)
++        m = offs < N
++        i = tl.load(ids_ptr + offs, mask=m, other=-1)
++        valid = i >= 0
++        ic = tl.where(valid, i, 0)
++        rm = tl.load(rm_ptr + ic, mask=m, other=0)
++        is_hot = valid & (rm >= 0)
++        is_cold = valid & (rm < 0)
++        neg1 = tl.full([BLOCK], -1, tl.int32)
++        tl.store(hot_ptr + offs, tl.where(is_hot, rm, neg1), mask=m)
++        tl.store(cold_ptr + offs, tl.where(is_cold, -rm - 1, neg1), mask=m)
++        on = tl.load(flag_ptr)
++        # v26ar.1: relaxed (fence-free) reduction. The counts are read
++        # approximately by a side thread; no ordering is needed.
++        tl.atomic_add(cnt_ptr + ic, tl.full([BLOCK], 1, tl.int32),
++                      mask=m & valid & (on != 0), sem="relaxed")
++
++    def launch(ids, row_map, cnt_row=None):
+         ids_c = ids.contiguous()
+         n = ids_c.numel()
+         hot = torch.empty_like(ids_c)
+         cold = torch.empty_like(ids_c)
+         BLOCK = 1024
+-        _sk[(triton.cdiv(n, BLOCK),)](ids_c, row_map, hot, cold, n, BLOCK=BLOCK)
++        grid = (triton.cdiv(n, BLOCK),)
++        if cnt_row is not None and _cnt_on is not None:
++            _skc[grid](ids_c, row_map, hot, cold, cnt_row, _cnt_on, n, BLOCK=BLOCK)
++        else:
++            _sk[grid](ids_c, row_map, hot, cold, n, BLOCK=BLOCK)
+         return hot, cold
+ 
+     _split_kernel = launch
+@@ -527,11 +568,12 @@
+     return hot_ids, cold_ids
+ 
+ 
+-def split_ids(ids: torch.Tensor, row_map: torch.Tensor):
++def split_ids(ids: torch.Tensor, row_map: torch.Tensor, cnt_row=None):
+     """Graph-safe remap. Returns hot_ids, cold_ids (both [T,K] int32, -1 for skip).
+-    v19: one Triton kernel (PIN_SPLIT_FUSED=1, default) instead of six torch ops."""
++    v19: one Triton kernel (PIN_SPLIT_FUSED=1, default) instead of six torch ops.
++    v26ar: optional cnt_row ([E] int32) -> same kernel also counts routed lanes."""
+     if SPLIT_FUSED and ids.dtype == torch.int32 and row_map.dtype == torch.int32:
+-        return _get_split()(ids, row_map)
++        return _get_split()(ids, row_map, cnt_row)
+     return split_ids_torch(ids, row_map)
+ 
+ 
+@@ -754,7 +796,10 @@
+     ids = ids.to(dtype=torch.int32)
+     T = ids.shape[0]
+     hidden = output.shape[-1]
+-    hot_ids, cold_ids = split_ids(ids, st.row_map)
++    cnt_row = None
++    if _cnt is not None and T <= COUNT_TMAX and 0 <= st.idx < N_MOE_LAYERS:
++        cnt_row = _cnt[st.idx]
++    hot_ids, cold_ids = split_ids(ids, st.row_map, cnt_row)
+ 
+     def _maybe_slice(t, n):
+         if t is None:
+@@ -1216,6 +1261,15 @@
+         f"host_avail={mem_available_bytes()/1024**3:.2f}GiB "
+         f"(expect ~206.6 / ~62.4)"
+     )
++    global _cnt, _cnt_on
++    if COUNTER == "atomic" and _cnt is None and states:
++        _dev = states[0].hot["w1"].device
++        _cnt = torch.zeros((N_MOE_LAYERS, E), dtype=torch.int32, device=_dev)
++        _cnt_on = torch.ones(1, dtype=torch.int32, device=_dev)
++        _LOG(
++            f"atomic counter ready layers={N_MOE_LAYERS} E={E} "
++            f"bytes={_cnt.numel() * 4} count_tmax={COUNT_TMAX} flag=1"
++        )
+     try:
+         dev = states[0].hot["w1"].device
+         T = 1

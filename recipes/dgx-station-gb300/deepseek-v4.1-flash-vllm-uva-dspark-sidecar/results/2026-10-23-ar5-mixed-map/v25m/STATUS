@@ -1,0 +1,26 @@
+2026-10-23 22:54:08 CDT AR5 start
+2026-10-23 22:55:09 CDT stopped (kept) dsv41-vllm-1017-v25-sidecar-BOUND-REF pair
+sidecar dsv41-vllm-1017-v25m-MIXMAP-rtx starting on RTX ${RTX_UUID} rowmap=rowmap-mixed-ar-v1.json; waiting for 'serving' (Ronan: 40 layers in 45 s, 560 graphs, ~76 GB at 99 cold)
+prepared 40 layers in 39s; 68.4 GB allocated
+captured 560 graphs; 68.4 GB allocated
+serving
+-rw-r--r-- 1 root root 127541248 Oct 23 22:56 /dev/shm/vllm_peer_tier2
+66213 MiB, 92.51 W
+2026-10-23 22:56:08 CDT sidecar serving
+launched dsv41-vllm-1017-v25m-MIXMAP (peer v2, rowmap=rowmap-mixed-ar-v1.json seqs=32 util=0.97 maxlen=1048576 overlay=1 PEER_CHECK=0 COLD_TRT=0) log $HOME/dsv41/m3/logs/dsv41-vllm-1017-v25m-MIXMAP.log
+2026-10-23 23:03:45 CDT bound after 453 s | MEGA_PEER rowmap /w/rowmap-mixed-ar-v1.json: 40 layers | GPU KV cache size: 4,400,013 tokens, Maximum concurrency for 1,048,576 tokens per request: 4.20x
+prepared 40 layers in 39s; 68.4 GB allocated
+SMOKE tool: ['terminal']
+2026-10-23 23:03:46 CDT held-out mixed C1
+2026-10-23 23:06:48 CDT   {"tag": "v25m-heldout-c1", "concurrency": 1, "n": 101, "errors": 0, "agg_tok_s_all": 220.56, "agg_tok_s_post60": 221.12, "per_req": {"jpde": {"median_all": 207.42, "median_post60": 206.655, "n_post60": 34}, "agent": {"median_all": 246.51, "median_post60": 246.42, "n_post60": 33}}}
+2026-10-23 23:06:48 CDT held-out mixed C4
+2026-10-23 23:09:49 CDT   {"tag": "v25m-heldout-c4", "concurrency": 4, "n": 257, "errors": 0, "agg_tok_s_all": 555.03, "agg_tok_s_post60": 558.51, "per_req": {"jpde": {"median_all": 126.89500000000001, "median_post60": 127.32, "n_post60": 84}, "agent": {"median_all": 161.51, "median_post60": 160.31, "n_post60": 85}}}
+2026-10-23 23:09:49 CDT in-sample mixed C1
+2026-10-23 23:12:49 CDT   {"tag": "v25m-c1", "concurrency": 1, "n": 99, "errors": 0, "agg_tok_s_all": 219.95, "agg_tok_s_post60": 219.93, "per_req": {"jpde": {"median_all": 206.05, "median_post60": 204.59, "n_post60": 33}, "agent": {"median_all": 243.59, "median_post60": 247.025, "n_post60": 32}}}
+2026-10-23 23:12:49 CDT in-sample mixed C4
+2026-10-23 23:15:51 CDT   {"tag": "v25m-c4", "concurrency": 4, "n": 256, "errors": 0, "agg_tok_s_all": 563.54, "agg_tok_s_post60": 565.28, "per_req": {"jpde": {"median_all": 129.36, "median_post60": 129.325, "n_post60": 84}, "agent": {"median_all": 162.51, "median_post60": 162.23, "n_post60": 84}}}
+2026-10-23 23:15:51 CDT shift protocol + stall sampling
+2026-10-23 23:24:53 CDT   {"jpde_1": {"first": 208.16, "last": 216.62, "n": 92}, "agent": {"first": 287.13, "last": 246.56, "n": 110}, "jpde_2": {"first": 220.0, "last": 205.65, "n": 92}}
+2026-10-23 23:24:53 CDT parity capture
+2026-10-23 23:25:25 CDT PARITY 15 / 50 ['agent-prose-1', 'agent-structured-1', 'agent-structured-2', 'agent-code-1', 'agent-code-2', 'agent-tool-1', 't5-prose-7', 't5-prose-12']
+2026-10-23 23:25:25 CDT AR5 done; dsv41-vllm-1017-v25m-MIXMAP serving on :30006 (no watchdog); dsv41-vllm-1017-v25-sidecar-BOUND-REF pair stopped-and-kept

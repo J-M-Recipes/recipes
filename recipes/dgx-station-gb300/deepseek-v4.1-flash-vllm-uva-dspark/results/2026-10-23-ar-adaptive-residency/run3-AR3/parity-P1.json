@@ -1,0 +1,755 @@
+{
+ "tag": "P1",
+ "ts": "2026-10-23T21:47:52",
+ "n": 50,
+ "seed": 42,
+ "max_tokens": 256,
+ "rows": [
+  {
+   "completion_tokens": 199,
+   "s": 1.162,
+   "finish": "stop",
+   "content": "Speculative decoding works by having a small, fast \"draft\" model guess several upcoming tokens, which the big model then checks in a single pass\u2014so speed depends on how often the draft guesses right. Counting is a task where the next token is highly predictable (after \"1, 2, 3,\" the draft almost always nails \"4\"), so the draft model's guesses get accepted in long runs and you skip most of the big model's work. Prose is the opposite: at nearly every word there are many plausible continuations, the draft model's specific guess often diverges from what the big model would have chosen, and each mismatch forces a rejection and a re-run from that point\u2014so the overhead of drafting and verifying buys you little, and the pipeline spends its time checking guesses that get thrown away. In short, speculative decoding pays off in proportion to how guessable the text is, and free-form writing is about as unguessable as it gets.",
+   "tool_calls": [],
+   "tool_norm": [],
+   "id": "agent-prose-1",
+   "group": "agent",
+   "prompt": "In one paragraph, explain to a smart non-engineer why a model that is fast at counting can be slow at writing prose when speculative decoding is on.",
+   "max_tokens": 256,
+   "seed": 42
+  },
+  {
+   "completion_tokens": 108,
+   "s": 0.583,
+   "finish": "stop",
+   "content": "I'll research both mechanisms to ground the comparison, then compute the numbers.\n\n",
+   "tool_calls": [],
+   "tool_norm": [],
+   "id": "agent-structured-1",
+   "group": "agent",
+   "prompt": "Compare vLLM UVA expert offload vs SGLang OffloaderV2 whole-layer copy for a 384-expert top-6 MoE. Output a markdown table with columns: approach, bytes moved per token, bottleneck, expected tok/s on a ~330 GB/s link. Then one sentence of verdict.",
+   "max_tokens": 256,
+   "seed": 42
+  },
+  {
+   "completion_tokens": 109,
+   "s": 0.707,
+   "finish": "stop",
+   "content": "- weights load: complete \u2014 14.2 GB safetensors mapped in 38.4 s\n- KV cache: allocated \u2014 21.7 GiB, 1,024 blocks, 0.92 GPU mem util\n- autotune: finished \u2014 47 kernel configs, 12.1 s\n- graph capture: done \u2014 35 CUDA graphs, 2.8 s\n- API bind: listening \u2014 0.0.0.0:8000, 3 workers ready",
+   "tool_calls": [],
+   "tool_norm": [],
+   "id": "agent-structured-2",
+   "group": "agent",
+   "prompt": "Status report format: 5 bullet points, each '<component>: <state> \u2014 <one metric>'. Components: weights load, KV cache, autotune, graph capture, API bind. Invent plausible values for a vLLM boot.",
+   "max_tokens": 256,
+   "seed": 42
+  },
+  {
+   "completion_tokens": 215,
+   "s": 1.308,
+   "finish": "stop",
+   "content": "```python\ndef knee(rows):\n    \"\"\"Return the concurrency where marginal gain per added stream first drops below 5 tok/s.\n\n    rows: list of (conc, agg_tps) sorted by increasing conc.\n    Returns the conc value at the first step whose (delta_tps / delta_conc) < 5,\n    or None if no such step exists.\n    \"\"\"\n    for (c0, t0), (c1, t1) in zip(rows, rows[1:]):\n        if c1 > c0 and (t1 - t0) / (c1 - c0) < 5:\n            return c1\n    return None\n\n# Example:\n# rows = [(1, 100), (2, 190), (4, 350), (8, 500)]\n# knee(rows)  # -> 8  (marginal gain 150/4 = 37.5, then 150/4 = 37.5... adjust data as needed)\n```",
+   "tool_calls": [],
+   "tool_norm": [],
+   "id": "agent-code-1",
+   "group": "agent",
+   "prompt": "Write a Python function `knee(rows)` that takes [(conc, agg_tps)] and returns the concurrency where marginal gain per added stream first drops below 5 tok/s. Include a docstring and a 3-line example. Code only.",
+   "max_tokens": 256,
+   "seed": 42
+  },
+  {
+   "completion_tokens": 157,
+   "s": 0.803,
+   "finish": "stop",
+   "content": "```bash\n#!/usr/bin/env bash\nset -euo pipefail\n\n: \"${SRC:?SRC is not set}\"\n\nmissing=0\nfor i in $(seq -w 1 48); do\n  f=\"model-000${i}-of-00048.safetensors\"\n  if [[ ! -e \"$SRC/$f\" ]]; then\n    echo \"MISSING: $f\"\n    missing=$((missing + 1))\n  fi\ndone\n\nif (( missing == 0 )); then\n  echo \"All 48 shards present in $SRC\"\nelse\n  echo \"$missing shard(s) missing in $SRC\" >&2\n  exit 1\nfi\n```",
+   "tool_calls": [],
+   "tool_norm": [],
+   "id": "agent-code-2",
+   "group": "agent",
+   "prompt": "Write a bash script that loops over shards model-00001..00048-of-00048.safetensors, checks each exists in $SRC, and prints missing ones. Code only.",
+   "max_tokens": 256,
+   "seed": 42
+  },
+  {
+   "completion_tokens": 75,
+   "s": 0.408,
+   "finish": "stop",
+   "content": "```\ndocker stop dsv41-vllm-v7\ndocker rename dsv41-vllm-v7 dsv41-vllm-v7-old\nsudo sh -c 'sync; echo 3 > /proc/sys/vm/drop_caches'\nOFFGB=70 SEQS=16 ./launch-dsv41-vllm.sh\n```",
+   "tool_calls": [],
+   "tool_norm": [],
+   "id": "agent-shell-1",
+   "group": "agent",
+   "prompt": "Give the exact sequence of shell commands to: stop docker container dsv41-vllm-v7, rename it with suffix -old, drop page caches with sudo, and relaunch via launch-dsv41-vllm.sh with OFFGB=70 SEQS=16. Commands only, one per line.",
+   "max_tokens": 256,
+   "seed": 42
+  },
+  {
+   "completion_tokens": 72,
+   "s": 0.48,
+   "finish": "tool_calls",
+   "content": "I'll check both. First, let me see what's available locally.\n\n",
+   "tool_calls": [
+    {
+     "id": "chatcmpl-tool-998454efb4ae70e3",
+     "type": "function",
+     "function": {
+      "name": "terminal",
+      "arguments": "{\"command\": \"which docker ssh 2>&1; echo \\\"---\\\"; docker ps 2>&1 | head -5\"}"
+     }
+    }
+   ],
+   "tool_norm": [
+    {
+     "name": "terminal",
+     "arguments": "{\"command\": \"which docker ssh 2>&1; echo \\\"---\\\"; docker ps 2>&1 | head -5\"}"
+    }
+   ],
+   "id": "agent-tool-1",
+   "group": "agent",
+   "prompt": "List the docker containers on host station.lan and check free disk on /. Use tools.",
+   "max_tokens": 256,
+   "seed": 42
+  },
+  {
+   "completion_tokens": 54,
+   "s": 0.253,
+   "finish": "tool_calls",
+   "content": "",
+   "tool_calls": [
+    {
+     "id": "chatcmpl-tool-98e64eb591575b83",
+     "type": "function",
+     "function": {
+      "name": "read_file",
+      "arguments": "{\"path\": \"$HOME/dsv41/launch-dsv41-vllm.sh\"}"
+     }
+    }
+   ],
+   "tool_norm": [
+    {
+     "name": "read_file",
+     "arguments": "{\"path\": \"$HOME/dsv41/launch-dsv41-vllm.sh\"}"
+    }
+   ],
+   "id": "agent-tool-2",
+   "group": "agent",
+   "prompt": "Read $HOME/dsv41/launch-dsv41-vllm.sh then write a copy to /tmp/l2.sh with port 30007. Use tools; call read_file first.",
+   "max_tokens": 256,
+   "seed": 42
+  },
+  {
+   "completion_tokens": 256,
+   "s": 1.834,
+   "finish": "length",
+   "content": "The number 7 has held a remarkable grip on human imagination across cultures and millennia, appearing so persistently in myth, religion, and folklore that scholars have coined the term \"septaphilia\" to describe our collective fondness for it. Its cultural resonance runs deep: the seven days of the week trace back to ancient Babylonian astronomy and its seven visible celestial bodies, the seven classical planets of antiquity shaped astrology and cosmology for centuries, and the number recurs throughout scripture and legend\u2014from the seven days of creation and the seven plagues of Egypt to the seven hills of Rome, the seven wonders of the ancient world, and the seven heavens of Islamic and Jewish tradition. Psychologists have offered explanations ranging from the limits of human working memory (often cited as seven plus or minus two items) to the number's position as the largest single-digit prime and its resistance to neat division, which may lend it an air of mystery. In mathematics, 7 is a Mersenne prime, a happy number, and the basis of the heptagon, while in everyday use it appears in the seven-note musical scale, the seven colors of the rainbow as Newton codified them, the seven chakras of Hindu tradition, and countless idioms such as \"seventh heaven,\" \"l",
+   "tool_calls": [],
+   "tool_norm": [],
+   "id": "t5-prose-7",
+   "group": "t5_prose",
+   "prompt": "Write a detailed paragraph about the number 7, its history and uses. No lists.",
+   "max_tokens": 256,
+   "seed": 42
+  },
+  {
+   "completion_tokens": 256,
+   "s": 1.722,
+   "finish": "length",
+   "content": "The number 12 has held a privileged place in human thought for millennia, largely because its remarkable divisibility\u2014by 2, 3, 4, and 6\u2014made it uniquely practical for counting, measuring, and dividing goods before the age of decimal arithmetic. Its influence is visible in the duodecimal and sexagesimal systems of ancient Mesopotamia, where Babylonian astronomers divided the day into twelve double-hours and the circle into 360 degrees, a scheme that survives in our 24-hour clock and 60-minute hour. The number's cultural reach is equally striking: twelve months in a year, twelve signs of the zodiac, twelve inches to a foot, twelve pence to a shilling in pre-decimal British currency, and twelve jurors in the English common-law tradition. Religious and mythological traditions reinforced its prestige, from the twelve tribes of Israel and the twelve apostles to the twelve Olympian gods of Greece and the twelve labors of Hercules, while the Chinese zodiac cycles through twelve animal years. In commerce, the dozen and the gross (twelve dozen) became standard units for selling eggs, bread, and other goods, and the number persists in everyday language through terms like \"a baker's dozen\" and \"the twelfth hour.\" Even in modern contexts, twelve retains",
+   "tool_calls": [],
+   "tool_norm": [],
+   "id": "t5-prose-12",
+   "group": "t5_prose",
+   "prompt": "Write a detailed paragraph about the number 12, its history and uses. No lists.",
+   "max_tokens": 256,
+   "seed": 42
+  },
+  {
+   "completion_tokens": 256,
+   "s": 1.903,
+   "finish": "length",
+   "content": "The number 42 carries a surprisingly rich cultural and mathematical life. In mathematics it is the fifth pronic number (6 \u00d7 7), a practical number, and famously the answer to the \"sum of three cubes\" problem\u2014after decades of searching, mathematicians in 2019 finally found integers x, y, and z such that x\u00b3 + y\u00b3 + z\u00b3 = 42, a result that required enormous computation. Its cultural fame stems chiefly from Douglas Adams's 1979 novel *The Hitchhiker's Guide to the Galaxy*, in which a supercomputer, after seven and a half million years of calculation, declares 42 to be \"the Answer to the Ultimate Question of Life, the Universe, and Everything\"\u2014a joke Adams later said was chosen simply because it was an ordinary, unremarkable number that would undercut any grand significance. Beyond fiction, 42 appears throughout history and daily life: it was the \"number of the beast\" in some early biblical manuscripts (a variant of 666), it is the number of laws in the Code of Hammurabi's surviving tablets, the number of generations in Matthew's genealogy of Jesus, the number of dots on a pair of dice, and the number of gallons in a standard oil barrel. It",
+   "tool_calls": [],
+   "tool_norm": [],
+   "id": "t5-prose-42",
+   "group": "t5_prose",
+   "prompt": "Write a detailed paragraph about the number 42, its history and uses. No lists.",
+   "max_tokens": 256,
+   "seed": 42
+  },
+  {
+   "completion_tokens": 256,
+   "s": 2.022,
+   "finish": "length",
+   "content": "The number 101 carries a surprising amount of cultural and practical weight for such a modest figure. Mathematically it is the 26th prime, a palindromic prime in base ten, and a Chen prime, but its fame rests more on its role as shorthand for introductory knowledge: \"101\" courses, from Psychology 101 to Economics 101, have signaled the foundational level of a subject in American universities since at least the early twentieth century, a convention that spread into popular usage as a metaphor for basic literacy in anything from cooking to car repair. The number also has a long history in computing and telecommunications, where it appears in binary as 1100101, in the famous HTTP status code 101 (Switching Protocols), and in the room number 101 of George Orwell's Nineteen Eighty-Four, the dreaded torture chamber that gave the phrase \"Room 101\" its enduring association with one's worst fear. In popular culture it surfaces in the title of the Depeche Mode album \"101,\" the highway designation U.S. Route 101 along the Pacific coast, and the Dalmatian count in Disney's animated classic, while in everyday life it serves as a common test number, a shorthand for \"basic\" in branding, and a recurring motif in numerology",
+   "tool_calls": [],
+   "tool_norm": [],
+   "id": "t5-prose-101",
+   "group": "t5_prose",
+   "prompt": "Write a detailed paragraph about the number 101, its history and uses. No lists.",
+   "max_tokens": 256,
+   "seed": 42
+  },
+  {
+   "completion_tokens": 256,
+   "s": 1.936,
+   "finish": "length",
+   "content": "256 is a power of two (2^8) whose significance runs from ancient mathematics to modern computing. In number theory it is a perfect square (16\u00b2) and a highly composite number with nine divisors, and it appears in classical contexts such as the 256-character limit of early ASCII-derived encodings and the traditional division of the Chinese I Ching into 64 hexagrams, each with six lines, yielding 2^6 = 64 and, when doubled, 2^8 = 256 possible binary states. Its most famous role, however, is in computing: because 8 bits form a byte, a single byte can represent 256 distinct values (0\u2013255), making 256 the fundamental modulus of digital storage, color channels (each RGB component ranging 0\u2013255), and countless data structures such as hash tables and lookup arrays sized to powers of two for fast bitmask operations. The number also carries cultural weight\u2014256 is the number of squares on a 16\u00d716 chessboard variant, appears in Buddhist enumerations of the 256 precepts of the monastic code, and has been adopted as a symbolic \"round number\" in gaming and software (e.g., the 256-level color palettes of early graphics hardware and the 256",
+   "tool_calls": [],
+   "tool_norm": [],
+   "id": "t5-prose-256",
+   "group": "t5_prose",
+   "prompt": "Write a detailed paragraph about the number 256, its history and uses. No lists.",
+   "max_tokens": 256,
+   "seed": 42
+  },
+  {
+   "completion_tokens": 256,
+   "s": 1.819,
+   "finish": "length",
+   "content": "The number 1024 is best known as a power of two\u2014specifically 2^10\u2014a property that has made it foundational to computing since the earliest days of binary arithmetic. Its significance traces to the binary number system, where each additional bit doubles the representable range, so ten bits yield exactly 1024 distinct values; this is why 1024 bytes were long treated as a \"kilobyte\" in computing tradition, even though the SI prefix \"kilo\" strictly means 1000, a discrepancy that led to the coining of the binary prefix \"kibi\" (KiB) in 1998 to reduce ambiguity. The number appears throughout digital systems: memory addresses, file sizes, screen resolutions such as 1024\u00d7768, and cryptographic key lengths are commonly expressed in multiples or powers of 1024, and the 1024-bit RSA key was a standard security benchmark for years. Beyond computing, 1024 has a modest presence in mathematics and culture\u2014it is a highly composite number with eleven divisors, and it surfaces in recreational puzzles and programming lore, such as the \"1024\" game where players combine tiles to reach the value. Its ubiquity reflects a deeper principle: because digital hardware is built on binary logic,",
+   "tool_calls": [],
+   "tool_norm": [],
+   "id": "t5-prose-1024",
+   "group": "t5_prose",
+   "prompt": "Write a detailed paragraph about the number 1024, its history and uses. No lists.",
+   "max_tokens": 256,
+   "seed": 42
+  },
+  {
+   "completion_tokens": 256,
+   "s": 1.659,
+   "finish": "length",
+   "content": "**The Quiet Power of Owning the Machine**\n\nThere is a particular kind of silence in a small studio at two in the morning, broken only by the hum of a fan. That hum belongs to a machine we own. It is not glamorous, not a rack of enterprise GPUs, just a modest box in the corner running our models locally. But that hum has come to mean something to me: it is the sound of independence.\n\nWhen we first started experimenting with generative tools, we rented inference by the token. It felt frictionless, almost magical. But every prompt carried a small, invisible tax\u2014not just on our budget, but on our curiosity. We hesitated before running a wild idea. We rationed experiments. The meter was always running, and creativity, it turns out, does not thrive on meters.\n\nOwning our inference hardware changed the texture of our work. The cost became fixed and predictable, a line item we could plan around rather than a variable that punished play. More importantly, it changed our psychology. We began to run the silly prompt, the redundant test, the version we were sure would fail. Failure became free. And free failure is the raw material of good work.\n\nThere are trade-offs, of course. Someone has to maintain the",
+   "tool_calls": [],
+   "tool_norm": [],
+   "id": "t5-prose-essay",
+   "group": "t5_prose",
+   "prompt": "Write a 300-word reflective essay on why small studios should own their inference hardware. No lists.",
+   "max_tokens": 256,
+   "seed": 42
+  },
+  {
+   "completion_tokens": 256,
+   "s": 1.594,
+   "finish": "length",
+   "content": "The air at first light is sharp enough to make you glad of a coat, and it carries the smell of woodsmoke and wet stone. The town is still half asleep; shutters are closed, and the only sound is the scrape of a broom on cobbles where an old man sweeps leaves from his doorstep. The streets climb in short, steep flights of steps, and between the houses you catch glimpses of the valley below, filled with a pale blue mist that the sun has not yet burned away.\n\nLate September has begun to touch the trees. Along the upper lanes the maples are turning, a few branches already a deep, glowing red, while the lindens hold their green a little longer, as if reluctant. The light comes slowly over the ridge, and when it does it is low and golden, striking the whitewashed walls and making the shadows long and cool. A cat stretches on a warm windowsill. Somewhere a church bell rings the hour, unhurried, and a woman sets out bread on a table by her door.\n\nThe path continues past the last of the houses and into the terraced gardens, where the vines are heavy and the air smells of earth and ripening fruit. Below, the town settles into its morning,",
+   "tool_calls": [],
+   "tool_norm": [],
+   "id": "t5-prose-walk",
+   "group": "t5_prose",
+   "prompt": "Describe, in flowing prose, a morning walk through a mountain town in late September.",
+   "max_tokens": 256,
+   "seed": 42
+  },
+  {
+   "completion_tokens": 146,
+   "s": 0.719,
+   "finish": "stop",
+   "content": "```python\nfrom typing import Sequence\n\ndef binary_search(xs: Sequence[int], target: int) -> int:\n    \"\"\"Return the insertion index for target in sorted sequence xs (bisect_left).\"\"\"\n    lo, hi = 0, len(xs)\n    while lo < hi:\n        mid = (lo + hi) // 2\n        if xs[mid] < target:\n            lo = mid + 1\n        else:\n            hi = mid\n    return lo\n\nassert binary_search([1, 3, 5, 7], 5) == 2\nassert binary_search([1, 3, 5, 7], 4) == 2\n```",
+   "tool_calls": [],
+   "tool_norm": [],
+   "id": "code-py-bsearch",
+   "group": "code",
+   "prompt": "Write a typed Python function binary_search(xs: Sequence[int], target: int) -> int that returns the insertion index. Include a short docstring and two assert examples. Code only.",
+   "max_tokens": 256,
+   "seed": 42
+  },
+  {
+   "completion_tokens": 225,
+   "s": 1.164,
+   "finish": "stop",
+   "content": "```python\nfrom collections import OrderedDict\n\nclass LRUCache:\n    def __init__(self, capacity: int):\n        self.capacity = capacity\n        self.cache = OrderedDict()\n\n    def get(self, key):\n        if key not in self.cache:\n            return -1\n        self.cache.move_to_end(key)\n        return self.cache[key]\n\n    def put(self, key, value) -> None:\n        if key in self.cache:\n            self.cache.move_to_end(key)\n        self.cache[key] = value\n        if len(self.cache) > self.capacity:\n            self.cache.popitem(last=False)\n```\n\n```python\ncache = LRUCache(2)\ncache.put(1, \"a\"); cache.put(2, \"b\")\nprint(cache.get(1))      # \"a\" (1 is now most recent)\ncache.put(3, \"c\")        # evicts 2\nprint(cache.get(2))      # -1\nprint(cache.get(3))      # \"c\"\n```",
+   "tool_calls": [],
+   "tool_norm": [],
+   "id": "code-py-lru",
+   "group": "code",
+   "prompt": "Implement an LRU cache in Python using OrderedDict with get/put O(1). Capacity is constructor arg. Code only, with a 6-line usage example.",
+   "max_tokens": 256,
+   "seed": 42
+  },
+  {
+   "completion_tokens": 217,
+   "s": 1.078,
+   "finish": "stop",
+   "content": "```rust\nfn parse_csv_line(line: &str) -> Result<Vec<String>, &'static str> {\n    let mut fields = Vec::new();\n    let mut current = String::new();\n    let mut in_quotes = false;\n    let mut chars = line.chars().peekable();\n\n    while let Some(c) = chars.next() {\n        if in_quotes {\n            if c == '\"' {\n                if chars.peek() == Some(&'\"') {\n                    chars.next();\n                    current.push('\"');\n                } else {\n                    in_quotes = false;\n                }\n            } else {\n                current.push(c);\n            }\n        } else if c == '\"' {\n            in_quotes = true;\n        } else if c == ',' {\n            fields.push(std::mem::take(&mut current));\n        } else {\n            current.push(c);\n        }\n    }\n\n    if in_quotes {\n        return Err(\"unterminated quote\");\n    }\n\n    fields.push(current);\n    Ok(fields)\n}\n```",
+   "tool_calls": [],
+   "tool_norm": [],
+   "id": "code-rs-csv",
+   "group": "code",
+   "prompt": "Write a Rust function parse_csv_line(line: &str) -> Result<Vec<String>, &'static str> that splits on commas, respects double quotes, and errors on unterminated quotes. Code only.",
+   "max_tokens": 256,
+   "seed": 42
+  },
+  {
+   "completion_tokens": 91,
+   "s": 0.582,
+   "finish": "stop",
+   "content": "```rust\nuse std::num::ParseIntError;\n\nfn triple(s: &str) -> Result<u64, ParseIntError> {\n    let n: u64 = s.parse()?;\n    Ok(n * 3)\n}\n\nfn main() {\n    match triple(\"not_a_number\") {\n        Ok(v) => println!(\"{}\", v),\n        Err(e) => println!(\"error: {}\", e),\n    }\n}\n```",
+   "tool_calls": [],
+   "tool_norm": [],
+   "id": "code-rs-result",
+   "group": "code",
+   "prompt": "Show a small Rust example: read a u64 from a string, multiply by 3, return Result<u64, ParseIntError> with the ? operator. Include a main that prints the error. Code only.",
+   "max_tokens": 256,
+   "seed": 42
+  },
+  {
+   "completion_tokens": 73,
+   "s": 0.477,
+   "finish": "stop",
+   "content": "```swift\nfunc fetchTitle(url: URL) async throws -> String {\n    let (data, _) = try await URLSession.shared.data(from: url)\n    guard let html = String(data: data, encoding: .utf8) else {\n        throw URLError(.cannotDecodeContentData)\n    }\n    return html\n}\n```",
+   "tool_calls": [],
+   "tool_norm": [],
+   "id": "code-swift-url",
+   "group": "code",
+   "prompt": "Write a Swift async function fetchTitle(url: URL) async throws -> String using URLSession.shared.data(from:) and UTF-8 decoding. Code only.",
+   "max_tokens": 256,
+   "seed": 42
+  },
+  {
+   "completion_tokens": 86,
+   "s": 0.491,
+   "finish": "stop",
+   "content": "```swift\nstruct Recipe: Codable {\n    let name: String\n    let tokPerSec: Double\n    let tags: [String]\n}\n\nfunc decodeRecipes(_ json: String) -> [Recipe]? {\n    guard let data = json.data(using: .utf8) else { return nil }\n    return try? JSONDecoder().decode([Recipe].self, from: data)\n}\n```",
+   "tool_calls": [],
+   "tool_norm": [],
+   "id": "code-swift-codable",
+   "group": "code",
+   "prompt": "Define a Swift Codable struct Recipe { name: String; tokPerSec: Double; tags: [String] } and a function that decodes a JSON string into [Recipe]. Code only.",
+   "max_tokens": 256,
+   "seed": 42
+  },
+  {
+   "completion_tokens": 61,
+   "s": 0.425,
+   "finish": "stop",
+   "content": "```sql\nSELECT dept, name, salary, rnk\nFROM (\n  SELECT dept, name, salary,\n         RANK() OVER (PARTITION BY dept ORDER BY salary DESC) AS rnk\n  FROM emp\n) t\nWHERE rnk <= 3;\n```",
+   "tool_calls": [],
+   "tool_norm": [],
+   "id": "code-sql-window",
+   "group": "code",
+   "prompt": "Write a PostgreSQL query that ranks employees by salary within each department using RANK() and returns dept, name, salary, rnk for rnk <= 3. Assume table emp(dept text, name text, salary numeric). SQL only.",
+   "max_tokens": 256,
+   "seed": 42
+  },
+  {
+   "completion_tokens": 90,
+   "s": 0.544,
+   "finish": "stop",
+   "content": "```sql\nWITH RECURSIVE org_tree AS (\n    SELECT id, name, 0 AS depth\n    FROM org\n    WHERE id = 1\n    UNION ALL\n    SELECT o.id, o.name, t.depth + 1\n    FROM org o\n    JOIN org_tree t ON o.parent_id = t.id\n)\nSELECT id, name, depth\nFROM org_tree\nORDER BY depth, id;\n```",
+   "tool_calls": [],
+   "tool_norm": [],
+   "id": "code-sql-cte",
+   "group": "code",
+   "prompt": "Write a recursive SQL CTE that expands an adjacency-list org chart table org(id int, parent_id int, name text) from root id=1 into id, name, depth. SQL only.",
+   "max_tokens": 256,
+   "seed": 42
+  },
+  {
+   "completion_tokens": 214,
+   "s": 1.025,
+   "finish": "stop",
+   "content": "```python\nimport argparse\nfrom dataclasses import dataclass\nfrom pathlib import Path\n\n\n@dataclass\nclass Args:\n    input: Path\n    limit: int\n\n\ndef parse_args() -> Args:\n    parser = argparse.ArgumentParser(description=\"Print the N longest lines of a file.\")\n    parser.add_argument(\"--input\", type=Path, required=True, help=\"Path to input file\")\n    parser.add_argument(\"--limit\", type=int, required=True, help=\"Number of longest lines to print\")\n    ns = parser.parse_args()\n    return Args(input=ns.input, limit=ns.limit)\n\n\ndef main() -> None:\n    args = parse_args()\n    with args.input.open(\"r\", encoding=\"utf-8\", errors=\"replace\") as f:\n        lines = f.read().splitlines()\n    longest = sorted(lines, key=len, reverse=True)[: args.limit]\n    for line in longest:\n        print(line)\n\n\nif __name__ == \"__main__\":\n    main()\n```",
+   "tool_calls": [],
+   "tool_norm": [],
+   "id": "code-py-cli",
+   "group": "code",
+   "prompt": "Write a Python argparse CLI that takes --input PATH and --limit N and prints the N longest lines. Use a dataclass for args. Code only.",
+   "max_tokens": 256,
+   "seed": 42
+  },
+  {
+   "completion_tokens": 173,
+   "s": 0.894,
+   "finish": "stop",
+   "content": "```rust\nuse axum::{routing::get, Json, Router};\nuse serde_json::{json, Value};\nuse std::time::{SystemTime, UNIX_EPOCH};\n\nasync fn health() -> Json<Value> {\n    let ts = SystemTime::now()\n        .duration_since(UNIX_EPOCH)\n        .unwrap()\n        .as_secs();\n    Json(json!({ \"ok\": true, \"ts\": ts }))\n}\n\n#[tokio::main]\nasync fn main() {\n    let app = Router::new().route(\"/health\", get(health));\n    let listener = tokio::net::TcpListener::bind(\"0.0.0.0:8080\").await.unwrap();\n    axum::serve(listener, app).await.unwrap();\n}\n```",
+   "tool_calls": [],
+   "tool_norm": [],
+   "id": "code-rs-http",
+   "group": "code",
+   "prompt": "Sketch a minimal Axum Rust handler GET /health that returns JSON {\"ok\": true, \"ts\": unix_secs}. Include the router bind on 0.0.0.0:8080. Code only.",
+   "max_tokens": 256,
+   "seed": 42
+  },
+  {
+   "completion_tokens": 149,
+   "s": 0.895,
+   "finish": "stop",
+   "content": "The freight train has a 1.5-hour head start (06:00 to 07:30), so it covers 48 \u00d7 1.5 = 72 miles before the passenger train departs. From that point, the passenger train closes the gap at the relative speed of 72 \u2212 48 = 24 mph, so it takes 72 \u00f7 24 = 3 hours to catch up. Therefore they meet at 07:30 + 3 hours = 10:30. The meeting point is 3 hours after the passenger train leaves, at 72 \u00d7 3 = 216 miles from Denver (equivalently, the freight train travels 48 \u00d7 4.5 = 216 miles).",
+   "tool_calls": [],
+   "tool_norm": [],
+   "id": "math-trains",
+   "group": "math",
+   "prompt": "A freight train leaves Denver at 06:00 at 48 mph. A passenger train leaves at 07:30 at 72 mph on the same track. In complete sentences, compute when and how far from Denver they meet. Show the algebra in prose.",
+   "max_tokens": 256,
+   "seed": 42
+  },
+  {
+   "completion_tokens": 256,
+   "s": 1.67,
+   "finish": "length",
+   "content": "Suppose, for the sake of contradiction, that sqrt(2) is rational. Then there exist integers p and q with q not equal to zero such that sqrt(2) = p/q, and we may assume the fraction p/q is in lowest terms, meaning that p and q have no common divisor greater than 1. Squaring both sides gives 2 = p^2/q^2, and multiplying through by q^2 yields p^2 = 2q^2. This equation shows that p^2 is even, since it equals twice the integer q^2. Because the square of an integer is even exactly when the integer itself is even, it follows that p is even, so p = 2k for some integer k. Substituting this into p^2 = 2q^2 gives 4k^2 = 2q^2, and dividing by 2 yields 2k^2 = q^2. Thus q^2 is even, and by the same reasoning q must be even. But now both p and q are even, so they share the common divisor 2, contradicting our assumption that p/q was in lowest terms. Therefore sqrt(2) cannot be rational; this is a proof by",
+   "tool_calls": [],
+   "tool_norm": [],
+   "id": "math-sqrt2",
+   "group": "math",
+   "prompt": "Give a complete prose proof that sqrt(2) is irrational. No bullet lists. End with the contradiction named explicitly.",
+   "max_tokens": 256,
+   "seed": 42
+  },
+  {
+   "completion_tokens": 55,
+   "s": 0.39,
+   "finish": "stop",
+   "content": "Compute total 4-person committees from 12: C(12,4)=495.\n\nSubtract committees with neither Alice nor Bob: choose 4 from the other 10: C(10,4)=210.\n\nValid = 495\u2212210=285.\n\n285",
+   "tool_calls": [],
+   "tool_norm": [],
+   "id": "math-committee",
+   "group": "math",
+   "prompt": "A club of 12 people chooses a 4-person committee that must include at least one of Alice or Bob. Compute the number of valid committees. Explain the counting in sentences, then give the integer.",
+   "max_tokens": 256,
+   "seed": 42
+  },
+  {
+   "completion_tokens": 150,
+   "s": 0.894,
+   "finish": "stop",
+   "content": "I'll compute this using Bayes' theorem.\n\nWith 99% sensitivity, 99% of diseased people test positive. With 95% specificity, 5% of healthy people test positive (false positives). Prevalence is 0.4%, so out of 100,000 people, 400 have the disease and 99,600 do not.\n\nTrue positives: 400 \u00d7 0.99 = 396. False positives: 99,600 \u00d7 0.05 = 4,980. Total positives: 396 + 4,980 = 5,376.\n\nSo P(disease|positive) = 396 / 5,376 \u2248 0.07366, which is **7.4%**.",
+   "tool_calls": [],
+   "tool_norm": [],
+   "id": "math-bayes",
+   "group": "math",
+   "prompt": "A test is 99% sensitive and 95% specific. Disease prevalence is 0.4%. In prose, compute P(disease|positive) and state the percentage rounded to one decimal place.",
+   "max_tokens": 256,
+   "seed": 42
+  },
+  {
+   "completion_tokens": 256,
+   "s": 1.373,
+   "finish": "length",
+   "content": "I'll solve \\(2x^2 - 7x - 15 = 0\\) by completing the square.\n\n**Step 1.** Divide every term by 2 so the leading coefficient becomes 1:\n\\[\nx^2 - \\frac{7}{2}x - \\frac{15}{2} = 0.\n\\]\n\n**Step 2.** Move the constant term to the right side:\n\\[\nx^2 - \\frac{7}{2}x = \\frac{15}{2}.\n\\]\n\n**Step 3.** Take half of the coefficient of \\(x\\), which is \\(-\\frac{7}{2}\\), giving \\(-\\frac{7}{4}\\), and square it to get \\(\\frac{49}{16}\\). Add this to both sides:\n\\[\nx^2 - \\frac{7}{2}x + \\frac{49}{16} = \\frac{15}{2} + \\frac{49}{16}.\n\\]\n\n**Step 4.** Write the right side with a common denominator of 16: \\(\\frac{15}{2} = \\frac{120}{16}\\), so\n\\[\n\\frac{120}{16} + \\frac{49}{16} = \\frac{169}{16}.\n\\]\n\n**Step ",
+   "tool_calls": [],
+   "tool_norm": [],
+   "id": "math-quadratic",
+   "group": "math",
+   "prompt": "Solve 2x^2 - 7x - 15 = 0 by completing the square, explaining each algebraic step in sentences. Give both roots as fractions.",
+   "max_tokens": 256,
+   "seed": 42
+  },
+  {
+   "completion_tokens": 256,
+   "s": 1.541,
+   "finish": "length",
+   "content": "The tangent length from an external point \\(P=(13,0)\\) to a circle of radius \\(r=5\\) centered at the origin is found from the right triangle formed by the center \\(O\\), the tangency point \\(T\\), and \\(P\\). Since \\(OT \\perp PT\\), we have \\(PT^2 = OP^2 - r^2 = 13^2 - 5^2 = 169-25=144\\), so the tangent length is \\(12\\).\n\nFor the tangency points, write \\(T=(x,y)\\) on the circle, so \\(x^2+y^2=25\\). The radius to \\(T\\) is perpendicular to the tangent line \\(PT\\), which gives \\((T-O)\\cdot(T-P)=0\\). Thus \\((x,y)\\cdot(x-13,y)=0\\), i.e. \\(x^2-13x+y^2=0\\). Using \\(x^2+y^2=25\\) gives \\(25-13x=0\\), so \\(x=\\frac{25}{13}\\). Then \\(y^2=25-\\frac{625}{169}=\\frac{4225-625}{169}=\\frac{3600}{169}\\), so \\(y=\\pm\\frac{60}{13}\\).\n\nTherefore the",
+   "tool_calls": [],
+   "tool_norm": [],
+   "id": "math-tangent",
+   "group": "math",
+   "prompt": "A circle of radius 5 is centered at the origin. From point (13,0) two tangents touch the circle. In prose, find the tangent length and the points of tangency.",
+   "max_tokens": 256,
+   "seed": 42
+  },
+  {
+   "completion_tokens": 66,
+   "s": 0.522,
+   "finish": "stop",
+   "content": "12378 = 4\u00b73054 + 126  \n3054 = 24\u00b7126 + 30  \n126 = 4\u00b730 + 6  \n30 = 5\u00b76 + 0  \n\nThe last nonzero remainder is 6, so gcd(12378, 3054) = **6**.",
+   "tool_calls": [],
+   "tool_norm": [],
+   "id": "math-gcd",
+   "group": "math",
+   "prompt": "Use the Euclidean algorithm in prose to compute gcd(12378, 3054). Show every remainder, then express the gcd as an integer.",
+   "max_tokens": 256,
+   "seed": 42
+  },
+  {
+   "completion_tokens": 222,
+   "s": 1.039,
+   "finish": "stop",
+   "content": "Let me reason through this carefully.\n\nA says \"B is a knave.\" If A is a knight, then B is a knave. If A is a knave, then his statement is false, so B is a knight.\n\nB says \"A and I are opposite types.\" This statement means exactly one of A, B is a knight.\n\nCase 1: Suppose A is a knight. Then A's statement is true, so B is a knave. Now check B's statement: A is a knight and B is a knave, so they are indeed opposite types \u2014 making B's statement true. But B is a knave and cannot tell the truth. Contradiction.\n\nCase 2: Suppose A is a knave. Then A's statement is false, so B is a knight. Now check B's statement: A is a knave and B is a knight, so they are opposite types \u2014 B's statement is true, which is consistent with B being a knight.\n\nSo the consistent assignment is: **A is a knave and B is a knight.**",
+   "tool_calls": [],
+   "tool_norm": [],
+   "id": "math-knights",
+   "group": "math",
+   "prompt": "On an island of knights (always truth) and knaves (always lie), A says 'B is a knave' and B says 'A and I are opposite types'. Determine each type. Reason in sentences.",
+   "max_tokens": 256,
+   "seed": 42
+  },
+  {
+   "completion_tokens": 212,
+   "s": 1.313,
+   "finish": "stop",
+   "content": "Let \\(x\\) be the distance from the wall to the base, and \\(y\\) the height of the top. The ladder length is fixed: \\(x^2+y^2=100\\).\n\nDifferentiate with respect to time: \\(2x\\dot x + 2y\\dot y = 0\\), so \\(\\dot y = -\\frac{x}{y}\\dot x\\).\n\nAt \\(x=6\\): \\(y=\\sqrt{100-36}=8\\). With \\(\\dot x=2\\):\n\n\\[\n\\dot y = -\\frac{6}{8}(2) = -\\frac{3}{2}\\ \\text{ft/s}.\n\\]\n\n**The top is falling at \\(1.5\\) ft/s.**\n\nIn prose: related rates means the variables are linked by a geometric constraint (here the Pythagorean relation), so their rates are linked too. Differentiating that constraint with respect to time converts the known rate of one quantity into the unknown rate of another; the negative sign indicates the height is decreasing as the base moves outward.",
+   "tool_calls": [],
+   "tool_norm": [],
+   "id": "math-related",
+   "group": "math",
+   "prompt": "A 10-ft ladder slides away from a wall: the base moves at 2 ft/s. When the base is 6 ft from the wall, how fast is the top falling? Explain related rates in prose and give the value.",
+   "max_tokens": 256,
+   "seed": 42
+  },
+  {
+   "completion_tokens": 125,
+   "s": 0.885,
+   "finish": "stop",
+   "content": "I'll compute this with the terminal.\n\n",
+   "tool_calls": [],
+   "tool_norm": [],
+   "id": "math-eigen",
+   "group": "math",
+   "prompt": "For matrix [[4, 1], [2, 3]], compute eigenvalues and one eigenvector per eigenvalue. Write the characteristic polynomial and the algebra in sentences.",
+   "max_tokens": 256,
+   "seed": 42
+  },
+  {
+   "completion_tokens": 256,
+   "s": 1.729,
+   "finish": "length",
+   "content": "El silencio de una biblioteca no es un vac\u00edo, sino una textura: una densidad hecha de p\u00e1ginas que se pasan, de respiraciones contenidas, de pasos que se amortiguan sobre la moqueta. Quien entra en ella no abandona el ruido del mundo para encontrar la nada, sino que cambia de r\u00e9gimen ac\u00fastico y, con \u00e9l, de r\u00e9gimen mental. Fuera, el pensamiento suele avanzar a empujones, interrumpido por notificaciones, conversaciones ajenas, el zumbido de una ciudad que exige respuestas inmediatas; dentro, la mente descubre que puede permitirse el lujo de la demora, de sostener una idea sin que otra la desplace antes de haber madurado. Ese silencio compartido, adem\u00e1s, no es soledad: es una forma de cortes\u00eda colectiva, un acuerdo t\u00e1cito seg\u00fan el cual nadie robar\u00e1 al otro su atenci\u00f3n. Y esa conciencia de estar rodeado de personas que tambi\u00e9n piensan en voz baja transforma la concentraci\u00f3n en algo casi f\u00edsico, como si el aire mismo estuviera dispuesto a sostener",
+   "tool_calls": [],
+   "tool_norm": [],
+   "id": "lang-es-essay",
+   "group": "non_english",
+   "prompt": "Escribe un ensayo breve y continuo (sin listas) sobre c\u00f3mo el silencio de una biblioteca cambia la forma de pensar. En espa\u00f1ol.",
+   "max_tokens": 256,
+   "seed": 42
+  },
+  {
+   "completion_tokens": 256,
+   "s": 1.478,
+   "finish": "length",
+   "content": "Im Atelier riecht es nach Messing und altem Holz, nach dem feinen \u00d6l, das nur in winzigen Tropfen aus einer Nadel f\u00e4llt. Das Licht kommt von einer Lampe, die tief \u00fcber den Werktisch gebeugt ist, und in ihrem Kegel liegt eine Welt, die kaum gr\u00f6\u00dfer ist als eine Handfl\u00e4che. Hier arbeitet der Uhrmacher, und wer ihm zusieht, begreift schnell, dass es nicht die gro\u00dfen Gesten sind, die dieses Handwerk ausmachen, sondern das Gegenteil: die beherrschte Ruhe, mit der ein Finger sich senkt, die Geduld, mit der ein Blick verharrt, bis das Zahnrad endlich sitzt.\n\nDas Werkzeug ist alt und vertraut. Die Pinzette, die Lupe im Auge, der kleine Schraubendreher, dessen Griff sich an die Hand geschmiegt hat wie ein Werkzeug, das \u00fcber Jahre hinweg ein St\u00fcck von seinem Besitzer annimmt. Nichts hier ist laut, nichts dr\u00e4ngt. Der Uhrmacher spricht wenig, und wenn er spricht, dann leise, als f\u00fcrchte er, ein zu",
+   "tool_calls": [],
+   "tool_norm": [],
+   "id": "lang-de-essay",
+   "group": "non_english",
+   "prompt": "Schreibe einen flie\u00dfenden Essay ohne Aufz\u00e4hlungen \u00fcber das Handwerk eines Uhrmachers in einem kleinen Atelier. Auf Deutsch.",
+   "max_tokens": 256,
+   "seed": 42
+  },
+  {
+   "completion_tokens": 256,
+   "s": 1.606,
+   "finish": "length",
+   "content": "\u51ac\u306e\u6d77\u8fba\u3067\u904e\u3054\u3059\u4e00\u65e5\u306b\u3064\u3044\u3066\u3001\u5c11\u3057\u7db4\u3063\u3066\u307f\u305f\u3044\u3068\u601d\u3044\u307e\u3059\u3002\n\n\u671d\u65e9\u304f\u306b\u5bb6\u3092\u51fa\u308b\u3068\u3001\u7a7a\u6c17\u306f\u523a\u3059\u3088\u3046\u306b\u51b7\u305f\u304f\u3001\u606f\u304c\u767d\u304f\u6fc1\u3063\u3066\u76ee\u306e\u524d\u3092\u6d41\u308c\u3066\u3044\u304d\u307e\u3057\u305f\u3002\u6d77\u3078\u5411\u304b\u3046\u9053\u306f\u4eba\u5f71\u3082\u307e\u3070\u3089\u3067\u3001\u9060\u304f\u306e\u6ce2\u306e\u97f3\u3060\u3051\u304c\u3057\u304d\u308a\u306b\u805e\u3053\u3048\u3066\u304d\u307e\u3059\u3002\u7802\u6d5c\u306b\u964d\u308a\u7acb\u3064\u3068\u3001\u8db3\u5143\u306e\u7802\u306f\u590f\u3068\u306f\u307e\u308b\u3067\u9055\u3046\u8868\u60c5\u3092\u3057\u3066\u3044\u3066\u3001\u51b7\u3048\u304d\u3063\u305f\u7c92\u306e\u3072\u3068\u3064\u3072\u3068\u3064\u304c\u56fa\u304f\u7de0\u307e\u308a\u3001\u8e0f\u3080\u305f\u3073\u306b\u4e7e\u3044\u305f\u97f3\u3092\u7acb\u3066\u308b\u306e\u3067\u3057\u305f\u3002\u6d77\u306f\u7070\u8272\u306b\u8fd1\u3044\u9752\u3092\u305f\u305f\u3048\u3001\u6c34\u5e73\u7dda\u306e\u3042\u305f\u308a\u306f\u971e\u3093\u3067\u3001\u7a7a\u3068\u306e\u5883\u76ee\u304c\u3069\u3053\u306b\u3042\u308b\u306e\u304b\u5b9a\u304b\u3067\u306f\u3042\u308a\u307e\u305b\u3093\u3002\u6c96\u304b\u3089\u5bc4\u305b\u308b\u6ce2\u306f\u52e2\u3044\u3053\u305d\u7a4f\u3084\u304b\u3067\u3059\u304c\u3001\u6253\u3061\u5bc4\u305b\u3066\u306f\u5f15\u3044\u3066\u3044\u304f\u305f\u3073\u306b\u3001\u3057\u3093\u3068\u9759\u304b\u306a\u97ff\u304d\u3092\u6b8b\u3057\u3066\u3044\u304d\u307e\u3059\u3002\n\n\u3057\u3070\u3089\u304f\u6b69\u3044\u3066\u3044\u308b\u3068\u3001\u4f53\u306e\u82af\u307e\u3067\u51b7\u3048\u3066\u3044\u304f\u306e\u304c\u5206\u304b\u308a\u307e\u3059\u3002\u305d\u308c\u3067\u3082\u3001\u51b7\u305f\u3055\u306b\u8eab\u3092\u7e2e\u3081\u3066\u3044\u308b\u3046\u3061\u306b\u3001\u304b\u3048\u3063\u3066\u611f\u899a\u304c\u7814\u304e",
+   "tool_calls": [],
+   "tool_norm": [],
+   "id": "lang-ja-essay",
+   "group": "non_english",
+   "prompt": "\u7b87\u6761\u66f8\u304d\u3092\u4f7f\u308f\u305a\u3001\u51ac\u306e\u6d77\u8fba\u3067\u904e\u3054\u3059\u4e00\u65e5\u306b\u3064\u3044\u3066\u4e01\u5be7\u306a\u65e5\u672c\u8a9e\u306e\u968f\u7b46\u3092\u66f8\u3044\u3066\u304f\u3060\u3055\u3044\u3002",
+   "max_tokens": 256,
+   "seed": 42
+  },
+  {
+   "completion_tokens": 256,
+   "s": 1.748,
+   "finish": "length",
+   "content": "\u6df1\u591c\u628a\u65e7\u6536\u97f3\u673a\u4ece\u67dc\u5e95\u62d6\u51fa\u6765\u65f6\uff0c\u5148\u6251\u4e0a\u6765\u7684\u662f\u4e00\u80a1\u9648\u5e74\u7684\u7070\u5473\uff0c\u6df7\u7740\u673a\u58f3\u91cc\u79ef\u4e45\u4e86\u7684\u677e\u9999\u548c\u710a\u9521\u7684\u9178\u6da9\uff0c\u50cf\u8c01\u5728\u6697\u5904\u8f7b\u8f7b\u5475\u4e86\u53e3\u6c14\u3002\u62e7\u5f00\u80cc\u677f\u7684\u87ba\u4e1d\uff0c\u91d1\u5c5e\u6469\u64e6\u7684\u7ec6\u54cd\u5728\u9759\u91cc\u683c\u5916\u6e05\u695a\uff0c\u4e00\u7c92\u7c92\u843d\u8fdb\u8033\u6735\u3002\u706f\u4e0b\u770b\u90a3\u7535\u8def\u677f\uff0c\u7535\u5bb9\u9f13\u7740\u809a\u5b50\uff0c\u710a\u70b9\u53d1\u4e4c\uff0c\u6211\u7528\u70d9\u94c1\u5c16\u53bb\u78b0\uff0c\u9521\u4e1d\u4e00\u5316\uff0c\u817e\u8d77\u4e00\u7f15\u767d\u70df\uff0c\u6c14\u5473\u7acb\u523b\u53d8\u5f97\u5c16\u9510\u800c\u6e29\u70ed\uff0c\u76f4\u5f80\u9f3b\u5b50\u91cc\u94bb\u3002\u65cb\u94ae\u8f6c\u8d77\u6765\u6da9\u6da9\u7684\uff0c\u6c99\u6c99\u5730\u54cd\uff0c\u50cf\u6709\u7ec6\u6c99\u5728\u9f7f\u8f6e\u95f4\u8d70\u3002\u901a\u7535\u90a3\u4e00\u4e0b\uff0c\u5587\u53ed\u5148\u662f\u4e00\u58f0\u95f7\u95f7\u7684\u201c\u5657\u201d\uff0c\u63a5\u7740\u662f\u7535\u6d41\u7684\u5636\u5636\u58f0\uff0c\u5ffd\u8fdc\u5ffd\u8fd1\uff0c\u50cf\u96e8\u843d\u5728\u94c1\u76ae\u68da\u4e0a\u3002\u6211\u6162\u6162\u8c03\u7740\u9891\u7387\uff0c\u6307\u9488\u5212\u8fc7\u523b\u5ea6\uff0c\u6742\u97f3\u91cc\u5ffd\u7136\u6d6e\u51fa\u534a\u53e5\u4eba\u58f0\uff0c\u53c8\u6c89\u4e0b\u53bb\uff0c\u518d\u62e7\uff0c\u4e00\u6bb5\u8001\u6b4c\u7684\u65cb\u5f8b\u65ad\u65ad\u7eed\u7eed\u5730\u5192\u51fa\u6765\uff0c\u5e26\u7740\u5e95\u566a\uff0c\u50cf\u4ece\u5f88\u6df1\u7684\u6c34\u5e95\u635e\u4e0a\u6765\u7684\u3002\u624b\u6307\u505c\u5728\u65cb\u94ae\u4e0a\u4e0d\u6562\u52a8\uff0c\u5c4b\u91cc\u9759\u5f97\u53ea\u5269\u90a3\u70b9\u6c99\u6c99\u7684\u54cd\uff0c\u548c\u70d9\u94c1\u4f59\u6e29\u91cc\u6563",
+   "tool_calls": [],
+   "tool_norm": [],
+   "id": "lang-zh-essay",
+   "group": "non_english",
+   "prompt": "\u7528\u8fde\u8d2f\u7684\u4e2d\u6587\u6563\u6587\uff08\u4e0d\u8981\u5217\u8868\uff09\u5199\u4e00\u6bb5\u5173\u4e8e\u6df1\u591c\u4fee\u7406\u65e7\u6536\u97f3\u673a\u7684\u6587\u5b57\uff0c\u6ce8\u91cd\u58f0\u97f3\u548c\u6c14\u5473\u3002",
+   "max_tokens": 256,
+   "seed": 42
+  },
+  {
+   "completion_tokens": 256,
+   "s": 1.635,
+   "finish": "length",
+   "content": "A travessia come\u00e7a antes do sol, quando o rio ainda \u00e9 uma superf\u00edcie escura e espessa que parece n\u00e3o ter fundo nem margem, apenas uma extens\u00e3o de sil\u00eancio que se confunde com o c\u00e9u baixo e carregado de n\u00e9voa. O barco range no cais de madeira, e o som curto e seco do remo ao bater na \u00e1gua \u00e9 a primeira coisa que rompe a quietude, um ru\u00eddo que se propaga e se desfaz logo adiante, engolido pela bruma. Quem embarca leva consigo o peso do sono mal dormido e a expectativa morna de quem sabe que a travessia \u00e9 sempre a mesma e nunca igual, porque o rio muda de humor a cada manh\u00e3 e o barqueiro conhece essa gram\u00e1tica sem precisar nome\u00e1-la. A \u00e1gua, ao redor do casco, abre-se em c\u00edrculos lentos que se alargam e desaparecem, e nesse movimento m\u00ednimo est\u00e1 toda a viagem, o avan\u00e7o teimoso de alguns metros por vez contra a corrente que puxa de lado e obriga o remo a corrigir a ro",
+   "tool_calls": [],
+   "tool_norm": [],
+   "id": "lang-pt-essay",
+   "group": "non_english",
+   "prompt": "Escreva um ensaio cont\u00ednuo em portugu\u00eas, sem listas, sobre uma travessia de barco no in\u00edcio da manh\u00e3 no rio.",
+   "max_tokens": 256,
+   "seed": 42
+  },
+  {
+   "completion_tokens": 256,
+   "s": 1.931,
+   "finish": "length",
+   "content": "\u0643\u0627\u0646\u062a \u0627\u0644\u0634\u0645\u0633 \u062a\u0645\u064a\u0644 \u0646\u062d\u0648 \u0627\u0644\u063a\u0631\u0648\u0628 \u0641\u062a\u064f\u0631\u0633\u0644 \u0623\u0634\u0639\u062a\u0647\u0627 \u0627\u0644\u0630\u0647\u0628\u064a\u0629 \u0627\u0644\u0645\u0627\u0626\u0644\u0629 \u0628\u064a\u0646 \u0627\u0644\u0623\u0642\u0648\u0627\u0633 \u0627\u0644\u062d\u062c\u0631\u064a\u0629 \u0644\u0644\u0633\u0648\u0642 \u0627\u0644\u0642\u062f\u064a\u0645\u060c \u0641\u062a\u0637\u0648\u0644 \u0627\u0644\u0638\u0644\u0627\u0644 \u0648\u062a\u062a\u0642\u0627\u0631\u0628 \u0627\u0644\u0623\u062c\u0633\u0627\u062f \u0641\u064a \u0627\u0644\u0623\u0632\u0642\u0629 \u0627\u0644\u0636\u064a\u0642\u0629. \u064a\u0639\u0644\u0648 \u0627\u0644\u0636\u062c\u064a\u062c \u0641\u064a\u0645\u062a\u0632\u062c \u0646\u062f\u0627\u0621 \u0627\u0644\u0628\u0627\u0639\u0629 \u0628\u0623\u0635\u062f\u0627\u0621 \u0627\u0644\u0645\u0637\u0627\u0631\u0642 \u0639\u0644\u0649 \u0627\u0644\u0646\u062d\u0627\u0633\u060c \u0648\u0635\u0631\u064a\u0631 \u0639\u062c\u0644\u0627\u062a \u0639\u0631\u0628\u0629 \u062a\u064f\u062f\u0641\u0639 \u0628\u064a\u0646 \u0627\u0644\u0623\u0643\u0634\u0627\u0643\u060c \u0648\u0647\u0645\u0633 \u0627\u0644\u0645\u062a\u0633\u0648\u0642\u064a\u0646 \u064a\u062a\u0641\u0627\u0648\u0636\u0648\u0646 \u0639\u0644\u0649 \u0627\u0644\u0623\u0633\u0639\u0627\u0631\u060c \u0648\u0636\u062d\u0643\u0627\u062a \u0623\u0637\u0641\u0627\u0644 \u064a\u062c\u0631\u0648\u0646 \u0628\u064a\u0646 \u0627\u0644\u0633\u0644\u0627\u0644\u060c \u0641\u0648\u0642 \u0646\u063a\u0645\u064d \u062e\u0627\u0641\u062a\u064d \u064a\u0646\u0628\u0639\u062b \u0645\u0646 \u0645\u0630\u064a\u0627\u0639 \u0642\u062f\u064a\u0645 \u0641\u064a \u062f\u0643\u0627\u0646 \u0627\u0644\u0639\u0637\u0651\u0627\u0631. \u0648\u062a\u062a\u0633\u0644\u0644 \u0625\u0644\u0649 \u0627\u0644\u0623\u0646\u0641 \u0631\u0648\u0627\u0626\u062d \u0645\u062a\u0634\u0627\u0628\u0643\u0629: \u0628\u062e\u0648\u0631 \u0627\u0644\u0635\u0646\u062f\u0644 \u0648\u0627\u0644\u0645\u0633\u0643 \u064a\u062a\u0635\u0627\u0639\u062f \u0645\u0646 \u0627\u0644\u0645\u0628\u0627\u062e\u0631\u060c \u0648\u0631\u0627\u0626\u062d\u0629 \u0627\u0644\u062e\u0628\u0632 \u0627\u0644\u0633\u0627\u062e\u0646 \u062a\u062e\u0631\u062c \u0645\u0646 \u0627\u0644\u0641\u0631\u0646 \u0627\u0644\u0645\u062c\u0627\u0648\u0631\u060c \u0648\u0639\u0637\u0631 \u0627\u0644\u0646\u0639\u0646\u0627\u0639 \u0648\u0627\u0644\u0632\u0639\u0641\u0631\u0627\u0646 \u0648\u0627\u0644\u0643\u0645\u0648\u0646 \u064a\u0645\u0644\u0623 \u0627\u0644\u0647\u0648\u0627\u0621\u060c \u0645\u0639 \u0631\u0637\u0648\u0628\u0629 \u0627\u0644\u0623\u0631\u0636 \u0627\u0644\u0645\u0628\u0644\u0644\u0629 \u0623\u0645\u0627\u0645 \u0628\u0627\u0626\u0639 \u0627\u0644\u062e\u0636\u0627\u0631\u060c \u0648\u0639\u0628\u0642 \u0627\u0644\u062c\u0644\u0648\u062f \u0627\u0644\u0645\u062f\u0628\u0648\u063a\u0629 \u064a\u0635\u0644 \u0645\u0646 \u0627\u0644\u062d\u0648\u0627\u0646\u064a\u062a \u0627\u0644\u0628\u0639\u064a\u062f\u0629. \u0648\u062d\u064a\u0646 \u064a\u0628\u062f\u0623 \u0627\u0644\u0645\u0624\u0630\u0646 \u064a\u0631\u0641\u0639",
+   "tool_calls": [],
+   "tool_norm": [],
+   "id": "lang-ar-essay",
+   "group": "non_english",
+   "prompt": "\u0627\u0643\u062a\u0628 \u0641\u0642\u0631\u0629 \u0633\u0631\u062f\u064a\u0629 \u0645\u062a\u0635\u0644\u0629 \u0628\u0627\u0644\u0639\u0631\u0628\u064a\u0629 \u0627\u0644\u0641\u0635\u062d\u0649 \u062f\u0648\u0646 \u0642\u0648\u0627\u0626\u0645 \u0639\u0646 \u0633\u0648\u0642 \u0642\u062f\u064a\u0645 \u0642\u0628\u064a\u0644 \u0627\u0644\u0645\u063a\u0631\u0628\u060c \u0645\u0639 \u0648\u0635\u0641 \u0627\u0644\u0623\u0635\u0648\u0627\u062a \u0648\u0627\u0644\u0631\u0648\u0627\u0626\u062d.",
+   "max_tokens": 256,
+   "seed": 42
+  },
+  {
+   "completion_tokens": 256,
+   "s": 1.412,
+   "finish": "length",
+   "content": "Copiar una capa MoE completa por token es m\u00e1s caro que un gather UVA por filas porque la copia materializa en memoria (y potencialmente en cach\u00e9) todos los par\u00e1metros de la capa \u2014todos los expertos, sus matrices de pesos y sesgos\u2014 para cada token, con un coste O(tama\u00f1o_total_de_la_capa) por token independientemente de cu\u00e1ntos expertos se activen, lo que multiplica el tr\u00e1fico de memoria y el ancho de banda por el n\u00famero de tokens y provoca un volumen de escritura/lectura proporcional al tama\u00f1o completo de la capa; en cambio, un gather UVA por filas solo accede a las filas concretas de los expertos seleccionados por el router (top-k), de modo que el coste es O(k \u00b7 tama\u00f1o_de_fila) por token, se limita a las filas efectivamente usadas, evita copiar expertos no activados y aprovecha el direccionamiento unificado (UVA) para leer directamente desde la memoria del dispositivo sin duplicar el tensor, reduciendo dr\u00e1sticamente bytes movidos, presi\u00f3n de cach\u00e9 y latencia frente a la",
+   "tool_calls": [],
+   "tool_norm": [],
+   "id": "lang-es-tech",
+   "group": "non_english",
+   "prompt": "En espa\u00f1ol, explica en un solo p\u00e1rrafo t\u00e9cnico por qu\u00e9 copiar una capa MoE completa por token es m\u00e1s caro que un gather UVA por filas.",
+   "max_tokens": 256,
+   "seed": 42
+  },
+  {
+   "completion_tokens": 228,
+   "s": 1.127,
+   "finish": "stop",
+   "content": "Ein Autotune-Hash trifft nur bei identischer Kernel-Shape, weil der Hash \u00fcber die konkreten Parameter gebildet wird, die die Form des Kernels bestimmen \u2013 etwa Tile-Gr\u00f6\u00dfen, Block-Dimensionen, Grid-Aufteilung, Unroll-Faktoren, Vektorisierung und die Problemgr\u00f6\u00dfen (M, N, K). Diese Parameter legen fest, wie der generierte Code aussieht und wie er Speicher adressiert, Schleifen strukturiert und Arbeit auf Threads verteilt. \u00c4ndert sich auch nur eine dieser Gr\u00f6\u00dfen, beschreibt der zwischengespeicherte Eintrag einen anderen Kernel als den, der jetzt gebraucht wird; seine gemessene Laufzeit und die zugeh\u00f6rige Konfiguration sind dann nicht mehr g\u00fcltig. Deshalb wird der Hash bewusst aus der vollst\u00e4ndigen Shape-Signatur gebildet, sodass nur exakt passende Konfigurationen wiederverwendet werden und f\u00fcr jede neue Shape ein eigener Autotune-Durchlauf n\u00f6tig ist.",
+   "tool_calls": [],
+   "tool_norm": [],
+   "id": "lang-de-tech",
+   "group": "non_english",
+   "prompt": "Erkl\u00e4re auf Deutsch in zusammenh\u00e4ngendem Text, warum ein Autotune-Hash nur bei identischer Kernel-Shape trifft.",
+   "max_tokens": 256,
+   "seed": 42
+  },
+  {
+   "completion_tokens": 78,
+   "s": 0.476,
+   "finish": "tool_calls",
+   "content": "",
+   "tool_calls": [
+    {
+     "id": "chatcmpl-tool-b12ca80998e8eef1",
+     "type": "function",
+     "function": {
+      "name": "terminal",
+      "arguments": "{\"command\": \"hostname; nvidia-smi --query-gpu=memory.free --format=csv,noheader 2>/dev/null; docker ps -q 2>/dev/null | wc -l\"}"
+     }
+    }
+   ],
+   "tool_norm": [
+    {
+     "name": "terminal",
+     "arguments": "{\"command\": \"hostname; nvidia-smi --query-gpu=memory.free --format=csv,noheader 2>/dev/null; docker ps -q 2>/dev/null | wc -l\"}"
+    }
+   ],
+   "id": "tool-json-status",
+   "group": "structured_tool",
+   "prompt": "Call tools if needed, then return ONLY a JSON object with keys host, gpu_free_mib, containers_running (integer). Use terminal to inspect this machine.",
+   "max_tokens": 256,
+   "seed": 42
+  },
+  {
+   "completion_tokens": 43,
+   "s": 0.33,
+   "finish": "tool_calls",
+   "content": "",
+   "tool_calls": [
+    {
+     "id": "chatcmpl-tool-a4b8e6c5c021903e",
+     "type": "function",
+     "function": {
+      "name": "web_search",
+      "arguments": "{\"query\": \"vLLM GitHub stars count\"}"
+     }
+    }
+   ],
+   "tool_norm": [
+    {
+     "name": "web_search",
+     "arguments": "{\"query\": \"vLLM GitHub stars count\"}"
+    }
+   ],
+   "id": "tool-search-sum",
+   "group": "structured_tool",
+   "prompt": "Use web_search to find the current vLLM GitHub stars, then write one sentence citing the number. If the tool is unavailable, still emit the tool call.",
+   "max_tokens": 256,
+   "seed": 42
+  },
+  {
+   "completion_tokens": 48,
+   "s": 0.343,
+   "finish": "tool_calls",
+   "content": "I'll read the file first.\n\n",
+   "tool_calls": [
+    {
+     "id": "chatcmpl-tool-abe33e155d1c635f",
+     "type": "function",
+     "function": {
+      "name": "read_file",
+      "arguments": "{\"path\": \"/etc/hostname\"}"
+     }
+    }
+   ],
+   "tool_norm": [
+    {
+     "name": "read_file",
+     "arguments": "{\"path\": \"/etc/hostname\"}"
+    }
+   ],
+   "id": "tool-read-patch",
+   "group": "structured_tool",
+   "prompt": "Read /etc/hostname with read_file, then propose a patch that appends a comment listing the hostname. Emit the tool calls; do not invent file contents.",
+   "max_tokens": 256,
+   "seed": 42
+  },
+  {
+   "completion_tokens": 101,
+   "s": 0.555,
+   "finish": "stop",
+   "content": "```yaml\nmodel: deepseek-ai/DeepSeek-V4.1-Flash\nport: 8000\noffload_gb: 24\nutil: 0.92\nspeculative:\n  schedule:\n    - [0, 8, 1]\n    - [8, 32, 2]\n    - [32, 128, 3]\n    - [128, 512, 4]\nkv_gib: 48\n```",
+   "tool_calls": [],
+   "tool_norm": [],
+   "id": "tool-yaml-cfg",
+   "group": "structured_tool",
+   "prompt": "Output a YAML document only (no prose) for a serving recipe with keys: model, port, offload_gb, util, speculative.schedule (a list of [start,end,k]), kv_gib. Use plausible DSV4.1-Flash values.",
+   "max_tokens": 256,
+   "seed": 42
+  },
+  {
+   "completion_tokens": 72,
+   "s": 0.469,
+   "finish": "tool_calls",
+   "content": "",
+   "tool_calls": [
+    {
+     "id": "chatcmpl-tool-b0c88d1406b8c039",
+     "type": "function",
+     "function": {
+      "name": "terminal",
+      "arguments": "{\"command\": \"date -u\"}"
+     }
+    },
+    {
+     "id": "chatcmpl-tool-a5b6e95034a676ec",
+     "type": "function",
+     "function": {
+      "name": "web_search",
+      "arguments": "{\"query\": \"Telluride Colorado weather forecast\"}"
+     }
+    }
+   ],
+   "tool_norm": [
+    {
+     "name": "terminal",
+     "arguments": "{\"command\": \"date -u\"}"
+    },
+    {
+     "name": "web_search",
+     "arguments": "{\"query\": \"Telluride Colorado weather forecast\"}"
+    }
+   ],
+   "id": "tool-weather-time",
+   "group": "structured_tool",
+   "prompt": "Need weather in Telluride and the UTC offset. Emit tool calls for terminal date and web_search. Do not answer without tools.",
+   "max_tokens": 256,
+   "seed": 42
+  },
+  {
+   "completion_tokens": 134,
+   "s": 0.628,
+   "finish": "stop",
+   "content": "{\"steps\":[{\"n\":1,\"cmd\":\"docker stop vllm\",\"why\":\"Gracefully stop the running vLLM container\"},{\"n\":2,\"cmd\":\"sync && echo 3 | sudo tee /proc/sys/vm/drop_caches\",\"why\":\"Flush filesystem buffers and drop page/dentry/inode caches\"},{\"n\":3,\"cmd\":\"docker start vllm\",\"why\":\"Restart the vLLM container with a clean cache state\"},{\"n\":4,\"cmd\":\"curl -s http://localhost:8000/v1/models\",\"why\":\"Verify the server is up and list available models\"}]}",
+   "tool_calls": [],
+   "tool_norm": [],
+   "id": "tool-steps-json",
+   "group": "structured_tool",
+   "prompt": "Return only JSON: {\"steps\":[{\"n\":1,\"cmd\":\"...\",\"why\":\"...\"}, ...]} with exactly 4 steps to stop a vLLM container, drop caches, start it, and curl /v1/models. No markdown.",
+   "max_tokens": 256,
+   "seed": 42
+  }
+ ]
+}

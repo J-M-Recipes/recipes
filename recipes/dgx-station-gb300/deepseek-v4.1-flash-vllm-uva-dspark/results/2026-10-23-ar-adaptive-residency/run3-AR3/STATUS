@@ -1,0 +1,27 @@
+2026-10-23 21:13:18 CDT AR3 runner start (mix_s=180 phase_s=180)
+2026-10-23 21:13:40 CDT AR0' rc=0 [ar0] VERDICT PASS -> /arhost/run3/ar0-unit.json [ar0] T6_restore_map: PASS {'moved_before': 0, 'moved_mid': 
+2026-10-23 21:13:43 CDT stopped (kept) dsv41-vllm-1017-v26ar-AR
+launched dsv41-vllm-1017-v26ar1-AR3 (run dir $HOME/dsv41/ar/run3)
+2026-10-23 21:21:39 CDT AR3 ready after 472 s
+2026-10-23 21:21:47 CDT S1a/S1b static-map parity x2
+2026-10-23 21:23:32 CDT CMP S1a vs S1b: 49 / 50 ['agent-tool-1']
+2026-10-23 21:23:32 CDT A/B count on/off, 12 pairs (relaxed atomics)
+2026-10-23 21:25:32 CDT A/B [ab] median on=241.27100000000002 off=242.652 delta=-0.569% paired=-0.562%
+2026-10-23 21:25:32 CDT mixed FROZEN C1 180s
+2026-10-23 21:28:32 CDT   {"tag": "frozen-c1", "concurrency": 1, "n": 59, "errors": 0, "agg_tok_s_all": 130.95, "agg_tok_s_post60": 133.09, "per_req": {"jpde": {"median_all": 91.39, "median_post60": 91.39, "n_post60": 20}, "agent": {"median_all": 196.02, "median_post60": 196.02, "n_post60": 19}}}
+2026-10-23 21:28:32 CDT mixed FROZEN C4 180s
+2026-10-23 21:31:37 CDT   {"tag": "frozen-c4", "concurrency": 4, "n": 106, "errors": 0, "agg_tok_s_all": 229.09, "agg_tok_s_post60": 236.64, "per_req": {"jpde": {"median_all": 50.06, "median_post60": 50.04, "n_post60": 35}, "agent": {"median_all": 65.93, "median_post60": 66.04, "n_post60": 35}}}
+2026-10-23 21:31:40 CDT mixed ADAPTIVE C1 180s
+2026-10-23 21:34:42 CDT   {"tag": "adaptive-c1", "concurrency": 1, "n": 86, "errors": 0, "agg_tok_s_all": 189.45, "agg_tok_s_post60": 194.12, "per_req": {"jpde": {"median_all": 182.87, "median_post60": 182.99, "n_post60": 29}, "agent": {"median_all": 211.45, "median_post60": 211.51, "n_post60": 29}}}
+2026-10-23 21:34:42 CDT mixed ADAPTIVE C4 180s
+2026-10-23 21:37:45 CDT   {"tag": "adaptive-c4", "concurrency": 4, "n": 194, "errors": 0, "agg_tok_s_all": 423.03, "agg_tok_s_post60": 430.99, "per_req": {"jpde": {"median_all": 96.53, "median_post60": 96.66499999999999, "n_post60": 64}, "agent": {"median_all": 121.56, "median_post60": 121.55, "n_post60": 65}}}
+2026-10-23 21:37:45 CDT shift ADAPTIVE (reproducibility of AR2)
+2026-10-23 21:46:50 CDT   {"jpde_1": {"first": 184.63, "last": 179.88, "n": 84}, "agent": {"first": 241.62, "last": 212.64, "n": 100}, "jpde_2": {"first": 170.15, "last": 205.51, "n": 83}}
+2026-10-23 21:46:58 CDT P1 post-adaptation parity
+2026-10-23 21:47:52 CDT CMP S1a vs P1: 48 / 50 ['agent-tool-1', 'tool-weather-time']
+2026-10-23 21:48:01 CDT restore drained: pending/hot_moved = 0 0 after 14 requests
+2026-10-23 21:48:01 CDT S2 restored-static parity
+2026-10-23 21:48:52 CDT CMP S1a vs S2: 49 / 50 ['agent-tool-1']
+2026-10-23 21:48:52 CDT CMP S1b vs S2: 49 / 50 ['agent-tool-1']
+2026-10-23 21:48:52 CDT VERDICT PASS {"AR0": true, "overhead_not_significant_or_le_0p5": true, "mixed_c1_no_regress": true, "mixed_c4_no_regress": true, "shift_repro_within_5pct": true, "roundtrip_parity_within_noise": true}
+2026-10-23 21:48:52 CDT AR3 done; dsv41-vllm-1017-v26ar1-AR3 left UP and FROZEN (restored static map) on :30006; dsv41-vllm-1017-v26ar-AR stopped-and-kept

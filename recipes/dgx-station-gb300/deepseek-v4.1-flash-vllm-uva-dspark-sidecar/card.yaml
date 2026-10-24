@@ -1,0 +1,71 @@
+# card.yaml — at-a-glance card sidecar. Rendered by scripts/render_card.py; never hand-edit card.html.
+# Every number here traces to recipe.yaml metrics or results/2026-10-22-v25-sidecar/. Unmeasured = pending.
+title: "DeepSeek-V4.1-Flash · 1× DGX Station GB300 + RTX PRO 6000 sidecar"
+subtitle: "The 89 cold experts per layer don't live in Grace — they live on the second GPU in the chassis, and they are computed there. Full 1M context, 3× the C16 decode of Grace offload."
+version: "v25 sidecar + KV 8.5 GiB · 48 h soak to 10-24 18:52 CDT"
+run_id: 2026-10-22-v25-sidecar
+handles: "github.com/J-M-Recipes/recipes · al-engr.com · sidecar recipe + kbench harness: RonanLabsAI (dgx-station-frontier) · hook: original-el8 — credited in the README"
+
+model:
+  type: MoE
+  type_detail: "384 routed experts + Engram; 295 hot in HBM, 89 computed on the RTX 6000"
+  total_params: 552B
+  active_params: "8B prefill / 16B decode"
+  checkpoint_gb: 510.3
+  weights_short: "as shipped · MXFP4 experts / FP8 attn+Engram · nothing re-quantized"
+  engine_extra: "nightly-af7f9488 (sha256:3af6a45b) on BOTH GPUs · el8 hook @87af662 · b12x @2cc7f66a · vllm#58132 bounded replay"
+  memory: "206.6 GiB hot experts in HBM + 66.2 GiB cold experts on the card · KV declared 8.5 GiB = 4.40M tok (4.2× one 1M request; 4×1M co-resident at 75%) · host carries Engram only"
+
+hero:
+  c1:      { value: 279.5, unit: tok/s, class: "real text, 8.2K in / 1,024 out", label: "Decode · C1, mean of 2 boots", note: "276.8 / 282.2 on two independent boots; incumbent 187.5 · acceptance 2.96 tok/step, TTFT 0.19 s · per-class C1: prose 295 · structured 299 · code 409 · shell 414 · tool-JSON 367" }
+  c16:     { value: 1576.9, unit: tok/s, label: "Decode · C16 aggregate", note: "1,581.0 / 1,572.8 vs incumbent 524.5 · C32 2,400.3 vs 936.9 · 32 seats, k=3 band above 8 sequences" }
+  prefill: { value: 50119, unit: tok/s, label: "Prompt reading · cold 64K prefill", note: "incumbent 23,439 tok/s same window · 1M-token prompt: first token 33.2 s (incumbent 81.4 s) · 128K cold prefill 2.61 s" }
+
+guesser:
+  name: DSpark
+  source: "in-checkpoint MTP (mtp.0–2), 1017 revision"
+  schedule: "k = 5 at 1–4 seqs, 3 at 5–8 and 9–32 (batch-size schedule)"
+  notes: "acceptance measured only blended: 2.96 tokens/verify step on the real-text C1 cell (incumbent 2.955). Per-class acceptance is pending on this image."
+
+secondary:
+  - label: "Guard — a missed sidecar deadline is wrong output, not a slow one"
+    items:
+      "bring-up cosine gate": "min 0.99906 · 40/40 layers · ≥32 cold rows · 0 timeouts"
+      "spin limit": "VLLM_EXP_PEER_SPINS=2e9 → a dead sidecar hangs instead of dropping the cold add"
+      "watchdog": "fail-closed, trips in ~3 s on timeout / stall / dead sidecar; fault-tested (rollback bound 260 s)"
+      "live counters (3 h)": "4.26M sidecar calls · 0 timeouts · 0.0048 ms wait per call · 0 trips"
+  - label: "Quality and cost of the win"
+    items:
+      "SC2 gates": "12/12 PASS · per-class decode 20/20 cells within −3%"
+      "BFCL": "dev 92.67 vs 92.33 · held-out 77.65 vs 77.88 (our grader)"
+      "GSM8K-1319 / needle / gauntlet": "96.97 = incumbent · 500/500 exact · 12/12"
+      "power": "module p99 1,353 W in 64K prefill, sw_power_cap 89.5% of samples (incumbent 65%) — measured under that throttling"
+
+fidelity:
+  - { status: pass, text: "Weights unchanged: 1017 checkpoint as shipped, 0 re-quantized bits; the sidecar reads the same shards, it does not copy or re-encode them" }
+  - { status: pass, text: "Sidecar path verified against the GB300's own cold-expert computation: min cos 0.99906 over 1,341 checks with ≥32 cold rows, all 40 layers, 0 timeouts" }
+  - { status: pass, text: "Speculation is target-verified (DSpark drafts are accepted by the full model at T=0)" }
+  - { status: pass, text: "Teacher-forced margin-weighted flips vs the same-map control inside the control floor (W=3.014 vs floor 1.866); BFCL dev +0.34 pt, held-out −0.23 pt" }
+  - { status: pass, text: "GSM8K-1319 96.97% identical to the incumbent (1,279/1,319); 500/500 exact needle; gauntlet 12/12; image request reads the picture" }
+  - { status: measured, text: "One temp-0 GSM8K item ran to the token cap on this image (0/32 at a 32K cap on repeat) — attributed to the image's effort-75 tail, not the sidecar" }
+
+harness:
+  protocol:
+    file: harness/protocol.yaml
+    sha256: 61c2d22b63516502c57ce876cb4a0884fb6f8e043a5707f5479cef95e99c32da
+    summary: "T=0, no thinking, tool_choice auto, 1 retry, C8 BFCL / C16 fund tools, 4-turn fund conversations (same protocol file as the GB300-only sibling; BFCL suite checksums live there)"
+  dev:
+    name: BFCL dev (simple_python 400 + multiple 200)
+    solved: 556
+    n: 600
+    pct: "92.67%"
+    status: pass
+    note: "sidecar arm C, 2026-10-22; incumbent 92.33%. Decides candidacy only"
+  heldout:
+    name: BFCL live sibling (live_simple 258 + live_multiple 1,053)
+    solved: 1018
+    n: 1311
+    pct: "77.65%"
+    status: pass
+    note: "sidecar arm C, 2026-10-22; incumbent 77.88% — inside the −1 pt bar"
+  # cost: no metered-plug run on this lane, so there is no energy basis and no $/1000-solved number to print.

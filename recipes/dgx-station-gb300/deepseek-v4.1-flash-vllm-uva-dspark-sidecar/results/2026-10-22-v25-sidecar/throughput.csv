@@ -1,0 +1,67 @@
+cell,arm,decode_agg_tps,ttft_s,acceptance_len,source,note
+RT-C1,v23-CTL1,187.1,0.66,,raw/sc1-speed-bracketed.md,"kbench_chat_ds 8.2K in / 1,024 forced, thinking off, mean of 3, 0% prefix hits"
+RT-C1,sidecar-CAND1,276.8,0.19,,raw/sc1-speed-bracketed.md,"same boot, cold prefill"
+RT-C1,sidecar-CAND2,282.2,0.19,,raw/sc1-speed-bracketed.md,"fresh boot, tune-luck check"
+RT-C1,v23-CTL2,187.9,0.66,,raw/sc1-speed-bracketed.md,
+RT-C1,sidecar-sc2-C,279.2,0.190,2.961,raw/sc2-quality-gates.md,"production arm C (replay ON), mean of 3"
+RT-C4,v23-CTL1,323.8,,,raw/sc1-speed-bracketed.md,
+RT-C4,sidecar-CAND1,689.1,,,raw/sc1-speed-bracketed.md,
+RT-C4,sidecar-CAND2,697.4,,,raw/sc1-speed-bracketed.md,
+RT-C4,v23-CTL2,319.5,,,raw/sc1-speed-bracketed.md,
+RT-C16,v23-CTL1,523.8,,,raw/sc1-speed-bracketed.md,
+RT-C16,sidecar-CAND1,1581.0,,,raw/sc1-speed-bracketed.md,
+RT-C16,sidecar-CAND2,1572.8,,,raw/sc1-speed-bracketed.md,
+RT-C16,v23-CTL2,525.2,,,raw/sc1-speed-bracketed.md,
+RT-C32,v23-CTL1,926.1,,,raw/sc1-speed-bracketed.md,"v23 controls run max-num-seqs 24, so C32 queues"
+RT-C32,sidecar-CAND1,2401.3,,,raw/sc1-speed-bracketed.md,
+RT-C32,sidecar-CAND2,2399.3,,,raw/sc1-speed-bracketed.md,
+RT-C32,v23-CTL2,947.7,,,raw/sc1-speed-bracketed.md,
+knee-C1,v23-CTL1,192.0,,,raw/sc1-speed-bracketed.md,"agent-text knee harness, 4-rep mean"
+knee-C1,sidecar-CAND1,220.7,,,raw/sc1-speed-bracketed.md,
+knee-C1,sidecar-CAND2,224.7,,,raw/sc1-speed-bracketed.md,
+knee-C1,v23-CTL2,192.2,,,raw/sc1-speed-bracketed.md,
+knee-C1,sidecar-sc2-C,222.8,,,raw/sc2-quality-gates.md,"same window, 4-rep mean"
+knee-C6,sidecar-sc2-C,762.4,,,raw/sc2-quality-gates.md,
+knee-C8,v23-CTL1,612.9,,,raw/sc1-speed-bracketed.md,"bimodal cell: gate on >=4 reps"
+knee-C8,sidecar-CAND1,932.3,,,raw/sc1-speed-bracketed.md,
+knee-C8,sidecar-CAND2,925.3,,,raw/sc1-speed-bracketed.md,
+knee-C8,v23-CTL2,621.6,,,raw/sc1-speed-bracketed.md,
+knee-C8,sidecar-sc2-C,891.1,,,raw/sc2-quality-gates.md,
+knee-C16,v23-CTL1,941.5,,,raw/sc1-speed-bracketed.md,
+knee-C16,sidecar-CAND1,1420.4,,,raw/sc1-speed-bracketed.md,
+knee-C16,sidecar-CAND2,1394.5,,,raw/sc1-speed-bracketed.md,
+knee-C16,v23-CTL2,941.0,,,raw/sc1-speed-bracketed.md,
+replay-r2,v23-CTL1,423.4,,,raw/sc1-speed-bracketed.md,"4 concurrent Hermes transcript workers"
+replay-r2,sidecar-CAND1,519.0,,,raw/sc1-speed-bracketed.md,
+replay-r2,sidecar-CAND2,498.5,,,raw/sc1-speed-bracketed.md,
+replay-r2,v23-CTL2,414.2,,,raw/sc1-speed-bracketed.md,
+replay-r2,sidecar-sc2-C-replayON,480.3,,,raw/sc2-quality-gates.md,
+replay-r2,sidecar-sc2-Coff-replayOFF,612.1,,,raw/sc2-quality-gates.md,"--no-swa-bounded-replay + overlay: +27.4% on warm agent replay"
+RT-C1-replayOFF,sidecar-sc2-Coff,276.7,0.290,,raw/sc2-quality-gates.md,"TTFT 0.100 s worse than replay ON"
+cold-prefill-64K,v23-A,23439,,,raw/sc2-quality-gates.md,"N=1 cold, tok/s"
+cold-prefill-64K,sidecar-C,50119,,,raw/sc2-quality-gates.md,"N=1 cold, tok/s"
+class-prose-C1,v23,232.3,,,raw/sc2-quality-gates.md,"per-class decode wall-clock, forced 256, class mean of 2"
+class-prose-C1,sidecar-C,294.8,,,raw/sc2-quality-gates.md,
+class-structured-C1,v23,250.3,,,raw/sc2-quality-gates.md,
+class-structured-C1,sidecar-C,299.1,,,raw/sc2-quality-gates.md,
+class-code-C1,v23,293.4,,,raw/sc2-quality-gates.md,
+class-code-C1,sidecar-C,408.9,,,raw/sc2-quality-gates.md,
+class-shell-C1,v23,316.9,,,raw/sc2-quality-gates.md,
+class-shell-C1,sidecar-C,413.7,,,raw/sc2-quality-gates.md,
+class-tooljson-C1,v23,300.0,,,raw/sc2-quality-gates.md,
+class-tooljson-C1,sidecar-C,367.2,,,raw/sc2-quality-gates.md,
+class-prose-C8,v23,532.0,,,raw/sc2-quality-gates.md,
+class-prose-C8,sidecar-C,1022.6,,,raw/sc2-quality-gates.md,
+class-code-C8,v23,642.1,,,raw/sc2-quality-gates.md,
+class-code-C8,sidecar-C,1274.9,,,raw/sc2-quality-gates.md,
+class-tooljson-C8,v23,684.0,,,raw/sc2-quality-gates.md,
+class-tooljson-C8,sidecar-C,1232.0,,,raw/sc2-quality-gates.md,
+class-structured-C8,v23,509.4,,,raw/sc2-quality-gates.md,
+class-structured-C8,sidecar-C,991.7,,,raw/sc2-quality-gates.md,
+class-shell-C8,v23,681.4,,,raw/sc2-quality-gates.md,
+class-shell-C8,sidecar-C,1325.2,,,raw/sc2-quality-gates.md,
+1M-TTFT,sidecar-C,30069,33.23,,raw/sc5-1m-and-power.md,"999,303-token prompt, TTFT 33.23 s => 30,069 tok/s prefill"
+1M-TTFT,v23-A,12262,81.44,,raw/sc5-1m-and-power.md,"998,567-token prompt"
+1M-after-decode,sidecar-C,276.52,,,raw/sc5-1m-and-power.md,"C1 decode after a 1M prompt (pre-1M 279.48)"
+128K-cold-prefill,sidecar-C,50231,,,raw/sc5-1m-and-power.md,"131,104 tokens in 2.61 s => 50,231 tok/s"
+C16-after-1M,sidecar-C,1565.92,0.61,,raw/sc5-1m-and-power.md,"32/32 ok"
