@@ -1,0 +1,28 @@
+2026-10-24 06:50:21 CDT ===== CARD GV2 START (candidate dsv41-vllm-1017-v25m2-L39S map rowmap-mixed-ar-v2-l39s.json; fallback dsv41-vllm-1017-v25m-MIXMAP map rowmap-mixed-ar-v1.json) =====
+2026-10-24 06:50:21 CDT preflight OK MemAvailable=179.2GiB RTX=66213MiB needle=1
+2026-10-24 06:50:21 CDT fail-stop watchdog 3776164 stopped for the gate boot
+2026-10-24 06:50:21 CDT LANE DARK begins (K gate boot, soak on dsv41-vllm-1017-v25m-MIXMAP cut)
+2026-10-24 06:50:21 CDT stop-and-keep dsv41-vllm-1017-v25m-MIXMAP
+2026-10-24 06:50:26 CDT stop-and-keep dsv41-vllm-1017-v25m-MIXMAP-rtx
+2026-10-24 06:51:58 CDT   dsv41-vllm-GV2-K-EXP waiting 0 min: MemAvail=463.8GiB RTX=66213MiB last=[]
+2026-10-24 06:56:59 CDT   dsv41-vllm-GV2-K-EXP waiting 5 min: MemAvail=115.9GiB RTX=66213MiB last=[2026-10-24 11:56:57,218 - INFO - autotuner.py:1046 - flashinfer.jit: [Autotuner]: Autotuning process starts ...]
+2026-10-24 07:02:01 CDT   dsv41-vllm-GV2-K-EXP waiting 10 min: MemAvail=114.7GiB RTX=66213MiB last=[2026-10-24 11:56:57,218 - INFO - autotuner.py:1046 - flashinfer.jit: [Autotuner]: Autotuning process starts ...]
+2026-10-24 07:03:22 CDT BOUND dsv41-vllm-GV2-K-EXP after 684s
+2026-10-24 07:03:22 CDT boot->ready K 759s
+2026-10-24 07:03:22 CDT FACTS K: check=2 rowmap40=1 | GPU KV cache size: 2,536,059 tokens, Maximum concurrency for 1,048,576 tokens per request: 2.42x
+2026-10-24 07:03:48 CDT GATE K: FAIL {'post_startup_checks': 1520, 'uncovered_layers_lt32rows': [], 'min_cos': 0.99831, 'max_rel_diff': 0.0919, 'peer_timeouts': 0, 'hook_timeout_lines': 0}
+2026-10-24 07:03:59 CDT FALLBACK to v25m v1 (K gate did not pass)
+2026-10-24 07:04:05 CDT strays: 4306 0.2GiB /usr/bin/dockerd -H|4348 0.1GiB /usr/bin/gnome-shell |3810 0.1GiB /usr/bin/containerd |4177 0.1GiB /usr/lib/xorg/Xorg vt1| MemAvailable=465.9GiB
+2026-10-24 07:05:28 CDT SIDECAR F map=rowmap-mixed-ar-v1.json: prepared 40 layers in 46s; 68.4 GB allocated|captured 560 graphs; 68.4 GB allocated|serving|66213 MiB, 83.28 W|
+2026-10-24 07:05:30 CDT SERVER F launched: launched dsv41-vllm-1017-v25m-MIXMAP (peer v2, rowmap=rowmap-mixed-ar-v1.json seqs=32 util=0.97 maxlen=1048576 overlay=1 PEER_CHECK=0 COLD_TRT=0) log $HOME/dsv41/m3/logs/dsv41-vllm-1017-v25m-MIXMAP.log
+2026-10-24 07:05:31 CDT   dsv41-vllm-1017-v25m-MIXMAP waiting 0 min: MemAvail=461.7GiB RTX=66213MiB last=[]
+2026-10-24 07:10:32 CDT   dsv41-vllm-1017-v25m-MIXMAP waiting 5 min: MemAvail=182.2GiB RTX=66213MiB last=[2026-10-24 12:09:51,134 - INFO - autotuner.py:1046 - flashinfer.jit: [Autotuner]: Autotuning process starts ...]
+2026-10-24 07:12:53 CDT BOUND dsv41-vllm-1017-v25m-MIXMAP after 443s
+2026-10-24 07:12:53 CDT boot->ready F 517s (dsv41-vllm-1017-v25m-MIXMAP)
+2026-10-24 07:12:53 CDT FACTS F: peer2=2 rowmap40=1 replay_line=1 NONDEFAULT  autotune_starts=25 | GPU KV cache size: 4,400,013 tokens, Maximum concurrency for 1,048,576 tokens pe | RTX 66213 MiB
+2026-10-24 07:12:53 CDT LANE DARK ends (v25m v1 bound)
+2026-10-24 07:12:54 CDT HEALTH F: {"models_http": "200", "chat_http": "200", "sidecar_running": true, "chat_content": "OK", "ok": true}
+2026-10-24 07:12:57 CDT fail-stop watchdog armed pid 3831694 on dsv41-vllm-1017-v25m-MIXMAP
+2026-10-24 07:12:57 CDT SHM P soakstart: {"t": 1792843977.055056, "words": [2560, 2560, 0, 252305, 714800, 204683616, 2387]}
+2026-10-24 07:12:57 CDT SOAK clock started 2026-10-24 07:12:57 CDT -> 2026-10-26 07:12:57 CDT on dsv41-vllm-1017-v25m-MIXMAP (rowmap-mixed-ar-v1.json)
+2026-10-24 07:12:57 CDT ===== CARD GV2 END (lane = dsv41-vllm-1017-v25m-MIXMAP) =====
