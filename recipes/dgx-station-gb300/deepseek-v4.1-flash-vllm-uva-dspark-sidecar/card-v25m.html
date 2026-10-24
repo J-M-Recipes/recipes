@@ -46,7 +46,7 @@
       <h1>DeepSeek-V4.1-Flash · 1× DGX Station GB300 + RTX PRO 6000 · mixed-traffic map (v25m)</h1>
       <div class="sub">The v25 sidecar lane with one file changed: the 295-hot / 89-cold expert split refit from live decode counts on JP/DE prose + agent traffic. No code change; same image, hook, kernels, flags, KV.</div>
     </div>
-    <div class="brand"><b>J-M-RECIPES</b><br>v25m = v25 + rowmap-mixed-ar-v1.json · gates re-run 2026-10-24 · 48 h soak 06:14 10-24 → 06:14 10-26 CDT (running) · 2026-10-24<br>status: experimental</div>
+    <div class="brand"><b>J-M-RECIPES</b><br>v25m = v25 + rowmap-mixed-ar-v1.json · gates re-run 2026-10-24 · 48 h soak 07:12 10-24 → 07:12 10-26 CDT (running) · 2026-10-24<br>status: experimental</div>
   </div>
   <div class="pills">
 <span class="pill type"><b>MoE</b> · 384 routed experts + Engram; 295 hot in HBM, 89 computed on the RTX 6000 · map refit: 42.5 experts/layer moved</span>
@@ -70,6 +70,7 @@
     <ul>
 <li class="ok">Weights unchanged: 1017 checkpoint as shipped; only which GPU computes each expert changed</li>
 <li class="fail">FAILED the pre-registered bring-up cosine gate: min cos 0.99811 vs bar 0.999 — 1 of 1,439 gated checks (layer 39, T=128, cold experts 7.9% of the output norm); p1 0.99968 vs v25 static 0.99970, v25 static min 0.99906. The same gate rejected the 285/99 map (0.99885)</li>
+<li class="meas">Map ruled out as the cause: layer 39 restored to v25&#x27;s exact static split still misses (min 0.99831), worst check again L39 with cold experts at ~0% of the output norm — boot-to-boot noise at that check</li>
 <li class="ok">Teacher-forced margin-weighted flips GATE PASS vs the v23 reference (W 2.84, bar 3.08) and vs v25 static (W 2.55, bar 2.90)</li>
 <li class="ok">GSM8K-1319 96.82% vs v25 96.97% (−0.15 pt, McNemar p 0.73) · needle 500/500 exact · gauntlet 12/12 · reasoning_effort codes identical · image request reads the picture</li>
 <li class="ok">Per-turn tool emission 8/12 + 8/12 tool turns (bar ≥ 4), text-turn spurious 4 / 5 (bar ≤ 5), 0 errors</li>

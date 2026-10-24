@@ -10,3 +10,6 @@
 Pre-registered bar: min cos >= 0.999 over gated checks, 40/40 layers covered, 0 timeouts. v25m FAILS on min cos
 (coverage 40/40, 0 timeouts). The bulk of the distribution matches v25 static (p1 0.99968 vs 0.99970, median 0.99985);
 the failure is one check at layer 39, the worst layer on every map tested. Not re-judged with a moved bar.
+
+Follow-up (Card GV2, same day): layer 39 restored to the static split → min 0.99831, still FAIL, worst check again
+L39 T=128 with cold share 0.000. See `../2026-10-24-gv2-l39-static/`.
