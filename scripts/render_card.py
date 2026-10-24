@@ -4,6 +4,7 @@
 Usage:
     python3 scripts/render_card.py recipes/<hw>/<slug>            # writes card.html (+ card.png)
     python3 scripts/render_card.py recipes/<hw>/<slug> --no-png
+    python3 scripts/render_card.py recipes/<hw>/<slug> --card v26ar  # variant: card-v26ar.yaml -> card-v26ar.html/.png
 
 Inputs (both required):
     recipe.yaml   — schema-strict recipe. Supplies title/id/status/updated, model name/params/revision/
@@ -122,7 +123,7 @@ def row2(recipe: dict, card: dict) -> str:
 def fidelity(card: dict) -> str:
     items = []
     for f in card.get("fidelity", []):
-        cls = {"pass": "ok", "measured": "meas"}.get(f.get("status"), "pend")  # measured = a number, not a verdict
+        cls = {"pass": "ok", "measured": "meas", "fail": "fail"}.get(f.get("status"), "pend")  # measured = a number, not a verdict
         items.append(f'<li class="{cls}">{e(f["text"])}</li>')
     return "\n".join(items) or f'<li class="pend">no fidelity evidence recorded</li>'
 
@@ -164,11 +165,11 @@ def harness(card: dict) -> str:
     return "\n".join(items)
 
 
-def render(recipe_dir: Path) -> str:
+def render(recipe_dir: Path, card_file: str = "card.yaml") -> str:
     recipe = yaml.safe_load((recipe_dir / "recipe.yaml").read_text())
     derived = params_from_config(recipe_dir)
     if derived:
-        card_probe = yaml.safe_load((recipe_dir / "card.yaml").read_text())
+        card_probe = yaml.safe_load((recipe_dir / card_file).read_text())
         claimed = str(card_probe.get("model", {}).get("total_params", ""))
         num = "".join(ch for ch in claimed if ch.isdigit() or ch == ".")
         if num:
@@ -177,7 +178,7 @@ def render(recipe_dir: Path) -> str:
                 raise SystemExit(f"card.yaml total_params {claimed} disagrees with config.json expert count {derived[0]} "
                                  f"(routed+shared experts only; ratio {ratio:.2f}). Fix the card or the config.")
         print(f"[render_card] config.json expert-count check: total ≈{derived[0]} active ≈{derived[1]}; card says {claimed} — ok")
-    card = yaml.safe_load((recipe_dir / "card.yaml").read_text())
+    card = yaml.safe_load((recipe_dir / card_file).read_text())
     tpl = TEMPLATE.read_text()
     rel = recipe_dir.relative_to(ROOT).as_posix()
     fields = {
@@ -185,7 +186,8 @@ def render(recipe_dir: Path) -> str:
         "SUBTITLE": e(card.get("subtitle", "")),
         "VERSION": e(card.get("version", "")),
         "UPDATED": e(recipe.get("updated", "")),
-        "STATUS": e(recipe.get("status", "")),
+        # A variant card may carry its own status (e.g. an experimental variant of a verified recipe).
+        "STATUS": e(card.get("status", recipe.get("status", ""))),
         "PILLS": pills(recipe, card),
         "HERO": hero(card),
         "ROW2": row2(recipe, card),
@@ -244,16 +246,18 @@ def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("recipe_dir")
     ap.add_argument("--no-png", action="store_true")
+    ap.add_argument("--card", default="", help="variant name: reads card-<name>.yaml, writes card-<name>.html/.png")
     a = ap.parse_args()
     d = (ROOT / a.recipe_dir).resolve() if not Path(a.recipe_dir).is_absolute() else Path(a.recipe_dir)
-    for req in ("recipe.yaml", "card.yaml"):
+    stem = f"card-{a.card}" if a.card else "card"
+    for req in ("recipe.yaml", f"{stem}.yaml"):
         if not (d / req).exists():
             sys.exit(f"missing {d / req}")
-    out = d / "card.html"
-    out.write_text(render(d))
+    out = d / f"{stem}.html"
+    out.write_text(render(d, f"{stem}.yaml"))
     print(f"wrote {out.relative_to(ROOT)}")
     if not a.no_png:
-        png = d / "card.png"
+        png = d / f"{stem}.png"
         if to_png(out, png):
             print(f"wrote {png.relative_to(ROOT)}")
         else:

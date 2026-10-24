@@ -1,0 +1,50 @@
+# card-v26ar.yaml — variant card (EXPERIMENTAL) for the GB300-only recipe. Rendered by
+#   scripts/render_card.py recipes/dgx-station-gb300/deepseek-v4.1-flash-vllm-uva-dspark --card v26ar
+# Every number traces to results/2026-10-23-ar-adaptive-residency/ (run1-AR0-AR2, run3-AR3, probes). Unmeasured = pending.
+title: "DeepSeek-V4.1-Flash · 1× DGX Station GB300 · adaptive expert residency"
+subtitle: "The v23 recipe, but the 295 HBM experts per layer follow live traffic: one relaxed atomic per routed token in a kernel that already runs, swaps between steps. Off-domain decode doubles; nothing else changes."
+version: "v26ar.1 = v23 launch + hook v26ar.1 (counter + guarded swaps) · measured 2026-10-23 on two boots · NOT promoted"
+status: experimental
+run_id: 2026-10-23-ar-adaptive-residency (AR0–AR3)
+handles: "github.com/J-M-Recipes/recipes · al-engr.com/gb300-adaptive-expert-residency.html · planner idea: vLLM #56177 (01554)"
+
+model:
+  type: MoE
+  type_detail: "384 routed experts + Engram; 295 hot per layer in HBM, re-chosen live; 89 cold in Grace over C2C"
+  total_params: 552B
+  active_params: "8B prefill / 16B decode"
+  checkpoint_gb: 510.3
+  weights_short: "as shipped · MXFP4 experts / FP8 attn+Engram · nothing re-quantized"
+  engine_extra: "day-0 image deepseekv41-flash-0909 · v23 launch flags unchanged · hook v26ar.1 (_skc counting split + e4_adaptive drain/swap)"
+  memory: "206.6 GiB hot experts in HBM + 62.3 GiB cold in pinned Grace · + one 17.9 MiB staging row + 61 KB counters · KV 2,495,694 tok (unchanged)"
+
+hero:
+  c1:      { value: 194.1, unit: tok/s, class: "mixed JP/DE + agent", label: "Decode · C1 aggregate, mixed traffic", note: "frozen v23 map 133.1 → 194.1 (+46%) · JP/DE essays 90.0 → 189.4 / 189.8 (+111%, two boots) · agent English 195.7 → 218.5 / 219.3 (+12%) · cold share of expert picks 17–28% → < 1%" }
+  c16:     { value: 431.0, unit: tok/s, label: "Decode · C4 aggregate, mixed traffic", note: "frozen map 236.6 → 431.0 (+82%) · agent requests 66 → 122 tok/s each (cold reads stop stalling the whole batch) · C8/C16 not measured on this variant" }
+  prefill: { value: 0.46, unit: s, label: "TTFT · 7.8K-token unique prompt", note: "0.47 / 0.46 s · 31.3K prompt 1.38–1.50 s (21–23K tok/s) · prefill is not counted and not changed by the hook" }
+
+guesser:
+  name: DSpark
+  source: "in-checkpoint MTP (mtp.0–2), 1017 revision"
+  schedule: "k = 5 at 1–8 seqs, 1 at 9–24 (v23 batch-size schedule, unchanged)"
+
+secondary:
+  - label: "Mechanism — count in-graph, decide off the clock, swap between steps"
+    items:
+      "counter cost (GB300 microbench, 40 layers)": "2–6 µs per step relaxed · acq_rel default was 25–78 µs"
+      "same-boot A/B, count on vs off": "−0.21% ± 0.36% over 12 pairs (not significant)"
+      "swaps": "≤ 8 per step, ~150 µs each · 15,382 swaps, 0 stale, 0 errors"
+      "convergence after a domain shift": "60–90 s"
+  - label: "Versus the RTX-sidecar sibling, same workloads, same night"
+    items:
+      "mixed C1 aggregate": "194.1 here · 208.9 sidecar (held-out prompts)"
+      "mixed C4 aggregate": "431.0 here · 560.4 sidecar"
+      "pick this when": "you have only the GB300, or traffic shifts in ways no fixed map covers"
+
+fidelity:
+  - { status: pass, text: "Weights unchanged: 1017 checkpoint as shipped; swaps move whole MXFP4 rows between the HBM and Grace banks, no re-encoding" }
+  - { status: pass, text: "Speculation is target-verified (DSpark drafts accepted by the full model at T=0)" }
+  - { status: pass, text: "Unit tests 6/6 on the GB300: counting kernel output-identical to the base split kernel, counts = bincount inside a captured CUDA graph, stale-swap refusal, restore round trip" }
+  - { status: pass, text: "Greedy parity 49/50 = the lane's fixed-map noise (the one miss, agent-tool-1, flips with nothing changed), including static map → 15,382 swaps → restore → re-capture" }
+  - { status: measured, text: "With a different hot set one more near-tie flips (48/50): the 295- and 89-row calls pick different prefill tiles — batch-variance-class numerics, not corruption" }
+  - { status: pending, text: "Teacher-forced Δlogprob, BFCL dev/held-out, GSM8K, gauntlet and a soak with p99 on swap steps have not been run on this variant" }

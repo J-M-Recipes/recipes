@@ -30,6 +30,7 @@ How it works:
 - **Fidelity:** unit tests 6/6. The 50-prompt greedy parity set matches the fixed-map capture within lane noise (49/50, the same noisy `agent-tool-1` prompt), including after a static → 15,382-swap → restore round trip. With a different hot set, one extra near-tie prompt flipped; we don't claim bit-identity across maps.
 - **Not done before promotion:** soak (p99 on swap steps), gauntlet, BFCL, long-context check.
 - **Against the sidecar sibling, same workloads, same night:** the sidecar lane is still faster on this box: mixed C1 208.9 vs 194.1, C4 560.4 vs 431.0 (held-out prompts), JP/DE C1 186 vs 189, agent 244 vs 219. Adaptive v23 is the better answer when you have **only** the GB300. See the sibling's 2026-10-23 round.
+- **Card:** [`card-v26ar.png`](card-v26ar.png) (base v23 card: [`card.png`](card.png)).
 - **Launch (experimental):** the v23 launch line with the hook directory swapped for `results/2026-10-23-ar-adaptive-residency/hook/` (plus the unchanged v19 files) and the env from `harness/launch_ar.sh`. It boots frozen (counting only); `touch $RUN/GO`, then `echo '{"freeze": false, "baseline": true}' > $RUN/ctrl.json`. Freeze again or `{"restore_map": true}` to return to the boot map.
 
 ## 2026-10-18 round — v23 promoted, nightly config C passes its gates (not promoted), P1 fails
