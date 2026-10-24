@@ -1,0 +1,34 @@
+{
+  "label": "pre vs post swap",
+  "exact": 49,
+  "n": 50,
+  "first_misses": [
+    {
+      "id": "agent-tool-1",
+      "group": "agent",
+      "content_equal": false,
+      "tools_equal": false,
+      "first_div_char": 39,
+      "a_head": "I'll check both. First, let me see what access I have to that host.  ",
+      "b_head": "I'll check both. First, let me see what's available locally.  ",
+      "a_tools": [
+        {
+          "name": "terminal",
+          "arguments": "{\"command\": \"which docker ssh 2>&1; echo \\\"---\\\"; docker ps 2>&1 | head -5\"}"
+        },
+        {
+          "name": "terminal",
+          "arguments": "{\"command\": \"timeout 5 ping -c 1 192.168.1.9 2>&1; echo \\\"---\\\"; timeout 5 ssh -o BatchMode=yes -o ConnectTimeout=4 192.168.1.9 'echo ok' 2>&1\"}"
+        }
+      ],
+      "b_tools": [
+        {
+          "name": "terminal",
+          "arguments": "{\"command\": \"which docker ssh 2>&1; echo \\\"---\\\"; docker ps 2>&1 | head -5\"}"
+        }
+      ],
+      "a_finish": "tool_calls",
+      "b_finish": "tool_calls"
+    }
+  ]
+}

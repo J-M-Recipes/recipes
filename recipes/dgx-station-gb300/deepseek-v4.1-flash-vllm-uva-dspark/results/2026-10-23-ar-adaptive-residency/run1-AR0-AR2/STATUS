@@ -1,0 +1,17 @@
+2026-10-23 20:35:54 CDT runner start (phase_s=180)
+2026-10-23 20:35:54 CDT AR0 unit tests (GB300, image vllm/vllm-openai:deepseekv41-flash-0909)
+2026-10-23 20:36:20 CDT AR0 rc=0 [ar0] VERDICT PASS -> /arhost/run/ar0-unit.json
+launched dsv41-vllm-1017-v26ar-AR (run dir /home/milo/dsv41/ar/run)
+2026-10-23 20:36:24 CDT AR1 boot launched dsv41-vllm-1017-v26ar-AR
+2026-10-23 20:44:17 CDT AR1 ready after 473 s
+2026-10-23 20:44:25 CDT AR1a parity capture (frozen map, counting on)
+2026-10-23 20:45:19 CDT AR1b same-boot A/B count on/off + TTFT sweep
+2026-10-23 20:46:25 CDT AR1 [ab] median on=239.351 off=241.8035 delta=-1.014% paired=-0.985%
+2026-10-23 20:46:25 CDT AR2a shift protocol, FROZEN static map
+2026-10-23 20:55:30 CDT AR2a {"jpde_1": {"first": 88.96, "last": 116.94, "n": 44}, "agent": {"first": 253.24, "last": 253.35, "n": 91}, "jpde_2": {"first": 88.92, "last": 116.91, "n": 44}}
+2026-10-23 20:55:30 CDT AR2b unfreeze + EWMA baseline
+2026-10-23 21:04:37 CDT AR2b {"jpde_1": {"first": 107.75, "last": 194.85, "n": 82}, "agent": {"first": 193.63, "last": 218.33, "n": 98}, "jpde_2": {"first": 172.78, "last": 204.5, "n": 83}}
+2026-10-23 21:04:50 CDT AR2c post-swap parity (frozen again)
+2026-10-23 21:05:45 CDT AR2c {"label":"prevspostswap","exact":49,"n":50,"first_misses":[{"id":"agent-tool-1","group":"agent","content_equal":false,"tools_equal":false,"first_div_char":39,"a
+2026-10-23 21:05:45 CDT VERDICT FAIL {"AR0_unit": true, "AR1_overhead": false, "AR2_jpde_speed_ge_5pct": true, "AR2_agent_no_regress_3pct": true, "AR2_jpde_cold_halved": true, "AR2_parity_exact": false}
+2026-10-23 21:05:45 CDT runner done; dsv41-vllm-1017-v26ar-AR left UP and FROZEN on :30006 (no restore-on-done)

@@ -1,0 +1,61 @@
+{
+  "label": "S1a vs P1",
+  "exact": 48,
+  "n": 50,
+  "first_misses": [
+    {
+      "id": "agent-tool-1",
+      "group": "agent",
+      "content_equal": false,
+      "tools_equal": true,
+      "first_div_char": 51,
+      "a_head": "I'll check both. First, let me see what's available.  ",
+      "b_head": "I'll check both. First, let me see what's available locally.  ",
+      "a_tools": [
+        {
+          "name": "terminal",
+          "arguments": "{\"command\": \"which docker ssh 2>&1; echo \\\"---\\\"; docker ps 2>&1 | head -5\"}"
+        }
+      ],
+      "b_tools": [
+        {
+          "name": "terminal",
+          "arguments": "{\"command\": \"which docker ssh 2>&1; echo \\\"---\\\"; docker ps 2>&1 | head -5\"}"
+        }
+      ],
+      "a_finish": "tool_calls",
+      "b_finish": "tool_calls"
+    },
+    {
+      "id": "tool-weather-time",
+      "group": "structured_tool",
+      "content_equal": true,
+      "tools_equal": false,
+      "first_div_char": null,
+      "a_head": "",
+      "b_head": "",
+      "a_tools": [
+        {
+          "name": "terminal",
+          "arguments": "{\"command\": \"date -u; date\"}"
+        },
+        {
+          "name": "web_search",
+          "arguments": "{\"query\": \"Telluride Colorado weather forecast\"}"
+        }
+      ],
+      "b_tools": [
+        {
+          "name": "terminal",
+          "arguments": "{\"command\": \"date -u\"}"
+        },
+        {
+          "name": "web_search",
+          "arguments": "{\"query\": \"Telluride Colorado weather forecast\"}"
+        }
+      ],
+      "a_finish": "tool_calls",
+      "b_finish": "tool_calls"
+    }
+  ]
+}

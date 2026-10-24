@@ -1,0 +1,34 @@
+{
+  "label": "S1a vs S1b",
+  "exact": 49,
+  "n": 50,
+  "first_misses": [
+    {
+      "id": "agent-tool-1",
+      "group": "agent",
+      "content_equal": false,
+      "tools_equal": false,
+      "first_div_char": 51,
+      "a_head": "I'll check both. First, let me see what's available.  ",
+      "b_head": "I'll check both. First, let me see what's available locally.  ",
+      "a_tools": [
+        {
+          "name": "terminal",
+          "arguments": "{\"command\": \"which docker ssh 2>&1; echo \\\"---\\\"; docker ps 2>&1 | head -5\"}"
+        }
+      ],
+      "b_tools": [
+        {
+          "name": "terminal",
+          "arguments": "{\"command\": \"which docker ssh 2>&1; echo \\\"---\\\"; docker ps 2>&1 | head -5\"}"
+        },
+        {
+          "name": "terminal",
+          "arguments": "{\"command\": \"ping -c 1 -W 2 192.168.1.9 2>&1 | tail -3; echo \\\"---\\\"; df -h / 2>&1\"}"
+        }
+      ],
+      "a_finish": "tool_calls",
+      "b_finish": "tool_calls"
+    }
+  ]
+}

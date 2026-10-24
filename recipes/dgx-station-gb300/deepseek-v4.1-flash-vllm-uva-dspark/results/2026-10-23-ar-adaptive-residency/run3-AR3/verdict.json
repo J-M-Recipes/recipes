@@ -1,0 +1,130 @@
+{
+ "AR0": {
+  "pass": true,
+  "tests": {
+   "T1_split_count_equivalence": true,
+   "T2_graph_counts": true,
+   "T3_queue_policy": true,
+   "T4_guarded_apply": true,
+   "T5_drain_telemetry": true,
+   "T6_restore_map": true
+  }
+ },
+ "AB": {
+  "median_on": 241.27100000000002,
+  "median_off": 242.652,
+  "paired": [
+   0.097,
+   -2.295,
+   0.054,
+   2.267,
+   1.728,
+   -0.666,
+   -1.118,
+   -0.554,
+   0.493,
+   -1.23,
+   -0.569,
+   -0.661
+  ],
+  "paired_mean_pct": -0.205,
+  "paired_se_pct": 0.363,
+  "same_tokens": true
+ },
+ "mixed": {
+  "c1": {
+   "agg_post60_frozen": 133.09,
+   "agg_post60_adaptive": 194.12,
+   "agg_delta_pct": 45.86,
+   "jpde_req_post60": [
+    91.39,
+    182.99
+   ],
+   "agent_req_post60": [
+    196.02,
+    211.51
+   ],
+   "errors": [
+    0,
+    0
+   ]
+  },
+  "c4": {
+   "agg_post60_frozen": 236.64,
+   "agg_post60_adaptive": 430.99,
+   "agg_delta_pct": 82.13,
+   "jpde_req_post60": [
+    50.04,
+    96.66499999999999
+   ],
+   "agent_req_post60": [
+    66.04,
+    121.55
+   ],
+   "errors": [
+    0,
+    0
+   ]
+  }
+ },
+ "shift_repro": {
+  "jpde_1": {
+   "AR2_frozen": 89.95,
+   "AR2_adaptive": 189.43,
+   "AR3_adaptive": 189.78
+  },
+  "agent": {
+   "AR2_frozen": 195.65,
+   "AR2_adaptive": 218.45,
+   "AR3_adaptive": 219.29
+  },
+  "jpde_2": {
+   "AR2_frozen": 89.95,
+   "AR2_adaptive": 188.61,
+   "AR3_adaptive": 189.35
+  }
+ },
+ "parity": {
+  "S1a_vs_S1b": {
+   "exact": 49,
+   "n": 50,
+   "ids": [
+    "agent-tool-1"
+   ]
+  },
+  "S1a_vs_P1": {
+   "exact": 48,
+   "n": 50,
+   "ids": [
+    "agent-tool-1",
+    "tool-weather-time"
+   ]
+  },
+  "S1a_vs_S2": {
+   "exact": 49,
+   "n": 50,
+   "ids": [
+    "agent-tool-1"
+   ]
+  },
+  "S1b_vs_S2": {
+   "exact": 49,
+   "n": 50,
+   "ids": [
+    "agent-tool-1"
+   ]
+  }
+ },
+ "noise_ids": [
+  "agent-tool-1"
+ ],
+ "gates": {
+  "AR0": true,
+  "overhead_not_significant_or_le_0p5": true,
+  "mixed_c1_no_regress": true,
+  "mixed_c4_no_regress": true,
+  "shift_repro_within_5pct": true,
+  "roundtrip_parity_within_noise": true
+ },
+ "verdict": "PASS"
+}
