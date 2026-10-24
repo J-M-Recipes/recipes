@@ -32,6 +32,27 @@ sibling is the one that needs nothing but the GB300.
 > the 295/89 map, the agreement gate run on real prompts, the ack-before-bookkeeping sidecar fix, the
 > fail-closed watchdog and the bracketed measurement discipline. See [Credits](#credits).
 
+## 2026-10-23 — experimental variant v25m: a mixed-traffic map (no code change)
+
+The 295/89 split in `rowmap-static-v1.json` was fitted on agent traffic. On Japanese/German prose, the GB300 spent
+**11.8 % of wall time waiting on the RTX** (0.5 % on agent English, measured from the peer shm stall counters).
+v25m changes **one file**: `rowmap-mixed-ar-v1.json`, the top-295 experts per layer by cumulative decode counts
+collected on ~100k JP/DE and ~105k agent/tool tokens during the
+[GB300-only adaptive-residency campaign](../deepseek-v4.1-flash-vllm-uva-dspark/README.md). Same image, hook, b12x, flags and KV.
+
+| post-60 s medians, tok/s | v25 (static map) | **v25m (mixed map)** |
+|---|---:|---:|
+| mixed JP/DE + agent, C1 aggregate, **held-out prompts** | 208.9 | **221.1** (+5.8 %) |
+| — per request, JP/DE / agent | 179.5 / 250.8 | **206.7** / 246.4 |
+| mixed, C4 aggregate, held-out | 560.4 | 558.5 (no change) |
+| shift protocol JP/DE / agent, C1 (in-sample prompts) | 186.0 / 244.3 | **206.9** / 247.9 |
+| GB300 stall on the RTX, JP/DE / agent | 11.8 % / 0.5 % | **0.5 %** / 0.4 % |
+
+- **What it buys:** single-stream off-domain prose, +11–15 %. At C4 the GB300's own step time already hides the RTX work.
+- **Fidelity is not established.** Greedy parity cannot gate this lane: two captures on the *same* map agree only 14/50 (probabilistic draft sampling and the sidecar's numerics). v25 vs v25m reads 15/50, at that floor. The cosine/agreement gate, teacher-forced bracket, BFCL, gauntlet and soak have **not** been re-run on the new map. That is why it is experimental.
+- **Launch:** both steps with `ROWMAP=rowmap-mixed-ar-v1.json` (the file goes in the hook directory), for example `NAME=… ROWMAP=rowmap-mixed-ar-v1.json bash launch_sidecar.sh sidecar`, then the same for `server`.
+- Receipts, fitter, harness and the layout-separability test: [`results/2026-10-23-ar5-mixed-map/`](results/2026-10-23-ar5-mixed-map/).
+
 ## What this runs
 
 DeepSeek-V4.1-Flash-1017 (MXFP4 routed experts, FP8 attention/Engram, in-checkpoint DSpark drafter) at the

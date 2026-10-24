@@ -1,0 +1,125 @@
+{
+  "label": "v25 static vs v25m",
+  "exact": 15,
+  "n": 50,
+  "first_misses": [
+    {
+      "id": "agent-prose-1",
+      "group": "agent",
+      "content_equal": false,
+      "tools_equal": true,
+      "first_div_char": 46,
+      "a_head": "Speculative decoding works by having a small, cheap \"draft\" model guess several ",
+      "b_head": "Speculative decoding works by having a small, fast \"draft\" model guess several u",
+      "a_tools": [],
+      "b_tools": [],
+      "a_finish": "stop",
+      "b_finish": "stop"
+    },
+    {
+      "id": "agent-structured-1",
+      "group": "agent",
+      "content_equal": false,
+      "tools_equal": true,
+      "first_div_char": 1,
+      "a_head": "I don't have reliable specifics on these two implementations' exact transfer gra",
+      "b_head": "I'll research both mechanisms to ground the comparison, then compute.  ",
+      "a_tools": [],
+      "b_tools": [],
+      "a_finish": "length",
+      "b_finish": "stop"
+    },
+    {
+      "id": "agent-structured-2",
+      "group": "agent",
+      "content_equal": false,
+      "tools_equal": true,
+      "first_div_char": 97,
+      "a_head": "- weights load: complete \u2014 14.2 GB sharded across 2 GPUs in 38 s - KV cache: all",
+      "b_head": "- weights load: complete \u2014 14.2 GB sharded across 2 GPUs in 38 s - KV cache: all",
+      "a_tools": [],
+      "b_tools": [],
+      "a_finish": "stop",
+      "b_finish": "stop"
+    },
+    {
+      "id": "agent-code-1",
+      "group": "agent",
+      "content_equal": false,
+      "tools_equal": true,
+      "first_div_char": 177,
+      "a_head": "```python def knee(rows):     \"\"\"Return the concurrency where marginal gain per ",
+      "b_head": "```python def knee(rows):     \"\"\"Return the concurrency where marginal gain per ",
+      "a_tools": [],
+      "b_tools": [],
+      "a_finish": "stop",
+      "b_finish": "stop"
+    },
+    {
+      "id": "agent-code-2",
+      "group": "agent",
+      "content_equal": false,
+      "tools_equal": true,
+      "first_div_char": 61,
+      "a_head": "```bash #!/usr/bin/env bash set -euo pipefail  : \"${SRC:?SRC is not set}\"  missi",
+      "b_head": "```bash #!/usr/bin/env bash set -euo pipefail  : \"${SRC:?SRC must be set}\"  miss",
+      "a_tools": [],
+      "b_tools": [],
+      "a_finish": "stop",
+      "b_finish": "stop"
+    },
+    {
+      "id": "agent-tool-1",
+      "group": "agent",
+      "content_equal": false,
+      "tools_equal": false,
+      "first_div_char": 17,
+      "a_head": "I'll check both. Let me first see what access I have to that host.  ",
+      "b_head": "I'll check both. First, let me see what access I have to that host.  ",
+      "a_tools": [
+        {
+          "name": "terminal",
+          "arguments": "{\"command\": \"which docker ssh 2>&1; echo \\\"---\\\"; docker ps 2>&1 | head -5\"}"
+        },
+        {
+          "name": "terminal",
+          "arguments": "{\"command\": \"timeout 5 ping -c 1 station.lan 2>&1; echo \\\"---\\\"; timeout 5 ssh -o BatchMode=yes -o ConnectTimeout=4 station.lan 'echo ok' 2>&1\"}"
+        }
+      ],
+      "b_tools": [
+        {
+          "name": "terminal",
+          "arguments": "{\"command\": \"which docker ssh 2>&1; echo \\\"---\\\"; docker ps 2>&1 | head -5; echo \\\"---\\\"; ssh -o BatchMode=yes -o ConnectTimeout=5 station.lan 'echo ok' 2>&1\"}"
+        }
+      ],
+      "a_finish": "tool_calls",
+      "b_finish": "tool_calls"
+    },
+    {
+      "id": "t5-prose-7",
+      "group": "t5_prose",
+      "content_equal": false,
+      "tools_equal": true,
+      "first_div_char": 227,
+      "a_head": "The number 7 has held a remarkable grip on human imagination across cultures and",
+      "b_head": "The number 7 has held a remarkable grip on human imagination across cultures and",
+      "a_tools": [],
+      "b_tools": [],
+      "a_finish": "length",
+      "b_finish": "length"
+    },
+    {
+      "id": "t5-prose-12",
+      "group": "t5_prose",
+      "content_equal": false,
+      "tools_equal": true,
+      "first_div_char": 149,
+      "a_head": "The number 12 has held a privileged place in human culture for millennia, largel",
+      "b_head": "The number 12 has held a privileged place in human culture for millennia, largel",
+      "a_tools": [],
+      "b_tools": [],
+      "a_finish": "length",
+      "b_finish": "length"
+    }
+  ]
+}

@@ -106,7 +106,7 @@
    ],
    "id": "agent-tool-1",
    "group": "agent",
-   "prompt": "List the docker containers on host 192.168.1.9 and check free disk on /. Use tools.",
+   "prompt": "List the docker containers on host station.lan and check free disk on /. Use tools.",
    "max_tokens": 256,
    "seed": 42
   },
@@ -121,19 +121,19 @@
      "type": "function",
      "function": {
       "name": "read_file",
-      "arguments": "{\"path\": \"/home/milo/dsv41/launch-dsv41-vllm.sh\"}"
+      "arguments": "{\"path\": \"$HOME/dsv41/launch-dsv41-vllm.sh\"}"
      }
     }
    ],
    "tool_norm": [
     {
      "name": "read_file",
-     "arguments": "{\"path\": \"/home/milo/dsv41/launch-dsv41-vllm.sh\"}"
+     "arguments": "{\"path\": \"$HOME/dsv41/launch-dsv41-vllm.sh\"}"
     }
    ],
    "id": "agent-tool-2",
    "group": "agent",
-   "prompt": "Read /home/milo/dsv41/launch-dsv41-vllm.sh then write a copy to /tmp/l2.sh with port 30007. Use tools; call read_file first.",
+   "prompt": "Read $HOME/dsv41/launch-dsv41-vllm.sh then write a copy to /tmp/l2.sh with port 30007. Use tools; call read_file first.",
    "max_tokens": 256,
    "seed": 42
   },

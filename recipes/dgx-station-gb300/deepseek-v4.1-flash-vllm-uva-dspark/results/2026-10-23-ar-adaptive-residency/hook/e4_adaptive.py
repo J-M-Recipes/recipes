@@ -426,7 +426,7 @@ def drain_and_decide() -> None:
 
 
 def _worker():
-    go = os.environ.get("PIN_ADAPTIVE_GO", "/home/milo/pin-hot-experts/e4/GO")
+    go = os.environ.get("PIN_ADAPTIVE_GO", "$HOME/pin-hot-experts/e4/GO")
     _log(f"worker parked until GO file {go}")
     while not os.path.exists(go):
         time.sleep(0.5)

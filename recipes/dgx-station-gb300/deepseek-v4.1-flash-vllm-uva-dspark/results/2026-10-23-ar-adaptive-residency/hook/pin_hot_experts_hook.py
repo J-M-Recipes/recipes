@@ -36,7 +36,7 @@ TOPK = 6
 HIDDEN = 5120
 DECODE_T = 16  # T <= 16 ≈ decode/verify when not capturing
 MAX_N = int(os.environ.get("PIN_MAX_N", "49152"))  # 8192 tokens * top_k=6
-DUMP_DIR = os.environ.get("PIN_DUMP_DIR", "/home/milo/pin-hot-experts/e2a")
+DUMP_DIR = os.environ.get("PIN_DUMP_DIR", "$HOME/pin-hot-experts/e2a")
 DUMP_SEC = float(os.environ.get("PIN_DUMP_SEC", "300"))
 SENTINEL = os.path.join(DUMP_DIR, "DUMP")
 MODE = os.environ.get("PIN_MODE", "").strip().lower()
@@ -50,7 +50,7 @@ ADAPTIVE_FREEZE = os.environ.get("PIN_ADAPTIVE_FREEZE", "0").strip().lower() in 
     "on",
 )
 ADAPTIVE_LOG = os.environ.get(
-    "PIN_ADAPTIVE_LOG", "/home/milo/pin-hot-experts/e4/swaps.jsonl"
+    "PIN_ADAPTIVE_LOG", "$HOME/pin-hot-experts/e4/swaps.jsonl"
 )
 RING_R = int(os.environ.get("PIN_RING_R", "4096"))
 RING_TMAX = int(os.environ.get("PIN_RING_TMAX", "96"))

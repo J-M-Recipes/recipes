@@ -3,15 +3,15 @@
 # mixed-domain traffic C1/C4 frozen vs adaptive, shift reproducibility, and
 # round-trip parity (static -> adapted -> restored static).
 set -uo pipefail
-AR=/home/milo/dsv41/ar
+AR=$HOME/dsv41/ar
 RUN=$AR/run3
 S=$RUN/STATUS
 OLD=dsv41-vllm-1017-v26ar-AR
 NAME=dsv41-vllm-1017-v26ar1-AR3
 IMAGE=vllm/vllm-openai:deepseekv41-flash-0909
-GB300=GPU-1c1855c8-dd10-0247-583e-3c3880ddbf55
-HOOK=/home/milo/pin-hot-experts/v26ar1/hook
-PROMPTS=/home/milo/pin-hot-experts/e2c/parity-prompts.json
+GB300=${GB300_UUID}
+HOOK=$HOME/pin-hot-experts/v26ar1/hook
+PROMPTS=$HOME/pin-hot-experts/e2c/parity-prompts.json
 MIX_S=${MIX_S:-180}
 PHASE_S=${PHASE_S:-180}
 mkdir -p "$RUN"
@@ -94,6 +94,6 @@ log "S2 restored-static parity"
 parity S2
 cmp S1a S2
 cmp S1b S2
-python3 "$AR/ar3_verdict.py" "$RUN" /home/milo/dsv41/ar/run > "$RUN/verdict.json" 2> "$RUN/verdict.err"
+python3 "$AR/ar3_verdict.py" "$RUN" $HOME/dsv41/ar/run > "$RUN/verdict.json" 2> "$RUN/verdict.err"
 log "VERDICT $(python3 -c "import json;d=json.load(open('$RUN/verdict.json'));print(d['verdict'], json.dumps(d['gates']))")"
 log "AR3 done; $NAME left UP and FROZEN (restored static map) on :30006; $OLD stopped-and-kept"

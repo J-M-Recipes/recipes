@@ -16,7 +16,7 @@ import urllib.request
 from pathlib import Path
 
 tag = sys.argv[1]
-outdir = Path(sys.argv[2] if len(sys.argv) > 2 else "/home/milo/pin-hot-experts/e4")
+outdir = Path(sys.argv[2] if len(sys.argv) > 2 else "$HOME/pin-hot-experts/e4")
 phase_s = float(sys.argv[3] if len(sys.argv) > 3 else 180)
 outdir.mkdir(parents=True, exist_ok=True)
 B = "http://127.0.0.1:30006/v1/chat/completions"

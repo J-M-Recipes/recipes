@@ -12,15 +12,15 @@
 set -euo pipefail
 NEW=/models/DeepSeek-V4.1-Flash-1017-1bae0e1088993b9b82de08f59de5be5a34e42170
 IMAGE=vllm/vllm-openai:deepseekv41-flash-0909
-CACHE=/home/milo/dsv41/vllm-cache
-HOOK=${HOOK:-/home/milo/pin-hot-experts/v26ar/hook}
+CACHE=$HOME/dsv41/vllm-cache
+HOOK=${HOOK:-$HOME/pin-hot-experts/v26ar/hook}
 NAME=${NAME:-dsv41-vllm-1017-v26ar-AR}
-RUN=${RUN:-/home/milo/dsv41/ar/run}
+RUN=${RUN:-$HOME/dsv41/ar/run}
 mkdir -p "$RUN"
 sudo -n sh -c "sync; echo 3 > /proc/sys/vm/drop_caches; echo 1 > /proc/sys/vm/compact_memory" 2>/dev/null || true
 docker run -d --name "$NAME" --gpus all --ipc host --network host --ulimit memlock=-1 --ulimit stack=67108864 --cap-add IPC_LOCK \
   -v "$NEW":/model:ro -v /mnt/miloark:/mnt/miloark:ro -v "$CACHE":/root/.cache/vllm \
-  -v "$HOOK/sitecustomize.py":/usr/lib/python3.12/sitecustomize.py:ro -v "$HOOK":/w:ro -v /home/milo/pin-hot-experts/v16:/home/milo/pin-hot-experts/v16 \
+  -v "$HOOK/sitecustomize.py":/usr/lib/python3.12/sitecustomize.py:ro -v "$HOOK":/w:ro -v $HOME/pin-hot-experts/v16:$HOME/pin-hot-experts/v16 \
   -v "$RUN":/ar \
   -e PIN_MODE=adaptive -e PIN_COUNTER=atomic -e PIN_ADAPTIVE_FREEZE=1 \
   -e PIN_ADAPTIVE_GO=/ar/GO -e PIN_CTRL=/ar/ctrl.json -e PIN_TELEMETRY=/ar/telemetry.jsonl -e PIN_ADAPTIVE_LOG=/ar/swaps.jsonl \

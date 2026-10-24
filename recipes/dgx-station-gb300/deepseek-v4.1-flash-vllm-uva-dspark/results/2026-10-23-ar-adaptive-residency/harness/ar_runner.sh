@@ -3,14 +3,14 @@
 # Detached: setsid nohup bash ar_runner.sh > run/runner.log 2>&1 &
 # Progress: run/STATUS (one line per milestone). Stops on the first hard failure.
 set -uo pipefail
-AR=/home/milo/dsv41/ar
+AR=$HOME/dsv41/ar
 RUN=$AR/run
 S=$RUN/STATUS
 NAME=dsv41-vllm-1017-v26ar-AR
 IMAGE=vllm/vllm-openai:deepseekv41-flash-0909
-GB300=GPU-1c1855c8-dd10-0247-583e-3c3880ddbf55
-HOOK=/home/milo/pin-hot-experts/v26ar/hook
-PROMPTS=/home/milo/pin-hot-experts/e2c/parity-prompts.json
+GB300=${GB300_UUID}
+HOOK=$HOME/pin-hot-experts/v26ar/hook
+PROMPTS=$HOME/pin-hot-experts/e2c/parity-prompts.json
 PHASE_S=${PHASE_S:-180}
 mkdir -p "$RUN"
 log() { echo "$(date '+%F %T %Z') $*" | tee -a "$S"; }
