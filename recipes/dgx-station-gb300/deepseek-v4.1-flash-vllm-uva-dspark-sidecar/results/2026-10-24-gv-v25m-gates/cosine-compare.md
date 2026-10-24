@@ -12,4 +12,5 @@ Pre-registered bar: min cos >= 0.999 over gated checks, 40/40 layers covered, 0 
 the failure is one check at layer 39, the worst layer on every map tested. Not re-judged with a moved bar.
 
 Follow-up (Card GV2, same day): layer 39 restored to the static split → min 0.99831, still FAIL, worst check again
-L39 T=128 with cold share 0.000. See `../2026-10-24-gv2-l39-static/`.
+L39 T=128 with cold share 0.000. See `../2026-10-24-gv2-l39-static/`. That shows noise at ~0 cold share; it does not
+clear v25m, whose failing check had cold share 0.079. Re-judge under R2: `../2026-10-26-gs-cosine-r2/`.
