@@ -1,0 +1,89 @@
+<!doctype html>
+<html><head><meta charset="utf-8">
+<style>
+  html,body{margin:0;background:#0b0f14;}
+  .card{width:1200px;box-sizing:border-box;padding:36px 44px;background:linear-gradient(160deg,#0b0f14 0%,#0f1620 100%);color:#e6edf3;font-family:Inter,-apple-system,Segoe UI,Helvetica,Arial,sans-serif;border:1px solid #1e2a38;border-radius:14px;}
+  .mono{font-family:"JetBrains Mono",SFMono-Regular,Menlo,Consolas,monospace;}
+  .top{display:flex;justify-content:space-between;align-items:flex-start;}
+  h1{margin:0;font-size:38px;font-weight:800;letter-spacing:-0.5px;}
+  .sub{margin-top:6px;font-size:15px;color:#9fb0c3;}
+  .brand{text-align:right;font-size:13px;color:#9fb0c3;line-height:1.5;white-space:nowrap}
+  .brand b{color:#6ee7b7;font-size:16px;letter-spacing:1px}
+  .pills{display:flex;flex-wrap:wrap;gap:8px;margin:18px 0 22px}
+  .pill{border:1px solid #2a3a4d;background:#111a25;border-radius:999px;padding:6px 12px;font-size:13px;color:#cfd9e4}
+  .pill b{color:#fff;font-weight:600}
+  .pill.type{border-color:#6ee7b7;color:#6ee7b7}
+  .grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px}
+  .box{background:#111a25;border:1px solid #1e2a38;border-radius:10px;padding:16px 18px}
+  .lbl{font-size:11px;letter-spacing:1.6px;text-transform:uppercase;color:#7f93a8;margin-bottom:6px}
+  .hero{font-size:56px;font-weight:800;line-height:1;color:#fff}
+  .hero small{font-size:18px;font-weight:500;color:#9fb0c3;margin-left:6px}
+  .note{font-size:12px;color:#9fb0c3;margin-top:8px;line-height:1.4}
+  .row2{display:grid;grid-template-columns:1.2fr 1fr 1fr;gap:14px;margin-top:14px}
+  .kv{font-size:14px;line-height:1.75}
+  .kv b{color:#fff;font-weight:600}
+  .acc span{display:inline-block;margin-right:12px}
+  .fid{margin-top:14px;background:#0e1a17;border:1px solid #1f4d3d;border-radius:10px;padding:16px 18px}
+  .fid .lbl{color:#6ee7b7}
+  .fid ul{margin:0;padding-left:0;list-style:none;display:grid;grid-template-columns:1fr 1fr;gap:6px 24px;font-size:14px;line-height:1.5}
+  .ok::before{content:"✓ ";color:#6ee7b7;font-weight:700}
+  .pend::before{content:"◌ ";color:#f59e0b;font-weight:700}
+  .pend{color:#d9c58a}
+  .meas::before{content:"≈ ";color:#93c5fd;font-weight:700}
+  .fail::before{content:"✗ ";color:#f87171;font-weight:700}
+  .fail{color:#fca5a5}
+  .pend-inline{color:#f59e0b;font-size:0.6em;font-weight:600;letter-spacing:1px}
+  .foot{display:flex;justify-content:space-between;margin-top:18px;font-size:12px;color:#7f93a8}
+  .foot .mono{color:#9fb0c3}
+  .fid li.pair { list-style: none; margin: 6px 0 2px -18px; padding: 10px 12px; border: 1px solid rgba(255,255,255,.14); border-radius: 8px; background: rgba(255,255,255,.04); }
+  .fid li.pair .big { font-size: 20px; font-weight: 700; color: #e8f0ff; letter-spacing: -.2px; }
+  .fid li.pair .sep { color: rgba(255,255,255,.35); margin: 0 6px; }
+  .fid li.pair .dim { font-size: 11.5px; color: rgba(255,255,255,.62); }
+</style></head><body>
+<div class="card">
+  <div class="top">
+    <div>
+      <h1>DeepSeek-V4.1-Flash · 1× DGX Station GB300 · adaptive expert residency</h1>
+      <div class="sub">The v23 recipe, but the 295 HBM experts per layer follow live traffic: one relaxed atomic per routed token in a kernel that already runs, swaps between steps. Off-domain decode doubles; nothing else changes.</div>
+    </div>
+    <div class="brand"><b>J-M-RECIPES</b><br>v26ar.1 = v23 launch + hook v26ar.1 (counter + guarded swaps) · measured 2026-10-23 on two boots · NOT promoted · 2026-10-24<br>status: experimental</div>
+  </div>
+  <div class="pills">
+<span class="pill type"><b>MoE</b> · 384 routed experts + Engram; 295 hot per layer in HBM, re-chosen live; 89 cold in Grace over C2C</span>
+<span class="pill"><b>552B</b> total · <b>8B prefill / 16B decode</b> active</span>
+<span class="pill">checkpoint <b>510.3 GB</b> · rev <span class="mono">1bae0e10</span></span>
+<span class="pill">weights <b>as shipped · MXFP4 experts / FP8 attn+Engram · nothing re-quantized</b></span>
+<span class="pill">engine <b>vLLM <span class="mono">179dd0fa9</span> · day-0 image deepseekv41-flash-0909 · v23 launch flags unchanged · hook v26ar.1 (_skc counting split + e4_adaptive drain/swap)</b></span>
+<span class="pill">memory <b>206.6 GiB hot experts in HBM + 62.3 GiB cold in pinned Grace · + one 17.9 MiB staging row + 61 KB counters · KV 2,495,694 tok (unchanged)</b></span>
+  </div>
+  <div class="grid">
+<div class="box"><div class="lbl">Decode · C1 aggregate, mixed traffic (mixed JP/DE + agent)</div><div class="hero">194.1<small>tok/s</small></div><div class="note">frozen v23 map 133.1 → 194.1 (+46%) · JP/DE essays 90.0 → 189.4 / 189.8 (+111%, two boots) · agent English 195.7 → 218.5 / 219.3 (+12%) · cold share of expert picks 17–28% → &lt; 1%</div></div>
+<div class="box"><div class="lbl">Decode · C4 aggregate, mixed traffic</div><div class="hero">431.0<small>tok/s</small></div><div class="note">frozen map 236.6 → 431.0 (+82%) · agent requests 66 → 122 tok/s each (cold reads stop stalling the whole batch) · C8/C16 not measured on this variant</div></div>
+<div class="box"><div class="lbl">TTFT · 7.8K-token unique prompt</div><div class="hero">0.46<small>s</small></div><div class="note">0.47 / 0.46 s · 31.3K prompt 1.38–1.50 s (21–23K tok/s) · prefill is not counted and not changed by the hook</div></div>
+  </div>
+  <div class="row2">
+<div class="box"><div class="lbl">Guesser</div><div class="kv"><b>DSpark</b> · in-checkpoint MTP (mtp.0–2), 1017 revision<br>k = 5 at 1–8 seqs, 1 at 9–24 (v23 batch-size schedule, unchanged)<br><span class="acc">accept: <span class="pend-inline">PENDING</span></span></div></div>
+<div class="box"><div class="lbl">Mechanism — count in-graph, decide off the clock, swap between steps</div><div class="kv">counter cost (GB300 microbench, 40 layers): <b>2–6 µs per step relaxed · acq_rel default was 25–78 µs</b><br>same-boot A/B, count on vs off: <b>−0.21% ± 0.36% over 12 pairs (not significant)</b><br>swaps: <b>≤ 8 per step, ~150 µs each · 15,382 swaps, 0 stale, 0 errors</b><br>convergence after a domain shift: <b>60–90 s</b></div></div>
+<div class="box"><div class="lbl">Versus the RTX-sidecar sibling, same workloads, same night</div><div class="kv">mixed C1 aggregate: <b>194.1 here · 208.9 sidecar (held-out prompts)</b><br>mixed C4 aggregate: <b>431.0 here · 560.4 sidecar</b><br>pick this when: <b>you have only the GB300, or traffic shifts in ways no fixed map covers</b></div></div>
+  </div>
+  <div class="fid"><div class="lbl">Output fidelity — does the recipe change what the model says?</div>
+    <ul>
+<li class="ok">Weights unchanged: 1017 checkpoint as shipped; swaps move whole MXFP4 rows between the HBM and Grace banks, no re-encoding</li>
+<li class="ok">Speculation is target-verified (DSpark drafts accepted by the full model at T=0)</li>
+<li class="ok">Unit tests 6/6 on the GB300: counting kernel output-identical to the base split kernel, counts = bincount inside a captured CUDA graph, stale-swap refusal, restore round trip</li>
+<li class="ok">Greedy parity 49/50 = the lane&#x27;s fixed-map noise (the one miss, agent-tool-1, flips with nothing changed), including static map → 15,382 swaps → restore → re-capture</li>
+<li class="meas">With a different hot set one more near-tie flips (48/50): the 295- and 89-row calls pick different prefill tiles — batch-variance-class numerics, not corruption</li>
+<li class="pend">Teacher-forced Δlogprob, BFCL dev/held-out, GSM8K, gauntlet and a soak with p99 on swap steps have not been run on this variant</li>
+    </ul>
+  </div>
+  <div class="fid"><div class="lbl">Agent claim card — fixed protocol, held-out sibling, cost per solved task</div>
+    <ul>
+<li class="pend">harness card pending — protocol hash, held-out sibling suite, cost per solved task</li>
+    </ul>
+  </div>
+  <div class="foot">
+    <span>recipe <span class="mono">recipes/dgx-station-gb300/deepseek-v4.1-flash-vllm-uva-dspark</span> · run <span class="mono">2026-10-23-ar-adaptive-residency (AR0–AR3)</span></span>
+    <span>github.com/J-M-Recipes/recipes · al-engr.com/gb300-adaptive-expert-residency.html · planner idea: vLLM #56177 (01554)</span>
+  </div>
+</div>
+</body></html>

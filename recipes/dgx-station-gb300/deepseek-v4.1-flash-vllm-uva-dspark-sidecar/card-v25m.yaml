@@ -1,0 +1,71 @@
+# card-v25m.yaml — variant card (EXPERIMENTAL) for the sidecar recipe. Rendered by
+#   scripts/render_card.py recipes/dgx-station-gb300/deepseek-v4.1-flash-vllm-uva-dspark-sidecar --card v25m
+# Numbers trace to results/2026-10-23-ar5-mixed-map/ (speed, stall, parity) and results/2026-10-24-gv-v25m-gates/ (gates).
+title: "DeepSeek-V4.1-Flash · 1× DGX Station GB300 + RTX PRO 6000 · mixed-traffic map (v25m)"
+subtitle: "The v25 sidecar lane with one file changed: the 295-hot / 89-cold expert split refit from live decode counts on JP/DE prose + agent traffic. No code change; same image, hook, kernels, flags, KV."
+version: "v25m = v25 + rowmap-mixed-ar-v1.json · gates re-run 2026-10-24 · 48 h soak 06:14 10-24 → 06:14 10-26 CDT (running)"
+status: experimental
+run_id: 2026-10-23-ar5-mixed-map · 2026-10-24-gv-v25m-gates
+handles: "github.com/J-M-Recipes/recipes · al-engr.com/gb300-adaptive-residency-sidecar-mixed-map.html · sidecar recipe: RonanLabsAI (dgx-station-frontier) · hook: original-el8"
+
+model:
+  type: MoE
+  type_detail: "384 routed experts + Engram; 295 hot in HBM, 89 computed on the RTX 6000 · map refit: 42.5 experts/layer moved"
+  total_params: 552B
+  active_params: "8B prefill / 16B decode"
+  checkpoint_gb: 510.3
+  weights_short: "as shipped · MXFP4 experts / FP8 attn+Engram · nothing re-quantized"
+  engine_extra: "nightly-af7f9488 (sha256:3af6a45b) on BOTH GPUs · el8 hook @87af662 · b12x @2cc7f66a · vllm#58132 bounded replay · ROWMAP=rowmap-mixed-ar-v1.json"
+  memory: "206.6 GiB hot experts in HBM + 66.2 GiB cold on the card · KV declared 8.5 GiB = 4,400,013 tok (unchanged) · host carries Engram only"
+
+hero:
+  c1:      { value: 221.1, unit: tok/s, class: "mixed JP/DE + agent, held-out prompts", label: "Decode · C1 aggregate, mixed traffic", note: "v25 static map 208.9 → 221.1 (+5.8%) · JP/DE per request 179.5 → 206.7 (+15%), agent 250.8 → 246.4 · GB300 waiting on the RTX during JP/DE 11.8% → 0.5% of wall · real-text English C1 273.2 vs v25 279.2 (−2%)" }
+  c16:     { value: 1411, unit: tok/s, label: "Decode · C16 aggregate (knee, 2 reps)", note: "1,429.9 / 1,392.8 vs v25 1,404.2 / 1,414.5 on the same instrument · knee C8 887 vs 934 (−5%) · mixed C4 558.5 vs 560.4 (no change)" }
+  prefill: { value: 0.20, unit: s, label: "TTFT · 8.2K real-text prompt", note: "0.20 s on all 3 real-text C1 runs (v25: 0.19 s) · cold 64K prefill not re-measured on this map" }
+
+guesser:
+  name: DSpark
+  source: "in-checkpoint MTP (mtp.0–2), 1017 revision"
+  schedule: "k = 5 at 1–4 seqs, 3 at 5–8 and 9–32 (unchanged from v25)"
+  accept: { "real-text C1": "2.87–2.98 tok/step", "agent replay": "2.83–2.84 tok/step" }
+
+secondary:
+  - label: "What changed and why"
+    items:
+      "file": "rowmap-mixed-ar-v1.json, top-295 per layer from 128.7 M decode picks (~100k JP/DE + ~105k agent/tool tokens)"
+      "fitted-traffic cold share": "18.2% → 0.88%"
+      "ceiling it chases": "GB300 stall on the RTX 11.8% (JP/DE) / 0.5% (agent) of wall on the static map"
+      "live swapping instead": "feasible (both layouts per-expert separable), not built — ceiling ≈ +13%"
+  - label: "Guard — same as v25"
+    items:
+      "spin limit": "VLLM_EXP_PEER_SPINS=2e9 → a dead sidecar hangs instead of dropping the cold add"
+      "watchdog": "fail-closed (fail-stop), re-armed on the v25m boot"
+      "sidecar timeouts during the gates": "0 (1.03 M waits, 0.016 ms per wait)"
+
+fidelity:
+  - { status: pass, text: "Weights unchanged: 1017 checkpoint as shipped; only which GPU computes each expert changed" }
+  - { status: fail, text: "FAILED the pre-registered bring-up cosine gate: min cos 0.99811 vs bar 0.999 — 1 of 1,439 gated checks (layer 39, T=128, cold experts 7.9% of the output norm); p1 0.99968 vs v25 static 0.99970, v25 static min 0.99906. The same gate rejected the 285/99 map (0.99885)" }
+  - { status: pass, text: "Teacher-forced margin-weighted flips GATE PASS vs the v23 reference (W 2.84, bar 3.08) and vs v25 static (W 2.55, bar 2.90)" }
+  - { status: pass, text: "GSM8K-1319 96.82% vs v25 96.97% (−0.15 pt, McNemar p 0.73) · needle 500/500 exact · gauntlet 12/12 · reasoning_effort codes identical · image request reads the picture" }
+  - { status: pass, text: "Per-turn tool emission 8/12 + 8/12 tool turns (bar ≥ 4), text-turn spurious 4 / 5 (bar ≤ 5), 0 errors" }
+  - { status: measured, text: "Greedy parity cannot gate this lane: the same map self-agrees 14/50 (probabilistic draft sampling + sidecar); v25 vs v25m 15/50 = that floor" }
+
+harness:
+  protocol:
+    file: harness/protocol.yaml
+    sha256: 61c2d22b63516502c57ce876cb4a0884fb6f8e043a5707f5479cef95e99c32da
+    summary: "T=0, no thinking, tool_choice auto, 1 retry, C8 BFCL (same protocol file as v25 and the GB300-only sibling)"
+  dev:
+    name: BFCL dev (simple_python 400 + multiple 200)
+    solved: 556
+    n: 600
+    pct: "92.67%"
+    status: pass
+    note: "v25m live lane, Card GV, 2026-10-24; v25 static 556/600 (identical). Decides candidacy only"
+  heldout:
+    name: BFCL live sibling (live_simple 258 + live_multiple 1,053)
+    solved: 1018
+    n: 1311
+    pct: "77.65%"
+    status: pass
+    note: "v25m 2026-10-24; v25 static 1018/1311 (identical)"

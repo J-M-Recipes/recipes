@@ -1,0 +1,92 @@
+<!doctype html>
+<html><head><meta charset="utf-8">
+<style>
+  html,body{margin:0;background:#0b0f14;}
+  .card{width:1200px;box-sizing:border-box;padding:36px 44px;background:linear-gradient(160deg,#0b0f14 0%,#0f1620 100%);color:#e6edf3;font-family:Inter,-apple-system,Segoe UI,Helvetica,Arial,sans-serif;border:1px solid #1e2a38;border-radius:14px;}
+  .mono{font-family:"JetBrains Mono",SFMono-Regular,Menlo,Consolas,monospace;}
+  .top{display:flex;justify-content:space-between;align-items:flex-start;}
+  h1{margin:0;font-size:38px;font-weight:800;letter-spacing:-0.5px;}
+  .sub{margin-top:6px;font-size:15px;color:#9fb0c3;}
+  .brand{text-align:right;font-size:13px;color:#9fb0c3;line-height:1.5;white-space:nowrap}
+  .brand b{color:#6ee7b7;font-size:16px;letter-spacing:1px}
+  .pills{display:flex;flex-wrap:wrap;gap:8px;margin:18px 0 22px}
+  .pill{border:1px solid #2a3a4d;background:#111a25;border-radius:999px;padding:6px 12px;font-size:13px;color:#cfd9e4}
+  .pill b{color:#fff;font-weight:600}
+  .pill.type{border-color:#6ee7b7;color:#6ee7b7}
+  .grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px}
+  .box{background:#111a25;border:1px solid #1e2a38;border-radius:10px;padding:16px 18px}
+  .lbl{font-size:11px;letter-spacing:1.6px;text-transform:uppercase;color:#7f93a8;margin-bottom:6px}
+  .hero{font-size:56px;font-weight:800;line-height:1;color:#fff}
+  .hero small{font-size:18px;font-weight:500;color:#9fb0c3;margin-left:6px}
+  .note{font-size:12px;color:#9fb0c3;margin-top:8px;line-height:1.4}
+  .row2{display:grid;grid-template-columns:1.2fr 1fr 1fr;gap:14px;margin-top:14px}
+  .kv{font-size:14px;line-height:1.75}
+  .kv b{color:#fff;font-weight:600}
+  .acc span{display:inline-block;margin-right:12px}
+  .fid{margin-top:14px;background:#0e1a17;border:1px solid #1f4d3d;border-radius:10px;padding:16px 18px}
+  .fid .lbl{color:#6ee7b7}
+  .fid ul{margin:0;padding-left:0;list-style:none;display:grid;grid-template-columns:1fr 1fr;gap:6px 24px;font-size:14px;line-height:1.5}
+  .ok::before{content:"✓ ";color:#6ee7b7;font-weight:700}
+  .pend::before{content:"◌ ";color:#f59e0b;font-weight:700}
+  .pend{color:#d9c58a}
+  .meas::before{content:"≈ ";color:#93c5fd;font-weight:700}
+  .fail::before{content:"✗ ";color:#f87171;font-weight:700}
+  .fail{color:#fca5a5}
+  .pend-inline{color:#f59e0b;font-size:0.6em;font-weight:600;letter-spacing:1px}
+  .foot{display:flex;justify-content:space-between;margin-top:18px;font-size:12px;color:#7f93a8}
+  .foot .mono{color:#9fb0c3}
+  .fid li.pair { list-style: none; margin: 6px 0 2px -18px; padding: 10px 12px; border: 1px solid rgba(255,255,255,.14); border-radius: 8px; background: rgba(255,255,255,.04); }
+  .fid li.pair .big { font-size: 20px; font-weight: 700; color: #e8f0ff; letter-spacing: -.2px; }
+  .fid li.pair .sep { color: rgba(255,255,255,.35); margin: 0 6px; }
+  .fid li.pair .dim { font-size: 11.5px; color: rgba(255,255,255,.62); }
+</style></head><body>
+<div class="card">
+  <div class="top">
+    <div>
+      <h1>DeepSeek-V4.1-Flash · 1× DGX Station GB300 + RTX PRO 6000 · mixed-traffic map (v25m)</h1>
+      <div class="sub">The v25 sidecar lane with one file changed: the 295-hot / 89-cold expert split refit from live decode counts on JP/DE prose + agent traffic. No code change; same image, hook, kernels, flags, KV.</div>
+    </div>
+    <div class="brand"><b>J-M-RECIPES</b><br>v25m = v25 + rowmap-mixed-ar-v1.json · gates re-run 2026-10-24 · 48 h soak 06:14 10-24 → 06:14 10-26 CDT (running) · 2026-10-24<br>status: experimental</div>
+  </div>
+  <div class="pills">
+<span class="pill type"><b>MoE</b> · 384 routed experts + Engram; 295 hot in HBM, 89 computed on the RTX 6000 · map refit: 42.5 experts/layer moved</span>
+<span class="pill"><b>552B</b> total · <b>8B prefill / 16B decode</b> active</span>
+<span class="pill">checkpoint <b>510.3 GB</b> · rev <span class="mono">1bae0e10</span></span>
+<span class="pill">weights <b>as shipped · MXFP4 experts / FP8 attn+Engram · nothing re-quantized</b></span>
+<span class="pill">engine <b>vLLM <span class="mono">af7f9488c</span> · nightly-af7f9488 (sha256:3af6a45b) on BOTH GPUs · el8 hook @87af662 · b12x @2cc7f66a · vllm#58132 bounded replay · ROWMAP=rowmap-mixed-ar-v1.json</b></span>
+<span class="pill">memory <b>206.6 GiB hot experts in HBM + 66.2 GiB cold on the card · KV declared 8.5 GiB = 4,400,013 tok (unchanged) · host carries Engram only</b></span>
+  </div>
+  <div class="grid">
+<div class="box"><div class="lbl">Decode · C1 aggregate, mixed traffic (mixed JP/DE + agent, held-out prompts)</div><div class="hero">221.1<small>tok/s</small></div><div class="note">v25 static map 208.9 → 221.1 (+5.8%) · JP/DE per request 179.5 → 206.7 (+15%), agent 250.8 → 246.4 · GB300 waiting on the RTX during JP/DE 11.8% → 0.5% of wall · real-text English C1 273.2 vs v25 279.2 (−2%)</div></div>
+<div class="box"><div class="lbl">Decode · C16 aggregate (knee, 2 reps)</div><div class="hero">1411<small>tok/s</small></div><div class="note">1,429.9 / 1,392.8 vs v25 1,404.2 / 1,414.5 on the same instrument · knee C8 887 vs 934 (−5%) · mixed C4 558.5 vs 560.4 (no change)</div></div>
+<div class="box"><div class="lbl">TTFT · 8.2K real-text prompt</div><div class="hero">0.2<small>s</small></div><div class="note">0.20 s on all 3 real-text C1 runs (v25: 0.19 s) · cold 64K prefill not re-measured on this map</div></div>
+  </div>
+  <div class="row2">
+<div class="box"><div class="lbl">Guesser</div><div class="kv"><b>DSpark</b> · in-checkpoint MTP (mtp.0–2), 1017 revision<br>k = 5 at 1–4 seqs, 3 at 5–8 and 9–32 (unchanged from v25)<br><span class="acc">accept: <span>real-text C1 <b>2.87–2.98 tok/step</b></span> <span>agent replay <b>2.83–2.84 tok/step</b></span></span></div></div>
+<div class="box"><div class="lbl">What changed and why</div><div class="kv">file: <b>rowmap-mixed-ar-v1.json, top-295 per layer from 128.7 M decode picks (~100k JP/DE + ~105k agent/tool tokens)</b><br>fitted-traffic cold share: <b>18.2% → 0.88%</b><br>ceiling it chases: <b>GB300 stall on the RTX 11.8% (JP/DE) / 0.5% (agent) of wall on the static map</b><br>live swapping instead: <b>feasible (both layouts per-expert separable), not built — ceiling ≈ +13%</b></div></div>
+<div class="box"><div class="lbl">Guard — same as v25</div><div class="kv">spin limit: <b>VLLM_EXP_PEER_SPINS=2e9 → a dead sidecar hangs instead of dropping the cold add</b><br>watchdog: <b>fail-closed (fail-stop), re-armed on the v25m boot</b><br>sidecar timeouts during the gates: <b>0 (1.03 M waits, 0.016 ms per wait)</b></div></div>
+  </div>
+  <div class="fid"><div class="lbl">Output fidelity — does the recipe change what the model says?</div>
+    <ul>
+<li class="ok">Weights unchanged: 1017 checkpoint as shipped; only which GPU computes each expert changed</li>
+<li class="fail">FAILED the pre-registered bring-up cosine gate: min cos 0.99811 vs bar 0.999 — 1 of 1,439 gated checks (layer 39, T=128, cold experts 7.9% of the output norm); p1 0.99968 vs v25 static 0.99970, v25 static min 0.99906. The same gate rejected the 285/99 map (0.99885)</li>
+<li class="ok">Teacher-forced margin-weighted flips GATE PASS vs the v23 reference (W 2.84, bar 3.08) and vs v25 static (W 2.55, bar 2.90)</li>
+<li class="ok">GSM8K-1319 96.82% vs v25 96.97% (−0.15 pt, McNemar p 0.73) · needle 500/500 exact · gauntlet 12/12 · reasoning_effort codes identical · image request reads the picture</li>
+<li class="ok">Per-turn tool emission 8/12 + 8/12 tool turns (bar ≥ 4), text-turn spurious 4 / 5 (bar ≤ 5), 0 errors</li>
+<li class="meas">Greedy parity cannot gate this lane: the same map self-agrees 14/50 (probabilistic draft sampling + sidecar); v25 vs v25m 15/50 = that floor</li>
+    </ul>
+  </div>
+  <div class="fid"><div class="lbl">Agent claim card — fixed protocol, held-out sibling, cost per solved task</div>
+    <ul>
+<li class="ok">protocol <span class="mono">harness/protocol.yaml</span> sha256 <span class="mono">61c2d22b6351</span> · T=0, no thinking, tool_choice auto, 1 retry, C8 BFCL (same protocol file as v25 and the GB300-only sibling)</li>
+<li class="ok">dev suite (decides candidacy): <b>BFCL dev (simple_python 400 + multiple 200)</b> 556/600 solved (92.67%) · v25m live lane, Card GV, 2026-10-24; v25 static 556/600 (identical). Decides candidacy only</li>
+<li class="ok">held-out sibling (decides promotion): <b>BFCL live sibling (live_simple 258 + live_multiple 1,053)</b> 1018/1311 solved (77.65%)</li>
+<li class="pend">Pass@1 · $ / solved pair: pending (needs held-out run + priced cost)</li>
+    </ul>
+  </div>
+  <div class="foot">
+    <span>recipe <span class="mono">recipes/dgx-station-gb300/deepseek-v4.1-flash-vllm-uva-dspark-sidecar</span> · run <span class="mono">2026-10-23-ar5-mixed-map · 2026-10-24-gv-v25m-gates</span></span>
+    <span>github.com/J-M-Recipes/recipes · al-engr.com/gb300-adaptive-residency-sidecar-mixed-map.html · sidecar recipe: RonanLabsAI (dgx-station-frontier) · hook: original-el8</span>
+  </div>
+</div>
+</body></html>

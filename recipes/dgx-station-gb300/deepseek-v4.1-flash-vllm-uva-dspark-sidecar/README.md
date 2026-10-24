@@ -49,7 +49,10 @@ collected on ~100k JP/DE and ~105k agent/tool tokens during the
 | GB300 stall on the RTX, JP/DE / agent | 11.8 % / 0.5 % | **0.5 %** / 0.4 % |
 
 - **What it buys:** single-stream off-domain prose, +11–15 %. At C4 the GB300's own step time already hides the RTX work.
-- **Fidelity is not established.** Greedy parity cannot gate this lane: two captures on the *same* map agree only 14/50 (probabilistic draft sampling and the sidecar's numerics). v25 vs v25m reads 15/50, at that floor. The cosine/agreement gate, teacher-forced bracket, BFCL, gauntlet and soak have **not** been re-run on the new map. That is why it is experimental.
+- **Fidelity (Card GV, 2026-10-24): 9 of 10 gates pass, the bring-up cosine gate fails.** Greedy parity cannot gate this lane (the same map self-agrees 14/50), so the gates are SC2's. Teacher-forced flips PASS against both v23 and v25 static; GSM8K-1319 96.82 vs 96.97; BFCL dev/held-out **identical** to v25 (556/600, 1018/1311); gauntlet 12/12; needle 500/500; tool emission, effort and image probes pass; 0 sidecar timeouts. **The bring-up cosine gate misses: min cos 0.99811 vs the 0.999 bar.** That is one of 1,439 gated checks, at layer 39 (the worst layer on every map), and the rest of the distribution matches v25 static (p1 0.99968 vs 0.99970). The same gate rejected the 285/99 map, so the bar stays where it is and v25m stays **experimental**. Receipts: [`results/2026-10-24-gv-v25m-gates/`](results/2026-10-24-gv-v25m-gates/).
+- **Same-instrument speed vs v25:** real-text English C1 273.2 vs 279.2 (−2 %), knee C8 887 vs 934 (−5 %), C16 1,411 vs 1,409. The mixed map trades a little English-only speed for +15 % on JP/DE.
+- **Soak:** 48 h on v25m, 06:14 10-24 → 06:14 10-26 CDT, fail-stop watchdog armed.
+- **Card:** [`card-v25m.png`](card-v25m.png) (base v25 card: [`card.png`](card.png)).
 - **Launch:** both steps with `ROWMAP=rowmap-mixed-ar-v1.json` (the file goes in the hook directory), for example `NAME=… ROWMAP=rowmap-mixed-ar-v1.json bash launch_sidecar.sh sidecar`, then the same for `server`.
 - Receipts, fitter, harness and the layout-separability test: [`results/2026-10-23-ar5-mixed-map/`](results/2026-10-23-ar5-mixed-map/).
 
