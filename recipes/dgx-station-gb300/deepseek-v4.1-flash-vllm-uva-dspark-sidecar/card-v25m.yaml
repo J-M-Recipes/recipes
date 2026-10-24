@@ -45,7 +45,7 @@ secondary:
 fidelity:
   - { status: pass, text: "Weights unchanged: 1017 checkpoint as shipped; only which GPU computes each expert changed" }
   - { status: fail, text: "FAILED the pre-registered bring-up cosine gate: min cos 0.99811 vs bar 0.999 — 1 of 1,439 gated checks (layer 39, T=128, cold experts 7.9% of the output norm); p1 0.99968 vs v25 static 0.99970, v25 static min 0.99906. The same gate rejected the 285/99 map (0.99885)" }
-  - { status: measured, text: "Map ruled out as the cause: layer 39 restored to v25's exact static split still misses (min 0.99831), worst check again L39 with cold experts at ~0% of the output norm — boot-to-boot noise at that check" }
+  - { status: measured, text: "Layer 39 on v25's exact static split still misses (0.99831; worst check at ~0 cold share = noise). That does not clear v25m, whose failing check had cold share 7.9%. Re-judged Mon 10-26 under the pre-registered gate R2" }
   - { status: pass, text: "Teacher-forced margin-weighted flips GATE PASS vs the v23 reference (W 2.84, bar 3.08) and vs v25 static (W 2.55, bar 2.90)" }
   - { status: pass, text: "GSM8K-1319 96.82% vs v25 96.97% (−0.15 pt, McNemar p 0.73) · needle 500/500 exact · gauntlet 12/12 · reasoning_effort codes identical · image request reads the picture" }
   - { status: pass, text: "Per-turn tool emission 8/12 + 8/12 tool turns (bar ≥ 4), text-turn spurious 4 / 5 (bar ≤ 5), 0 errors" }

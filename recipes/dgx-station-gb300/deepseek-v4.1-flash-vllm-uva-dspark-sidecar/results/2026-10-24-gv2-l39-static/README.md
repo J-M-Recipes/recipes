@@ -17,6 +17,9 @@ re-armed, 48 h soak restarted 2026-10-24 07:12:57 → 2026-10-26 07:12:57 CDT. N
 
 Reading: with layer 39's split byte-identical to v25 static, layer 39 is still the worst check and still misses. The
 worst checks on both static-L39 boots have the cold experts contributing ~0% of that layer's output norm, so the cosine
-there compares two near-zero vectors and is dominated by rounding noise. The miss is not attributable to the map. The
-gate as registered (min over all >= 32-row checks) appears to sit inside boot-to-boot noise at layer 39 T=128; v25
-static's single passing boot (0.99906) is one sample. Not re-judged; any re-registration of the gate is James's call.
+there compares two near-zero vectors and is dominated by rounding noise. So layer 39's checks are noisy, and
+v25 static's single passing boot (0.99906) is one sample.
+
+**Correction (2026-10-24 08:15):** an earlier version of this file concluded "the miss is not attributable to the map".
+That overreached. v25m's own failing check (Card GV) had cold share 0.079 (rel_diff 0.062), not ~0, so GV2 does not
+clear v25m. Resolution goes to cosine gate R2, registered before any re-judging: `../2026-10-26-gs-cosine-r2/`.
