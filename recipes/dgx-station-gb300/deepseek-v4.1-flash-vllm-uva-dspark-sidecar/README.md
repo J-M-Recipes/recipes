@@ -32,6 +32,58 @@ sibling is the one that needs nothing but the GB300.
 > the 295/89 map, the agreement gate run on real prompts, the ack-before-bookkeeping sidecar fix, the
 > fail-closed watchdog and the bracketed measurement discipline. See [Credits](#credits).
 
+> **Status, 2026-10-24 (recipe stays experimental).** The adaptive-residency campaign has ended. James cancelled
+> the v25m 48 h soak on 2026-10-24, and lane `:30006` on the reference box now serves the v26 "Seeded Adaptive"
+> config from the GB300-only sibling. This recipe documents the sidecar lane and its variants, including the new
+> kv-host-tier variant below. **Cross-links:** the GB300-only recipe's new v26 run is in
+> [`../deepseek-v4.1-flash-vllm-uva-dspark`](../deepseek-v4.1-flash-vllm-uva-dspark/README.md). Blogs:
+> [Adaptive Residency Part 3, the seed map](https://al-engr.com/gb300-adaptive-residency-seed-map.html) and
+> [Part 1, with its convergence correction](https://al-engr.com/gb300-adaptive-expert-residency.html).
+
+## 2026-10-24: kv-host-tier variant, a 48 GiB Grace prefix-KV tier (Card KV3)
+
+**Result: full battery PASS, 10/10 pre-registered gates, no measurable speed cost, eligible for production use as a variant.**
+The change is two flags added to the existing launch, after the KV declaration already published:
+
+```bash
+EXTRA="--kv-cache-memory 9126805504 --kv-offloading-size 48 --kv-offloading-backend native" bash scripts/launch-sidecar.sh server
+```
+
+With the tier on, vLLM's `OffloadingConnector` keeps prefix blocks evicted from the GPU in a 51.54 GB `/dev/shm`
+mmap in Grace memory. When a later request hits that prefix, it loads the blocks back instead of recomputing
+them. The GPU pool stays at **4,400,013 tokens on every arm**, so the tier only adds capacity. In the evict-replay
+probes the tier loaded **1,656 B per hit token**, so 48 GiB holds **~31M prefix tokens** on top of the GPU's 4.40M.
+That figure was measured on this lane's `fp8_ds_mla` KV and does not transfer to other KV formats.
+
+Bracketed **K0 (no tier) → K1 (tier) → K0R (no tier)**. Each arm got a fresh sidecar+server boot on the v25m map,
+with the fail-closed watchdog armed, on 2026-10-24 between 21:22 and 22:35 CDT. Receipts:
+[`results/2026-10-24-kv3-host-prefix-tier/`](results/2026-10-24-kv3-host-prefix-tier/).
+
+| cell | no tier (K0 / K0R) | **tier (K1)** | Δ / gate |
+|---|--:|--:|---|
+| C1 held-out mixed JP/DE + agent, 6 × 120 s, mean | 219.76 / 219.20 | **219.89** | +0.19% vs pooled 219.48 (bar −2.04%; drift K0→K0R 0.26%) |
+| cold 64K TTFT proxy, median | 1.401 / 1.406 s | 1.424 s | +1.47% (bar +5%) |
+| warm replay r2 (8,172-tok prompt, 256 forced) | 195.52 / 183.72 | 177.48 | −3.40% vs the lower control (bar −5%); the controls themselves span 183.7–195.5 |
+| evict → `/reset_prefix_cache` → replay, 7,929 / 31,629 tok | — | host-tier hit + load, **identical output**, ×1.54 / ×3.2 | PASS |
+| 954,028-token needle | recalled, 32.9 / 33.0 s | recalled, 32.8 s | PASS |
+| GPU KV tokens | 4,400,013 | 4,400,013 | unchanged |
+| MemAvailable min during cells | 177.7 / 178.9 GiB | 129.8 GiB | floor 60; 0 new OOM kills |
+| watchdog timeouts / trips · error lines · pin warnings | 0 / 0 · 0 · — | 0 / 0 · 0 · 0 | PASS |
+| gauntlet | — | 12/12 | PASS |
+
+- **The card's launcher (`launch_kv3.sh`) set `VLLM_SERVER_DEV_MODE=1`. That was for the smoke and probe only:** it
+  exposes `/reset_prefix_cache`, which the evict-replay probe needs to drop the GPU prefix cache. The production
+  variant is the two flags above, without dev mode. That exact no-dev-mode boot was not measured separately.
+- **Upstream [vllm#47890](https://github.com/vllm-project/vllm/issues/47890)** reports that speculative decoding can
+  zero CPU-tier hits. We tested for it, and it did not reproduce on this image (af7f9488): with DSpark on, both
+  probe lengths (7,929 and 31,629 tokens, neither a multiple of 256) hit and loaded from the host tier. The K1 boot
+  logs `treating all groups as non-draft for offloading`. Only two lengths were probed.
+- **LMCache is not an option on this lane.** It needs the hybrid KV manager turned off.
+- **Limits:** the base was the v25m map, not the static map. Fidelity evidence on the tier arm is identical short
+  outputs on the probes plus gauntlet, needle and zero errors. No teacher-forced, GSM8K or BFCL run was done on the tier arm.
+  Hit rates under real multi-user eviction pressure, and C>1 with the tier, were not measured. The tier also costs
+  about 48 GiB of host MemAvailable. Card: [`card-kv.yaml`](card-kv.yaml) (not yet rendered).
+
 ## 2026-10-23 — experimental variant v25m: a mixed-traffic map (no code change)
 
 The 295/89 split in `rowmap-static-v1.json` was fitted on agent traffic. On Japanese/German prose, the GB300 spent
@@ -51,7 +103,7 @@ collected on ~100k JP/DE and ~105k agent/tool tokens during the
 - **What it buys:** single-stream off-domain prose, +11–15 %. At C4 the GB300's own step time already hides the RTX work.
 - **Fidelity (Card GV, 2026-10-24): 9 of 10 gates pass, the bring-up cosine gate fails.** Greedy parity cannot gate this lane (the same map self-agrees 14/50), so the gates are SC2's. Teacher-forced flips PASS against both v23 and v25 static; GSM8K-1319 96.82 vs 96.97; BFCL dev/held-out **identical** to v25 (556/600, 1018/1311); gauntlet 12/12; needle 500/500; tool emission, effort and image probes pass; 0 sidecar timeouts. **The bring-up cosine gate misses: min cos 0.99811 vs the 0.999 bar.** That is one of 1,439 gated checks, at layer 39 (the worst layer on every map), and the rest of the distribution matches v25 static (p1 0.99968 vs 0.99970). The same gate rejected the 285/99 map, so the bar stays where it is and v25m stays **experimental**. **Follow-up (Card GV2):** restoring layer 39 to v25's exact static split did not fix it (min 0.99831; worst check again layer 39, where the cold experts carried ~0 % of the output norm); see [`results/2026-10-24-gv2-l39-static/`](results/2026-10-24-gv2-l39-static/). **Correction (2026-10-24 08:15):** an earlier version said the v25m miss was check noise, not the map. That overreached. GV2 shows layer 39's checks are noisy when the cold experts carry ~0 of the output, but v25m's own failing check had them at 7.9 %, so GV2 does not clear v25m. The open question goes to a new, pre-registered gate (R2, below). **Cosine gate R2, registered 2026-10-24 before re-judging** ([`results/2026-10-26-gs-cosine-r2/`](results/2026-10-26-gs-cosine-r2/)): judge the sidecar's error as a fraction of the whole layer output, e = rel_diff × cold share, against a bar of 1.5 × the worst e from three v25-static check boots (the SC0 boot plus two more after the soak, 2026-10-26). Every archived boot is re-judged and the table published whatever it says. Receipts: [`results/2026-10-24-gv-v25m-gates/`](results/2026-10-24-gv-v25m-gates/).
 - **Same-instrument speed vs v25:** real-text English C1 273.2 vs 279.2 (−2 %), knee C8 887 vs 934 (−5 %), C16 1,411 vs 1,409. The mixed map trades a little English-only speed for +15 % on JP/DE.
-- **Soak:** 48 h on v25m, restarted after Card GV2 at 07:12 Sat 10-24 → 07:12 Mon 10-26 CDT, fail-stop watchdog armed. Card GS (static check boots + R2 re-judge) runs right after.
+- **Soak:** 48 h on v25m, restarted after Card GV2 at 07:12 Sat 10-24 → 07:12 Mon 10-26 CDT, fail-stop watchdog armed. Card GS (static check boots + R2 re-judge) runs right after. **Cancelled 2026-10-24 by James** (soak and Card GS); v25m was never soak-cleared.
 - **Card:** [`card-v25m.png`](card-v25m.png) (base v25 card: [`card.png`](card.png)).
 - **Launch:** both steps with `ROWMAP=rowmap-mixed-ar-v1.json` (the file goes in the hook directory), for example `NAME=… ROWMAP=rowmap-mixed-ar-v1.json bash launch_sidecar.sh sidecar`, then the same for `server`.
 - Receipts, fitter, harness and the layout-separability test: [`results/2026-10-23-ar5-mixed-map/`](results/2026-10-23-ar5-mixed-map/).
@@ -179,6 +231,7 @@ bash scripts/soak_check.sh <ssh-host> "$NAME"     # one health sample from anoth
 | drafter | per-class decode wall-clock, 20 cells × {C1, C8} | no cell worse than −3% vs both controls |
 | speed | bracketed ladders with a control on each side | knee C1 ≥ 198, knee C16 ≥ 974, sidecar C16 ≥ Grace-only +3% |
 | soak | 48 h, sampled every 5 min — restarted with the KV change: 2026-10-22 18:52 → 2026-10-24 18:52 CDT | no timeout, no trip, no stall |
+| kv-host-tier (variant) | boot log `Creating v1 connector with name: OffloadingConnector` + `Created mmap file /dev/shm/vllm_offload_….mmap (51.54 GB)`, GPU KV line still 4,400,013; evict-replay probe in `results/2026-10-24-kv3-host-prefix-tier/scripts/kv3_cells.py` (needs dev mode, test boots only) | host-tier hit + load, identical output; Card KV3's 10 gates |
 
 Nothing here is promoted on throughput alone: the cosine gate and the 0-timeout soak are pass/fail, and a
 timeout is treated as a correctness bug rather than a slow request.
@@ -262,6 +315,15 @@ in prefill (2,062 incumbent); RTX p99 ≤ 194 W against its 300 W cap. Full tabl
 
 ## Known limits
 
+* **kv-host-tier variant (Card KV3):** the card's launcher ran with `VLLM_SERVER_DEV_MODE=1` (smoke only, for
+  `/reset_prefix_cache`), and production drops it, so that exact boot was not measured on its own. It was measured on the v25m map. ~31M
+  prefix tokens = 48 GiB / 1,656 B per hit token on this lane only. Speed-neutral on the gated C1/TTFT/warm
+  cells, but real multi-user hit rates, eviction pressure and C>1 with the tier were not measured. Fidelity on the tier arm is
+  identical short probe outputs + gauntlet 12/12 + needle; there was no TF/GSM8K/BFCL run on it. Host MemAvailable drops by ~48 GiB
+  (min 129.8 GiB). vllm#47890 did not reproduce, but only two prompt lengths were probed. LMCache would need the hybrid
+  KV manager off.
+* **No 48 h soak has completed on any sidecar config.** The 2026-10-22 window was cut at ~25 h, and James cancelled
+  the v25m window on 2026-10-24. The recipe stays experimental.
 * **The power cap binds in prefill** — and it bound on the incumbent too (65% / 52% of samples). The SC5 bars
   (<1% throttled, module ≤1,190 W) were set too tight for this chassis; every number here was measured under
   that throttling. A 240 V / uncapped retest is the obvious next measurement.
@@ -307,6 +369,10 @@ docker start dsv41-vllm-1017-v23-pinexact-RETIRED-REF     # binds in ~260 s
 To undo only the KV change, start the kept util-0.97 pair instead (sidecar first, then server):
 `docker start dsv41-vllm-1017-v25-sidecar-kv4.9-KEPT-rtx && docker start dsv41-vllm-1017-v25-sidecar-kv4.9-KEPT`
 (it bound in ~7 min on the reference box).
+
+To drop only the kv-host-tier variant, relaunch the server step without the two tier flags
+(`EXTRA="--kv-cache-memory 9126805504"`). `docker start` of a tier container keeps its flags. The mmap is unlinked
+at boot, so stopping the container frees the 51.54 GB.
 
 With no previous lane on the box, the fallback is the GB300-only sibling recipe
 ([`../deepseek-v4.1-flash-vllm-uva-dspark`](../deepseek-v4.1-flash-vllm-uva-dspark)): same checkpoint, Grace

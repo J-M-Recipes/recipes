@@ -1,0 +1,14 @@
+sha1 3db050b7e5e8 ~/dsv41/m3/kv3/cardKV3_runner.sh
+sha1 5c02229c8f00 ~/dsv41/m3/launch_kv3.sh
+sha1 ce5231c16a96 ~/dsv41/ar/ar_mixed_v2.py
+sha1 b17d9103d58b ~/dsv41/m3/sidecar_watchdog.py
+sha1 7a96fc2f3593 ~/dsv41/m3/kv3/kv3_cells.py
+sha1 dc36c55f6367 ~/dsv41/m3/kv3/kv3_verdict.py
+sha1 e5f575dcd4a9 ~/pin-hot-experts/round7/gauntlet/run_suite.py
+sha1 52e2861c7ecc ~/dsv41/m3/el8/deepseek-v4.1-flash/m3/hook/rowmap-mixed-ar-v1.json
+image vllm/vllm-openai@sha256:3af6a45b060d681aa6254200f87859d1bb3c1f962afb3d15540b4b31d4a41063
+gauntlet image sha256:00d577a6a63281e15336029d5bcee4e9a2cf182214a4f20ba6111b1c8e79893d
+K0/K0R EXTRA=[--kv-cache-memory 9126805504]
+K1 EXTRA=[--kv-cache-memory 9126805504 --kv-offloading-size 48 --kv-offloading-backend native]
+REF args: ["serve","--model","/model","--served-model-name","dsv41-flash-uva","--trust-remote-code","--tensor-parallel-size","1","--offload-backend","uva","--cpu-offload-gb","60","--cpu-offload-params","routed_experts.w13_weight","routed_experts.w2_weight","--engram-config","{\"cpu_offload\": true}","--max-model-len","1048576","--max-num-seqs","24","--max-num-batched-tokens","8192","--gpu-memory-utilization","0.97","--tool-call-parser","deepseek_v41","--reasoning-parser","deepseek_v41","--enable-auto-tool-choice","--long-prefill-token-threshold","6144","--speculative-config","{\"method\":\"dspark\",\"num_speculative_tokens\":5,\"num_speculative_tokens_per_batch_size\":[[1,8,5],[9,24,1]]}","--cudagraph-capture-sizes","1","2","4","6","8","12","16","18","24","32","40","48","64","96","128","--host","0.0.0.0","--port","30006"]
+soak dir: total 228|drwxrwxr-x  2 milo milo   4096 Oct 24 20:54 .|drwxrwxr-x 10 milo milo   4096 Oct 24 20:31 ..|-rw-rw-r--  1 milo milo     35 Oct 24 20:54 ctrl.json|-rw-rw-r--  1 milo milo      0 Oct 24 20:54 GO|-rw-r--r--  1 root root 142432 Oct 24 21:22 steps.bin|-rw-r--r--  1 root root  64155 Oct 24 20:52 swaps.jsonl|-rw-r--r--  1 root root   3582 Oct 24 20:54 telemetry.jsonl|

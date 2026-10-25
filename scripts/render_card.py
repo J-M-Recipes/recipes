@@ -213,7 +213,7 @@ def to_png(html_path: Path, png_path: Path) -> bool:
         # Chrome's --screenshot captures exactly the viewport; a fixed 900 px silently cropped the fidelity and
         # agent-claim strips once the card grew. Render tall, then trim background-only rows (Pillow; else stays tall).
         cmd = [exe, "--headless=new", "--disable-gpu", "--hide-scrollbars",
-               f"--screenshot={png_path}", "--window-size=1200,2400", "--force-device-scale-factor=2",
+               f"--screenshot={png_path}", "--window-size=1200,3600", "--force-device-scale-factor=2",
                html_path.resolve().as_uri()]
         r = subprocess.run(cmd, capture_output=True, text=True)
         if r.returncode == 0 and png_path.exists():

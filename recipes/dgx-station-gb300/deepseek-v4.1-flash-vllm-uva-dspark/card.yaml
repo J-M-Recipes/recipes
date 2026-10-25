@@ -2,53 +2,56 @@
 # Every number here must trace to recipe.yaml metrics or a results/<run_id>/ bundle. Unknown = pending (renders amber);
 # status measured = a number without a pass/fail verdict (renders blue ≈).
 title: "DeepSeek-V4.1-Flash · 1× DGX Station GB300"
-subtitle: "Full 1,048,576-token context from a single GB300 — routed experts split HBM / Grace over NVLink-C2C, in-checkpoint DSpark drafter"
-version: "v23 “Pin Exact” serving since 2026-10-18 10:21 CDT (v22 + exact-size pinned host allocs) · v22 = rollback · nightly-39983a5e config C passed its gates, NOT promoted (pending James)"
-run_id: 2026-10-18-v23-pinexact-host (v23) · 2026-10-18-p2-nightly-39983a5e-gate (v23 controls, candidate) · 2026-10-18-p1-prefill-graphs-FAIL
-handles: "github.com/J-M-Recipes/recipes · al-engr.com · @jmeadlock"
+subtitle: "Full 1,048,576-token context from a single GB300 — routed experts split HBM / Grace over NVLink-C2C, the 295 HBM experts per layer follow live traffic from a counter-seeded boot map, in-checkpoint DSpark drafter"
+version: "v26 “Seeded Adaptive” · serving since 2026-10-24 · soak waived · v23 = rollback"
+run_id: 2026-10-24-v26-seeded-adaptive (v26, Card AR6 v2) · 2026-10-23-ar-adaptive-residency (hook v26ar.1, restore round trip) · 2026-10-18-v23-pinexact-host (v23 base, prefill)
+handles: "github.com/J-M-Recipes/recipes · al-engr.com/gb300-adaptive-residency-seed-map.html · @jmeadlock"
 
 model:
   type: MoE
-  type_detail: "384 routed experts + Engram"
+  type_detail: "384 routed experts + Engram; 295 hot per layer in HBM (re-chosen live), 89 cold in Grace"
   total_params: 552B              # backbone, model card; + 196B Engram. 284B was V4-Flash — corrected 2026-09-20
   active_params: "8B prefill / 16B decode"   # model card (CED: 20-layer encoder + 20-layer decoder); config: 6 of 384 routed + 1 shared per MoE layer
   checkpoint_gb: 510.3            # 1017 revision: 253 files, 510,311,114,235 B (stat sum on the box, 2026-10-18)
   weights_short: "as shipped · MXFP4 experts / FP8 attn+Engram · nothing re-quantized"
-  engine_extra: "day-0 image deepseekv41-flash-0909 (sha256 00d577a6) · FlashInfer 0.6.18 · autotune hash 62426808 (189 configs) · hook v21"
-  memory: "206.6 GiB HBM experts + 62.3 GiB Grace-pinned experts · pinned host total 252.8 GiB (v22: 328.0) · KV 2.50M tok"
+  engine_extra: "day-0 image deepseekv41-flash-0909 (sha256 00d577a6) · FlashInfer 0.6.18 · autotune hash 62426808 (189 configs, hash hit) · hook v26ar.2 (python-side, sha1 69bf0777)"
+  memory: "206.6 GiB hot experts in HBM + 62.3 GiB cold in pinned Grace · pinned host ~252.8 GiB (v23 alloc env) · KV 2,495,694 tok (2.38× at 1M)"
 
 hero:
-  c1:      { value: 188, unit: tok/s, class: "prose-class real text, CNN/DM 8.2K in", label: "Decode · C1, mean of 3", note: "188.2 (190.8 / 189.1 / 184.8), 2.99 tokens/step, v23 promotion boot; later v23 controls 186.1 / 186.8 · 1,024 forced tokens, 0% prefix hits · per class (40 real prompts, decode only): prose 232 · structured 250 · code 293 · shell 317 · tool-JSON 300" }
-  c16:     { value: 605, unit: tok/s, label: "Decode · C8 aggregate (prose knee, 4 reps)", note: "knee6 C8 596.5 / 614.0 on the two v23 control arms (reps bimodal: ~570–580 or ~620) · knee r2 C16 944 · max-num-seqs 24, k=5 to 8 live sequences" }
-  prefill: { value: 0.645, unit: s, label: "TTFT · 8.2K-token prompt", note: "0.643 / 0.647 s, RT C1 median on two v23 arms · cold ~53K-token prompt at 24.1K tok/s · 972K prompt in 85 s (v11)" }
+  c1:      { value: 218.9, unit: tok/s, class: "agent-English prose, adaptive steady state", label: "Decode · C1", note: "seed boot, shipped policy, final 60 s of each phase, 3 reps · JP/DE essays 189.6 · static-map boot converges to the same 219.1 / 189.9 · different instrument from v23's 188.2 kbench real-text C1 (not re-run on v26)" }
+  c16:     { value: 183.7, unit: tok/s, label: "Held-out mixed · C1 aggregate, maps frozen", note: "seed map vs September static map ×1.445 (127.1), same window, held-out prompts · agent −0.7% · first prose request after boot 177.9 vs 85.0 (2.1×) · C8/C16 not re-run on v26" }
+  prefill: { value: 0.645, unit: s, label: "TTFT · 8.2K-token prompt", note: "unchanged from the v23 base (0.643 / 0.647 s, RT C1 median); the hook neither counts nor touches prefill · not re-measured on v26 · 972K prompt in 85 s (v11)" }
 
 guesser:
   name: DSpark
   source: "in-checkpoint MTP (mtp.0–2), 1017 revision"
-  schedule: "k = 5 at 1–8 seqs, 1 at 9–24 (batch-size schedule, v22)"
-  accept: { prose: 42%, structured: 46%, code: 67%, shell: 68%, tool-JSON: 60% }   # per-class instrument, C1, 40 real prompts/class, forced 256, v23 18:29 baseline (mean of r1/r2)
+  schedule: "k = 5 at 1–8 seqs, 1 at 9–24 (batch-size schedule, v22; unchanged in v26)"
+  accept: { prose: 42%, structured: 46%, code: 67%, shell: 68%, tool-JSON: 60% }   # per-class instrument, C1, 40 real prompts/class, forced 256, v23 18:29 baseline (mean of r1/r2); not re-measured on v26
 
 secondary:
-  - label: "Host memory and long context (v23)"
+  - label: "Seed map + adaptive residency — Card AR6, 2026-10-24"
+    items:
+      "peak cold share after a domain shift": "25.4% → 5.7% (Sept map → seed map)"
+      "cold-share T90, agent → JP/DE / back": "8.7 s / 14.0 s · converged 0.3–0.5%"
+      "2× / 4× faster swap queue (H2)": "no gain — T90 ×1.00–1.15 · closed"
+      "swap-bearing step cost": "×1.9 p95 · 1.3–2.4 ms per swap (row copy 0.26 ms)"
+      "whole boot": "2.53% swap steps · p99 host step 22.2 ms (19.5 swap-free)"
+  - label: "Host memory and long context (v23 base, unchanged by the hook)"
     items:
       "pinned host, v22 → v23": "327.96 → 252.79 GiB"
-      "hook boot guard at layer 9 (floor 10 GiB)": "12.1 → 197.7 GiB"
+      "hook boot guard at layer 9 (floor 10 GiB)": "197.2–197.3 GiB on both AR6 boots"
       "decode flat to (tokens in ctx)": 425K
-      "short-request TTFT during a 480K prefill": ~1 s
-  - label: "Candidate, NOT promoted — vLLM nightly-39983a5e “config C” · and P1, 2026-10-18"
-    items:
-      "7 pre-registered gates": "all PASS · per-class decode 20/20 cells (+0.5…+12.6%)"
-      "speed vs v23": "RT C1 197.8 vs 186.4 (+6.1%) · knee6 C8 656.5 vs 605.2 · TTFT 8K 0.43 s · KV +55%"
-      "weakest cell": "GSM8K-200 95.5 vs 97.0 — exactly at the −1.5 bar, +48% completion tokens"
-      "P1 prefill graphs to 8K": "FAILED — KV −43% at 2K, no boot at 8K"
+      "128K / 1M request on v26": "not run (soak waived)"
 
 fidelity:
-  - { status: pass,    text: "Weights unchanged: 1017 checkpoint as shipped, 0 re-quantized bits · v23 changes host allocation only (no kernel, no HBM byte)" }
+  - { status: pass,    text: "Weights unchanged: 1017 checkpoint as shipped, 0 re-quantized bits · swaps move whole MXFP4 rows between the HBM and Grace banks, no re-encoding" }
   - { status: pass,    text: "Speculation is target-verified: every emitted token accepted by the full model (lossless at T=0)" }
-  - { status: pass,    text: "Greedy parity 16/16 non-tool prompts byte-exact, v23 vs both v22 controls (2026-10-18) · gauntlet 12/12 on every v23 arm" }
-  - { status: pass,    text: "Tool calling, measured on the live v23 lane: BFCL v4 dev 554/600 = 92.3% · held-out live sibling 1018/1311 = 77.65% (our AST grader, T=0; same-grader A/B, not a leaderboard number)" }
-  - { status: measured, text: "GSM8K-200 97.0% (194/200) on the live v23 lane, 96.5% on its restart (lil-bench v0.7.7, T=0) — the same-config floor is ~1 item" }
-  - { status: measured, text: "Teacher-forced Δlogprob vs no-hook reference (2026-09-20, df42c109 weights, prefill-only): hook mean |Δ| 0.030, top-1 flips 1.06% corpus-wide and 0.56% on agent/tool-shaped text; v23 adds no GPU-side change" }
+  - { status: pass,    text: "Greedy parity 49/50, September static map vs seed map, cross-boot (Card AR6) — the one miss, agent-tool-1, is the documented noise prompt that also flips within one map" }
+  - { status: pass,    text: "Restore round trip: static map → 15,382 swaps → restore_map → parity back at the fixed-map 49/50; unit test T6 restore_map PASS (v26ar.1, 2026-10-23)" }
+  - { status: pass,    text: "Agentic gauntlet 12/12 on the fixed seed map and 12/12 live under adaptation on the promoted lane (2026-10-24) · 0 stale swaps, 0 server errors" }
+  - { status: measured, text: "Convergence after a domain shift: cold-share T90 8.7–14.0 s on the seed boot (AR6); cold share < 1% in 9–16 s on the static-boot re-analysis — corrects the earlier 60–90 s, a windowing artifact" }
+  - { status: measured, text: "Teacher-forced Δlogprob vs no-hook reference (2026-09-20, df42c109 weights, prefill-only, v18-hook lineage): mean |Δ| 0.030, top-1 flips 1.06% corpus-wide, 0.56% on agent/tool text — not re-run on v26" }
+  - { status: pending, text: "Not re-run on v26: BFCL dev/held-out (v23: 92.3% / 77.65%), GSM8K-200 (v23: 97.0%), and the 48 h soak (waived by James at promotion)" }
 
 # Agent claim card (per @getmeosu, adopted 2026-09-21): fixed outer protocol + held-out sibling + cost per solved task.
 harness:
@@ -62,13 +65,13 @@ harness:
     n: 600
     pct: "92.3%"
     status: pass
-    note: "v23 live lane, Card P2f arm A, 2026-10-18; v23 restart 556/600 (92.7%). Decides candidacy only"
+    note: "v23 live lane, Card P2f arm A, 2026-10-18 (NOT re-run on v26); v23 restart 556/600 (92.7%). Decides candidacy only"
   heldout:
     name: BFCL live sibling (live_simple 258 + live_multiple 1,053)
     solved: 1018
     n: 1311
     pct: "77.65%"
     status: pass
-    note: "v23 live lane 2026-10-18 (restart 1021/1311 = 77.88%); v20 read 78.8% on 2026-09-21 on a different image and weights"
+    note: "v23 live lane 2026-10-18, NOT re-run on v26 (restart 1021/1311 = 77.88%); v20 read 78.8% on 2026-09-21 on a different image and weights"
     unsolved: { "no-call": 32, "wrong-arg-value": 195, "wrong-function": 42, "missing-arg": 23, "extra-arg": 1 }   # bfcl-A-heldout-summary.json fail_kinds
   # cost: not re-priced on v23 (no metered-plug run on this lane); v20's $0.30 / 1000 solved (2026-09-21) is not carried over.

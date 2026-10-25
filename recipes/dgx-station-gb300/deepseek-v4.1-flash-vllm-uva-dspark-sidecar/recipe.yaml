@@ -22,9 +22,9 @@ summary: >
   (sidecar) must be alive for the lane to be correct. The KV pool is declared, not inferred:
   --kv-cache-memory 8.5 GiB gives 4,400,013 tokens (4.20x one 1M request, +73% over util 0.97), stress-tested
   with four ~1M contexts resident at once (KV peak 75%, 0 preemptions, 0 timeouts) and no decode cost.
-status: experimental     # measured and gated; 48 h soak RESTARTED with the KV change 2026-10-22 18:52, CUT 2026-10-23 20:14 CDT (lane given to the AR campaign after ~25 h; that partial window was not evaluated). Soak now running on the v25m variant 2026-10-24 07:12 -> 10-26 07:12 CDT (restarted after Card GV2). Verified only on a clean 48 h soak.
+status: experimental     # measured and gated; 48 h soak RESTARTED with the KV change 2026-10-22 18:52, CUT 2026-10-23 20:14 CDT (lane given to the AR campaign after ~25 h; that partial window was not evaluated). Soak now running on the v25m variant 2026-10-24 07:12 -> 10-26 07:12 CDT (restarted after Card GV2). Verified only on a clean 48 h soak. 2026-10-24 - the AR campaign ended, the v25m soak was cancelled by James, and lane :30006 was handed to the v26 GB300-only config (sibling recipe); this recipe documents the sidecar lane plus the kv-host-tier variant (Card KV3, results/2026-10-24-kv3-host-prefix-tier/).
 owners: [jmeadlock, milo]
-updated: "2026-10-24"
+updated: "2026-10-25"
 tags: [deepseek-v4.1-flash, mxfp4, vllm, expert-sidecar, rtx-pro-6000, pcie, dspark, speculative-decoding, 1m-context, agent]
 
 model:
@@ -81,6 +81,7 @@ launch:
   health: "curl -fs http://localhost:30006/v1/models ; the server log must contain 'MEGA_PEER patched ... (peer mode 2, check 0)', 'MEGA_PEER layer 0 ... 295 hot experts in MegaMoE, 89 cold on the host; peer mode 2', 'Using DeepSeek's fp8_ds_mla KV cache format', 'reserved 8.5 GiB memory for KV Cache as specified by kv_cache_memory_bytes config', 'GPU KV cache size: 4,400,013 tokens ... 4.20x' (2,537,081 / 2.42x means EXTRA was dropped and util 0.97 sized the pool), and 'Decoder SWA bounded replay'; the sidecar log must say 'prepared 40 layers', 'captured 560 graphs', 'serving'; RTX memory.used settles near 66,213 MiB."
   warmup: "scripts/soak_check.sh <ssh-host> <server-container> gives one health reading (watchdog status, timeouts, sidecar container, /v1/models). First request of each shape pays a few seconds of JIT. The 64K cold-prefill figure must be measured cold — with prefix caching on, a second identical prompt is a cache hit."
   notable_flags:
+    - "VARIANT kv-host-tier - --kv-offloading-size 48 --kv-offloading-backend native (Card KV3 2026-10-24 - 10/10 gates, speed-neutral, +~31M Grace prefix tokens). Append both flags to EXTRA after --kv-cache-memory 9126805504; no VLLM_SERVER_DEV_MODE (the card set it only to reach /reset_prefix_cache). Measured on the v25m map; GPU KV unchanged at 4,400,013; the boot log must show 'Creating v1 connector with name: OffloadingConnector' and a 51.54 GB /dev/shm/vllm_offload_*.mmap. Receipts in results/2026-10-24-kv3-host-prefix-tier/."
     - "VARIANT v25m mixed-traffic map (EXPERIMENTAL, 2026-10-23) - identical launch with ROWMAP=rowmap-mixed-ar-v1.json for BOTH steps (sidecar --rowmap and server MEGA_ROWMAP); the map file and its fitter are in results/2026-10-23-ar5-mixed-map/. No code change."
     - "TWO CONTAINERS: <name> on the GB300 (vllm serve) and <name>-rtx on the RTX card (peer server). Both must be up; the watchdog treats a dead sidecar as fatal, not degraded."
     - "MEGA_PEER=2 selects original-el8's peer tier 2 (b12x); MEGA_FUSED_SEND=2 and VLLM_EXP_PEER2_SMALL=64 must match on both sides. MEGA_COLD_TRT=0 and MEGA_PEER_CHECK=0 in production — cold weights are NOT resident on the GB300, so any MoE call that falls back to the Grace path raises instead of computing."
@@ -92,6 +93,36 @@ launch:
     - "MEGA_FI_TUNE_FILE is intentionally empty: FlashInfer live-tunes at boot, so boot-to-boot C1 moves a few percent. Never compare two separately tuned boots; bracket with a control on each side (the receipts do)."
 
 metrics:
+  - name: decode_c1_mixed_heldout_kv_host_tier
+    value: 219.89
+    unit: tok/s
+    workload: "C1, held-out mixed JP/DE + agent prompts (ar_mixed_v2 HELDOUT=1), 120 s windows, v25m map + 48 GiB host prefix-KV tier"
+    aggregation: "mean agg_tok_s_all of 6 reps; no-tier controls K0 219.76 / K0R 219.20 (pooled 219.48, +0.19%); K1 spread 0.96%"
+    provenance: { run_id: 2026-10-24-kv3-host-prefix-tier, method: "Card KV3 bracketed K0 -> K1 -> K0R, gate G2_c1", raw: VERDICT.txt }
+  - name: ttft_cold_64k_kv_host_tier
+    value: 1.424
+    unit: s
+    workload: "unique ~64.5K-token prompt, max_tokens 1 (TTFT proxy), with the host tier"
+    aggregation: "median of probes 2-3 (first dropped); controls 1.401 / 1.406 s (+1.47%)"
+    provenance: { run_id: 2026-10-24-kv3-host-prefix-tier, method: "Card KV3 gate G2_ttft64k", raw: raw/K1/cold64k.json }
+  - name: kv_host_tier_evict_replay_speedup_31k
+    value: 3.2
+    unit: x
+    workload: "31,629-token prompt: first request, /reset_prefix_cache (GPU prefix cache dropped), identical replay served from the Grace tier"
+    aggregation: "single probe; 0.7106 -> 0.2218 s; 31,616 tokens hit the host tier, output identical; 7,929-token probe x1.54"
+    provenance: { run_id: 2026-10-24-kv3-host-prefix-tier, method: "Card KV3 gate G3_tier", raw: raw/K1/evict.json }
+  - name: kv_host_tier_bytes_per_token
+    value: 1656
+    unit: B/token
+    workload: "host-tier bytes loaded per hit token in the evict-replay probes (fp8_ds_mla)"
+    aggregation: "12,930,048 B / 7,808 tok and 52,356,096 B / 31,616 tok, both 1,656; 48 GiB / 1,656 B = ~31M prefix tokens (this lane only)"
+    provenance: { run_id: 2026-10-24-kv3-host-prefix-tier, method: "vllm:kv_offload_load_bytes_total and external_prefix_cache_hits_total deltas", raw: raw/K1/evict.json }
+  - name: host_memavailable_min_kv_host_tier
+    value: 129.8
+    unit: GiB
+    workload: "MemAvailable during the K1 cells (tier allocated), 5 s samples"
+    aggregation: "minimum; controls 177.7 / 178.9 GiB; gate floor 60; 0 new OOM-kill lines"
+    provenance: { run_id: 2026-10-24-kv3-host-prefix-tier, method: "Card KV3 gate G4_mem", raw: mem.tsv }
   - name: decode_c1_real_text
     value: 279.5
     unit: tok/s
@@ -254,8 +285,8 @@ verification:
   gates:
     schema:
       how: "python3 scripts/check_recipe.py on this recipe.yaml (jsonschema + README headings + every metric's raw file + patch sha256)"
-      last_pass_utc: "2026-10-23T00:28:00Z"
-      run_id: 2026-10-22-kv85
+      last_pass_utc: "2026-10-25T03:43:00Z"
+      run_id: 2026-10-24-kv3-host-prefix-tier
     digest:
       how: "image @sha256:3af6a45b… on BOTH GPUs; every mounted file's sha256 recorded in raw/hook-lock.txt from inside the running containers; checkpoint revision + total bytes in raw/weights-1017-receipt.txt"
       last_pass_utc: "2026-10-22T13:48:36Z"
@@ -286,6 +317,7 @@ verification:
       - "Compare two separately FlashInfer-tuned boots and call the difference a config effect."
 
 limits:
+  - "KV-HOST-TIER VARIANT (Card KV3, 2026-10-24, results/2026-10-24-kv3-host-prefix-tier/) - what it does not cover. (1) The card's launcher set VLLM_SERVER_DEV_MODE=1 to reach /reset_prefix_cache for the evict-replay probe; production is the two flags without dev mode, and that exact no-dev-mode boot was not separately measured. (2) Measured on the v25m mixed map (ROWMAP=rowmap-mixed-ar-v1.json), not the static 295/89 map. (3) ~31M prefix tokens is 48 GiB / 1,656 B per hit token measured on this lane's fp8_ds_mla KV, not a portable figure. (4) Speed-neutral on the gated cells (C1 +0.19%, cold-64K TTFT +1.47%, warm-replay r2 -3.4% inside the controls' own 183.7-195.5 spread); real multi-user prefix traffic, hit rates under eviction pressure and C>1 with the tier were not measured. (5) Fidelity evidence is identical short outputs on two evict-replay probes, 12/12 gauntlet, the 954K needle and 0 errors / 0 watchdog events - no teacher-forced, GSM8K or BFCL run on the tier arm. (6) Host cost: MemAvailable min 129.8 GiB with the tier vs ~178 GiB without; the connector is a 51.54 GB /dev/shm mmap and vLLM marks KVConnectorBase_V1 experimental. (7) Upstream vllm#47890 (speculative decoding can zero CPU-tier hits) did not reproduce here - hits and loads at 7,929 and 31,629 tokens with DSpark on - but only two lengths were probed. (8) LMCache was not used: it needs the hybrid KV manager off, which this lane does not do."
   - "EXPERIMENTAL VARIANT 2026-10-23 (v25m, mixed-traffic static map; measured, not promoted): rowmap-mixed-ar-v1.json = top-295 per layer from cumulative decode counts of ~100k JP/DE + ~105k agent/tool tokens (GB300-only adaptive campaign), 42.5 experts moved per layer. Held-out prompts, post-60 s: mixed C1 208.9 -> 221.1 tok/s (+5.8%; JP/DE 179.5 -> 206.7 = +15%, agent 250.8 -> 246.4), mixed C4 560.4 -> 558.5 (no change). Shift protocol (in-sample prompts): JP/DE 186 -> 206.9, agent 244.3 -> 247.9. GB300 stall on the RTX during JP/DE 11.8% -> 0.5% of wall. KV unchanged (4,400,013). Greedy parity is not a usable gate on this lane: two captures of the SAME map agree 14/50 (probabilistic draft sampling + sidecar), v25 static vs v25m 15/50 = at that floor. Gates re-run 2026-10-24 (Card GV, results/2026-10-24-gv-v25m-gates/): 9/10 PASS - TF flips PASS vs v23 and vs v25, GSM8K-1319 96.82 vs 96.97, BFCL dev/held-out identical (556/600, 1018/1311), gauntlet 12/12, needle 500/500, 0 timeouts - but the bring-up cosine gate FAILS (min cos 0.99811 vs 0.999; 1 of 1,439 gated checks, layer 39; p1 0.99968 vs v25 0.99970); bar not moved, stays experimental. Same-instrument real-text C1 -2%, knee C8 -5%, C16 flat. Card GV2 (results/2026-10-24-gv2-l39-static/): layer 39 restored to the static split still fails (min 0.99831; worst check again L39 at ~0 cold share = noise); this does NOT clear v25m (its failing check had cold share 0.079) - corrected 2026-10-24 08:15. Cosine gate R2 (error / layer output, bar from 3 v25-static boots) registered before re-judging: results/2026-10-26-gs-cosine-r2/, runs 2026-10-26 after the soak. 48 h soak on v25m restarted 2026-10-24 07:12 -> 10-26 07:12 CDT. results/2026-10-23-ar5-mixed-map/."
   - "Live adaptive residency on this lane is feasible but not built (2026-10-23): both expert layouts are per-expert separable (DeepGEMM MegaMoE transform of one expert == its slice of the bank; b12x prepares in place), so a hot<->cold swap needs a cross-process mailbox in the peer shm plus raw-expert reads. Ceiling measured from the GB300's stall on the RTX: ~ +13% off-domain C1, ~0 in-domain; a refit static map already took most of it."
   - "POWER: the chassis' 1,600 W budget is split between the GB300 module and the RTX card, and the module cap binds in prefill — sw_power_cap active in 89.47% of 1 s samples during a 64K prefill (incumbent 65.00%) and 85.71% in C32 8K prefill, with SM clock p50 1,980 MHz vs 2,062. Module p99 1,353 W in 64K prefill, 1,263 W in C32 decode. The pre-registered SC6 bars (<1% swcap, module <=1,190 W) are FAILED — and failed by the incumbent too, so they were mis-set for this chassis. All speed numbers here were measured under that throttling; a 240 V / uncapped-power retest is the obvious follow-up."

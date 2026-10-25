@@ -1,0 +1,46 @@
+Card AR6 v2 verdict: MIXED   suffix AR6-H1PASS-H2FAIL   winner None
+
+cell          shift            T90cold <2xconv   <=1%  T90req  T90w3    peak    conv  reps T90cold
+0:B0          agent->jpde         11.0    18.0   13.0    14.0   10.2  0.2540  0.0030  [12.0, 10.0]
+0:B0          jpde->agent         14.0    14.0   14.0    14.6   14.4  0.0600  0.0040  [14.0, 14.0]
+0:B0          restore->agent      19.0    12.0   12.0     9.9   14.1  0.0190  0.0040  [22.0, 16.0]
+              churn 107.2/min  conv_cold 0.00374  stale 0  errors 0  C1conv {'jpde': 189.94, 'agent': 219.13}  G2 1.9079
+A:B0          agent->jpde          8.7    10.0    8.7    10.3    7.9  0.0570  0.0030  [8.0, 10.0, 8.0]
+A:B0          jpde->agent         14.0    14.0   14.0     9.5   14.7  0.0330  0.0050  [14.0, 14.0, 14.0]
+A:B0          restore->agent      22.0     4.0    4.0     1.6   15.9  0.0110  0.0040  [22.0, 22.0, 22.0]
+              churn 95.3/min  conv_cold 0.00397  stale 0  errors 0  C1conv {'jpde': 189.59, 'agent': 218.94}  G2 1.9087
+A:B1          agent->jpde          9.3     9.3    8.0     9.4    7.3  0.0370  0.0030  [8.0, 10.0, 10.0]
+A:B1          jpde->agent         14.0     8.7    6.0     7.9   12.5  0.0260  0.0050  [14.0, 14.0, 14.0]
+A:B1          restore->agent      22.7     4.0    4.0     1.6   15.8  0.0110  0.0040  [22.0, 22.0, 24.0]
+              churn 102.8/min  conv_cold 0.00403  stale 0  errors 0  C1conv {'jpde': 189.62, 'agent': 218.21}  G2 1.8893
+A:B2          agent->jpde         10.0     8.0    8.0     8.6    4.9  0.0290  0.0030  [10.0, 10.0, 10.0]
+A:B2          jpde->agent         14.0     6.0    6.0     7.9    9.6  0.0230  0.0050  [14.0, 14.0, 14.0]
+A:B2          restore->agent      22.7     4.0    4.0     1.6   18.1  0.0110  0.0040  [22.0, 22.0, 24.0]
+              churn 112.3/min  conv_cold 0.00403  stale 0  errors 0  C1conv {'jpde': 189.52, 'agent': 217.92}  G2 1.9047
+A:B2:third    agent->third        10.0    10.0   10.0    12.4    9.0  0.0570  0.0050  [10.0]
+A:B2:third    restore->agent      22.0     4.0    4.0     1.6   15.9  0.0110  0.0040  [22.0]
+A:B2:third    third->agent        14.0    14.0   14.0    12.5    7.8  0.0440  0.0050  [14.0]
+              churn 153.0/min  conv_cold 0.00468  stale 0  errors 0  C1conv {'third': 202.21, 'agent': 217.72}  G2 1.8627
+
+gate                      status      detail
+T90_B1                    FAIL        agent->jpde: T90_cold 9.3 vs B0 8.7 s (×1.08); <2×conv 9.3 vs 10.0 (×0.93); jpde->agent: T90_cold 14.0 vs B0 14.0 s (×1.00); <2×conv 8.7 vs 14.0 (×0.62) — bar ≤0.50× on both gated shifts (registered 2 s-window cold-share T90); MDE 1.0 s
+G1_B1                     PASS        jpde 189.6 vs B0 189.6 tok/s (+0.00%); agent 218.2 vs B0 218.9 tok/s (-0.30%) — converged C1 (final 60 s, pooled reps), bar ≥ −2% vs same-boot B0
+G2_B1                     FAIL        p95 swap/non-swap host-step ratio 1.8893 (p90 1.8889, p99 1.7389 reported) over 113 matched 5 s bins, 1318 swap steps; 1.9211 ms/applied swap; cuda_ms mean 0.2641; chunk-gap p95 ratio 1.9024 — bar ≤ 1.25
+G3_B1                     PASS        churn 102.8/min vs B0 95.3 (×1.08, bar ≤1.25); stale 0; server errors 0; conv cold 0.00403 (bar <0.01)
+T90_B2                    FAIL        agent->jpde: T90_cold 10.0 vs B0 8.7 s (×1.15); <2×conv 8.0 vs 10.0 (×0.80); jpde->agent: T90_cold 14.0 vs B0 14.0 s (×1.00); <2×conv 6.0 vs 14.0 (×0.43) — bar ≤0.50× on both gated shifts (registered 2 s-window cold-share T90); MDE 1.0 s
+G1_B2                     PASS        jpde 189.5 vs B0 189.6 tok/s (+0.00%); agent 217.9 vs B0 218.9 tok/s (-0.50%) — converged C1 (final 60 s, pooled reps), bar ≥ −2% vs same-boot B0
+G2_B2                     FAIL        p95 swap/non-swap host-step ratio 1.9047 (p90 1.8934, p99 1.7779 reported) over 109 matched 5 s bins, 1612 swap steps; 2.4342 ms/applied swap; cuda_ms mean 0.2661; chunk-gap p95 ratio 1.9084 — bar ≤ 1.25
+G3_B2                     PASS        churn 112.3/min vs B0 95.3 (×1.18, bar ≤1.25); stale 0; server errors 0; conv cold 0.00403 (bar <0.01)
+T90_B3                    REPORT      B3 not run (conditional on B2 G3 churn fail; default skip)
+G3_B0                     REPORT      control cell (churn ratio 1 by definition): churn 95.33/min; stale 0; errors 0; conv cold 0.00397 — sub-checks {'stale': True, 'errors': True, 'conv_cold': True}
+G2_B0                     FAIL        control cell p95 ratio 1.9087 (reported; feeds AR5)
+G4_gauntlet_ArmA          PASS        12/12 — bar 12/12
+G4_parity_ArmA            PASS        static (Arm0-S1) vs seed (ArmA-F1) 49/50 misses ['agent-tool-1']; noise set ['agent-tool-1', 'tool-weather-time'] (F1vsF2 ['agent-tool-1'], S1vsS2 ['agent-tool-1'] + documented)
+G4_gauntlet_winner        REPORT      no winner cell → winner G4 not run
+H1_mixed                  PASS        A-frozen held-out mixed C1 agg post60 183.73 vs same-window A0-frozen held-out 127.12 (×1.445; vs 133.1 class ×1.38) — bar ≥ ×1.2
+H1_agent                  PASS        A-frozen held-out agent C1 201.36 vs same-window A0 202.74 (×0.993; vs 195.7 class ×1.029) — bar ≥ −2%
+H1_first_request          REPORT      first-request tok/s A-frozen jpde 177.89 agent 201.44 | A0-frozen jpde 84.96 agent 202.9
+H1_adaptive_steady        PASS        jpde A 189.59 vs Arm0 189.94 (-0.20%); agent A 218.94 vs Arm0 219.13 (-0.10%) — A-adaptive converged C1 matches B0 (Arm 0), bar |Δ| ≤ 2%
+H1                        PASS        seed map: held-out mixed ≥ +20%, agent within 2%, adaptive steady state matches B0
+H2                        FAIL        no B cell halves cold-share T90 vs same-boot B0 on both gated shifts with G1–G3 green: B1 FAIL; B2 FAIL
+third_B2                  REPORT      agent->third: T90_cold 10.0 s, <2×conv 10.0, ≤1% 10.0; restore->agent: T90_cold 22.0 s, <2×conv 4.0, ≤1% 4.0; third->agent: T90_cold 14.0 s, <2×conv 14.0, ≤1% 14.0 (non-gating, one pass)

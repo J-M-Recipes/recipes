@@ -1,0 +1,650 @@
+{
+ "card": "KV3 full battery",
+ "result": "PASS",
+ "suffix": "KV3PASS",
+ "gates": {
+  "G1_kv_tokens": [
+   "PASS",
+   "GPU KV cache size must be 4,400,013 on all arms: K0=4,400,013 K1=4,400,013 K0R=4,400,013"
+  ],
+  "G2_c1": [
+   "PASS",
+   "K1 C1 agg_tok_s_all mean 219.89 vs K0/K0R 219.48 (+0.19%); bar -2.04% = max(2%, 1.5 x pooled spread 1.36%); bracket drift K0->K0R 0.26%"
+  ],
+  "G2_ttft64k": [
+   "PASS",
+   "K1 cold-64K TTFT-proxy median 1.424s vs K0/K0R mean 1.404s (+1.47%; bar +5%) [K0 1.401 K0R 1.406; first probe dropped]"
+  ],
+  "G2_warm_r2": [
+   "PASS",
+   "K1 warm r2 177.48 tok/s vs min(K0 195.52, K0R 183.72) = 183.72 (-3.40%; bar -5%); mode {'K0': 'ignore_eos+min_tokens', 'K1': 'ignore_eos+min_tokens', 'K0R': 'ignore_eos+min_tokens'}; forced_len {'K0': True, 'K1': True, 'K0R': True}"
+  ],
+  "G3_tier": [
+   "PASS",
+   "evict-replay hits=True identical=True recall=True errors=False | connector=True pin_warn=0 controls_tier_free=True | 7929tok(mod256=249) hit=True load=True ident=True recall=True x1.54; 31629tok(mod256=141) hit=True load=True ident=True recall=True x3.2 (speedup info only)"
+  ],
+  "G4_watchdog": [
+   "PASS",
+   "K0: timeouts=0 trips=0 alive=True; K1: timeouts=0 trips=0 alive=True; K0R: timeouts=0 trips=0 alive=True"
+  ],
+  "G4_errors": [
+   "PASS",
+   "K0: server=0 harness=0 (sidecar=0, info); K1: server=0 harness=0 (sidecar=0, info); K0R: server=0 harness=0 (sidecar=0, info)"
+  ],
+  "G4_needles": [
+   "PASS",
+   "K0: recall=True pt=954028 wall=32.88s; K1: recall=True pt=954028 wall=32.79s; K0R: recall=True pt=954028 wall=32.97s (need recall and prompt_tokens >= 800000)"
+  ],
+  "G4_mem": [
+   "PASS",
+   "MemAvailable min GiB K0:boot=161.3 K0:cells=177.7 K1:boot=131.4 K1:cells=129.8 K0R:boot=162.6 K0R:cells=178.9 (floor 60); oom_kill_lines_delta=0"
+  ],
+  "G5_gauntlet": [
+   "PASS",
+   "K1 gauntlet 12/12 (need 12/12)"
+  ]
+ },
+ "cells": {
+  "K0": {
+   "present": true,
+   "facts": {
+    "arm": "K0",
+    "name": "dsv41-vllm-1017-KV3-K0",
+    "kv_tokens": "4,400,013",
+    "kv_expect": "4,400,013",
+    "connector_lines": 0,
+    "pin_warn_lines": 0,
+    "kvdecl_in_args": 1,
+    "tier_in_args": 0,
+    "boot_s": 519,
+    "bound_at": 1792895500
+   },
+   "c1": [
+    {
+     "rep": 1,
+     "agg_tok_s_all": 218.05,
+     "agg_tok_s_post60": 218.29,
+     "n": 67,
+     "errors": 0,
+     "agent_med": 240.05,
+     "jpde_med": 203.285
+    },
+    {
+     "rep": 2,
+     "agg_tok_s_all": 218.74,
+     "agg_tok_s_post60": 221.49,
+     "n": 67,
+     "errors": 0,
+     "agent_med": 242.89,
+     "jpde_med": 205.715
+    },
+    {
+     "rep": 3,
+     "agg_tok_s_all": 222.65,
+     "agg_tok_s_post60": 226.3,
+     "n": 68,
+     "errors": 0,
+     "agent_med": 247.905,
+     "jpde_med": 206.32
+    },
+    {
+     "rep": 4,
+     "agg_tok_s_all": 221.29,
+     "agg_tok_s_post60": 224.58,
+     "n": 68,
+     "errors": 0,
+     "agent_med": 247.115,
+     "jpde_med": 206.575
+    },
+    {
+     "rep": 5,
+     "agg_tok_s_all": 218.88,
+     "agg_tok_s_post60": 220.57,
+     "n": 67,
+     "errors": 0,
+     "agent_med": 242.9,
+     "jpde_med": 202.61
+    },
+    {
+     "rep": 6,
+     "agg_tok_s_all": 218.98,
+     "agg_tok_s_post60": 220.06,
+     "n": 67,
+     "errors": 0,
+     "agent_med": 244.77,
+     "jpde_med": 205.88
+    }
+   ],
+   "c1_mean": 219.765,
+   "c1_spread": 0.02093144950287805,
+   "c1_post60_mean": 221.88166666666666,
+   "cold64k_kept_wall_s": [
+    1.4024,
+    1.3991
+   ],
+   "cold64k_median_s": 1.40075,
+   "cold64k_prompt_tokens": [
+    64398,
+    64407
+   ],
+   "warm": {
+    "mode": "ignore_eos+min_tokens",
+    "forced_ok": true,
+    "r1_decode_tok_s": 183.86,
+    "r2_decode_tok_s": 195.52,
+    "runs": [
+     {
+      "r": 1,
+      "prompt_tokens": 8172,
+      "completion_tokens": 256,
+      "chunks": 137,
+      "ttft_s": 0.2064,
+      "wall_s": 1.5935,
+      "decode_tok_s": 183.86
+     },
+     {
+      "r": 2,
+      "prompt_tokens": 8172,
+      "completion_tokens": 256,
+      "chunks": 129,
+      "ttft_s": 0.1547,
+      "wall_s": 1.459,
+      "decode_tok_s": 195.52
+     }
+    ]
+   },
+   "needle1m": {
+    "prompt_tokens": 954028,
+    "wall_s": 32.88,
+    "recall": true,
+    "answer": "ZEBRA-COUPON-4994",
+    "error": null
+   },
+   "wd": {
+    "timeouts": 0,
+    "trips": 0,
+    "alive_at_collect": true
+   },
+   "errcount_server": 0,
+   "errcount_sidecar": 0,
+   "mem_min_boot": 161.3,
+   "mem_min_cells": 177.7
+  },
+  "K1": {
+   "present": true,
+   "facts": {
+    "arm": "K1",
+    "name": "dsv41-vllm-1017-KV3-K1",
+    "kv_tokens": "4,400,013",
+    "kv_expect": "4,400,013",
+    "connector_lines": 2,
+    "pin_warn_lines": 0,
+    "kvdecl_in_args": 1,
+    "tier_in_args": 1,
+    "boot_s": 519,
+    "bound_at": 1792896831
+   },
+   "c1": [
+    {
+     "rep": 1,
+     "agg_tok_s_all": 220.22,
+     "agg_tok_s_post60": 225.61,
+     "n": 68,
+     "errors": 0,
+     "agent_med": 246.595,
+     "jpde_med": 206.95499999999998
+    },
+    {
+     "rep": 2,
+     "agg_tok_s_all": 218.62,
+     "agg_tok_s_post60": 225.42,
+     "n": 67,
+     "errors": 0,
+     "agent_med": 247.89,
+     "jpde_med": 207.9
+    },
+    {
+     "rep": 3,
+     "agg_tok_s_all": 220.74,
+     "agg_tok_s_post60": 223.74,
+     "n": 67,
+     "errors": 0,
+     "agent_med": 245.89,
+     "jpde_med": 204.04500000000002
+    },
+    {
+     "rep": 4,
+     "agg_tok_s_all": 220.45,
+     "agg_tok_s_post60": 224.17,
+     "n": 68,
+     "errors": 0,
+     "agent_med": 242.0,
+     "jpde_med": 206.95499999999998
+    },
+    {
+     "rep": 5,
+     "agg_tok_s_all": 220.51,
+     "agg_tok_s_post60": 227.38,
+     "n": 68,
+     "errors": 0,
+     "agent_med": 245.45,
+     "jpde_med": 205.765
+    },
+    {
+     "rep": 6,
+     "agg_tok_s_all": 218.82,
+     "agg_tok_s_post60": 219.42,
+     "n": 67,
+     "errors": 0,
+     "agent_med": 241.06,
+     "jpde_med": 204.95499999999998
+    }
+   ],
+   "c1_mean": 219.89333333333332,
+   "c1_spread": 0.00964103807906866,
+   "c1_post60_mean": 224.29,
+   "cold64k_kept_wall_s": [
+    1.456,
+    1.3924
+   ],
+   "cold64k_median_s": 1.4242,
+   "cold64k_prompt_tokens": [
+    64639,
+    64507
+   ],
+   "warm": {
+    "mode": "ignore_eos+min_tokens",
+    "forced_ok": true,
+    "r1_decode_tok_s": 195.83,
+    "r2_decode_tok_s": 177.48,
+    "runs": [
+     {
+      "r": 1,
+      "prompt_tokens": 8172,
+      "completion_tokens": 256,
+      "chunks": 128,
+      "ttft_s": 0.2095,
+      "wall_s": 1.5117,
+      "decode_tok_s": 195.83
+     },
+     {
+      "r": 2,
+      "prompt_tokens": 8172,
+      "completion_tokens": 256,
+      "chunks": 141,
+      "ttft_s": 0.1523,
+      "wall_s": 1.5891,
+      "decode_tok_s": 177.48
+     }
+    ]
+   },
+   "needle1m": {
+    "prompt_tokens": 954028,
+    "wall_s": 32.79,
+    "recall": true,
+    "answer": "ZEBRA-COUPON-4877",
+    "error": null
+   },
+   "wd": {
+    "timeouts": 0,
+    "trips": 0,
+    "alive_at_collect": true
+   },
+   "errcount_server": 0,
+   "errcount_sidecar": 0,
+   "mem_min_boot": 131.4,
+   "mem_min_cells": 129.8,
+   "evict": {
+    "cell": "evict",
+    "lengths": [
+     {
+      "target": 8205,
+      "code": "CODE-KV3-000",
+      "prompt_tokens": 7929,
+      "output1": "CODE-KV3-000",
+      "t1": 0.2643,
+      "recall": true,
+      "mod256": 249,
+      "reset_status": 200,
+      "output2": "CODE-KV3-000",
+      "t2": 0.1714,
+      "identical": true,
+      "delta": {
+       "vllm:kv_offload_total_bytes_total": 12930048.0,
+       "vllm:kv_offload_total_time_total": 0.00010924799740314513,
+       "vllm:kv_offload_size_bucket": 8.0,
+       "vllm:kv_offload_size_count": 1.0,
+       "vllm:kv_offload_size_sum": 12930048.0,
+       "vllm:kv_offload_load_bytes_total": 12930048.0,
+       "vllm:kv_offload_load_bytes_created": 1792897599.084504,
+       "vllm:kv_offload_load_time_total": 0.00010924799740314484,
+       "vllm:kv_offload_load_time_created": 1792897599.0845196,
+       "vllm:kv_offload_load_size_bucket": 8.0,
+       "vllm:kv_offload_load_size_count": 1.0,
+       "vllm:kv_offload_load_size_sum": 12930048.0,
+       "vllm:kv_offload_load_size_created": 1792897599.084539,
+       "vllm:kv_offload_lookup_sync_delay_seconds_bucket": 11.0,
+       "vllm:kv_offload_lookup_sync_delay_seconds_count": 1.0,
+       "vllm:kv_offload_lookup_sync_delay_seconds_sum": 4.844804061576724e-05,
+       "vllm:prefix_cache_queries_total": 7929.0,
+       "vllm:external_prefix_cache_queries_total": 7929.0,
+       "vllm:external_prefix_cache_hits_total": 7808.0,
+       "http_requests_total": 1.0,
+       "http_requests_created": 1792897598.06605,
+       "http_request_size_bytes_count": 1.0,
+       "http_request_size_bytes_created": 1792897598.066066,
+       "http_response_size_bytes_count": 1.0,
+       "http_response_size_bytes_sum": 16.0,
+       "http_response_size_bytes_created": 1792897598.0660794,
+       "http_request_duration_seconds_bucket": 4.0,
+       "http_request_duration_seconds_count": 1.0,
+       "http_request_duration_seconds_sum": 0.0059514829772524536,
+       "http_request_duration_seconds_created": 1792897598.0660994
+      },
+      "hit": true,
+      "load": true,
+      "speedup": 1.54,
+      "error": null
+     },
+     {
+      "target": 33010,
+      "code": "CODE-KV3-111",
+      "prompt_tokens": 31629,
+      "output1": "CODE-KV3-111",
+      "t1": 0.7106,
+      "recall": true,
+      "mod256": 141,
+      "reset_status": 200,
+      "output2": "CODE-KV3-111",
+      "t2": 0.2218,
+      "identical": true,
+      "delta": {
+       "vllm:kv_offload_total_bytes_total": 64226304.0,
+       "vllm:kv_offload_total_time_total": 0.00033055998757481556,
+       "vllm:kv_offload_size_bucket": 14.0,
+       "vllm:kv_offload_size_count": 2.0,
+       "vllm:kv_offload_size_sum": 64226304.0,
+       "vllm:kv_offload_cpu_cache_usage_perc": -0.0002848307291666667,
+       "vllm:kv_offload_cpu_cache_write_usage_perc": -0.0002848307291666667,
+       "vllm:kv_offload_load_bytes_total": 52356096.0,
+       "vllm:kv_offload_load_time_total": 0.00029369598627090453,
+       "vllm:kv_offload_load_size_bucket": 6.0,
+       "vllm:kv_offload_load_size_count": 1.0,
+       "vllm:kv_offload_load_size_sum": 52356096.0,
+       "vllm:kv_offload_store_bytes_total": 11870208.0,
+       "vllm:kv_offload_store_time_total": 3.686400130391114e-05,
+       "vllm:kv_offload_store_size_bucket": 8.0,
+       "vllm:kv_offload_store_size_count": 1.0,
+       "vllm:kv_offload_store_size_sum": 11870208.0,
+       "vllm:kv_offload_lookup_sync_delay_seconds_bucket": 9.0,
+       "vllm:kv_offload_lookup_sync_delay_seconds_count": 1.0,
+       "vllm:kv_offload_lookup_sync_delay_seconds_sum": 0.00012959999730810523,
+       "vllm:prefix_cache_queries_total": 31629.0,
+       "vllm:external_prefix_cache_queries_total": 31629.0,
+       "vllm:external_prefix_cache_hits_total": 31616.0,
+       "http_requests_total": 1.0,
+       "http_request_size_bytes_count": 1.0,
+       "http_response_size_bytes_count": 1.0,
+       "http_response_size_bytes_sum": 16.0,
+       "http_request_duration_seconds_bucket": 4.0,
+       "http_request_duration_seconds_count": 1.0,
+       "http_request_duration_seconds_sum": 0.002513002953492105
+      },
+      "hit": true,
+      "load": true,
+      "speedup": 3.2,
+      "error": null
+     }
+    ],
+    "error": null,
+    "metrics_present": [
+     "vllm:cache_config_info",
+     "vllm:engine_sleep_state",
+     "vllm:external_prefix_cache_hits_created",
+     "vllm:external_prefix_cache_hits_total",
+     "vllm:external_prefix_cache_queries_created",
+     "vllm:external_prefix_cache_queries_total",
+     "vllm:kv_offload_cpu_allocation_size_bucket",
+     "vllm:kv_offload_cpu_allocation_size_count",
+     "vllm:kv_offload_cpu_allocation_size_created",
+     "vllm:kv_offload_cpu_allocation_size_sum",
+     "vllm:kv_offload_cpu_cache_read_usage_perc",
+     "vllm:kv_offload_cpu_cache_usage_perc",
+     "vllm:kv_offload_cpu_cache_write_usage_perc",
+     "vllm:kv_offload_lookup_sync_delay_seconds_bucket",
+     "vllm:kv_offload_lookup_sync_delay_seconds_count",
+     "vllm:kv_offload_lookup_sync_delay_seconds_created",
+     "vllm:kv_offload_lookup_sync_delay_seconds_sum",
+     "vllm:kv_offload_size_bucket",
+     "vllm:kv_offload_size_count",
+     "vllm:kv_offload_size_created",
+     "vllm:kv_offload_size_sum",
+     "vllm:kv_offload_store_bytes_created",
+     "vllm:kv_offload_store_bytes_total",
+     "vllm:kv_offload_store_size_bucket",
+     "vllm:kv_offload_store_size_count",
+     "vllm:kv_offload_store_size_created",
+     "vllm:kv_offload_store_size_sum",
+     "vllm:kv_offload_store_time_created",
+     "vllm:kv_offload_store_time_total",
+     "vllm:kv_offload_total_bytes_created",
+     "vllm:kv_offload_total_bytes_total",
+     "vllm:kv_offload_total_time_created",
+     "vllm:kv_offload_total_time_total",
+     "vllm:prefix_cache_hits_created",
+     "vllm:prefix_cache_hits_total",
+     "vllm:prefix_cache_queries_created",
+     "vllm:prefix_cache_queries_total"
+    ],
+    "errors": 0
+   }
+  },
+  "K0R": {
+   "present": true,
+   "facts": {
+    "arm": "K0R",
+    "name": "dsv41-vllm-1017-KV3-K0R",
+    "kv_tokens": "4,400,013",
+    "kv_expect": "4,400,013",
+    "connector_lines": 0,
+    "pin_warn_lines": 0,
+    "kvdecl_in_args": 1,
+    "tier_in_args": 0,
+    "boot_s": 519,
+    "bound_at": 1792898179
+   },
+   "c1": [
+    {
+     "rep": 1,
+     "agg_tok_s_all": 219.42,
+     "agg_tok_s_post60": 224.9,
+     "n": 68,
+     "errors": 0,
+     "agent_med": 243.2,
+     "jpde_med": 203.76999999999998
+    },
+    {
+     "rep": 2,
+     "agg_tok_s_all": 219.06,
+     "agg_tok_s_post60": 219.97,
+     "n": 67,
+     "errors": 0,
+     "agent_med": 242.35,
+     "jpde_med": 204.375
+    },
+    {
+     "rep": 3,
+     "agg_tok_s_all": 218.61,
+     "agg_tok_s_post60": 224.35,
+     "n": 67,
+     "errors": 0,
+     "agent_med": 249.83,
+     "jpde_med": 203.445
+    },
+    {
+     "rep": 4,
+     "agg_tok_s_all": 219.72,
+     "agg_tok_s_post60": 220.42,
+     "n": 67,
+     "errors": 0,
+     "agent_med": 244.29,
+     "jpde_med": 206.485
+    },
+    {
+     "rep": 5,
+     "agg_tok_s_all": 219.89,
+     "agg_tok_s_post60": 222.22,
+     "n": 67,
+     "errors": 0,
+     "agent_med": 248.16,
+     "jpde_med": 202.745
+    },
+    {
+     "rep": 6,
+     "agg_tok_s_all": 218.51,
+     "agg_tok_s_post60": 223.18,
+     "n": 68,
+     "errors": 0,
+     "agent_med": 245.445,
+     "jpde_med": 204.17000000000002
+    }
+   ],
+   "c1_mean": 219.20166666666665,
+   "c1_spread": 0.006295572570159878,
+   "c1_post60_mean": 222.50666666666666,
+   "cold64k_kept_wall_s": [
+    1.4096,
+    1.4032
+   ],
+   "cold64k_median_s": 1.4064,
+   "cold64k_prompt_tokens": [
+    64380,
+    64157
+   ],
+   "warm": {
+    "mode": "ignore_eos+min_tokens",
+    "forced_ok": true,
+    "r1_decode_tok_s": 179.38,
+    "r2_decode_tok_s": 183.72,
+    "runs": [
+     {
+      "r": 1,
+      "prompt_tokens": 8172,
+      "completion_tokens": 256,
+      "chunks": 140,
+      "ttft_s": 0.2078,
+      "wall_s": 1.6294,
+      "decode_tok_s": 179.38
+     },
+     {
+      "r": 2,
+      "prompt_tokens": 8172,
+      "completion_tokens": 256,
+      "chunks": 136,
+      "ttft_s": 0.1556,
+      "wall_s": 1.5436,
+      "decode_tok_s": 183.72
+     }
+    ]
+   },
+   "needle1m": {
+    "prompt_tokens": 954028,
+    "wall_s": 32.97,
+    "recall": true,
+    "answer": "ZEBRA-COUPON-5977",
+    "error": null
+   },
+   "wd": {
+    "timeouts": 0,
+    "trips": 0,
+    "alive_at_collect": true
+   },
+   "errcount_server": 0,
+   "errcount_sidecar": 0,
+   "mem_min_boot": 162.6,
+   "mem_min_cells": 178.9
+  },
+  "G2_c1_calc": {
+   "ctrl_mean": 219.48333333333332,
+   "pooled_spread": 0.013613511036518963,
+   "bar": 0.020420266554778445,
+   "k1_rel": 0.0018680233882601982,
+   "bracket_drift": 0.0025666337611056234
+  },
+  "cross_arm_outputs": [
+   {
+    "target": 8205,
+    "K1": "CODE-KV3-000",
+    "K0": "CODE-KV3-000",
+    "K0R": "CODE-KV3-000",
+    "identical_to_controls": true
+   },
+   {
+    "target": 33010,
+    "K1": "CODE-KV3-111",
+    "K0": "CODE-KV3-111",
+    "K0R": "CODE-KV3-111",
+    "identical_to_controls": true
+   }
+  ],
+  "mem_by_phase": {
+   "pre": {
+    "min": 195.7,
+    "n": 2
+   },
+   "K0:preboot": {
+    "min": 452.1,
+    "n": 1
+   },
+   "K0:boot": {
+    "min": 161.3,
+    "n": 105
+   },
+   "K0:cells": {
+    "min": 177.7,
+    "n": 153
+   },
+   "K0:post": {
+    "min": 177.7,
+    "n": 8
+   },
+   "K1:preboot": {
+    "min": 451.1,
+    "n": 1
+   },
+   "K1:boot": {
+    "min": 131.4,
+    "n": 105
+   },
+   "K1:cells": {
+    "min": 129.8,
+    "n": 156
+   },
+   "K1:post": {
+    "min": 129.8,
+    "n": 8
+   },
+   "K0R:preboot": {
+    "min": 450.8,
+    "n": 1
+   },
+   "K0R:boot": {
+    "min": 162.6,
+    "n": 105
+   },
+   "K0R:cells": {
+    "min": 178.9,
+    "n": 153
+   },
+   "K0R:post": {
+    "min": 178.9,
+    "n": 8
+   },
+   "restore": {
+    "min": 153.4,
+    "n": 62
+   }
+  }
+ },
+ "R": "~/dsv41/m3/kv3/results-cardKV3"
+}

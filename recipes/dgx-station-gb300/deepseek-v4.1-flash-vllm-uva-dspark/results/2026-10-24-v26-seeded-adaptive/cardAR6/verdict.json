@@ -1,0 +1,1973 @@
+{
+ "card": "AR6 v2",
+ "result": "MIXED",
+ "suffix": "AR6-H1PASS-H2FAIL",
+ "winner": null,
+ "gates": {
+  "T90_B1": [
+   "FAIL",
+   "agent->jpde: T90_cold 9.3 vs B0 8.7 s (\u00d71.08); <2\u00d7conv 9.3 vs 10.0 (\u00d70.93); jpde->agent: T90_cold 14.0 vs B0 14.0 s (\u00d71.00); <2\u00d7conv 8.7 vs 14.0 (\u00d70.62) \u2014 bar \u22640.50\u00d7 on both gated shifts (registered 2 s-window cold-share T90); MDE 1.0 s"
+  ],
+  "G1_B1": [
+   "PASS",
+   "jpde 189.6 vs B0 189.6 tok/s (+0.00%); agent 218.2 vs B0 218.9 tok/s (-0.30%) \u2014 converged C1 (final 60 s, pooled reps), bar \u2265 \u22122% vs same-boot B0"
+  ],
+  "G2_B1": [
+   "FAIL",
+   "p95 swap/non-swap host-step ratio 1.8893 (p90 1.8889, p99 1.7389 reported) over 113 matched 5 s bins, 1318 swap steps; 1.9211 ms/applied swap; cuda_ms mean 0.2641; chunk-gap p95 ratio 1.9024 \u2014 bar \u2264 1.25"
+  ],
+  "G3_B1": [
+   "PASS",
+   "churn 102.8/min vs B0 95.3 (\u00d71.08, bar \u22641.25); stale 0; server errors 0; conv cold 0.00403 (bar <0.01)"
+  ],
+  "T90_B2": [
+   "FAIL",
+   "agent->jpde: T90_cold 10.0 vs B0 8.7 s (\u00d71.15); <2\u00d7conv 8.0 vs 10.0 (\u00d70.80); jpde->agent: T90_cold 14.0 vs B0 14.0 s (\u00d71.00); <2\u00d7conv 6.0 vs 14.0 (\u00d70.43) \u2014 bar \u22640.50\u00d7 on both gated shifts (registered 2 s-window cold-share T90); MDE 1.0 s"
+  ],
+  "G1_B2": [
+   "PASS",
+   "jpde 189.5 vs B0 189.6 tok/s (+0.00%); agent 217.9 vs B0 218.9 tok/s (-0.50%) \u2014 converged C1 (final 60 s, pooled reps), bar \u2265 \u22122% vs same-boot B0"
+  ],
+  "G2_B2": [
+   "FAIL",
+   "p95 swap/non-swap host-step ratio 1.9047 (p90 1.8934, p99 1.7779 reported) over 109 matched 5 s bins, 1612 swap steps; 2.4342 ms/applied swap; cuda_ms mean 0.2661; chunk-gap p95 ratio 1.9084 \u2014 bar \u2264 1.25"
+  ],
+  "G3_B2": [
+   "PASS",
+   "churn 112.3/min vs B0 95.3 (\u00d71.18, bar \u22641.25); stale 0; server errors 0; conv cold 0.00403 (bar <0.01)"
+  ],
+  "T90_B3": [
+   "REPORT",
+   "B3 not run (conditional on B2 G3 churn fail; default skip)"
+  ],
+  "G3_B0": [
+   "REPORT",
+   "control cell (churn ratio 1 by definition): churn 95.33/min; stale 0; errors 0; conv cold 0.00397 \u2014 sub-checks {'stale': True, 'errors': True, 'conv_cold': True}"
+  ],
+  "G2_B0": [
+   "FAIL",
+   "control cell p95 ratio 1.9087 (reported; feeds AR5)"
+  ],
+  "G4_gauntlet_ArmA": [
+   "PASS",
+   "12/12 \u2014 bar 12/12"
+  ],
+  "G4_parity_ArmA": [
+   "PASS",
+   "static (Arm0-S1) vs seed (ArmA-F1) 49/50 misses ['agent-tool-1']; noise set ['agent-tool-1', 'tool-weather-time'] (F1vsF2 ['agent-tool-1'], S1vsS2 ['agent-tool-1'] + documented)"
+  ],
+  "G4_gauntlet_winner": [
+   "REPORT",
+   "no winner cell \u2192 winner G4 not run"
+  ],
+  "H1_mixed": [
+   "PASS",
+   "A-frozen held-out mixed C1 agg post60 183.73 vs same-window A0-frozen held-out 127.12 (\u00d71.445; vs 133.1 class \u00d71.38) \u2014 bar \u2265 \u00d71.2"
+  ],
+  "H1_agent": [
+   "PASS",
+   "A-frozen held-out agent C1 201.36 vs same-window A0 202.74 (\u00d70.993; vs 195.7 class \u00d71.029) \u2014 bar \u2265 \u22122%"
+  ],
+  "H1_first_request": [
+   "REPORT",
+   "first-request tok/s A-frozen jpde 177.89 agent 201.44 | A0-frozen jpde 84.96 agent 202.9"
+  ],
+  "H1_adaptive_steady": [
+   "PASS",
+   "jpde A 189.59 vs Arm0 189.94 (-0.20%); agent A 218.94 vs Arm0 219.13 (-0.10%) \u2014 A-adaptive converged C1 matches B0 (Arm 0), bar |\u0394| \u2264 2%"
+  ],
+  "H1": [
+   "PASS",
+   "seed map: held-out mixed \u2265 +20%, agent within 2%, adaptive steady state matches B0"
+  ],
+  "H2": [
+   "FAIL",
+   "no B cell halves cold-share T90 vs same-boot B0 on both gated shifts with G1\u2013G3 green: B1 FAIL; B2 FAIL"
+  ],
+  "third_B2": [
+   "REPORT",
+   "agent->third: T90_cold 10.0 s, <2\u00d7conv 10.0, \u22641% 10.0; restore->agent: T90_cold 22.0 s, <2\u00d7conv 4.0, \u22641% 4.0; third->agent: T90_cold 14.0 s, <2\u00d7conv 14.0, \u22641% 14.0 (non-gating, one pass)"
+  ]
+ },
+ "cells": {
+  "0:B0": {
+   "boot": "0",
+   "cell": "B0",
+   "third": false,
+   "reps": [
+    {
+     "rep": 1,
+     "tag": "B0-r1",
+     "shifts": {
+      "restore->agent": {
+       "t0": 1792881926.9913754,
+       "t1": 1792882018.1738396,
+       "n_windows": 46,
+       "conv_cold": 0.003958015280812622,
+       "peak_cold": 0.018436950923051,
+       "t90_cold": 22.0,
+       "t_2x": 12.0,
+       "t_1pct": 12.0,
+       "t90_req": 9.98,
+       "t90_w3": 14.09,
+       "traj_2s": [
+        0.0184,
+        0.0155,
+        0.0139,
+        0.0122,
+        0.0146,
+        0.0066,
+        0.0055,
+        0.0054,
+        0.0055,
+        0.0065,
+        0.004,
+        0.0042,
+        0.0037,
+        0.0049,
+        0.0048
+       ],
+       "soft": false,
+       "churn_n": 79,
+       "churn_min": 1.0,
+       "stale": 0,
+       "conv_sel": 7836756,
+       "conv_cold_n": 31018,
+       "phase": "p1_agent",
+       "ctrl_lag_s": null
+      },
+      "agent->jpde": {
+       "t0": 1792882018.1779459,
+       "t1": 1792882110.3136954,
+       "n_windows": 46,
+       "conv_cold": 0.0030627775983724727,
+       "peak_cold": 0.17892156862745098,
+       "t90_cold": 12.0,
+       "t_2x": 20.0,
+       "t_1pct": 14.0,
+       "t90_req": 13.97,
+       "t90_w3": 10.09,
+       "traj_2s": [
+        0.1789,
+        0.0593,
+        0.0472,
+        0.0536,
+        0.0207,
+        0.0109,
+        0.0083,
+        0.0045,
+        0.0061,
+        0.0053,
+        0.0048,
+        0.0039,
+        0.0034,
+        0.0026,
+        0.0042
+       ],
+       "soft": false,
+       "churn_n": 130,
+       "churn_min": 1.0,
+       "stale": 0,
+       "conv_sel": 8509596,
+       "conv_cold_n": 26063,
+       "phase": "p2_jpde",
+       "ctrl_lag_s": -0.0
+      },
+      "jpde->agent": {
+       "t0": 1792882110.3137772,
+       "t1": 1792882201.2737823,
+       "n_windows": 46,
+       "conv_cold": 0.004472759514446774,
+       "peak_cold": 0.059945746664153,
+       "t90_cold": 14.0,
+       "t_2x": 14.0,
+       "t_1pct": 14.0,
+       "t90_req": 14.67,
+       "t90_w3": 14.75,
+       "traj_2s": [
+        0.0599,
+        0.0464,
+        0.0316,
+        0.0228,
+        0.0213,
+        0.0164,
+        0.0082,
+        0.0057,
+        0.0051,
+        0.007,
+        0.0076,
+        0.0053,
+        0.0042,
+        0.0039,
+        0.0064
+       ],
+       "soft": false,
+       "churn_n": 90,
+       "churn_min": 1.0,
+       "stale": 0,
+       "conv_sel": 7818216,
+       "conv_cold_n": 34969,
+       "phase": "p3_agent",
+       "ctrl_lag_s": null
+      }
+     },
+     "server_errors": 0
+    },
+    {
+     "rep": 2,
+     "tag": "B0-r2",
+     "shifts": {
+      "restore->agent": {
+       "t0": 1792882217.858732,
+       "t1": 1792882308.9836137,
+       "n_windows": 46,
+       "conv_cold": 0.0039655050865744475,
+       "peak_cold": 0.01873268698060942,
+       "t90_cold": 16.0,
+       "t_2x": 12.0,
+       "t_1pct": 12.0,
+       "t90_req": 9.92,
+       "t90_w3": 14.15,
+       "traj_2s": [
+        0.0187,
+        0.0154,
+        0.0134,
+        0.0116,
+        0.0121,
+        0.0062,
+        0.0059,
+        0.0048,
+        0.0054,
+        0.0066,
+        0.0038,
+        0.004,
+        0.0036,
+        0.005,
+        0.0046
+       ],
+       "soft": false,
+       "churn_n": 91,
+       "churn_min": 1.0,
+       "stale": 0,
+       "conv_sel": 7830024,
+       "conv_cold_n": 31050,
+       "phase": "p1_agent",
+       "ctrl_lag_s": null
+      },
+      "agent->jpde": {
+       "t0": 1792882308.9906125,
+       "t1": 1792882401.0927422,
+       "n_windows": 47,
+       "conv_cold": 0.0030568067767804082,
+       "peak_cold": 0.32848525045796223,
+       "t90_cold": 10.0,
+       "t_2x": 16.0,
+       "t_1pct": 12.0,
+       "t90_req": 13.96,
+       "t90_w3": 10.24,
+       "traj_2s": [
+        0.3285,
+        0.0905,
+        0.0548,
+        0.0505,
+        0.0194,
+        0.0093,
+        0.0072,
+        0.0045,
+        0.0051,
+        0.0053,
+        0.0045,
+        0.0038,
+        0.0034,
+        0.0028,
+        0.0039
+       ],
+       "soft": false,
+       "churn_n": 116,
+       "churn_min": 1.0,
+       "stale": 0,
+       "conv_sel": 8501028,
+       "conv_cold_n": 25986,
+       "phase": "p2_jpde",
+       "ctrl_lag_s": -0.0
+      },
+      "jpde->agent": {
+       "t0": 1792882401.092831,
+       "t1": 1792882491.9451418,
+       "n_windows": 46,
+       "conv_cold": 0.004482484559380478,
+       "peak_cold": 0.060071905495634306,
+       "t90_cold": 14.0,
+       "t_2x": 14.0,
+       "t_1pct": 14.0,
+       "t90_req": 14.57,
+       "t90_w3": 14.0,
+       "traj_2s": [
+        0.0601,
+        0.0468,
+        0.0286,
+        0.0226,
+        0.0191,
+        0.0153,
+        0.0078,
+        0.0055,
+        0.005,
+        0.0068,
+        0.0075,
+        0.0052,
+        0.0041,
+        0.0037,
+        0.0069
+       ],
+       "soft": false,
+       "churn_n": 93,
+       "churn_min": 1.0,
+       "stale": 0,
+       "conv_sel": 7715364,
+       "conv_cold_n": 34584,
+       "phase": "p3_agent",
+       "ctrl_lag_s": null
+      }
+     },
+     "server_errors": 0
+    }
+   ],
+   "knobs": {
+    "baseline": true,
+    "drain_n": 64,
+    "swaps_per_drain": 2,
+    "swaps_per_barrier": 8,
+    "hyst": 1.5,
+    "min_abs": 8,
+    "halflife": 500,
+    "freeze": false
+   },
+   "pooled": {
+    "agent->jpde": {
+     "t90_cold": 11.0,
+     "t_2x": 18.0,
+     "t_1pct": 13.0,
+     "t90_req": 13.965,
+     "t90_w3": 10.165,
+     "per_rep_t90_cold": [
+      12.0,
+      10.0
+     ],
+     "per_rep_t_2x": [
+      20.0,
+      16.0
+     ],
+     "n": 2
+    },
+    "jpde->agent": {
+     "t90_cold": 14.0,
+     "t_2x": 14.0,
+     "t_1pct": 14.0,
+     "t90_req": 14.62,
+     "t90_w3": 14.375,
+     "per_rep_t90_cold": [
+      14.0,
+      14.0
+     ],
+     "per_rep_t_2x": [
+      14.0,
+      14.0
+     ],
+     "n": 2
+    },
+    "restore->agent": {
+     "t90_cold": 19.0,
+     "t_2x": 12.0,
+     "t_1pct": 12.0,
+     "t90_req": 9.95,
+     "t90_w3": 14.12,
+     "per_rep_t90_cold": [
+      22.0,
+      16.0
+     ],
+     "per_rep_t_2x": [
+      12.0,
+      12.0
+     ],
+     "n": 2
+    }
+   },
+   "churn_per_min": 107.25,
+   "conv_cold": 0.00374,
+   "stale": 0,
+   "server_errors": 0,
+   "c1_conv": {
+    "jpde": 189.94,
+    "agent": 219.13
+   },
+   "g2": {
+    "bins": 75,
+    "n_swap_steps": 954,
+    "n_non_steps": 31540,
+    "p90_ratio": 1.8887,
+    "p95_ratio": 1.9079,
+    "p99_ratio": 1.6955,
+    "mean_ms_per_applied_swap": 1.2851,
+    "cuda_ms_mean": 0.2675,
+    "cuda_ms_p95": 0.2879,
+    "chunk_gap_p95_ratio": 1.9099,
+    "chunk_gap_n_swap": 936
+   }
+  },
+  "A:B0": {
+   "boot": "A",
+   "cell": "B0",
+   "third": false,
+   "reps": [
+    {
+     "rep": 1,
+     "tag": "B0-r1",
+     "shifts": {
+      "restore->agent": {
+       "t0": 1792883216.4812357,
+       "t1": 1792883307.280107,
+       "n_windows": 46,
+       "conv_cold": 0.004431329741801733,
+       "peak_cold": 0.011087851263128015,
+       "t90_cold": 22.0,
+       "t_2x": 4.0,
+       "t_1pct": 4.0,
+       "t90_req": 1.55,
+       "t90_w3": 15.89,
+       "traj_2s": [
+        0.0111,
+        0.0081,
+        0.0066,
+        0.0068,
+        0.0103,
+        0.0066,
+        0.0059,
+        0.0043,
+        0.0062,
+        0.0069,
+        0.005,
+        0.0039,
+        0.0036,
+        0.0066,
+        0.005
+       ],
+       "soft": true,
+       "churn_n": 65,
+       "churn_min": 1.0,
+       "stale": 0,
+       "conv_sel": 7816164,
+       "conv_cold_n": 34636,
+       "phase": "p1_agent",
+       "ctrl_lag_s": null
+      },
+      "agent->jpde": {
+       "t0": 1792883307.2870677,
+       "t1": 1792883397.5737715,
+       "n_windows": 46,
+       "conv_cold": 0.0033713146891503364,
+       "peak_cold": 0.08281967818639334,
+       "t90_cold": 8.0,
+       "t_2x": 10.0,
+       "t_1pct": 10.0,
+       "t90_req": 12.17,
+       "t90_w3": 9.17,
+       "traj_2s": [
+        0.0828,
+        0.0218,
+        0.0275,
+        0.0109,
+        0.0063,
+        0.005,
+        0.0041,
+        0.0043,
+        0.0048,
+        0.0045,
+        0.0037,
+        0.0035,
+        0.0028,
+        0.0042,
+        0.0047
+       ],
+       "soft": false,
+       "churn_n": 117,
+       "churn_min": 1.0,
+       "stale": 0,
+       "conv_sel": 8415708,
+       "conv_cold_n": 28372,
+       "phase": "p2_jpde",
+       "ctrl_lag_s": -0.0
+      },
+      "jpde->agent": {
+       "t0": 1792883397.573856,
+       "t1": 1792883487.669145,
+       "n_windows": 46,
+       "conv_cold": 0.004671720857860348,
+       "peak_cold": 0.03917176460895178,
+       "t90_cold": 14.0,
+       "t_2x": 14.0,
+       "t_1pct": 14.0,
+       "t90_req": 10.32,
+       "t90_w3": 14.6,
+       "traj_2s": [
+        0.0392,
+        0.0283,
+        0.0162,
+        0.0142,
+        0.0139,
+        0.0117,
+        0.0067,
+        0.0046,
+        0.0048,
+        0.0085,
+        0.006,
+        0.0049,
+        0.0037,
+        0.0057,
+        0.0063
+       ],
+       "soft": false,
+       "churn_n": 96,
+       "churn_min": 1.0,
+       "stale": 0,
+       "conv_sel": 7809756,
+       "conv_cold_n": 36485,
+       "phase": "p3_agent",
+       "ctrl_lag_s": null
+      }
+     },
+     "server_errors": 0
+    },
+    {
+     "rep": 2,
+     "tag": "B0-r2",
+     "shifts": {
+      "restore->agent": {
+       "t0": 1792884073.3479564,
+       "t1": 1792884164.1100104,
+       "n_windows": 46,
+       "conv_cold": 0.00440691507227515,
+       "peak_cold": 0.010695933869526364,
+       "t90_cold": 22.0,
+       "t_2x": 4.0,
+       "t_1pct": 4.0,
+       "t90_req": 1.55,
+       "t90_w3": 15.89,
+       "traj_2s": [
+        0.0107,
+        0.0082,
+        0.0063,
+        0.0073,
+        0.0094,
+        0.0065,
+        0.0059,
+        0.0042,
+        0.006,
+        0.0069,
+        0.005,
+        0.0039,
+        0.0035,
+        0.0065,
+        0.0051
+       ],
+       "soft": true,
+       "churn_n": 75,
+       "churn_min": 1.0,
+       "stale": 0,
+       "conv_sel": 7800468,
+       "conv_cold_n": 34376,
+       "phase": "p1_agent",
+       "ctrl_lag_s": null
+      },
+      "agent->jpde": {
+       "t0": 1792884164.1169734,
+       "t1": 1792884256.1190271,
+       "n_windows": 46,
+       "conv_cold": 0.003311948276231187,
+       "peak_cold": 0.0367132210771339,
+       "t90_cold": 10.0,
+       "t_2x": 10.0,
+       "t_1pct": 8.0,
+       "t90_req": 9.42,
+       "t90_w3": 7.26,
+       "traj_2s": [
+        0.0367,
+        0.0178,
+        0.0165,
+        0.0071,
+        0.0048,
+        0.0059,
+        0.0038,
+        0.0045,
+        0.0049,
+        0.004,
+        0.0037,
+        0.0036,
+        0.0028,
+        0.0045,
+        0.0039
+       ],
+       "soft": false,
+       "churn_n": 104,
+       "churn_min": 1.0,
+       "stale": 0,
+       "conv_sel": 8407740,
+       "conv_cold_n": 27846,
+       "phase": "p2_jpde",
+       "ctrl_lag_s": -0.0
+      },
+      "jpde->agent": {
+       "t0": 1792884256.1191094,
+       "t1": 1792884347.9653885,
+       "n_windows": 46,
+       "conv_cold": 0.004663426962243028,
+       "peak_cold": 0.028341245863904473,
+       "t90_cold": 14.0,
+       "t_2x": 14.0,
+       "t_1pct": 14.0,
+       "t90_req": 8.04,
+       "t90_w3": 15.03,
+       "traj_2s": [
+        0.0283,
+        0.023,
+        0.0144,
+        0.0123,
+        0.0156,
+        0.0126,
+        0.0069,
+        0.0055,
+        0.0044,
+        0.0079,
+        0.0062,
+        0.0055,
+        0.0039,
+        0.0053,
+        0.0069
+       ],
+       "soft": false,
+       "churn_n": 79,
+       "churn_min": 1.0,
+       "stale": 0,
+       "conv_sel": 7714284,
+       "conv_cold_n": 35975,
+       "phase": "p3_agent",
+       "ctrl_lag_s": null
+      }
+     },
+     "server_errors": 0
+    },
+    {
+     "rep": 3,
+     "tag": "B0-r3",
+     "shifts": {
+      "restore->agent": {
+       "t0": 1792884936.619502,
+       "t1": 1792885027.3762019,
+       "n_windows": 46,
+       "conv_cold": 0.004392793622765601,
+       "peak_cold": 0.010736196319018405,
+       "t90_cold": 22.0,
+       "t_2x": 4.0,
+       "t_1pct": 4.0,
+       "t90_req": 1.55,
+       "t90_w3": 15.82,
+       "traj_2s": [
+        0.0107,
+        0.0082,
+        0.0063,
+        0.0073,
+        0.0096,
+        0.0066,
+        0.0057,
+        0.0043,
+        0.0063,
+        0.0069,
+        0.0049,
+        0.0039,
+        0.0035,
+        0.0062,
+        0.0056
+       ],
+       "soft": true,
+       "churn_n": 67,
+       "churn_min": 1.0,
+       "stale": 0,
+       "conv_sel": 7815300,
+       "conv_cold_n": 34331,
+       "phase": "p1_agent",
+       "ctrl_lag_s": null
+      },
+      "agent->jpde": {
+       "t0": 1792885027.3831549,
+       "t1": 1792885119.4099174,
+       "n_windows": 46,
+       "conv_cold": 0.0033151609701560646,
+       "peak_cold": 0.051825837598460926,
+       "t90_cold": 8.0,
+       "t_2x": 10.0,
+       "t_1pct": 8.0,
+       "t90_req": 9.43,
+       "t90_w3": 7.31,
+       "traj_2s": [
+        0.0518,
+        0.0188,
+        0.016,
+        0.008,
+        0.0052,
+        0.0058,
+        0.0037,
+        0.0045,
+        0.0049,
+        0.004,
+        0.0039,
+        0.0034,
+        0.0027,
+        0.0045,
+        0.004
+       ],
+       "soft": false,
+       "churn_n": 101,
+       "churn_min": 1.0,
+       "stale": 0,
+       "conv_sel": 8414976,
+       "conv_cold_n": 27897,
+       "phase": "p2_jpde",
+       "ctrl_lag_s": -0.0
+      },
+      "jpde->agent": {
+       "t0": 1792885119.4100103,
+       "t1": 1792885211.2743483,
+       "n_windows": 46,
+       "conv_cold": 0.004662627425359591,
+       "peak_cold": 0.03172833301924325,
+       "t90_cold": 14.0,
+       "t_2x": 14.0,
+       "t_1pct": 14.0,
+       "t90_req": 10.17,
+       "t90_w3": 14.36,
+       "traj_2s": [
+        0.0317,
+        0.0266,
+        0.0152,
+        0.0136,
+        0.0135,
+        0.0124,
+        0.0068,
+        0.0055,
+        0.0044,
+        0.0081,
+        0.006,
+        0.0054,
+        0.0039,
+        0.0053,
+        0.0072
+       ],
+       "soft": false,
+       "churn_n": 75,
+       "churn_min": 1.0,
+       "stale": 0,
+       "conv_sel": 7714320,
+       "conv_cold_n": 35969,
+       "phase": "p3_agent",
+       "ctrl_lag_s": null
+      }
+     },
+     "server_errors": 0
+    }
+   ],
+   "knobs": {
+    "baseline": true,
+    "drain_n": 64,
+    "swaps_per_drain": 2,
+    "swaps_per_barrier": 8,
+    "hyst": 1.5,
+    "min_abs": 8,
+    "halflife": 500,
+    "freeze": false
+   },
+   "pooled": {
+    "agent->jpde": {
+     "t90_cold": 8.667,
+     "t_2x": 10.0,
+     "t_1pct": 8.667,
+     "t90_req": 10.34,
+     "t90_w3": 7.913,
+     "per_rep_t90_cold": [
+      8.0,
+      10.0,
+      8.0
+     ],
+     "per_rep_t_2x": [
+      10.0,
+      10.0,
+      10.0
+     ],
+     "n": 3
+    },
+    "jpde->agent": {
+     "t90_cold": 14.0,
+     "t_2x": 14.0,
+     "t_1pct": 14.0,
+     "t90_req": 9.51,
+     "t90_w3": 14.663,
+     "per_rep_t90_cold": [
+      14.0,
+      14.0,
+      14.0
+     ],
+     "per_rep_t_2x": [
+      14.0,
+      14.0,
+      14.0
+     ],
+     "n": 3
+    },
+    "restore->agent": {
+     "t90_cold": 22.0,
+     "t_2x": 4.0,
+     "t_1pct": 4.0,
+     "t90_req": 1.55,
+     "t90_w3": 15.867,
+     "per_rep_t90_cold": [
+      22.0,
+      22.0,
+      22.0
+     ],
+     "per_rep_t_2x": [
+      4.0,
+      4.0,
+      4.0
+     ],
+     "n": 3
+    }
+   },
+   "churn_per_min": 95.33,
+   "conv_cold": 0.00397,
+   "stale": 0,
+   "server_errors": 0,
+   "c1_conv": {
+    "jpde": 189.59,
+    "agent": 218.94
+   },
+   "g2": {
+    "bins": 112,
+    "n_swap_steps": 1042,
+    "n_non_steps": 48515,
+    "p90_ratio": 1.9007,
+    "p95_ratio": 1.9087,
+    "p99_ratio": 1.7721,
+    "mean_ms_per_applied_swap": 1.5801,
+    "cuda_ms_mean": 0.2646,
+    "cuda_ms_p95": 0.2855,
+    "chunk_gap_p95_ratio": 1.9068,
+    "chunk_gap_n_swap": 1022
+   }
+  },
+  "A:B1": {
+   "boot": "A",
+   "cell": "B1",
+   "third": false,
+   "reps": [
+    {
+     "rep": 1,
+     "tag": "B1-r1",
+     "shifts": {
+      "restore->agent": {
+       "t0": 1792883501.8549552,
+       "t1": 1792883592.6191707,
+       "n_windows": 46,
+       "conv_cold": 0.004390985993407759,
+       "peak_cold": 0.010647995606809445,
+       "t90_cold": 22.0,
+       "t_2x": 4.0,
+       "t_1pct": 4.0,
+       "t90_req": 1.55,
+       "t90_w3": 15.86,
+       "traj_2s": [
+        0.0106,
+        0.0081,
+        0.0065,
+        0.0071,
+        0.0095,
+        0.0066,
+        0.0057,
+        0.0043,
+        0.0062,
+        0.007,
+        0.0049,
+        0.0039,
+        0.0035,
+        0.0064,
+        0.0053
+       ],
+       "soft": true,
+       "churn_n": 60,
+       "churn_min": 1.0,
+       "stale": 0,
+       "conv_sel": 7809180,
+       "conv_cold_n": 34290,
+       "phase": "p1_agent",
+       "ctrl_lag_s": null
+      },
+      "agent->jpde": {
+       "t0": 1792883592.662271,
+       "t1": 1792883682.7870793,
+       "n_windows": 45,
+       "conv_cold": 0.0033807719667877083,
+       "peak_cold": 0.041311612364243945,
+       "t90_cold": 8.0,
+       "t_2x": 10.0,
+       "t_1pct": 8.0,
+       "t90_req": 9.52,
+       "t90_w3": 7.41,
+       "traj_2s": [
+        0.0413,
+        0.0167,
+        0.0231,
+        0.007,
+        0.0056,
+        0.0047,
+        0.0037,
+        0.0045,
+        0.0049,
+        0.0042,
+        0.0037,
+        0.0037,
+        0.0029,
+        0.0045,
+        0.0041
+       ],
+       "soft": false,
+       "churn_n": 102,
+       "churn_min": 1.0,
+       "stale": 0,
+       "conv_sel": 8383884,
+       "conv_cold_n": 28344,
+       "phase": "p2_jpde",
+       "ctrl_lag_s": -0.0
+      },
+      "jpde->agent": {
+       "t0": 1792883682.7871647,
+       "t1": 1792883774.7024336,
+       "n_windows": 46,
+       "conv_cold": 0.00473555115838074,
+       "peak_cold": 0.028106768960281307,
+       "t90_cold": 14.0,
+       "t_2x": 14.0,
+       "t_1pct": 6.0,
+       "t90_req": 8.0,
+       "t90_w3": 12.58,
+       "traj_2s": [
+        0.0281,
+        0.0169,
+        0.0098,
+        0.0094,
+        0.0117,
+        0.0098,
+        0.0061,
+        0.0049,
+        0.0056,
+        0.0076,
+        0.0053,
+        0.0051,
+        0.0038,
+        0.0056,
+        0.0067
+       ],
+       "soft": false,
+       "churn_n": 117,
+       "churn_min": 1.0,
+       "stale": 0,
+       "conv_sel": 7762560,
+       "conv_cold_n": 36760,
+       "phase": "p3_agent",
+       "ctrl_lag_s": null
+      }
+     },
+     "server_errors": 0
+    },
+    {
+     "rep": 2,
+     "tag": "B1-r2",
+     "shifts": {
+      "restore->agent": {
+       "t0": 1792884361.6166506,
+       "t1": 1792884452.3854303,
+       "n_windows": 46,
+       "conv_cold": 0.004389846261441437,
+       "peak_cold": 0.010985069545764031,
+       "t90_cold": 22.0,
+       "t_2x": 4.0,
+       "t_1pct": 4.0,
+       "t90_req": 1.55,
+       "t90_w3": 15.71,
+       "traj_2s": [
+        0.011,
+        0.0081,
+        0.0064,
+        0.0061,
+        0.01,
+        0.0064,
+        0.0061,
+        0.0043,
+        0.006,
+        0.0074,
+        0.005,
+        0.0039,
+        0.0034,
+        0.006,
+        0.0058
+       ],
+       "soft": true,
+       "churn_n": 71,
+       "churn_min": 1.0,
+       "stale": 0,
+       "conv_sel": 7824192,
+       "conv_cold_n": 34347,
+       "phase": "p1_agent",
+       "ctrl_lag_s": null
+      },
+      "agent->jpde": {
+       "t0": 1792884452.3926032,
+       "t1": 1792884544.463601,
+       "n_windows": 46,
+       "conv_cold": 0.003374308182759943,
+       "peak_cold": 0.03235121208977418,
+       "t90_cold": 10.0,
+       "t_2x": 8.0,
+       "t_1pct": 8.0,
+       "t90_req": 9.37,
+       "t90_w3": 7.28,
+       "traj_2s": [
+        0.0324,
+        0.013,
+        0.0245,
+        0.0066,
+        0.0058,
+        0.005,
+        0.0028,
+        0.0045,
+        0.005,
+        0.0041,
+        0.0038,
+        0.0033,
+        0.003,
+        0.0045,
+        0.0039
+       ],
+       "soft": false,
+       "churn_n": 102,
+       "churn_min": 1.0,
+       "stale": 0,
+       "conv_sel": 8386608,
+       "conv_cold_n": 28299,
+       "phase": "p2_jpde",
+       "ctrl_lag_s": -0.0
+      },
+      "jpde->agent": {
+       "t0": 1792884544.4636834,
+       "t1": 1792884636.2703168,
+       "n_windows": 46,
+       "conv_cold": 0.004741830242632301,
+       "peak_cold": 0.024844820636839984,
+       "t90_cold": 14.0,
+       "t_2x": 6.0,
+       "t_1pct": 6.0,
+       "t90_req": 7.91,
+       "t90_w3": 12.54,
+       "traj_2s": [
+        0.0248,
+        0.0166,
+        0.0093,
+        0.0087,
+        0.0121,
+        0.01,
+        0.0062,
+        0.0049,
+        0.0058,
+        0.0077,
+        0.0055,
+        0.005,
+        0.0038,
+        0.0057,
+        0.0068
+       ],
+       "soft": false,
+       "churn_n": 90,
+       "churn_min": 1.0,
+       "stale": 0,
+       "conv_sel": 7742580,
+       "conv_cold_n": 36714,
+       "phase": "p3_agent",
+       "ctrl_lag_s": null
+      }
+     },
+     "server_errors": 0
+    },
+    {
+     "rep": 3,
+     "tag": "B1-r3",
+     "shifts": {
+      "restore->agent": {
+       "t0": 1792885224.9260776,
+       "t1": 1792885315.701989,
+       "n_windows": 46,
+       "conv_cold": 0.004383879775135582,
+       "peak_cold": 0.01092412676382142,
+       "t90_cold": 24.0,
+       "t_2x": 4.0,
+       "t_1pct": 4.0,
+       "t90_req": 1.55,
+       "t90_w3": 15.78,
+       "traj_2s": [
+        0.0109,
+        0.0079,
+        0.0065,
+        0.0067,
+        0.0098,
+        0.0068,
+        0.0056,
+        0.0043,
+        0.0061,
+        0.0069,
+        0.005,
+        0.004,
+        0.0035,
+        0.006,
+        0.0058
+       ],
+       "soft": true,
+       "churn_n": 75,
+       "churn_min": 1.0,
+       "stale": 0,
+       "conv_sel": 7824804,
+       "conv_cold_n": 34303,
+       "phase": "p1_agent",
+       "ctrl_lag_s": null
+      },
+      "agent->jpde": {
+       "t0": 1792885315.7089858,
+       "t1": 1792885407.799035,
+       "n_windows": 46,
+       "conv_cold": 0.0033573436586317455,
+       "peak_cold": 0.037037037037037035,
+       "t90_cold": 10.0,
+       "t_2x": 10.0,
+       "t_1pct": 8.0,
+       "t90_req": 9.4,
+       "t90_w3": 7.31,
+       "traj_2s": [
+        0.037,
+        0.014,
+        0.0225,
+        0.007,
+        0.0054,
+        0.0048,
+        0.0027,
+        0.0044,
+        0.005,
+        0.0041,
+        0.0037,
+        0.0033,
+        0.0029,
+        0.0044,
+        0.0039
+       ],
+       "soft": false,
+       "churn_n": 116,
+       "churn_min": 1.0,
+       "stale": 0,
+       "conv_sel": 8386392,
+       "conv_cold_n": 28156,
+       "phase": "p2_jpde",
+       "ctrl_lag_s": -0.0
+      },
+      "jpde->agent": {
+       "t0": 1792885407.7991235,
+       "t1": 1792885499.6237257,
+       "n_windows": 46,
+       "conv_cold": 0.004729887627929435,
+       "peak_cold": 0.025677470560603852,
+       "t90_cold": 14.0,
+       "t_2x": 6.0,
+       "t_1pct": 6.0,
+       "t90_req": 7.92,
+       "t90_w3": 12.48,
+       "traj_2s": [
+        0.0257,
+        0.0168,
+        0.0094,
+        0.0085,
+        0.0121,
+        0.0102,
+        0.0061,
+        0.005,
+        0.0056,
+        0.0076,
+        0.0057,
+        0.0051,
+        0.0038,
+        0.0056,
+        0.0066
+       ],
+       "soft": false,
+       "churn_n": 90,
+       "churn_min": 1.0,
+       "stale": 0,
+       "conv_sel": 7753884,
+       "conv_cold_n": 36675,
+       "phase": "p3_agent",
+       "ctrl_lag_s": null
+      }
+     },
+     "server_errors": 0
+    }
+   ],
+   "knobs": {
+    "baseline": true,
+    "drain_n": 32,
+    "swaps_per_drain": 2,
+    "swaps_per_barrier": 8,
+    "hyst": 1.5,
+    "min_abs": 8,
+    "halflife": 500,
+    "freeze": false
+   },
+   "pooled": {
+    "agent->jpde": {
+     "t90_cold": 9.333,
+     "t_2x": 9.333,
+     "t_1pct": 8.0,
+     "t90_req": 9.43,
+     "t90_w3": 7.333,
+     "per_rep_t90_cold": [
+      8.0,
+      10.0,
+      10.0
+     ],
+     "per_rep_t_2x": [
+      10.0,
+      8.0,
+      10.0
+     ],
+     "n": 3
+    },
+    "jpde->agent": {
+     "t90_cold": 14.0,
+     "t_2x": 8.667,
+     "t_1pct": 6.0,
+     "t90_req": 7.943,
+     "t90_w3": 12.533,
+     "per_rep_t90_cold": [
+      14.0,
+      14.0,
+      14.0
+     ],
+     "per_rep_t_2x": [
+      14.0,
+      6.0,
+      6.0
+     ],
+     "n": 3
+    },
+    "restore->agent": {
+     "t90_cold": 22.667,
+     "t_2x": 4.0,
+     "t_1pct": 4.0,
+     "t90_req": 1.55,
+     "t90_w3": 15.783,
+     "per_rep_t90_cold": [
+      22.0,
+      22.0,
+      24.0
+     ],
+     "per_rep_t_2x": [
+      4.0,
+      4.0,
+      4.0
+     ],
+     "n": 3
+    }
+   },
+   "churn_per_min": 102.83,
+   "conv_cold": 0.00403,
+   "stale": 0,
+   "server_errors": 0,
+   "c1_conv": {
+    "jpde": 189.62,
+    "agent": 218.21
+   },
+   "g2": {
+    "bins": 113,
+    "n_swap_steps": 1318,
+    "n_non_steps": 48431,
+    "p90_ratio": 1.8889,
+    "p95_ratio": 1.8893,
+    "p99_ratio": 1.7389,
+    "mean_ms_per_applied_swap": 1.9211,
+    "cuda_ms_mean": 0.2641,
+    "cuda_ms_p95": 0.2842,
+    "chunk_gap_p95_ratio": 1.9024,
+    "chunk_gap_n_swap": 1286
+   }
+  },
+  "A:B2": {
+   "boot": "A",
+   "cell": "B2",
+   "third": false,
+   "reps": [
+    {
+     "rep": 1,
+     "tag": "B2-r1",
+     "shifts": {
+      "restore->agent": {
+       "t0": 1792883788.704098,
+       "t1": 1792883879.4862328,
+       "n_windows": 46,
+       "conv_cold": 0.0043953161621243545,
+       "peak_cold": 0.011059707114940904,
+       "t90_cold": 22.0,
+       "t_2x": 4.0,
+       "t_1pct": 4.0,
+       "t90_req": 1.55,
+       "t90_w3": 15.76,
+       "traj_2s": [
+        0.0111,
+        0.0079,
+        0.0065,
+        0.0066,
+        0.0099,
+        0.0064,
+        0.0059,
+        0.0043,
+        0.0061,
+        0.0069,
+        0.005,
+        0.0039,
+        0.0034,
+        0.0061,
+        0.0058
+       ],
+       "soft": true,
+       "churn_n": 75,
+       "churn_min": 1.0,
+       "stale": 0,
+       "conv_sel": 7823328,
+       "conv_cold_n": 34386,
+       "phase": "p1_agent",
+       "ctrl_lag_s": null
+      },
+      "agent->jpde": {
+       "t0": 1792883879.5286973,
+       "t1": 1792883969.5773444,
+       "n_windows": 45,
+       "conv_cold": 0.0033904066635120265,
+       "peak_cold": 0.02719344960724271,
+       "t90_cold": 10.0,
+       "t_2x": 8.0,
+       "t_1pct": 8.0,
+       "t90_req": 9.37,
+       "t90_w3": 6.39,
+       "traj_2s": [
+        0.0272,
+        0.0122,
+        0.0176,
+        0.0063,
+        0.0052,
+        0.0048,
+        0.0028,
+        0.0046,
+        0.005,
+        0.0041,
+        0.0037,
+        0.0034,
+        0.0031,
+        0.0045,
+        0.0039
+       ],
+       "soft": false,
+       "churn_n": 104,
+       "churn_min": 1.0,
+       "stale": 0,
+       "conv_sel": 8419344,
+       "conv_cold_n": 28545,
+       "phase": "p2_jpde",
+       "ctrl_lag_s": -0.0
+      },
+      "jpde->agent": {
+       "t0": 1792883969.5774295,
+       "t1": 1792884059.6918197,
+       "n_windows": 46,
+       "conv_cold": 0.004742319138061793,
+       "peak_cold": 0.02323218639934977,
+       "t90_cold": 14.0,
+       "t_2x": 6.0,
+       "t_1pct": 6.0,
+       "t90_req": 7.93,
+       "t90_w3": 11.87,
+       "traj_2s": [
+        0.0232,
+        0.013,
+        0.0088,
+        0.0078,
+        0.0125,
+        0.0088,
+        0.006,
+        0.0049,
+        0.0058,
+        0.0078,
+        0.0053,
+        0.0051,
+        0.004,
+        0.0055,
+        0.0068
+       ],
+       "soft": false,
+       "churn_n": 129,
+       "churn_min": 1.0,
+       "stale": 0,
+       "conv_sel": 7763712,
+       "conv_cold_n": 36818,
+       "phase": "p3_agent",
+       "ctrl_lag_s": null
+      }
+     },
+     "server_errors": 0
+    },
+    {
+     "rep": 2,
+     "tag": "B2-r2",
+     "shifts": {
+      "restore->agent": {
+       "t0": 1792884649.962691,
+       "t1": 1792884740.7220912,
+       "n_windows": 46,
+       "conv_cold": 0.004390512264404045,
+       "peak_cold": 0.010744305856832972,
+       "t90_cold": 22.0,
+       "t_2x": 4.0,
+       "t_1pct": 4.0,
+       "t90_req": 1.55,
+       "t90_w3": 22.6,
+       "traj_2s": [
+        0.0107,
+        0.0082,
+        0.0064,
+        0.0071,
+        0.0096,
+        0.0066,
+        0.0056,
+        0.0043,
+        0.0063,
+        0.0069,
+        0.005,
+        0.0039,
+        0.0035,
+        0.0061,
+        0.0058
+       ],
+       "soft": true,
+       "churn_n": 65,
+       "churn_min": 1.0,
+       "stale": 0,
+       "conv_sel": 7812528,
+       "conv_cold_n": 34301,
+       "phase": "p1_agent",
+       "ctrl_lag_s": null
+      },
+      "agent->jpde": {
+       "t0": 1792884740.7290635,
+       "t1": 1792884832.8159559,
+       "n_windows": 47,
+       "conv_cold": 0.0033848826834880336,
+       "peak_cold": 0.026412599873541415,
+       "t90_cold": 10.0,
+       "t_2x": 8.0,
+       "t_1pct": 8.0,
+       "t90_req": 9.34,
+       "t90_w3": 6.32,
+       "traj_2s": [
+        0.0264,
+        0.0125,
+        0.0145,
+        0.0062,
+        0.0051,
+        0.0047,
+        0.0029,
+        0.0045,
+        0.005,
+        0.004,
+        0.0039,
+        0.0034,
+        0.0032,
+        0.0045,
+        0.0039
+       ],
+       "soft": false,
+       "churn_n": 86,
+       "churn_min": 1.0,
+       "stale": 0,
+       "conv_sel": 8433084,
+       "conv_cold_n": 28545,
+       "phase": "p2_jpde",
+       "ctrl_lag_s": -0.0
+      },
+      "jpde->agent": {
+       "t0": 1792884832.8160489,
+       "t1": 1792884922.9253983,
+       "n_windows": 46,
+       "conv_cold": 0.0047548539268212515,
+       "peak_cold": 0.02235444037619355,
+       "t90_cold": 14.0,
+       "t_2x": 6.0,
+       "t_1pct": 6.0,
+       "t90_req": 7.89,
+       "t90_w3": 11.9,
+       "traj_2s": [
+        0.0224,
+        0.0132,
+        0.0085,
+        0.009,
+        0.0115,
+        0.0089,
+        0.0061,
+        0.0048,
+        0.0058,
+        0.0076,
+        0.0055,
+        0.0051,
+        0.0039,
+        0.0057,
+        0.0067
+       ],
+       "soft": false,
+       "churn_n": 128,
+       "churn_min": 1.0,
+       "stale": 0,
+       "conv_sel": 7751868,
+       "conv_cold_n": 36859,
+       "phase": "p3_agent",
+       "ctrl_lag_s": null
+      }
+     },
+     "server_errors": 0
+    },
+    {
+     "rep": 3,
+     "tag": "B2-r3",
+     "shifts": {
+      "restore->agent": {
+       "t0": 1792885513.3094594,
+       "t1": 1792885604.0996797,
+       "n_windows": 46,
+       "conv_cold": 0.0043865444815943885,
+       "peak_cold": 0.010771748022907009,
+       "t90_cold": 24.0,
+       "t_2x": 4.0,
+       "t_1pct": 4.0,
+       "t90_req": 1.55,
+       "t90_w3": 15.99,
+       "traj_2s": [
+        0.0108,
+        0.0081,
+        0.0063,
+        0.0076,
+        0.0092,
+        0.0065,
+        0.0058,
+        0.0043,
+        0.0063,
+        0.0069,
+        0.0051,
+        0.0039,
+        0.0037,
+        0.0058,
+        0.0058
+       ],
+       "soft": true,
+       "churn_n": 81,
+       "churn_min": 1.0,
+       "stale": 0,
+       "conv_sel": 7809792,
+       "conv_cold_n": 34258,
+       "phase": "p1_agent",
+       "ctrl_lag_s": null
+      },
+      "agent->jpde": {
+       "t0": 1792885604.106685,
+       "t1": 1792885694.1535575,
+       "n_windows": 46,
+       "conv_cold": 0.0033789793824263187,
+       "peak_cold": 0.032220143922271585,
+       "t90_cold": 10.0,
+       "t_2x": 8.0,
+       "t_1pct": 8.0,
+       "t90_req": 7.06,
+       "t90_w3": 2.05,
+       "traj_2s": [
+        0.0322,
+        0.0116,
+        0.0143,
+        0.0063,
+        0.0052,
+        0.0047,
+        0.0029,
+        0.0045,
+        0.005,
+        0.0039,
+        0.0038,
+        0.0034,
+        0.0032,
+        0.0044,
+        0.0039
+       ],
+       "soft": false,
+       "churn_n": 96,
+       "churn_min": 1.0,
+       "stale": 0,
+       "conv_sel": 8431836,
+       "conv_cold_n": 28491,
+       "phase": "p2_jpde",
+       "ctrl_lag_s": -0.0
+      },
+      "jpde->agent": {
+       "t0": 1792885694.1536436,
+       "t1": 1792885784.2169363,
+       "n_windows": 46,
+       "conv_cold": 0.004726554003330404,
+       "peak_cold": 0.0233474411093167,
+       "t90_cold": 14.0,
+       "t_2x": 6.0,
+       "t_1pct": 6.0,
+       "t90_req": 7.88,
+       "t90_w3": 5.07,
+       "traj_2s": [
+        0.0233,
+        0.0121,
+        0.0093,
+        0.0082,
+        0.012,
+        0.0083,
+        0.0064,
+        0.0048,
+        0.0058,
+        0.0074,
+        0.0054,
+        0.0049,
+        0.0039,
+        0.0058,
+        0.0067
+       ],
+       "soft": false,
+       "churn_n": 131,
+       "churn_min": 1.0,
+       "stale": 0,
+       "conv_sel": 7742004,
+       "conv_cold_n": 36593,
+       "phase": "p3_agent",
+       "ctrl_lag_s": null
+      }
+     },
+     "server_errors": 0
+    }
+   ],
+   "knobs": {
+    "baseline": true,
+    "drain_n": 16,
+    "swaps_per_drain": 2,
+    "swaps_per_barrier": 8,
+    "hyst": 1.5,
+    "min_abs": 8,
+    "halflife": 500,
+    "freeze": false
+   },
+   "pooled": {
+    "agent->jpde": {
+     "t90_cold": 10.0,
+     "t_2x": 8.0,
+     "t_1pct": 8.0,
+     "t90_req": 8.59,
+     "t90_w3": 4.92,
+     "per_rep_t90_cold": [
+      10.0,
+      10.0,
+      10.0
+     ],
+     "per_rep_t_2x": [
+      8.0,
+      8.0,
+      8.0
+     ],
+     "n": 3
+    },
+    "jpde->agent": {
+     "t90_cold": 14.0,
+     "t_2x": 6.0,
+     "t_1pct": 6.0,
+     "t90_req": 7.9,
+     "t90_w3": 9.613,
+     "per_rep_t90_cold": [
+      14.0,
+      14.0,
+      14.0
+     ],
+     "per_rep_t_2x": [
+      6.0,
+      6.0,
+      6.0
+     ],
+     "n": 3
+    },
+    "restore->agent": {
+     "t90_cold": 22.667,
+     "t_2x": 4.0,
+     "t_1pct": 4.0,
+     "t90_req": 1.55,
+     "t90_w3": 18.117,
+     "per_rep_t90_cold": [
+      22.0,
+      22.0,
+      24.0
+     ],
+     "per_rep_t_2x": [
+      4.0,
+      4.0,
+      4.0
+     ],
+     "n": 3
+    }
+   },
+   "churn_per_min": 112.33,
+   "conv_cold": 0.00403,
+   "stale": 0,
+   "server_errors": 0,
+   "c1_conv": {
+    "jpde": 189.52,
+    "agent": 217.92
+   },
+   "g2": {
+    "bins": 109,
+    "n_swap_steps": 1612,
+    "n_non_steps": 47410,
+    "p90_ratio": 1.8934,
+    "p95_ratio": 1.9047,
+    "p99_ratio": 1.7779,
+    "mean_ms_per_applied_swap": 2.4342,
+    "cuda_ms_mean": 0.2661,
+    "cuda_ms_p95": 0.2867,
+    "chunk_gap_p95_ratio": 1.9084,
+    "chunk_gap_n_swap": 1567
+   }
+  },
+  "A:B2:third": {
+   "boot": "A",
+   "cell": "B2",
+   "third": true,
+   "reps": [
+    {
+     "rep": 1,
+     "tag": "B2-third",
+     "shifts": {
+      "restore->agent": {
+       "t0": 1792885799.2581525,
+       "t1": 1792885890.0314837,
+       "n_windows": 46,
+       "conv_cold": 0.004397428860335476,
+       "peak_cold": 0.010610866563093388,
+       "t90_cold": 22.0,
+       "t_2x": 4.0,
+       "t_1pct": 4.0,
+       "t90_req": 1.56,
+       "t90_w3": 15.89,
+       "traj_2s": [
+        0.0106,
+        0.0081,
+        0.0064,
+        0.0071,
+        0.0093,
+        0.0065,
+        0.0059,
+        0.0043,
+        0.006,
+        0.007,
+        0.005,
+        0.0039,
+        0.0035,
+        0.0066,
+        0.005
+       ],
+       "soft": true,
+       "churn_n": 73,
+       "churn_min": 1.0,
+       "stale": 0,
+       "conv_sel": 7804788,
+       "conv_cold_n": 34321,
+       "phase": "p1_agent",
+       "ctrl_lag_s": null
+      },
+      "agent->third": {
+       "t0": 1792885890.0738888,
+       "t1": 1792885981.6245587,
+       "n_windows": 46,
+       "conv_cold": 0.004566543731979113,
+       "peak_cold": 0.05697087614762571,
+       "t90_cold": 10.0,
+       "t_2x": 10.0,
+       "t_1pct": 10.0,
+       "t90_req": 12.38,
+       "t90_w3": 8.98,
+       "traj_2s": [
+        0.057,
+        0.0414,
+        0.0241,
+        0.0213,
+        0.0082,
+        0.0047,
+        0.008,
+        0.0083,
+        0.0058,
+        0.0034,
+        0.0061,
+        0.0054,
+        0.0057,
+        0.0031,
+        0.0054
+       ],
+       "soft": false,
+       "churn_n": 156,
+       "churn_min": 1.0,
+       "stale": 0,
+       "conv_sel": 8251536,
+       "conv_cold_n": 37681,
+       "phase": "p2_third",
+       "ctrl_lag_s": -0.0
+      },
+      "third->agent": {
+       "t0": 1792885981.6246433,
+       "t1": 1792886072.7867455,
+       "n_windows": 46,
+       "conv_cold": 0.004805905300118727,
+       "peak_cold": 0.04441291763526141,
+       "t90_cold": 14.0,
+       "t_2x": 14.0,
+       "t_1pct": 14.0,
+       "t90_req": 12.48,
+       "t90_w3": 7.76,
+       "traj_2s": [
+        0.0444,
+        0.0246,
+        0.0171,
+        0.0121,
+        0.0171,
+        0.012,
+        0.0073,
+        0.0059,
+        0.0051,
+        0.0082,
+        0.0081,
+        0.0058,
+        0.0045,
+        0.0047,
+        0.007
+       ],
+       "soft": false,
+       "churn_n": 150,
+       "churn_min": 1.0,
+       "stale": 0,
+       "conv_sel": 7758996,
+       "conv_cold_n": 37289,
+       "phase": "p3_agent",
+       "ctrl_lag_s": null
+      }
+     },
+     "server_errors": 0
+    }
+   ],
+   "knobs": {
+    "baseline": true,
+    "drain_n": 16,
+    "swaps_per_drain": 2,
+    "swaps_per_barrier": 8,
+    "hyst": 1.5,
+    "min_abs": 8,
+    "halflife": 500,
+    "freeze": false
+   },
+   "pooled": {
+    "agent->third": {
+     "t90_cold": 10.0,
+     "t_2x": 10.0,
+     "t_1pct": 10.0,
+     "t90_req": 12.38,
+     "t90_w3": 8.98,
+     "per_rep_t90_cold": [
+      10.0
+     ],
+     "per_rep_t_2x": [
+      10.0
+     ],
+     "n": 1
+    },
+    "restore->agent": {
+     "t90_cold": 22.0,
+     "t_2x": 4.0,
+     "t_1pct": 4.0,
+     "t90_req": 1.56,
+     "t90_w3": 15.89,
+     "per_rep_t90_cold": [
+      22.0
+     ],
+     "per_rep_t_2x": [
+      4.0
+     ],
+     "n": 1
+    },
+    "third->agent": {
+     "t90_cold": 14.0,
+     "t_2x": 14.0,
+     "t_1pct": 14.0,
+     "t90_req": 12.48,
+     "t90_w3": 7.76,
+     "per_rep_t90_cold": [
+      14.0
+     ],
+     "per_rep_t_2x": [
+      14.0
+     ],
+     "n": 1
+    }
+   },
+   "churn_per_min": 153.0,
+   "conv_cold": 0.00468,
+   "stale": 0,
+   "server_errors": 0,
+   "c1_conv": {
+    "third": 202.21,
+    "agent": 217.72
+   },
+   "g2": {
+    "bins": 38,
+    "n_swap_steps": 791,
+    "n_non_steps": 15246,
+    "p90_ratio": 1.8658,
+    "p95_ratio": 1.8627,
+    "p99_ratio": 1.5855,
+    "mean_ms_per_applied_swap": 1.7824,
+    "cuda_ms_mean": 0.2633,
+    "cuda_ms_p95": 0.2848,
+    "chunk_gap_p95_ratio": 1.8645,
+    "chunk_gap_n_swap": 772
+   }
+  }
+ },
+ "unmeasured_gates": [],
+ "notes": [],
+ "instrument": {
+  "win_s": 2.0,
+  "conv_s": 60.0,
+  "peak_s": 20.0,
+  "hold_windows": 2,
+  "bin_s": 5.0,
+  "mde_pooled_s": 1.0,
+  "tail_zone": 0.4
+ }
+}

@@ -1,0 +1,39 @@
+#!/usr/bin/env bash
+# launch_ar6.sh — Card AR6 v2 boot = launch_ar.sh (the exact v23 launch + v26ar deltas, AR3 2026-10-23) with ONLY:
+#   +ROWMAP env   PIN_ROWMAP=/w/$ROWMAP (launch_ar.sh hardcodes rowmap-static-v1.json; AR6 Boot 2 needs the seed map)
+#   +G2 env       PIN_STEP_RING=${PIN_STEP_RING:-65536} PIN_SWAP_CUDA_EVENTS=${PIN_SWAP_CUDA_EVENTS:-1}
+#                 (hook v26ar.2 DIFF.md; PIN_SWAP_APPLY_TS defaults on; steps.bin -> /ar/steps.bin)
+#   HOOK default  v26ar2/hook (the ROWMAP file must exist INSIDE $HOOK — it is mounted as /w).
+# Same image, model, args, autotune cache, PIN_* knobs, freeze-at-boot (count only until GO + ctrl).
+set -euo pipefail
+NEW=/models/DeepSeek-V4.1-Flash-1017-1bae0e1088993b9b82de08f59de5be5a34e42170
+IMAGE=vllm/vllm-openai:deepseekv41-flash-0909
+CACHE=$HOME/dsv41/vllm-cache
+HOOK=${HOOK:-$HOME/pin-hot-experts/v26ar2/hook}
+NAME=${NAME:?NAME required}
+RUN=${RUN:?RUN required}
+ROWMAP=${ROWMAP:-rowmap-static-v1.json}
+PIN_STEP_RING=${PIN_STEP_RING:-65536}
+PIN_SWAP_CUDA_EVENTS=${PIN_SWAP_CUDA_EVENTS:-1}
+[[ -s $HOOK/$ROWMAP ]] || { echo "launch_ar6: $HOOK/$ROWMAP missing" >&2; exit 3; }
+for f in pin_hot_experts_hook.py e4_adaptive.py sitecustomize.py; do [[ -s $HOOK/$f ]] || { echo "launch_ar6: $HOOK/$f missing" >&2; exit 3; }; done
+mkdir -p "$RUN"
+sudo -n sh -c "sync; echo 3 > /proc/sys/vm/drop_caches; echo 1 > /proc/sys/vm/compact_memory" 2>/dev/null || true
+docker run -d --name "$NAME" --gpus all --ipc host --network host --ulimit memlock=-1 --ulimit stack=67108864 --cap-add IPC_LOCK \
+  -v "$NEW":/model:ro -v /mnt/miloark:/mnt/miloark:ro -v "$CACHE":/root/.cache/vllm \
+  -v "$HOOK/sitecustomize.py":/usr/lib/python3.12/sitecustomize.py:ro -v "$HOOK":/w:ro -v $HOME/pin-hot-experts/v16:$HOME/pin-hot-experts/v16 \
+  -v "$RUN":/ar \
+  -e PIN_MODE=adaptive -e PIN_COUNTER=atomic -e PIN_ADAPTIVE_FREEZE=1 \
+  -e PIN_ADAPTIVE_GO=/ar/GO -e PIN_CTRL=/ar/ctrl.json -e PIN_TELEMETRY=/ar/telemetry.jsonl -e PIN_ADAPTIVE_LOG=/ar/swaps.jsonl \
+  -e PIN_COUNT_TMAX=256 -e PIN_SWAPS_PER_BARRIER=8 \
+  -e PIN_STEP_RING="$PIN_STEP_RING" -e PIN_SWAP_CUDA_EVENTS="$PIN_SWAP_CUDA_EVENTS" \
+  -e PIN_HOOK=/w/pin_hot_experts_hook.py -e PIN_ROWMAP="/w/$ROWMAP" -e PYTORCH_CUDA_ALLOC_CONF=pinned_max_cached_size_mb:1024 -e VLLM_LOGGING_LEVEL=INFO -e VLLM_ENGINE_READY_TIMEOUT_S=7200 \
+  "$IMAGE" \
+  --model /model --served-model-name dsv41-flash-uva --trust-remote-code --tensor-parallel-size 1 \
+  --offload-backend uva --cpu-offload-gb 60 --cpu-offload-params routed_experts.w13_weight routed_experts.w2_weight \
+  --engram-config '{"cpu_offload": true}' --max-model-len 1048576 --max-num-seqs 24 --max-num-batched-tokens 8192 --gpu-memory-utilization 0.97 \
+  --tool-call-parser deepseek_v41 --reasoning-parser deepseek_v41 --enable-auto-tool-choice --long-prefill-token-threshold 6144 \
+  --speculative-config '{"method":"dspark","num_speculative_tokens":5,"num_speculative_tokens_per_batch_size":[[1,8,5],[9,24,1]]}' \
+  --cudagraph-capture-sizes 1 2 4 6 8 12 16 18 24 32 40 48 64 96 128 \
+  --host 0.0.0.0 --port 30006 >/dev/null
+echo "launched $NAME (run dir $RUN, rowmap $ROWMAP, step_ring $PIN_STEP_RING, cuda_events $PIN_SWAP_CUDA_EVENTS)"

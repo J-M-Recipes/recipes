@@ -1,0 +1,17 @@
+# hook v26ar.2 — sha1 (first 12 hex) of the host-side files the AR6 runner mounted, from cardAR6/instruments.txt
+69bf07779ef4  pin_hot_experts_hook.py
+7ea55cbd4fb1  e4_adaptive.py
+e65a93d700e5  sitecustomize.py
+80e0cf317760  rowmap-static-v1.json   (Boot 0 / Arm 0 control map, September)
+52e2861c7ecc  rowmap-mixed-ar-v1.json (Boot A seed map = the v26 production map)
+#
+# v26ar.2 = v26ar.1 (published: ../2026-10-23-ar-adaptive-residency/hook/) + telemetry only:
+#   per-step ring PIN_STEP_RING (4 x int64 per host step -> /ar/steps.bin), swap apply timestamps (PIN_SWAP_APPLY_TS,
+#   default on), optional CUDA events around the row copies (PIN_SWAP_CUDA_EVENTS). Env-gated.
+#   The v26ar.2 source files, the AST-identical-kernels check and the 7/7 CPU unit-test receipt were NOT staged into this
+#   bundle; only the sha1s above are receipts. Hashes are of the host files (sha1sum on the box), not docker exec reads.
+# seed map: top-295 experts per layer from one cumulative live-counter dump (2026-10-23), same 295 hot / 89 cold geometry
+#   as rowmap-static-v1, so the FlashInfer autotune hash is unchanged (hash hit, Loaded 189).
+#   Copy in hook/rowmap-mixed-ar-v1.json: sha1 52e2861c7eccba0470d41a72a078abd0736868e4 (matches instruments.txt),
+#   sha256 in hook/SHA256SUMS; byte-identical to the sidecar recipe's results/2026-10-23-ar5-mixed-map/rowmap-mixed-ar-v1.json.
+#   rowmap-static-v1.json (sha1 80e0cf317760...) is ../2026-09-17-e2b-pin-hot-experts-v15/hook/rowmap-static-v1.json.

@@ -1,0 +1,89 @@
+2026-10-24 21:22:45 CDT ===== CARD KV3 START (arms=K0 K1 K0R mix_s=120 c1_reps=6 cold=3 x 64000 warm=8000/256 needle=950000 evict=8205,33010 mem_min=380) =====
+2026-10-24 21:22:45 CDT LANE-OWNER.txt: OWNER: none (Milo, 2026-10-24 07:28 CDT). James: keep v25m; gates re-run (Card GV 9/10, cosine FAIL); L39 test (Card GV2) also FAIL (noise at ~0 cold share; does NOT clear v25m). Gate R2 registered. LANE :30006 = dsv41-vllm-1017-v25m-MIXMAP (v25 sidecar + rowmap-mixed-ar-v1.json), EXPERIMENTAL. Booted 2026-10-24 07:12 by cardGV2 fallback. SOAK 48 h: 2026-10-24 07:12:57 -> 2026-10-26 07:12:57 CDT. 
+2026-10-24 21:22:49 CDT LANE DARK begins (stopping dsv41-vllm-1017-v26seed-BOUND-REF, kept)
+2026-10-24 21:22:54 CDT stop-and-keep dsv41-vllm-1017-v26seed-BOUND-REF (running=false)
+2026-10-24 21:23:01 CDT BOOT K0: dsv41-vllm-1017-KV3-K0 EXTRA=[--kv-cache-memory 9126805504] ROWMAP=rowmap-mixed-ar-v1.json MemAvail=465.7GiB
+2026-10-24 21:24:13 CDT SIDECAR K0 serving: serving
+2026-10-24 21:24:15 CDT SERVER K0 launched: launched dsv41-vllm-1017-KV3-K0 (peer v2, rowmap=rowmap-mixed-ar-v1.json seqs=32 util=0.97 maxlen=1048576 overlay=1 PEER_CHECK=0 COLD_TRT=0) log ~/dsv41/m3/logs/dsv41-vllm-1017-KV3-K0.log
+2026-10-24 21:24:18 CDT KV3 watchdog armed pid 465045 on dsv41-vllm-1017-KV3-K0 (enforce, stall 2 s)
+2026-10-24 21:31:40 CDT BOUND dsv41-vllm-1017-KV3-K0 after 442s
+2026-10-24 21:31:40 CDT boot->ready K0 519s (dsv41-vllm-1017-KV3-K0)
+2026-10-24 21:31:40 CDT FACTS K0: kv=[4,400,013] expect=4,400,013 connector_lines=0 pin_warn=0 kvdecl=1 tier=0
+2026-10-24 21:31:40 CDT HEALTH K0: models_http=200 chat_http=200 content=[OK] sidecar=true
+2026-10-24 21:33:41 CDT CELL K0 c1-r1 rc=0: {"tag": "K0-c1-r1", "concurrency": 1, "n": 67, "errors": 0, "agg_tok_s_all": 218.05, "agg_tok_s_post60": 218.29, "per_req": {"jpde": {"median_all": 203.285, "median_post60": 203.13, "n_post60": 17}, "agent": {"median_all": 240.05, "median_post60": 237.89, "n_post60": 16}}}
+2026-10-24 21:35:41 CDT CELL K0 c1-r2 rc=0: {"tag": "K0-c1-r2", "concurrency": 1, "n": 67, "errors": 0, "agg_tok_s_all": 218.74, "agg_tok_s_post60": 221.49, "per_req": {"jpde": {"median_all": 205.715, "median_post60": 206.09, "n_post60": 17}, "agent": {"median_all": 242.89, "median_post60": 241.685, "n_post60": 16}}}
+2026-10-24 21:37:42 CDT CELL K0 c1-r3 rc=0: {"tag": "K0-c1-r3", "concurrency": 1, "n": 68, "errors": 0, "agg_tok_s_all": 222.65, "agg_tok_s_post60": 226.3, "per_req": {"jpde": {"median_all": 206.32, "median_post60": 206.37, "n_post60": 17}, "agent": {"median_all": 247.905, "median_post60": 247.49, "n_post60": 17}}}
+2026-10-24 21:39:43 CDT CELL K0 c1-r4 rc=0: {"tag": "K0-c1-r4", "concurrency": 1, "n": 68, "errors": 0, "agg_tok_s_all": 221.29, "agg_tok_s_post60": 224.58, "per_req": {"jpde": {"median_all": 206.575, "median_post60": 206.29, "n_post60": 17}, "agent": {"median_all": 247.115, "median_post60": 248.22, "n_post60": 17}}}
+2026-10-24 21:41:45 CDT CELL K0 c1-r5 rc=0: {"tag": "K0-c1-r5", "concurrency": 1, "n": 67, "errors": 0, "agg_tok_s_all": 218.88, "agg_tok_s_post60": 220.57, "per_req": {"jpde": {"median_all": 202.61, "median_post60": 206.38, "n_post60": 17}, "agent": {"median_all": 242.9, "median_post60": 243.555, "n_post60": 16}}}
+2026-10-24 21:43:46 CDT CELL K0 c1-r6 rc=0: {"tag": "K0-c1-r6", "concurrency": 1, "n": 67, "errors": 0, "agg_tok_s_all": 218.98, "agg_tok_s_post60": 220.06, "per_req": {"jpde": {"median_all": 205.88, "median_post60": 205.6, "n_post60": 17}, "agent": {"median_all": 244.77, "median_post60": 245.44, "n_post60": 16}}}
+2026-10-24 21:43:51 CDT CELL K0 cold64k rc=0: {"cell": "cold64k", "n": 3, "kept_median_wall_s": 1.40075, "errors": 0}
+2026-10-24 21:43:54 CDT CELL K0 warm rc=0: {"cell": "warm", "mode": "ignore_eos+min_tokens", "forced_ok": true, "r1_decode_tok_s": 183.86, "r2_decode_tok_s": 195.52, "error": null}
+2026-10-24 21:44:27 CDT CELL K0 needle1m rc=0: {"cell": "needle", "prompt_tokens": 954028, "wall_s": 32.88, "answer": "ZEBRA-COUPON-4994", "recall": true, "error": null}
+2026-10-24 21:44:28 CDT CELL K0 evictctl rc=0: {"cell": "evictctl", "n": 2, "recall_all": true, "errors": 0}
+2026-10-24 21:44:28 CDT ERRCOUNT K0 0 (since 2026-10-25T02:31:40Z)
+2026-10-24 21:44:28 CDT ERRCOUNT K0-rtx 0 (since 2026-10-25T02:31:40Z)
+2026-10-24 21:44:28 CDT WATCHDOG K0: alive True timeouts 0 trips 0
+2026-10-24 21:44:28 CDT KV3 watchdog 465045 stopped
+2026-10-24 21:44:30 CDT stop-and-keep dsv41-vllm-1017-KV3-K0
+2026-10-24 21:44:35 CDT stop-and-keep dsv41-vllm-1017-KV3-K0-rtx
+2026-10-24 21:45:12 CDT BOOT K1: dsv41-vllm-1017-KV3-K1 EXTRA=[--kv-cache-memory 9126805504 --kv-offloading-size 48 --kv-offloading-backend native] ROWMAP=rowmap-mixed-ar-v1.json MemAvail=464.0GiB
+2026-10-24 21:46:25 CDT SIDECAR K1 serving: serving
+2026-10-24 21:46:27 CDT SERVER K1 launched: launched dsv41-vllm-1017-KV3-K1 (peer v2, rowmap=rowmap-mixed-ar-v1.json seqs=32 util=0.97 maxlen=1048576 overlay=1 PEER_CHECK=0 COLD_TRT=0) log ~/dsv41/m3/logs/dsv41-vllm-1017-KV3-K1.log
+2026-10-24 21:46:30 CDT KV3 watchdog armed pid 496597 on dsv41-vllm-1017-KV3-K1 (enforce, stall 2 s)
+2026-10-24 21:53:51 CDT BOUND dsv41-vllm-1017-KV3-K1 after 441s
+2026-10-24 21:53:51 CDT boot->ready K1 519s (dsv41-vllm-1017-KV3-K1)
+2026-10-24 21:53:51 CDT FACTS K1: kv=[4,400,013] expect=4,400,013 connector_lines=2 pin_warn=0 kvdecl=1 tier=1
+2026-10-24 21:53:52 CDT HEALTH K1: models_http=200 chat_http=200 content=[OK] sidecar=true
+2026-10-24 21:55:52 CDT CELL K1 c1-r1 rc=0: {"tag": "K1-c1-r1", "concurrency": 1, "n": 68, "errors": 0, "agg_tok_s_all": 220.22, "agg_tok_s_post60": 225.61, "per_req": {"jpde": {"median_all": 206.95499999999998, "median_post60": 209.34, "n_post60": 17}, "agent": {"median_all": 246.595, "median_post60": 242.31, "n_post60": 17}}}
+2026-10-24 21:57:53 CDT CELL K1 c1-r2 rc=0: {"tag": "K1-c1-r2", "concurrency": 1, "n": 67, "errors": 0, "agg_tok_s_all": 218.62, "agg_tok_s_post60": 225.42, "per_req": {"jpde": {"median_all": 207.9, "median_post60": 208.21, "n_post60": 17}, "agent": {"median_all": 247.89, "median_post60": 248.81, "n_post60": 17}}}
+2026-10-24 21:59:54 CDT CELL K1 c1-r3 rc=0: {"tag": "K1-c1-r3", "concurrency": 1, "n": 67, "errors": 0, "agg_tok_s_all": 220.74, "agg_tok_s_post60": 223.74, "per_req": {"jpde": {"median_all": 204.04500000000002, "median_post60": 201.72, "n_post60": 17}, "agent": {"median_all": 245.89, "median_post60": 246.615, "n_post60": 16}}}
+2026-10-24 22:01:55 CDT CELL K1 c1-r4 rc=0: {"tag": "K1-c1-r4", "concurrency": 1, "n": 68, "errors": 0, "agg_tok_s_all": 220.45, "agg_tok_s_post60": 224.17, "per_req": {"jpde": {"median_all": 206.95499999999998, "median_post60": 207.67, "n_post60": 17}, "agent": {"median_all": 242.0, "median_post60": 240.83, "n_post60": 17}}}
+2026-10-24 22:03:55 CDT CELL K1 c1-r5 rc=0: {"tag": "K1-c1-r5", "concurrency": 1, "n": 68, "errors": 0, "agg_tok_s_all": 220.51, "agg_tok_s_post60": 227.38, "per_req": {"jpde": {"median_all": 205.765, "median_post60": 206.45, "n_post60": 17}, "agent": {"median_all": 245.45, "median_post60": 246.26, "n_post60": 17}}}
+2026-10-24 22:05:57 CDT CELL K1 c1-r6 rc=0: {"tag": "K1-c1-r6", "concurrency": 1, "n": 67, "errors": 0, "agg_tok_s_all": 218.82, "agg_tok_s_post60": 219.42, "per_req": {"jpde": {"median_all": 204.95499999999998, "median_post60": 202.56, "n_post60": 17}, "agent": {"median_all": 241.06, "median_post60": 237.89, "n_post60": 16}}}
+2026-10-24 22:06:01 CDT CELL K1 cold64k rc=0: {"cell": "cold64k", "n": 3, "kept_median_wall_s": 1.4242, "errors": 0}
+2026-10-24 22:06:04 CDT CELL K1 warm rc=0: {"cell": "warm", "mode": "ignore_eos+min_tokens", "forced_ok": true, "r1_decode_tok_s": 195.83, "r2_decode_tok_s": 177.48, "error": null}
+2026-10-24 22:06:37 CDT CELL K1 needle1m rc=0: {"cell": "needle", "prompt_tokens": 954028, "wall_s": 32.79, "answer": "ZEBRA-COUPON-4877", "recall": true, "error": null}
+2026-10-24 22:06:41 CDT CELL K1 evict rc=0: {"cell": "evict", "n": 2, "hits_all": true, "identical_all": true, "recall_all": true, "errors": 0, "speedups": [1.54, 3.2]}
+2026-10-24 22:06:55 CDT GAUNTLET K1: 12 / 12
+2026-10-24 22:06:55 CDT ERRCOUNT K1 0 (since 2026-10-25T02:53:52Z)
+2026-10-24 22:06:55 CDT ERRCOUNT K1-rtx 0 (since 2026-10-25T02:53:52Z)
+2026-10-24 22:06:55 CDT WATCHDOG K1: alive True timeouts 0 trips 0
+2026-10-24 22:06:55 CDT KV3 watchdog 496597 stopped
+2026-10-24 22:06:58 CDT stop-and-keep dsv41-vllm-1017-KV3-K1
+2026-10-24 22:07:03 CDT stop-and-keep dsv41-vllm-1017-KV3-K1-rtx
+2026-10-24 22:07:40 CDT BOOT K0R: dsv41-vllm-1017-KV3-K0R EXTRA=[--kv-cache-memory 9126805504] ROWMAP=rowmap-mixed-ar-v1.json MemAvail=464.0GiB
+2026-10-24 22:08:52 CDT SIDECAR K0R serving: serving
+2026-10-24 22:08:54 CDT SERVER K0R launched: launched dsv41-vllm-1017-KV3-K0R (peer v2, rowmap=rowmap-mixed-ar-v1.json seqs=32 util=0.97 maxlen=1048576 overlay=1 PEER_CHECK=0 COLD_TRT=0) log ~/dsv41/m3/logs/dsv41-vllm-1017-KV3-K0R.log
+2026-10-24 22:08:57 CDT KV3 watchdog armed pid 529664 on dsv41-vllm-1017-KV3-K0R (enforce, stall 2 s)
+2026-10-24 22:16:19 CDT BOUND dsv41-vllm-1017-KV3-K0R after 442s
+2026-10-24 22:16:19 CDT boot->ready K0R 519s (dsv41-vllm-1017-KV3-K0R)
+2026-10-24 22:16:19 CDT FACTS K0R: kv=[4,400,013] expect=4,400,013 connector_lines=0 pin_warn=0 kvdecl=1 tier=0
+2026-10-24 22:16:19 CDT HEALTH K0R: models_http=200 chat_http=200 content=[OK] sidecar=true
+2026-10-24 22:18:20 CDT CELL K0R c1-r1 rc=0: {"tag": "K0R-c1-r1", "concurrency": 1, "n": 68, "errors": 0, "agg_tok_s_all": 219.42, "agg_tok_s_post60": 224.9, "per_req": {"jpde": {"median_all": 203.76999999999998, "median_post60": 203.81, "n_post60": 17}, "agent": {"median_all": 243.2, "median_post60": 241.06, "n_post60": 17}}}
+2026-10-24 22:20:21 CDT CELL K0R c1-r2 rc=0: {"tag": "K0R-c1-r2", "concurrency": 1, "n": 67, "errors": 0, "agg_tok_s_all": 219.06, "agg_tok_s_post60": 219.97, "per_req": {"jpde": {"median_all": 204.375, "median_post60": 202.01, "n_post60": 17}, "agent": {"median_all": 242.35, "median_post60": 245.31, "n_post60": 16}}}
+2026-10-24 22:22:22 CDT CELL K0R c1-r3 rc=0: {"tag": "K0R-c1-r3", "concurrency": 1, "n": 67, "errors": 0, "agg_tok_s_all": 218.61, "agg_tok_s_post60": 224.35, "per_req": {"jpde": {"median_all": 203.445, "median_post60": 204.06, "n_post60": 17}, "agent": {"median_all": 249.83, "median_post60": 252.34, "n_post60": 17}}}
+2026-10-24 22:24:22 CDT CELL K0R c1-r4 rc=0: {"tag": "K0R-c1-r4", "concurrency": 1, "n": 67, "errors": 0, "agg_tok_s_all": 219.72, "agg_tok_s_post60": 220.42, "per_req": {"jpde": {"median_all": 206.485, "median_post60": 205.35, "n_post60": 17}, "agent": {"median_all": 244.29, "median_post60": 244.39999999999998, "n_post60": 16}}}
+2026-10-24 22:26:24 CDT CELL K0R c1-r5 rc=0: {"tag": "K0R-c1-r5", "concurrency": 1, "n": 67, "errors": 0, "agg_tok_s_all": 219.89, "agg_tok_s_post60": 222.22, "per_req": {"jpde": {"median_all": 202.745, "median_post60": 202.88, "n_post60": 17}, "agent": {"median_all": 248.16, "median_post60": 247.065, "n_post60": 16}}}
+2026-10-24 22:28:25 CDT CELL K0R c1-r6 rc=0: {"tag": "K0R-c1-r6", "concurrency": 1, "n": 68, "errors": 0, "agg_tok_s_all": 218.51, "agg_tok_s_post60": 223.18, "per_req": {"jpde": {"median_all": 204.17000000000002, "median_post60": 201.76, "n_post60": 17}, "agent": {"median_all": 245.445, "median_post60": 240.31, "n_post60": 17}}}
+2026-10-24 22:28:29 CDT CELL K0R cold64k rc=0: {"cell": "cold64k", "n": 3, "kept_median_wall_s": 1.4064, "errors": 0}
+2026-10-24 22:28:32 CDT CELL K0R warm rc=0: {"cell": "warm", "mode": "ignore_eos+min_tokens", "forced_ok": true, "r1_decode_tok_s": 179.38, "r2_decode_tok_s": 183.72, "error": null}
+2026-10-24 22:29:05 CDT CELL K0R needle1m rc=0: {"cell": "needle", "prompt_tokens": 954028, "wall_s": 32.97, "answer": "ZEBRA-COUPON-5977", "recall": true, "error": null}
+2026-10-24 22:29:06 CDT CELL K0R evictctl rc=0: {"cell": "evictctl", "n": 2, "recall_all": true, "errors": 0}
+2026-10-24 22:29:06 CDT ERRCOUNT K0R 0 (since 2026-10-25T03:16:19Z)
+2026-10-24 22:29:06 CDT ERRCOUNT K0R-rtx 0 (since 2026-10-25T03:16:19Z)
+2026-10-24 22:29:06 CDT WATCHDOG K0R: alive True timeouts 0 trips 0
+2026-10-24 22:29:06 CDT KV3 watchdog 529664 stopped
+2026-10-24 22:29:08 CDT stop-and-keep dsv41-vllm-1017-KV3-K0R
+2026-10-24 22:29:13 CDT stop-and-keep dsv41-vllm-1017-KV3-K0R-rtx
+2026-10-24 22:34:56 CDT BOUND dsv41-vllm-1017-v26seed-BOUND-REF after 302s
+2026-10-24 22:34:56 CDT LANE DARK ends (dsv41-vllm-1017-v26seed-BOUND-REF bound after 303s)
+2026-10-24 22:34:56 CDT CTRL restore GO touched + ~/dsv41/ar/soak/ctrl.json = {"freeze": false, "baseline": true}
+2026-10-24 22:34:56 CDT RESTORE FACTS kvdecl=0 kvline=[GPU KV cache size: 2,495,694 tokens] watchdog=none(by design)
+2026-10-24 22:34:56 CDT HEALTH restore: models_http=200 chat_http=200 content=[OK]
+2026-10-24 22:34:57 CDT VERDICT rc=0 PASS | KV3PASS | {"G1_kv_tokens": "PASS", "G2_c1": "PASS", "G2_ttft64k": "PASS", "G2_warm_r2": "PASS", "G3_tier": "PASS", "G4_watchdog": "PASS", "G4_errors": "PASS", "G4_needles": "PASS", "G4_mem": "PASS", "G5_gauntlet": "PASS"}
+2026-10-24 22:34:57 CDT kept dsv41-vllm-1017-KV3-K0-KV3PASS (stopped)
+2026-10-24 22:34:58 CDT kept dsv41-vllm-1017-KV3-K0-rtx-KV3PASS (stopped)
+2026-10-24 22:34:58 CDT kept dsv41-vllm-1017-KV3-K1-KV3PASS (stopped)
+2026-10-24 22:34:59 CDT kept dsv41-vllm-1017-KV3-K1-rtx-KV3PASS (stopped)
+2026-10-24 22:34:59 CDT kept dsv41-vllm-1017-KV3-K0R-KV3PASS (stopped)
+2026-10-24 22:35:00 CDT kept dsv41-vllm-1017-KV3-K0R-rtx-KV3PASS (stopped)
