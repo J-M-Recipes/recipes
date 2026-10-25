@@ -1,0 +1,88 @@
+<!doctype html>
+<html><head><meta charset="utf-8">
+<style>
+  html,body{margin:0;background:#0b0f14;}
+  .card{width:1200px;box-sizing:border-box;padding:36px 44px;background:linear-gradient(160deg,#0b0f14 0%,#0f1620 100%);color:#e6edf3;font-family:Inter,-apple-system,Segoe UI,Helvetica,Arial,sans-serif;border:1px solid #1e2a38;border-radius:14px;}
+  .mono{font-family:"JetBrains Mono",SFMono-Regular,Menlo,Consolas,monospace;}
+  .top{display:flex;justify-content:space-between;align-items:flex-start;}
+  h1{margin:0;font-size:38px;font-weight:800;letter-spacing:-0.5px;}
+  .sub{margin-top:6px;font-size:15px;color:#9fb0c3;}
+  .brand{text-align:right;font-size:13px;color:#9fb0c3;line-height:1.5;white-space:nowrap}
+  .brand b{color:#6ee7b7;font-size:16px;letter-spacing:1px}
+  .pills{display:flex;flex-wrap:wrap;gap:8px;margin:18px 0 22px}
+  .pill{border:1px solid #2a3a4d;background:#111a25;border-radius:999px;padding:6px 12px;font-size:13px;color:#cfd9e4}
+  .pill b{color:#fff;font-weight:600}
+  .pill.type{border-color:#6ee7b7;color:#6ee7b7}
+  .grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px}
+  .box{background:#111a25;border:1px solid #1e2a38;border-radius:10px;padding:16px 18px}
+  .lbl{font-size:11px;letter-spacing:1.6px;text-transform:uppercase;color:#7f93a8;margin-bottom:6px}
+  .hero{font-size:56px;font-weight:800;line-height:1;color:#fff}
+  .hero small{font-size:18px;font-weight:500;color:#9fb0c3;margin-left:6px}
+  .note{font-size:12px;color:#9fb0c3;margin-top:8px;line-height:1.4}
+  .row2{display:grid;grid-template-columns:1.2fr 1fr 1fr;gap:14px;margin-top:14px}
+  .kv{font-size:14px;line-height:1.75}
+  .kv b{color:#fff;font-weight:600}
+  .acc span{display:inline-block;margin-right:12px}
+  .fid{margin-top:14px;background:#0e1a17;border:1px solid #1f4d3d;border-radius:10px;padding:16px 18px}
+  .fid .lbl{color:#6ee7b7}
+  .fid ul{margin:0;padding-left:0;list-style:none;display:grid;grid-template-columns:1fr 1fr;gap:6px 24px;font-size:14px;line-height:1.5}
+  .ok::before{content:"✓ ";color:#6ee7b7;font-weight:700}
+  .pend::before{content:"◌ ";color:#f59e0b;font-weight:700}
+  .pend{color:#d9c58a}
+  .meas::before{content:"≈ ";color:#93c5fd;font-weight:700}
+  .fail::before{content:"✗ ";color:#f87171;font-weight:700}
+  .fail{color:#fca5a5}
+  .pend-inline{color:#f59e0b;font-size:0.6em;font-weight:600;letter-spacing:1px}
+  .foot{display:flex;justify-content:space-between;margin-top:18px;font-size:12px;color:#7f93a8}
+  .foot .mono{color:#9fb0c3}
+  .fid li.pair { list-style: none; margin: 6px 0 2px -18px; padding: 10px 12px; border: 1px solid rgba(255,255,255,.14); border-radius: 8px; background: rgba(255,255,255,.04); }
+  .fid li.pair .big { font-size: 20px; font-weight: 700; color: #e8f0ff; letter-spacing: -.2px; }
+  .fid li.pair .sep { color: rgba(255,255,255,.35); margin: 0 6px; }
+  .fid li.pair .dim { font-size: 11.5px; color: rgba(255,255,255,.62); }
+</style></head><body>
+<div class="card">
+  <div class="top">
+    <div>
+      <h1>DeepSeek-V4.1-Flash · 1× DGX Station GB300 + RTX PRO 6000 · Grace prefix-KV tier (kv-host-tier)</h1>
+      <div class="sub">The sidecar lane plus two vLLM flags: prefix blocks the GPU evicts go to a 48 GiB tier in Grace memory and come back on a hit instead of being recomputed. GPU KV pool unchanged; no measurable speed cost.</div>
+    </div>
+    <div class="brand"><b>J-M-RECIPES</b><br>kv-host-tier = v25m sidecar lane + --kv-offloading-size 48 --kv-offloading-backend native · Card KV3 2026-10-24 · 10/10 gates · 2026-10-25<br>status: experimental</div>
+  </div>
+  <div class="pills">
+<span class="pill type"><b>MoE</b> · 384 routed experts + Engram; 295 hot in HBM, 89 computed on the RTX 6000 (v25m mixed map)</span>
+<span class="pill"><b>552B</b> total · <b>8B prefill / 16B decode</b> active</span>
+<span class="pill">checkpoint <b>510.3 GB</b> · rev <span class="mono">1bae0e10</span></span>
+<span class="pill">weights <b>as shipped · MXFP4 experts / FP8 attn+Engram · nothing re-quantized</b></span>
+<span class="pill">engine <b>vLLM <span class="mono">af7f9488c</span> · nightly-af7f9488 (sha256:3af6a45b) on BOTH GPUs · el8 hook @87af662 · b12x @2cc7f66a · vllm#58132 bounded replay · OffloadingConnector (CPUOffloadingSpec, native backend)</b></span>
+<span class="pill">memory <b>GPU KV declared 8.5 GiB = 4,400,013 tok (unchanged on all arms) + Grace prefix tier 48 GiB (51.54 GB /dev/shm mmap) ≈ 31M tok at 1,656 B/token · host MemAvailable min 129.8 GiB with the tier</b></span>
+  </div>
+  <div class="grid">
+<div class="box"><div class="lbl">Decode · C1 aggregate, with the tier (mixed JP/DE + agent, held-out prompts)</div><div class="hero">219.9<small>tok/s</small></div><div class="note">+0.19% vs no-tier controls 219.76 / 219.20 (pooled spread 1.36%, drift 0.26%) · 6 × 120 s per arm, bracketed K0 → K1 → K0R · cold-64K TTFT 1.424 vs 1.404 s (+1.5%)</div></div>
+<div class="box"><div class="lbl">Prefix tokens held in Grace · 48 GiB tier</div><div class="hero">~31M<small>tokens</small></div><div class="note">1,656 B per hit token measured in the evict-replay probes (12.93 MB / 7,808 tok; 52.36 MB / 31,616 tok) · on top of 4.40M GPU tokens · this lane&#x27;s fp8_ds_mla KV only, not portable</div></div>
+<div class="box"><div class="lbl">Replay after GPU eviction · 7.9K / 31.6K-token prompt</div><div class="hero">×1.54–×3.2<small></small></div><div class="note">0.264 → 0.171 s and 0.711 → 0.222 s once /reset_prefix_cache dropped the GPU copy · single probe each · 950K-class needle recalled on every arm (~33 s)</div></div>
+  </div>
+  <div class="row2">
+<div class="box"><div class="lbl">Guesser</div><div class="kv"><b>DSpark</b> · in-checkpoint MTP (mtp.0–2), 1017 revision<br>k = 5 at 1–4 seqs, 3 at 5–8 and 9–32 (unchanged)<br><span class="acc">accept: <span class="pend-inline">PENDING</span></span></div></div>
+<div class="box"><div class="lbl">What changed and what it costs</div><div class="kv">flags: <b>--kv-offloading-size 48 --kv-offloading-backend native, appended to EXTRA after --kv-cache-memory 9126805504</b><br>dev mode: <b>VLLM_SERVER_DEV_MODE=1 was set on the card for /reset_prefix_cache only — production runs without it</b><br>host memory: <b>MemAvailable min 129.8 GiB with the tier vs 177.7 / 178.9 GiB without (floor 60) · 0 OOM kills</b><br>warm replay r2: <b>177.5 vs 183.7 (−3.4%, bar −5%) — the controls themselves span 183.7–195.5</b></div></div>
+<div class="box"><div class="lbl">Guard — same as the sidecar lane</div><div class="kv">watchdog: <b>fail-closed, enforce mode on every arm · 0 timeouts · 0 trips</b><br>errors: <b>0 server / 0 harness / 0 sidecar error lines on all three arms</b><br>not tested: <b>C&gt;1 with the tier, hit rates under real multi-user eviction pressure, TF/GSM8K/BFCL on the tier arm</b></div></div>
+  </div>
+  <div class="fid"><div class="lbl">Output fidelity — does the recipe change what the model says?</div>
+    <ul>
+<li class="ok">Weights unchanged: 1017 checkpoint as shipped; the tier stores and reloads KV blocks, it does not touch weights or the GPU KV pool size (4,400,013 on all arms)</li>
+<li class="ok">Evict-replay outputs byte-identical to the first pass after the GPU prefix cache was dropped and the blocks came back from Grace (7,929 and 31,629 tok), and identical to the no-tier controls — short code-recall outputs, not a teacher-forced run</li>
+<li class="ok">Gauntlet 12/12 on the tier arm · 954,028-token needle recalled on all arms</li>
+<li class="ok">0 cudaHostRegister / pin warnings at boot · connector present on the tier arm only · 0 watchdog timeouts or trips</li>
+<li class="pend">Teacher-forced flips, GSM8K-1319 and BFCL not run with the tier on</li>
+    </ul>
+  </div>
+  <div class="fid"><div class="lbl">Agent claim card — fixed protocol, held-out sibling, cost per solved task</div>
+    <ul>
+<li class="pend">harness card pending — protocol hash, held-out sibling suite, cost per solved task</li>
+    </ul>
+  </div>
+  <div class="foot">
+    <span>recipe <span class="mono">recipes/dgx-station-gb300/deepseek-v4.1-flash-vllm-uva-dspark-sidecar</span> · run <span class="mono">2026-10-24-kv3-host-prefix-tier</span></span>
+    <span>github.com/J-M-Recipes/recipes · al-engr.com · sidecar recipe: RonanLabsAI (dgx-station-frontier) · hook: original-el8 · tier: vLLM OffloadingConnector</span>
+  </div>
+</div>
+</body></html>

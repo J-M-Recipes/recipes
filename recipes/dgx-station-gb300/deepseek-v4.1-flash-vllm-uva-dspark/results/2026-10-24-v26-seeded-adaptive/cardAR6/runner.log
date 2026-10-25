@@ -1,0 +1,172 @@
+2026-10-24 17:31:17 CDT ===== CARD AR6 START (phase_s=90 mix_s=180 reps=3 b3=auto/3 hook=~/pin-hot-experts/v26ar2/hook maps=rowmap-static-v1.json,rowmap-mixed-ar-v1.json) =====
+2026-10-24 17:31:17 CDT LANE-OWNER.txt: OWNER: none (Milo, 2026-10-24 07:28 CDT). James: keep v25m; gates re-run (Card GV 9/10, cosine FAIL); L39 test (Card GV2) also FAIL (noise at ~0 cold share; does NOT clear v25m). Gate R2 registered. LANE :30006 = dsv41-vllm-1017-v25m-MIXMAP (v25 sidecar + rowmap-mixed-ar-v1.json), EXPERIMENTAL. Booted 2026-10-24 07:12 by cardGV2 fallback. SOAK 48 h: 2026-10-24 07:12:57 -> 2026-10-26 07:12:57 CDT. 
+2026-10-24 17:31:18 CDT preflight OK: MemAvailable=173.4GiB RTX=66213MiB (sha1s in instruments.txt)
+2026-10-24 17:31:18 CDT lane before: dsv41-vllm-1017-v25m-MIXMAP dsv41-vllm-1017-v25m-MIXMAP-rtx 
+2026-10-24 17:31:18 CDT fail-stop watchdog 3831694 stopped (cardAR6)
+2026-10-24 17:31:20 CDT LANE DARK begins (stopping v25m pair, kept)
+2026-10-24 17:32:20 CDT stop-and-keep dsv41-vllm-1017-v25m-MIXMAP dsv41-vllm-1017-v25m-MIXMAP-rtx
+2026-10-24 17:32:27 CDT strays: 3810 0.5GiB /usr/bin/containerd |4306 0.2GiB /usr/bin/dockerd -H|4348 0.1GiB /usr/bin/gnome-shell |4177 0.1GiB /usr/lib/xorg/Xorg vt1| MemAvailable=459.8GiB
+2026-10-24 17:32:30 CDT SERVER 0 launched: launched dsv41-vllm-1017-v26ar2-AR6-ARM0 (run dir ~/dsv41/ar/results-cardAR6/boot0, rowmap rowmap-static-v1.json, step_ring 65536, cuda_events 1)
+2026-10-24 17:32:30 CDT   dsv41-vllm-1017-v26ar2-AR6-ARM0 waiting 0 min: MemAvail=459.6GiB last=[]
+2026-10-24 17:37:31 CDT   dsv41-vllm-1017-v26ar2-AR6-ARM0 waiting 5 min: MemAvail=196.5GiB last=[(EngineCore pid=364) /usr/local/lib/python3.12/dist-packages/nvidia_cutlass_dsl/dsl_packages/cutlass/base_dsl/dsl.py:2309: UserWarning: Argument aux_data (posit]
+2026-10-24 17:40:22 CDT BOUND dsv41-vllm-1017-v26ar2-AR6-ARM0 after 472s
+2026-10-24 17:40:22 CDT boot->ready 0 474s (dsv41-vllm-1017-v26ar2-AR6-ARM0)
+2026-10-24 17:40:22 CDT FACTS 0: GPU KV cache size: 2,495,694 tokens, Maximum concurrency for 1,048,576 tokens pe | autotune_starts=1 | v26ar.2 telemetry step_ring=65536 file='/ar/steps.bin' cuda_events=1 apply_ts=1
+2026-10-24 17:40:32 CDT STEPRING 0 steps.bin 704 B after GO+10s
+2026-10-24 17:43:33 CDT MIXED 0 A0-frozen-heldout-c1: {"tag": "A0-frozen-heldout-c1", "concurrency": 1, "n": 57, "errors": 0, "agg_tok_s_all": 124.0, "agg_tok_s_post60": 127.12, "per_req": {"jpde": {"median_all": 85.45, "median_post60": 85.45, "n_post60": 19}, "agent": {"median_all": 202.75, "median_post60": 202.74, "n_post60": 19}}}
+2026-10-24 17:43:33 CDT ERRCOUNT 0-A0-frozen-heldout-c1 0 (since 2026-10-24T22:40:32Z)
+2026-10-24 17:43:33 CDT G4 reference: static fixed-map parity double capture (frozen boot map)
+2026-10-24 17:45:17 CDT PARITY Arm0-S1 vs Arm0-S2: 49 / 50 ['agent-tool-1']
+2026-10-24 17:45:17 CDT CTRL 0 reset {"freeze": true}
+2026-10-24 17:45:20 CDT CTRL 0 reset {"restore_map": true}
+2026-10-24 17:45:23 CDT RESET 0: DRAINED pending=0 hot_moved=0 after 2 requests drains_after=1 t=0.6s
+2026-10-24 17:45:23 CDT CTRL 0 precondition {"baseline": true, "drain_n": 64, "swaps_per_drain": 2, "swaps_per_barrier": 8, "hyst": 1.5, "min_abs": 8, "halflife": 500, "freeze": false}
+2026-10-24 17:45:26 CDT PASS 0 B0-r1 start: agent 90s (shipped) -> jpde 90s -> agent 90s; shift knobs {"drain_n": 64, "swaps_per_drain": 2, "swaps_per_barrier": 8, "hyst": 1.5, "min_abs": 8, "halflife": 500}
+2026-10-24 17:50:01 CDT CTRL 0 shift(in-process) [ar6] CTRL at shift p2_jpde: {"baseline": true, "drain_n": 64, "swaps_per_drain": 2, "swaps_per_barrier": 8, "hyst": 1.5, "min_abs": 8, "halflife": 500, "freeze": false}
+2026-10-24 17:50:01 CDT PASS 0 B0-r1 done: {"p1_agent": {"first": 252.27, "last": 212.42, "n": 50}, "p2_jpde": {"first": 113.5, "last": 189.88, "n": 41}, "p3_agent": {"first": 197.57, "last": 209.53, "n": 49}}
+2026-10-24 17:50:01 CDT CTRL 0 post-pass {"freeze": true}
+2026-10-24 17:50:04 CDT ERRCOUNT 0-B0-r1 0 (since 2026-10-24T22:45:17Z)
+2026-10-24 17:50:04 CDT CTRL 0 reset {"freeze": true}
+2026-10-24 17:50:07 CDT CTRL 0 reset {"restore_map": true}
+2026-10-24 17:50:14 CDT RESET 0: DRAINED pending=0 hot_moved=0 after 12 requests drains_after=4 t=4.4s
+2026-10-24 17:50:14 CDT CTRL 0 precondition {"baseline": true, "drain_n": 64, "swaps_per_drain": 2, "swaps_per_barrier": 8, "hyst": 1.5, "min_abs": 8, "halflife": 500, "freeze": false}
+2026-10-24 17:50:17 CDT PASS 0 B0-r2 start: agent 90s (shipped) -> jpde 90s -> agent 90s; shift knobs {"drain_n": 64, "swaps_per_drain": 2, "swaps_per_barrier": 8, "hyst": 1.5, "min_abs": 8, "halflife": 500}
+2026-10-24 17:54:51 CDT CTRL 0 shift(in-process) [ar6] CTRL at shift p2_jpde: {"baseline": true, "drain_n": 64, "swaps_per_drain": 2, "swaps_per_barrier": 8, "hyst": 1.5, "min_abs": 8, "halflife": 500, "freeze": false}
+2026-10-24 17:54:51 CDT PASS 0 B0-r2 done: {"p1_agent": {"first": 251.61, "last": 211.73, "n": 50}, "p2_jpde": {"first": 111.16, "last": 189.67, "n": 41}, "p3_agent": {"first": 198.74, "last": 210.16, "n": 49}}
+2026-10-24 17:54:52 CDT CTRL 0 post-pass {"freeze": true}
+2026-10-24 17:54:55 CDT ERRCOUNT 0-B0-r2 0 (since 2026-10-24T22:50:04Z)
+2026-10-24 17:54:55 CDT CTRL 0 reset {"freeze": true}
+2026-10-24 17:54:58 CDT CTRL 0 reset {"restore_map": true}
+2026-10-24 17:55:24 CDT RESET 0: NOT-DRAINED pending=0 hot_moved=90 after 80 requests
+2026-10-24 17:55:24 CDT CELL 0 B0-r3 SKIPPED: restore did not drain
+2026-10-24 17:55:24 CDT ERRCOUNT boot0 0 (since 2026-10-24T22:40:32Z)
+2026-10-24 17:55:24 CDT CTRL 0 end-arm0 {"freeze": true}
+2026-10-24 17:55:27 CDT stop-and-keep dsv41-vllm-1017-v26ar2-AR6-ARM0
+2026-10-24 17:55:40 CDT strays: 4306 0.1GiB /usr/bin/dockerd -H|4348 0.1GiB /usr/bin/gnome-shell |3810 0.1GiB /usr/bin/containerd |4177 0.1GiB /usr/lib/xorg/Xorg vt1| MemAvailable=465.3GiB
+2026-10-24 17:55:42 CDT SERVER A launched: launched dsv41-vllm-1017-v26ar2-AR6-ARMA (run dir ~/dsv41/ar/results-cardAR6/bootA, rowmap rowmap-mixed-ar-v1.json, step_ring 65536, cuda_events 1)
+2026-10-24 17:55:42 CDT   dsv41-vllm-1017-v26ar2-AR6-ARMA waiting 0 min: MemAvail=465.2GiB last=[]
+2026-10-24 18:00:44 CDT   dsv41-vllm-1017-v26ar2-AR6-ARMA waiting 5 min: MemAvail=196.6GiB last=[(EngineCore pid=364) /usr/local/lib/python3.12/dist-packages/nvidia_cutlass_dsl/dsl_packages/cutlass/base_dsl/dsl.py:2309: UserWarning: Argument aux_data (posit]
+2026-10-24 18:03:34 CDT BOUND dsv41-vllm-1017-v26ar2-AR6-ARMA after 472s
+2026-10-24 18:03:34 CDT boot->ready A 474s (dsv41-vllm-1017-v26ar2-AR6-ARMA)
+2026-10-24 18:03:34 CDT FACTS A: GPU KV cache size: 2,495,694 tokens, Maximum concurrency for 1,048,576 tokens pe | autotune_starts=1 | v26ar.2 telemetry step_ring=65536 file='/ar/steps.bin' cuda_events=1 apply_ts=1
+2026-10-24 18:03:44 CDT STEPRING A steps.bin 704 B after GO+10s
+2026-10-24 18:06:46 CDT MIXED A A-frozen-heldout-c1: {"tag": "A-frozen-heldout-c1", "concurrency": 1, "n": 84, "errors": 0, "agg_tok_s_all": 181.37, "agg_tok_s_post60": 183.73, "per_req": {"jpde": {"median_all": 177.23, "median_post60": 177.225, "n_post60": 28}, "agent": {"median_all": 201.36, "median_post60": 201.36, "n_post60": 28}}}
+2026-10-24 18:06:47 CDT ERRCOUNT A-A-frozen-heldout-c1 0 (since 2026-10-24T23:03:44Z)
+2026-10-24 18:06:47 CDT CTRL A reset {"freeze": true}
+2026-10-24 18:06:50 CDT CTRL A reset {"restore_map": true}
+2026-10-24 18:06:53 CDT RESET A: DRAINED pending=0 hot_moved=0 after 1 requests drains_after=1 t=0.3s
+2026-10-24 18:06:53 CDT CTRL A precondition {"baseline": true, "drain_n": 64, "swaps_per_drain": 2, "swaps_per_barrier": 8, "hyst": 1.5, "min_abs": 8, "halflife": 500, "freeze": false}
+2026-10-24 18:06:56 CDT PASS A B0-r1 start: agent 90s (shipped) -> jpde 90s -> agent 90s; shift knobs {"drain_n": 64, "swaps_per_drain": 2, "swaps_per_barrier": 8, "hyst": 1.5, "min_abs": 8, "halflife": 500}
+2026-10-24 18:11:27 CDT CTRL A shift(in-process) [ar6] CTRL at shift p2_jpde: {"baseline": true, "drain_n": 64, "swaps_per_drain": 2, "swaps_per_barrier": 8, "hyst": 1.5, "min_abs": 8, "halflife": 500, "freeze": false}
+2026-10-24 18:11:27 CDT PASS A B0-r1 done: {"p1_agent": {"first": 267.29, "last": 211.81, "n": 50}, "p2_jpde": {"first": 146.04, "last": 190.18, "n": 41}, "p3_agent": {"first": 220.86, "last": 209.46, "n": 49}}
+2026-10-24 18:11:27 CDT CTRL A post-pass {"freeze": true}
+2026-10-24 18:11:30 CDT ERRCOUNT A-B0-r1 0 (since 2026-10-24T23:06:47Z)
+2026-10-24 18:11:30 CDT CTRL A reset {"freeze": true}
+2026-10-24 18:11:33 CDT CTRL A reset {"restore_map": true}
+2026-10-24 18:11:38 CDT RESET A: DRAINED pending=0 hot_moved=0 after 6 requests drains_after=2 t=2.0s
+2026-10-24 18:11:38 CDT CTRL A precondition {"baseline": true, "drain_n": 64, "swaps_per_drain": 2, "swaps_per_barrier": 8, "hyst": 1.5, "min_abs": 8, "halflife": 500, "freeze": false}
+2026-10-24 18:11:41 CDT PASS A B1-r1 start: agent 90s (shipped) -> jpde 90s -> agent 90s; shift knobs {"drain_n": 32, "swaps_per_drain": 2, "swaps_per_barrier": 8, "hyst": 1.5, "min_abs": 8, "halflife": 500}
+2026-10-24 18:16:14 CDT CTRL A shift(in-process) [ar6] CTRL at shift p2_jpde: {"baseline": true, "drain_n": 32, "swaps_per_drain": 2, "swaps_per_barrier": 8, "hyst": 1.5, "min_abs": 8, "halflife": 500, "freeze": false}
+2026-10-24 18:16:14 CDT PASS A B1-r1 done: {"p1_agent": {"first": 266.55, "last": 212.38, "n": 50}, "p2_jpde": {"first": 152.08, "last": 189.58, "n": 41}, "p3_agent": {"first": 226.86, "last": 210.95, "n": 50}}
+2026-10-24 18:16:14 CDT CTRL A post-pass {"freeze": true}
+2026-10-24 18:16:17 CDT ERRCOUNT A-B1-r1 0 (since 2026-10-24T23:11:30Z)
+2026-10-24 18:16:17 CDT CTRL A reset {"freeze": true}
+2026-10-24 18:16:20 CDT CTRL A reset {"restore_map": true}
+2026-10-24 18:16:25 CDT RESET A: DRAINED pending=0 hot_moved=0 after 5 requests drains_after=3 t=1.7s
+2026-10-24 18:16:25 CDT CTRL A precondition {"baseline": true, "drain_n": 64, "swaps_per_drain": 2, "swaps_per_barrier": 8, "hyst": 1.5, "min_abs": 8, "halflife": 500, "freeze": false}
+2026-10-24 18:16:28 CDT PASS A B2-r1 start: agent 90s (shipped) -> jpde 90s -> agent 90s; shift knobs {"drain_n": 16, "swaps_per_drain": 2, "swaps_per_barrier": 8, "hyst": 1.5, "min_abs": 8, "halflife": 500}
+2026-10-24 18:20:59 CDT CTRL A shift(in-process) [ar6] CTRL at shift p2_jpde: {"baseline": true, "drain_n": 16, "swaps_per_drain": 2, "swaps_per_barrier": 8, "hyst": 1.5, "min_abs": 8, "halflife": 500, "freeze": false}
+2026-10-24 18:20:59 CDT PASS A B2-r1 done: {"p1_agent": {"first": 267.36, "last": 212.42, "n": 50}, "p2_jpde": {"first": 160.87, "last": 189.7, "n": 41}, "p3_agent": {"first": 231.67, "last": 208.2, "n": 49}}
+2026-10-24 18:20:59 CDT CTRL A post-pass {"freeze": true}
+2026-10-24 18:21:02 CDT ERRCOUNT A-B2-r1 0 (since 2026-10-24T23:16:17Z)
+2026-10-24 18:21:02 CDT CTRL A reset {"freeze": true}
+2026-10-24 18:21:05 CDT CTRL A reset {"restore_map": true}
+2026-10-24 18:21:10 CDT RESET A: DRAINED pending=0 hot_moved=0 after 4 requests drains_after=5 t=1.4s
+2026-10-24 18:21:10 CDT CTRL A precondition {"baseline": true, "drain_n": 64, "swaps_per_drain": 2, "swaps_per_barrier": 8, "hyst": 1.5, "min_abs": 8, "halflife": 500, "freeze": false}
+2026-10-24 18:21:13 CDT PASS A B0-r2 start: agent 90s (shipped) -> jpde 90s -> agent 90s; shift knobs {"drain_n": 64, "swaps_per_drain": 2, "swaps_per_barrier": 8, "hyst": 1.5, "min_abs": 8, "halflife": 500}
+2026-10-24 18:25:48 CDT CTRL A shift(in-process) [ar6] CTRL at shift p2_jpde: {"baseline": true, "drain_n": 64, "swaps_per_drain": 2, "swaps_per_barrier": 8, "hyst": 1.5, "min_abs": 8, "halflife": 500, "freeze": false}
+2026-10-24 18:25:48 CDT PASS A B0-r2 done: {"p1_agent": {"first": 266.5, "last": 212.33, "n": 50}, "p2_jpde": {"first": 157.08, "last": 195.48, "n": 42}, "p3_agent": {"first": 230.61, "last": 211.84, "n": 50}}
+2026-10-24 18:25:48 CDT CTRL A post-pass {"freeze": true}
+2026-10-24 18:25:51 CDT ERRCOUNT A-B0-r2 0 (since 2026-10-24T23:21:02Z)
+2026-10-24 18:25:51 CDT CTRL A reset {"freeze": true}
+2026-10-24 18:25:54 CDT CTRL A reset {"restore_map": true}
+2026-10-24 18:25:58 CDT RESET A: DRAINED pending=0 hot_moved=0 after 4 requests drains_after=2 t=1.4s
+2026-10-24 18:25:58 CDT CTRL A precondition {"baseline": true, "drain_n": 64, "swaps_per_drain": 2, "swaps_per_barrier": 8, "hyst": 1.5, "min_abs": 8, "halflife": 500, "freeze": false}
+2026-10-24 18:26:01 CDT PASS A B1-r2 start: agent 90s (shipped) -> jpde 90s -> agent 90s; shift knobs {"drain_n": 32, "swaps_per_drain": 2, "swaps_per_barrier": 8, "hyst": 1.5, "min_abs": 8, "halflife": 500}
+2026-10-24 18:30:36 CDT CTRL A shift(in-process) [ar6] CTRL at shift p2_jpde: {"baseline": true, "drain_n": 32, "swaps_per_drain": 2, "swaps_per_barrier": 8, "hyst": 1.5, "min_abs": 8, "halflife": 500, "freeze": false}
+2026-10-24 18:30:36 CDT PASS A B1-r2 done: {"p1_agent": {"first": 267.44, "last": 212.48, "n": 50}, "p2_jpde": {"first": 159.25, "last": 195.14, "n": 42}, "p3_agent": {"first": 232.17, "last": 211.49, "n": 50}}
+2026-10-24 18:30:36 CDT CTRL A post-pass {"freeze": true}
+2026-10-24 18:30:39 CDT ERRCOUNT A-B1-r2 0 (since 2026-10-24T23:25:51Z)
+2026-10-24 18:30:39 CDT CTRL A reset {"freeze": true}
+2026-10-24 18:30:42 CDT CTRL A reset {"restore_map": true}
+2026-10-24 18:30:46 CDT RESET A: DRAINED pending=0 hot_moved=0 after 4 requests drains_after=3 t=1.4s
+2026-10-24 18:30:46 CDT CTRL A precondition {"baseline": true, "drain_n": 64, "swaps_per_drain": 2, "swaps_per_barrier": 8, "hyst": 1.5, "min_abs": 8, "halflife": 500, "freeze": false}
+2026-10-24 18:30:49 CDT PASS A B2-r2 start: agent 90s (shipped) -> jpde 90s -> agent 90s; shift knobs {"drain_n": 16, "swaps_per_drain": 2, "swaps_per_barrier": 8, "hyst": 1.5, "min_abs": 8, "halflife": 500}
+2026-10-24 18:35:22 CDT CTRL A shift(in-process) [ar6] CTRL at shift p2_jpde: {"baseline": true, "drain_n": 16, "swaps_per_drain": 2, "swaps_per_barrier": 8, "hyst": 1.5, "min_abs": 8, "halflife": 500, "freeze": false}
+2026-10-24 18:35:22 CDT PASS A B2-r2 done: {"p1_agent": {"first": 267.18, "last": 212.62, "n": 50}, "p2_jpde": {"first": 160.25, "last": 195.26, "n": 42}, "p3_agent": {"first": 233.87, "last": 207.85, "n": 49}}
+2026-10-24 18:35:23 CDT CTRL A post-pass {"freeze": true}
+2026-10-24 18:35:26 CDT ERRCOUNT A-B2-r2 0 (since 2026-10-24T23:30:39Z)
+2026-10-24 18:35:26 CDT CTRL A reset {"freeze": true}
+2026-10-24 18:35:29 CDT CTRL A reset {"restore_map": true}
+2026-10-24 18:35:33 CDT RESET A: DRAINED pending=0 hot_moved=0 after 4 requests drains_after=5 t=1.4s
+2026-10-24 18:35:33 CDT CTRL A precondition {"baseline": true, "drain_n": 64, "swaps_per_drain": 2, "swaps_per_barrier": 8, "hyst": 1.5, "min_abs": 8, "halflife": 500, "freeze": false}
+2026-10-24 18:35:36 CDT PASS A B0-r3 start: agent 90s (shipped) -> jpde 90s -> agent 90s; shift knobs {"drain_n": 64, "swaps_per_drain": 2, "swaps_per_barrier": 8, "hyst": 1.5, "min_abs": 8, "halflife": 500}
+2026-10-24 18:40:11 CDT CTRL A shift(in-process) [ar6] CTRL at shift p2_jpde: {"baseline": true, "drain_n": 64, "swaps_per_drain": 2, "swaps_per_barrier": 8, "hyst": 1.5, "min_abs": 8, "halflife": 500, "freeze": false}
+2026-10-24 18:40:11 CDT PASS A B0-r3 done: {"p1_agent": {"first": 267.04, "last": 212.34, "n": 50}, "p2_jpde": {"first": 155.5, "last": 195.51, "n": 42}, "p3_agent": {"first": 228.47, "last": 211.84, "n": 50}}
+2026-10-24 18:40:11 CDT CTRL A post-pass {"freeze": true}
+2026-10-24 18:40:14 CDT ERRCOUNT A-B0-r3 0 (since 2026-10-24T23:35:26Z)
+2026-10-24 18:40:14 CDT CTRL A reset {"freeze": true}
+2026-10-24 18:40:17 CDT CTRL A reset {"restore_map": true}
+2026-10-24 18:40:21 CDT RESET A: DRAINED pending=0 hot_moved=0 after 4 requests drains_after=2 t=1.4s
+2026-10-24 18:40:21 CDT CTRL A precondition {"baseline": true, "drain_n": 64, "swaps_per_drain": 2, "swaps_per_barrier": 8, "hyst": 1.5, "min_abs": 8, "halflife": 500, "freeze": false}
+2026-10-24 18:40:24 CDT PASS A B1-r3 start: agent 90s (shipped) -> jpde 90s -> agent 90s; shift knobs {"drain_n": 32, "swaps_per_drain": 2, "swaps_per_barrier": 8, "hyst": 1.5, "min_abs": 8, "halflife": 500}
+2026-10-24 18:44:59 CDT CTRL A shift(in-process) [ar6] CTRL at shift p2_jpde: {"baseline": true, "drain_n": 32, "swaps_per_drain": 2, "swaps_per_barrier": 8, "hyst": 1.5, "min_abs": 8, "halflife": 500, "freeze": false}
+2026-10-24 18:44:59 CDT PASS A B1-r3 done: {"p1_agent": {"first": 267.02, "last": 213.08, "n": 50}, "p2_jpde": {"first": 157.2, "last": 195.05, "n": 42}, "p3_agent": {"first": 231.53, "last": 211.37, "n": 50}}
+2026-10-24 18:44:59 CDT CTRL A post-pass {"freeze": true}
+2026-10-24 18:45:02 CDT ERRCOUNT A-B1-r3 0 (since 2026-10-24T23:40:14Z)
+2026-10-24 18:45:02 CDT CTRL A reset {"freeze": true}
+2026-10-24 18:45:05 CDT CTRL A reset {"restore_map": true}
+2026-10-24 18:45:10 CDT RESET A: DRAINED pending=0 hot_moved=0 after 4 requests drains_after=3 t=1.4s
+2026-10-24 18:45:10 CDT CTRL A precondition {"baseline": true, "drain_n": 64, "swaps_per_drain": 2, "swaps_per_barrier": 8, "hyst": 1.5, "min_abs": 8, "halflife": 500, "freeze": false}
+2026-10-24 18:45:13 CDT PASS A B2-r3 start: agent 90s (shipped) -> jpde 90s -> agent 90s; shift knobs {"drain_n": 16, "swaps_per_drain": 2, "swaps_per_barrier": 8, "hyst": 1.5, "min_abs": 8, "halflife": 500}
+2026-10-24 18:49:44 CDT CTRL A shift(in-process) [ar6] CTRL at shift p2_jpde: {"baseline": true, "drain_n": 16, "swaps_per_drain": 2, "swaps_per_barrier": 8, "hyst": 1.5, "min_abs": 8, "halflife": 500, "freeze": false}
+2026-10-24 18:49:44 CDT PASS A B2-r3 done: {"p1_agent": {"first": 267.13, "last": 212.1, "n": 50}, "p2_jpde": {"first": 156.13, "last": 189.59, "n": 41}, "p3_agent": {"first": 233.46, "last": 208.17, "n": 49}}
+2026-10-24 18:49:44 CDT CTRL A post-pass {"freeze": true}
+2026-10-24 18:49:47 CDT ERRCOUNT A-B2-r3 0 (since 2026-10-24T23:45:02Z)
+2026-10-24 18:49:48 CDT B3 CHECK: B3=SKIP (B2 G3 churn ok=True; churn 112.3/min vs B0 95.3 (×1.18, bar ≤1.25); stale 0; server errors 0; conv cold 0.00403 (bar <0.01))
+2026-10-24 18:49:48 CDT WINNER (provisional, for third-domain + G4): NONE
+2026-10-24 18:49:48 CDT CTRL A reset {"freeze": true}
+2026-10-24 18:49:51 CDT CTRL A reset {"restore_map": true}
+2026-10-24 18:49:56 CDT RESET A: DRAINED pending=0 hot_moved=0 after 3 requests drains_after=4 t=1.2s
+2026-10-24 18:49:56 CDT CTRL A precondition {"baseline": true, "drain_n": 64, "swaps_per_drain": 2, "swaps_per_barrier": 8, "hyst": 1.5, "min_abs": 8, "halflife": 500, "freeze": false}
+2026-10-24 18:49:59 CDT PASS A B2-third start: agent 90s (shipped) -> third 90s -> agent 90s; shift knobs {"drain_n": 16, "swaps_per_drain": 2, "swaps_per_barrier": 8, "hyst": 1.5, "min_abs": 8, "halflife": 500}
+2026-10-24 18:54:32 CDT CTRL A shift(in-process) [ar6] CTRL at shift p2_third: {"baseline": true, "drain_n": 16, "swaps_per_drain": 2, "swaps_per_barrier": 8, "hyst": 1.5, "min_abs": 8, "halflife": 500, "freeze": false}
+2026-10-24 18:54:32 CDT PASS A B2-third done: {"p1_agent": {"first": 266.17, "last": 212.35, "n": 50}, "p2_third": {"first": 135.83, "last": 192.29, "n": 55}, "p3_agent": {"first": 199.92, "last": 208.26, "n": 49}}
+2026-10-24 18:54:32 CDT CTRL A post-pass {"freeze": true}
+2026-10-24 18:54:35 CDT ERRCOUNT A-B2-third 0 (since 2026-10-24T23:49:48Z)
+2026-10-24 18:54:35 CDT CTRL A reset {"freeze": true}
+2026-10-24 18:54:38 CDT CTRL A reset {"restore_map": true}
+2026-10-24 18:54:44 CDT RESET A: DRAINED pending=0 hot_moved=0 after 7 requests drains_after=9 t=2.6s
+2026-10-24 18:54:44 CDT G4 ArmA fixed seed map (frozen, restored)
+2026-10-24 18:56:21 CDT PARITY ArmA-F1 vs ArmA-F2: 49 / 50 ['agent-tool-1']
+2026-10-24 18:56:21 CDT PARITY Arm0-S1 vs ArmA-F1 (static vs seed, cross-boot): 49 / 50 ['agent-tool-1']
+2026-10-24 18:56:41 CDT GAUNTLET ArmA: 12 / 12
+2026-10-24 18:56:41 CDT G4 winner: none (H2 provisional FAIL) — Arm A G4 only
+2026-10-24 18:56:41 CDT CTRL A dump {"freeze": true, "dump": "post-AR6-armA"}
+2026-10-24 18:56:54 CDT DUMP ~/dsv41/ar/results-cardAR6/bootA/counts-post-AR6-armA-20261024-235642.npz
+2026-10-24 18:56:54 CDT ERRCOUNT bootA 0 (since 2026-10-24T23:03:44Z)
+2026-10-24 18:56:54 CDT stop-and-keep dsv41-vllm-1017-v26ar2-AR6-ARMA
+2026-10-24 18:57:07 CDT strays: 3810 0.5GiB /usr/bin/containerd |4306 0.2GiB /usr/bin/dockerd -H|4348 0.1GiB /usr/bin/gnome-shell |4177 0.1GiB /usr/lib/xorg/Xorg vt1| MemAvailable=464.7GiB
+2026-10-24 18:58:09 CDT RESTORE sidecar dsv41-vllm-1017-v25m-MIXMAP-rtx running=true after 62s: prepared 40 layers in 42s; 68.4 GB allocated
+2026-10-24 18:58:09 CDT   dsv41-vllm-1017-v25m-MIXMAP waiting 0 min: MemAvail=448.1GiB last=[]
+2026-10-24 19:03:12 CDT   dsv41-vllm-1017-v25m-MIXMAP waiting 5 min: MemAvail=181.2GiB last=[2026-10-25 00:01:57,434 - INFO - autotuner.py:1046 - flashinfer.jit: [Autotuner]: Autotuning process starts ...]
+2026-10-24 19:05:02 CDT BOUND dsv41-vllm-1017-v25m-MIXMAP after 413s
+2026-10-24 19:05:02 CDT LANE DARK ends (dsv41-vllm-1017-v25m-MIXMAP bound after 475s)
+2026-10-24 19:05:02 CDT RESTORE FACTS rowmap40=1 peer2=2 kvdecl=1
+2026-10-24 19:05:03 CDT HEALTH restore: models_http=200 chat_http=200 content=[OK] sidecar=true
+2026-10-24 19:05:06 CDT fail-stop watchdog armed pid 444865 on dsv41-vllm-1017-v25m-MIXMAP
+2026-10-24 19:05:07 CDT VERDICT rc=0 MIXED | AR6-H1PASS-H2FAIL | {"T90_B1": "FAIL", "G1_B1": "PASS", "G2_B1": "FAIL", "G3_B1": "PASS", "T90_B2": "FAIL", "G1_B2": "PASS", "G2_B2": "FAIL", "G3_B2": "PASS", "T90_B3": "REPORT", "G3_B0": "REPORT", "G2_B0": "FAIL", "G4_gauntlet_ArmA": "PASS", "G4_parity_ArmA": "PASS", "G4_gauntlet_winner": "REPORT", "H1_mixed": "PASS", "H1_agent": "PASS", "H1_first_request": "REPORT", "H1_adaptive_steady": "PASS", "H1": "PASS", "H2": "FAIL", "third_B2": "REPORT"}
+2026-10-24 19:05:08 CDT kept dsv41-vllm-1017-v26ar2-AR6-ARM0-AR6-H1PASS-H2FAIL (stopped)
+2026-10-24 19:05:08 CDT kept dsv41-vllm-1017-v26ar2-AR6-ARMA-AR6-H1PASS-H2FAIL (stopped)
+2026-10-24 19:05:08 CDT FINAL dsv41 running=[dsv41-vllm-1017-v25m-MIXMAP dsv41-vllm-1017-v25m-MIXMAP-rtx ] bound=1
+2026-10-24 19:05:08 CDT ===== CARD AR6 END (lane = dsv41-vllm-1017-v25m-MIXMAP) =====

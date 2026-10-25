@@ -1,15 +1,97 @@
 # DeepSeek-V4.1-Flash at 1M context on one DGX Station GB300
 
-**2026-10-22 — the lane moved.** `:30006` now serves the **sidecar sibling**
-([`../deepseek-v4.1-flash-vllm-uva-dspark-sidecar`](../deepseek-v4.1-flash-vllm-uva-dspark-sidecar)):
-same checkpoint and same image, plus the RTX PRO 6000 in the chassis computing the 89 cold experts per layer —
-C1 279.5 vs 187.5 tok/s here, C16 3.0×, TTFT 0.19 vs 0.66 s. This recipe remains the reference for a GB300 with
-no second GPU, and v23 below is kept stopped as the rollback.
+**2026-10-24 ~21:30 CDT — v26 "Seeded Adaptive" promoted; `:30006` serves this GB300-only recipe again.**
+v26 is the v23 launch (same image, same flags), plus three changes:
+- **adaptive expert residency** — hook v26ar.2;
+- **a seed boot map** — the top 295 experts per layer, taken from the live counter's own dump;
+- **the shipped swap policy**, with adaptation unfrozen.
 
-**Serving on `:30006` since 2026-10-18 10:21 CDT: Pin Exact, v23** (v22 + exact-size pinned host allocations: pinned host 328.0 → 252.8 GiB, boot-guard margin 12 → 198 GiB, decode and greedy non-tool output unchanged; **188.2 tok/s C1 real text, accept 2.99/step**; BFCL held-out 77.65; see the 2026-10-18 round) · rollback **v22** (k=5 band to 8 sequences, 2026-10-17) · **candidate, not promoted:** vLLM nightly-39983a5e "config C" passed all seven pre-registered gates (+6% C1, TTFT 8K 0.43 s, KV +55%; GSM8K exactly at its bar), pending James · previous **Fused Split, v21** (2026-09-27: v18 launch on the 0909 image + hook v21 — `split_ids()` as one Triton kernel; **182.8 tok/s C1 prose, +6.2 % vs v18 bracketing controls 171.8 / 172.5**, C8 687 (+4.6 %), C16 993 (+4.0 %), non-tool greedy 16/16 vs both controls; held-out BFCL on v21 pending; see Round 12) · documented release **Clean Nightly, v20** (2026-09-21: vLLM nightly `2671fedf` — the last before the #56633 mHC-fold drift — + v15 hook + off54 + fp8_ds_mla + v18's 24-seat/cudagraph flags; **181 tok/s C1 prose (+5.1% pair mean vs v18)**, KV 2.55M tokens, C24 warm agent p95 2.4–2.8 s vs 3.4; **held-out BFCL live sibling 78.8% vs v18 78.9%**, dev 92.7–93.5%; tools 64/64 ×3; $0.008 per 1000 solved tasks; see Round 11b) · rollback **Many Seat, v18** (2026-09-18: v15 hook + `--max-num-seqs 24` + token-sized `--cudagraph-capture-sizes`; 172 tok/s C1 prose, KV 2.50M tokens, C24 warm agent turn 0.55 s p50; **BFCL v4 tool-call exact-match 93.3%**) · **v19 "Nightly" was promoted and reverted on 2026-09-20** (see Round 10) · previous **v15 Pin Hot Experts** (retired 2026-09-18) · **v14 Sixty-K Agent** (retired 2026-09-17) · Historical **v13: 90 tok/s single-stream prose · 140–160 tok/s on agent/code text · 429 agg tok/s at C16** (v12: 89 / 140–160 / 311 · v11: 82 / 130–150 / 287) · 972K-token prompt prefilled in 85 s · Hermes tool-calling 10/10
+With maps frozen on held-out prompts, mixed C1 is **183.7 vs 127.1 tok/s (×1.445)**. The adaptive steady state is
+**218.9 tok/s agent / 189.6 JP/DE** at C1. Gauntlet is 12/12 and greedy parity 49/50. **The 48 h soak was waived by
+James at promotion** — see Known limits. Receipts: [`results/2026-10-24-v26-seeded-adaptive/`](results/2026-10-24-v26-seeded-adaptive/README.md).
+
+From 2026-10-22 to 2026-10-24 the lane ran the **sidecar sibling**
+([`../deepseek-v4.1-flash-vllm-uva-dspark-sidecar`](../deepseek-v4.1-flash-vllm-uva-dspark-sidecar)). It uses the
+same checkpoint and image, plus the chassis' RTX PRO 6000 computing the 89 cold experts per layer: C1 279.5 vs
+187.5 tok/s for v23 here, C16 3.0×. It is still the faster lane on a box that has that second GPU; its 2026-10-24
+round adds a 48 GiB Grace host prefix-KV tier. This recipe is the reference for a GB300 with no second GPU.
+
+**Before v26 — Pin Exact, v23** (serving 2026-10-18 → 2026-10-22; v26 launches from it) (v22 + exact-size pinned host allocations: pinned host 328.0 → 252.8 GiB, boot-guard margin 12 → 198 GiB, decode and greedy non-tool output unchanged; **188.2 tok/s C1 real text, accept 2.99/step**; BFCL held-out 77.65; see the 2026-10-18 round) · rollback **v22** (k=5 band to 8 sequences, 2026-10-17) · **candidate, not promoted:** vLLM nightly-39983a5e "config C" passed all seven pre-registered gates (+6% C1, TTFT 8K 0.43 s, KV +55%; GSM8K exactly at its bar), pending James · previous **Fused Split, v21** (2026-09-27: v18 launch on the 0909 image + hook v21 — `split_ids()` as one Triton kernel; **182.8 tok/s C1 prose, +6.2 % vs v18 bracketing controls 171.8 / 172.5**, C8 687 (+4.6 %), C16 993 (+4.0 %), non-tool greedy 16/16 vs both controls; held-out BFCL on v21 pending; see Round 12) · documented release **Clean Nightly, v20** (2026-09-21: vLLM nightly `2671fedf` — the last before the #56633 mHC-fold drift — + v15 hook + off54 + fp8_ds_mla + v18's 24-seat/cudagraph flags; **181 tok/s C1 prose (+5.1% pair mean vs v18)**, KV 2.55M tokens, C24 warm agent p95 2.4–2.8 s vs 3.4; **held-out BFCL live sibling 78.8% vs v18 78.9%**, dev 92.7–93.5%; tools 64/64 ×3; $0.008 per 1000 solved tasks; see Round 11b) · rollback **Many Seat, v18** (2026-09-18: v15 hook + `--max-num-seqs 24` + token-sized `--cudagraph-capture-sizes`; 172 tok/s C1 prose, KV 2.50M tokens, C24 warm agent turn 0.55 s p50; **BFCL v4 tool-call exact-match 93.3%**) · **v19 "Nightly" was promoted and reverted on 2026-09-20** (see Round 10) · previous **v15 Pin Hot Experts** (retired 2026-09-18) · **v14 Sixty-K Agent** (retired 2026-09-17) · Historical **v13: 90 tok/s single-stream prose · 140–160 tok/s on agent/code text · 429 agg tok/s at C16** (v12: 89 / 140–160 / 311 · v11: 82 / 130–150 / 287) · 972K-token prompt prefilled in 85 s · Hermes tool-calling 10/10
 
 
-## 2026-10-23 round — adaptive expert residency (hook v26ar.1): released as EXPERIMENTAL, not promoted
+## 2026-10-24 round — v26 "Seeded Adaptive": seed map + adaptive residency, PROMOTED (48 h soak waived)
+
+**Config.** The v23 launch is unchanged: 0909 image, the same serve flags, and autotune hash `62426808` (`Loaded 189`
+on both boots). The changes are:
+- **Hook v26ar.2.** This is the published v26ar.1 hook plus env-gated telemetry only: a per-step ring
+  `PIN_STEP_RING=65536`, swap-apply timestamps, and CUDA events `PIN_SWAP_CUDA_EVENTS=1`.
+- **Boot map `PIN_ROWMAP=/w/rowmap-mixed-ar-v1.json`.** This is the top 295 experts per layer from one cumulative
+  dump of the live counter (2026-10-23). The 295 hot / 89 cold geometry is unchanged.
+- **The shipped policy, adaptation unfrozen:** drain every 64 steps, ≤ 2 swaps per layer, half-life 500 steps,
+  hysteresis 1.5×, min 8, ≤ 8 swaps per barrier.
+
+Promoted by James on 2026-10-24 at ~21:30 CDT, **with the 48 h soak explicitly waived**. Write-up:
+[Adaptive Residency, Part 3: The Seed Was the Prize](https://al-engr.com/gb300-adaptive-residency-seed-map.html).
+Receipts: [`results/2026-10-24-v26-seeded-adaptive/`](results/2026-10-24-v26-seeded-adaptive/README.md). Card AR6 v2 verdict: `AR6-H1PASS-H2FAIL`.
+
+**Design.** Two boots in one window: September static map vs seed map. Each boot ran a frozen-map held-out mixed run,
+then agent → JP/DE → agent shift passes. The shipped policy (B0) ran against 2× (B1, drain 32) and 4× (B2, drain 16)
+queue rates, interleaved over 3 rounds.
+
+**H1 — the seed map (PASS).** Adaptation frozen on both arms, held-out prompts, same window:
+
+| C1 | Sept static map | seed map | Δ |
+|---|---:|---:|---:|
+| mixed aggregate (post-60 s) | 127.12 | **183.73** | **×1.445** (bar ×1.2) |
+| JP/DE per-request median | 85.45 | 177.23 | ×2.07 |
+| agent English per-request median | 202.74 | 201.36 | −0.7 % (bar ±2 %) |
+| first JP/DE request after boot | 84.96 | 177.89 | ×2.1 |
+
+With adaptation on, both boots converge to the same steady state: **JP/DE 189.6 / agent 218.9 tok/s** C1 on the seed
+boot, against 189.9 / 219.1 on the static boot. The seed changes where you start, not where you end.
+
+**H2 — a faster swap queue (FAIL, closed).**
+
+| seed boot | agent → JP/DE T90 | JP/DE → agent T90 | churn | converged C1 JP/DE / agent |
+|---|---:|---:|---:|---:|
+| B0 shipped (drain 64) | **8.7 s** | **14.0 s** | 95 /min | 189.6 / 218.9 |
+| B1 2× (drain 32) | 9.3 s | 14.0 s | 103 /min | 189.6 / 218.2 |
+| B2 4× (drain 16) | 10.0 s | 14.0 s | 112 /min | 189.5 / 217.9 |
+
+T90 is the cold share in 2 s windows: the time to clear 90 % of the peak → converged excess, pooled over 3 reps. The
+static boot's B0 read 11.0 / 14.0 s. Converged cold share is 0.3–0.5 % per shift, and cold share is ≤ 1 % at 8.7 s
+and 14.0 s.
+
+No cell halved T90 (ratios ×1.00–1.15 vs the same-boot B0). **Why:** the seed map collapses the shift peak from
+**25.4 % to 5.7 %** cold share (agent → JP/DE), and from 6.0 % to 3.3 % the other way. The swap queue never saturates,
+so a faster queue has nothing to drain. The shipped policy stays.
+
+**Swap cost, measured for the first time.**
+- **Per swap:** a host step that applies swaps runs **~1.9× the p95** of a swap-free step on every cell, including the
+  shipped-policy control. That is 1.3–2.4 ms of excess per applied swap, of which the CUDA row copy is ~0.26 ms.
+- **Whole seed boot** ([`p99_overall.py`](results/2026-10-24-v26-seeded-adaptive/scripts/p99_overall.py)): **2.53 %** of 267,226 host steps carried
+  swaps. p99 host step was **22.17 ms**, against 19.52 ms for swap-free steps alone, under shift-heavy test traffic.
+- These are host-step (verify-window) intervals, not client inter-token gaps.
+
+**Quality.**
+- Gauntlet **12/12** on the fixed seed map, and **12/12 live under adaptation** on the promoted lane.
+- Greedy parity **49/50**, static vs seed map cross-boot. The miss is `agent-tool-1`, the documented noise prompt
+  that also flips within one map.
+- 0 stale swaps and 0 server errors in every cell.
+- From the 2026-10-23 bundle: the restore round trip (a 15,382-swap campaign then `restore_map` returns to fixed-map
+  parity, 49/50).
+- **Not re-run on v26:** BFCL, GSM8K, teacher-forced Δlogprob, and any 128K or 1M request.
+
+**Correction carried in from Part 1.** Convergence is **not 60–90 s**. That number was a windowing artifact: 30 s
+medians over prompts whose converged speeds differ by up to 19 %. Re-analysis of the 2026-10-23 telemetry gives
+cold share < 1 % in **9–16 s** and each prompt at ~90 % of converged speed in ~12–20 s. AR6 measures T90 at
+8.7 / 14.0 s on the seed boot. The correction is live on
+[Part 1](https://al-engr.com/gb300-adaptive-expert-residency.html).
+
+**Against the sidecar sibling.** On a box with the RTX PRO 6000, the sidecar lane is still the faster one; see
+[its README](../deepseek-v4.1-flash-vllm-uva-dspark-sidecar/README.md). v26 is the single-GPU answer.
+
+## 2026-10-23 round — adaptive expert residency (hook v26ar.1): released as EXPERIMENTAL, not promoted (superseded by v26 above)
 
 v23's 295-hot / 89-cold split per layer was fixed at boot (`rowmap-static-v1.json`, fitted on agent traffic). Hook v26ar.1 makes the split follow live traffic. **Same image, weights, flags, and starting map as v23**; only the hook directory and its env change. Write-up: [We Built the Counter](https://al-engr.com/gb300-adaptive-expert-residency.html). Receipts, hook, diffs, and harness: [`results/2026-10-23-ar-adaptive-residency/`](results/2026-10-23-ar-adaptive-residency/).
 
@@ -428,7 +510,25 @@ Full lock: [`results/…/software-lock.txt`](results/2026-09-10-v11-1M-k5-lpt614
 
 ## Launch
 
-v23, the serving launch (one `docker run`; edit the model/cache/hook paths at the top):
+**v26, the serving launch (since 2026-10-24).** This is the v23 `docker run` with the hook directory and its env
+changed. Edit the model, cache and hook paths at the top. The hook directory must contain the v26ar.2 hook
+(sha1s in [`hook.txt`](results/2026-10-24-v26-seeded-adaptive/hook.txt)) and the seed map
+[`rowmap-mixed-ar-v1.json`](results/2026-10-24-v26-seeded-adaptive/hook/rowmap-mixed-ar-v1.json).
+
+```bash
+NAME=dsv41-vllm-1017-v26seed-BOUND-REF RUN=$HOME/dsv41/ar/v26 ROWMAP=rowmap-mixed-ar-v1.json \
+  bash results/2026-10-24-v26-seeded-adaptive/scripts/launch_ar6.sh      # boots FROZEN (counting only); hash-hit boot ~8 min
+touch $RUN/GO
+echo '{"freeze": false, "baseline": true}' > $RUN/ctrl.json.tmp && mv $RUN/ctrl.json.tmp $RUN/ctrl.json   # adaptation on, shipped policy
+bash scripts/smoke_vllm.sh
+```
+
+- **Freeze without a reboot:** write `{"freeze": true}` to `ctrl.json`, or `{"restore_map": true}` to return to
+  the boot map.
+- **What changed vs the published v26ar.1 launcher:**
+  [`launch_ar6-vs-launch_ar.diff`](results/2026-10-24-v26-seeded-adaptive/launch_ar6-vs-launch_ar.diff).
+
+v23, the previous launch (one `docker run`; edit the model/cache/hook paths at the top):
 
 ```bash
 bash results/2026-10-18-v23-pinexact-host/scripts/launch_v23.sh dsv41-vllm-1017-v23-pinexact-BOUND-REF
@@ -482,12 +582,16 @@ FlashInfer autotunes the MXFP4 MoE kernels and caches the result under a hash of
 
 | gate | how | last pass |
 |---|---|---|
-| schema | `scripts/check_recipe.py` | 2026-10-18 |
+| schema | `scripts/check_recipe.py` | 2026-10-25 |
 | digest | image `sha256:00d577a6…` (0909) by `docker image inspect`; `/model` is the 1017 revision `1bae0e10`; hook `b5e4f4f8…` read inside the container | 2026-10-18 |
 | health | `/v1/models` 200; log shows `Available KV cache memory: 10.05 GiB`, `Loaded 210 configs`; `smoke_vllm.sh` 5/5 | 2026-09-11 |
 | quality | smoke (arith 323, count 1–60, prose, parsed `tool_call`, thinking→`36`); **Hermes harness 10/10** tool calls with correct answers and side effects ([harness-summary.md](results/2026-09-12-v12-1M-k5-off60-util97/harness-summary.md) (v12 re-run 2026-09-12, 10/10)). No requant, so no divergence gate. | 2026-09-11 |
 | performance | v23: bracketed CTL → CAND → CTL, RT C1/C4/C16 and replay r2 within −2%, knee6 C8/C6 on ≥ 4 reps within −2% (Card S0/S0c) | 2026-10-18 |
 | fidelity (v23) | greedy non-tool parity 16/16 vs both controls; gauntlet 12/12; BFCL dev 92.33 / held-out 77.65; GSM8K-200 97.0 | 2026-10-18 |
+| health (v26) | boot log: `Loaded 189 configs` (hash 62426808), `GPU KV cache size: 2,495,694 tokens`, `PIN_HOT installed PIN_MODE=adaptive … rowmap=/w/rowmap-mixed-ar-v1.json`, rehome 206.61 / 62.33 GiB; `steps.bin` grows after `GO`; serving-log error count 0 | 2026-10-24 |
+| performance (v26) | Card AR6 v2, registered bars, same window: H1 held-out mixed C1 ≥ ×1.2 (×1.445), agent within 2 % (−0.7 %), adaptive steady state within 2 % of the static boot (−0.2 / −0.1 %) | 2026-10-24 |
+| fidelity (v26) | gauntlet 12/12 on the fixed seed map and 12/12 live under adaptation; greedy parity 49/50 static vs seed (documented noise prompt); 0 stale swaps, 0 server errors. BFCL / GSM8K / TF not re-run | 2026-10-24 |
+| soak (v26) | **waived** at promotion (James); longest unattended window ~1 h | — |
 
 ### Promotion gates (amended 2026-10-18, accepted by James)
 
@@ -507,7 +611,27 @@ FlashInfer autotunes the MXFP4 MoE kernels and caches the result under a hash of
 
 ## Results
 
-### v23 — Pin Exact (serving since 2026-10-18 10:21 CDT)
+### v26 — Seeded Adaptive (serving since 2026-10-24 ~21:30 CDT)
+
+Bundle: [`results/2026-10-24-v26-seeded-adaptive/`](results/2026-10-24-v26-seeded-adaptive/README.md); every cell is in [`throughput.csv`](results/2026-10-24-v26-seeded-adaptive/throughput.csv).
+
+The instrument is the AR shift/mixed harness: agent-English prose and JP/DE essay pools, synthetic. It is not the
+kbench CNN/DM real-text cell of the v23 table below, so compare within one table. kbench, knee and BFCL were not
+re-run on v26.
+
+| cell | v26 (seed map) | static-map control, same window |
+|---|---|---|
+| held-out mixed C1 aggregate, maps frozen | **183.73** | 127.12 |
+| held-out agent / JP/DE per-request median, frozen | 201.36 / 177.23 | 202.74 / 85.45 |
+| first JP/DE request after boot | 177.89 | 84.96 |
+| adaptive steady-state C1, agent / JP/DE | **218.94 / 189.59** | 219.13 / 189.94 |
+| cold-share T90 agent → JP/DE / JP/DE → agent | 8.7 / 14.0 s | 11.0 / 14.0 s |
+| peak cold share after the shift | 5.7 % / 3.3 % | 25.4 % / 6.0 % |
+| swap churn (shipped policy) | 95 /min | 107 /min |
+| swap-bearing host steps / p99 host step (whole boot) | 2.53 % / 22.17 ms | 2.50 % / 24.42 ms |
+| KV at 1M, boot | 2,495,694 tokens (2.38×) | same |
+
+### v23 — Pin Exact (serving 2026-10-18 → 2026-10-22; the base v26 launches from)
 
 Bundle: [`results/2026-10-18-v23-pinexact-host/`](results/2026-10-18-v23-pinexact-host/README.md). Real-text harness = RonanLabs `kbench_chat_ds.py` (CNN/DM ~8.2K in, 1,024 forced, thinking off, T=0, nonce, 0% prefix hits). Not slot-capped below C24.
 
@@ -671,7 +795,17 @@ Zero preemptions at 972K; HBM peaked at 243 GiB. Warm prefix on an 8.8K-token sy
 
 ## Known limits
 
-See `limits:` in [`recipe.yaml`](recipe.yaml). 2026-10-18 additions: the per-class acceptance rule is amended (trigger, not gate); vLLM nightly-39983a5e config C passed its gates and is a candidate, not the runtime (GSM8K at its bar, +48% completion tokens); P1 prefill graphs failed on KV; prose-knee C8 is bimodal (gate on ≥ 4 reps); the 0909 image renders thinking-mode `reasoning_effort` low/high as 25/50 where the 1017 checkpoint's encoder uses 50/75. The short version: decode is C2C + kernel bound and the offloaded-expert byte count is the lever (~0.76 tok/s per GiB moved into HBM; v12 spends the last HBM headroom on it and pays in KV); quote the tok/s for your content class, not the best one; the autotune hash trap is real; `reasoning_effort: medium` is rejected by the template (use `low|high|xhigh|max`); ~110 GB of host shmem was unaccounted for (corrected in part on 2026-10-18: 75 GiB of pinned memory was power-of-two rounding, removed by v23; v23 leaves ~200 GiB MemAvailable).
+See `limits:` in [`recipe.yaml`](recipe.yaml).
+
+2026-10-24 additions (v26):
+- **The 48 h soak was waived at promotion** (James, 2026-10-24). The AR5 soak ran ~19:57 → ~20:4x CDT and was cancelled. The longest unattended window on v26 so far is ~1 h plus the Card AR6 / gauntlet battery traffic. Multi-day memory drift and multi-hour swap churn under real traffic are unmeasured.
+- **Convergence correction.** The 2026-10-23 card and Part 1 said 60–90 s. That figure was a windowing artifact; re-analysis gives cold share < 1 % in 9–16 s, and AR6 measures T90 at 8.7 / 14.0 s on the seed boot.
+- **Swap cost.** Swap-bearing steps run ~1.9× the p95 of swap-free steps (G2 failed against its 1.25 bar on every cell, including the control). 2.53 % of steps carry swaps, and whole-boot p99 host step is 22.17 ms vs 19.52 ms swap-free.
+- **Not run on v26:** long context (no 128K or 1M request; the 950K needle in the 2026-10-24 receipts is the sidecar lane's), BFCL, GSM8K, teacher-forced Δlogprob, and C4+ concurrency.
+- **Image of record** is still `vllm/vllm-openai:deepseekv41-flash-0909`, a pullable tag. The hook is python-side, with no kernel change, and is pinned by sha1.
+- **v26ar.2 hook source is not in this repo yet.** It is v26ar.1 plus env-gated telemetry. The seed map is published.
+
+2026-10-18 additions: the per-class acceptance rule is amended (trigger, not gate); vLLM nightly-39983a5e config C passed its gates and is a candidate, not the runtime (GSM8K at its bar, +48% completion tokens); P1 prefill graphs failed on KV; prose-knee C8 is bimodal (gate on ≥ 4 reps); the 0909 image renders thinking-mode `reasoning_effort` low/high as 25/50 where the 1017 checkpoint's encoder uses 50/75. The short version: decode is C2C + kernel bound and the offloaded-expert byte count is the lever (~0.76 tok/s per GiB moved into HBM; v12 spends the last HBM headroom on it and pays in KV); quote the tok/s for your content class, not the best one; the autotune hash trap is real; `reasoning_effort: medium` is rejected by the template (use `low|high|xhigh|max`); ~110 GB of host shmem was unaccounted for (corrected in part on 2026-10-18: 75 GiB of pinned memory was power-of-two rounding, removed by v23; v23 leaves ~200 GiB MemAvailable).
 
 ## What didn't work
 
@@ -679,9 +813,23 @@ See `limits:` in [`recipe.yaml`](recipe.yaml). 2026-10-18 additions: the per-cla
 
 ## Rollback
 
+**v26 → v23 behaviour, no reboot:** write `{"freeze": true}`, then `{"restore_map": true}`, to the run dir's `ctrl.json`. The hook stops swapping and returns to the boot map.
+
+**Exact v23 runtime:** `docker stop dsv41-vllm-1017-v26seed-BOUND-REF`, then `docker start` the kept v23 container (hash hit, ~5 min).
+
+**The live lane's operational rollback** is the sidecar v25m-MIXMAP pair plus its fail-stop watchdog; see the sibling recipe.
+
 v23 → v22: `docker stop dsv41-vllm-1017-v23-pinexact-BOUND-REF && docker start dsv41-vllm-1017-v22-ksched1to8-RETIRED-REF` (~5 min, autotune hash hit). Every bound config is kept as a stopped container `dsv41-vllm-<tag>`. `docker stop` the lane, `docker start` the previous one; ~4 min. Production surfaces on other ports are never part of this lane.
 
 ## Credits
+
+2026-10-24 round (Card AR6 v2, v26):
+- **Campaign, runner, verdict and write-up:** Milo (Hermes) — the Part 3 byline lists one anthropic/claude-fable-5 session for measurements and campaign.
+- **Promotion decision and soak waiver:** James.
+- **Routing traces** of this exact checkpoint, which made the desk simulation possible: [05yuki](https://github.com/05yuki/deepseek-v4.1-flash-1017-ktransformers).
+- **Half-life evidence:** N3mezis's trace replays.
+- **Prior art for traffic-fitted maps:** original-el8's `rowmap-mix-v1`.
+- **The device-side planner idea:** [vLLM #56177](https://github.com/vllm-project/vllm/pull/56177) by 01554.
 
 2026-10-18 round: briefs, bars and write-up by Milo (Hermes, claude-fable-5-1); worker runs by claude-opus-5-5 subagents from those briefs; original-el8 for the P1 (prefill graphs) and P5 (long-generation cell) ideas; the Opus 5.5 review behind the per-class rule amendment; Ronan (RonanLabsAI) for the real-text RT harness; vLLM upstream for nightly-39983a5e, #58132, #56893 and the managed autotune store.
 

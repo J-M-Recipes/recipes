@@ -46,7 +46,7 @@
       <h1>DeepSeek-V4.1-Flash · 1× DGX Station GB300 · adaptive expert residency</h1>
       <div class="sub">The v23 recipe, but the 295 HBM experts per layer follow live traffic: one relaxed atomic per routed token in a kernel that already runs, swaps between steps. Off-domain decode doubles; nothing else changes.</div>
     </div>
-    <div class="brand"><b>J-M-RECIPES</b><br>v26ar.1 = v23 launch + hook v26ar.1 (counter + guarded swaps) · measured 2026-10-23 on two boots · NOT promoted · 2026-10-24<br>status: experimental</div>
+    <div class="brand"><b>J-M-RECIPES</b><br>v26ar.1 · measured 2026-10-23 · NOT promoted · superseded by v26 Seeded Adaptive · 2026-10-25<br>status: experimental</div>
   </div>
   <div class="pills">
 <span class="pill type"><b>MoE</b> · 384 routed experts + Engram; 295 hot per layer in HBM, re-chosen live; 89 cold in Grace over C2C</span>
@@ -63,7 +63,7 @@
   </div>
   <div class="row2">
 <div class="box"><div class="lbl">Guesser</div><div class="kv"><b>DSpark</b> · in-checkpoint MTP (mtp.0–2), 1017 revision<br>k = 5 at 1–8 seqs, 1 at 9–24 (v23 batch-size schedule, unchanged)<br><span class="acc">accept: <span class="pend-inline">PENDING</span></span></div></div>
-<div class="box"><div class="lbl">Mechanism — count in-graph, decide off the clock, swap between steps</div><div class="kv">counter cost (GB300 microbench, 40 layers): <b>2–6 µs per step relaxed · acq_rel default was 25–78 µs</b><br>same-boot A/B, count on vs off: <b>−0.21% ± 0.36% over 12 pairs (not significant)</b><br>swaps: <b>≤ 8 per step, ~150 µs each · 15,382 swaps, 0 stale, 0 errors</b><br>convergence after a domain shift: <b>60–90 s</b></div></div>
+<div class="box"><div class="lbl">Mechanism — count in-graph, decide off the clock, swap between steps</div><div class="kv">counter cost (GB300 microbench, 40 layers): <b>2–6 µs per step relaxed · acq_rel default was 25–78 µs</b><br>same-boot A/B, count on vs off: <b>−0.21% ± 0.36% over 12 pairs (not significant)</b><br>swaps: <b>≤ 8 per step, ~150 µs each · 15,382 swaps, 0 stale, 0 errors</b><br>convergence after a domain shift: <b>CORRECTED 2026-10-24: cold &lt; 1% in 9–16 s (60–90 s was a windowing artifact)</b></div></div>
 <div class="box"><div class="lbl">Versus the RTX-sidecar sibling, same workloads, same night</div><div class="kv">mixed C1 aggregate: <b>194.1 here · 208.9 sidecar (held-out prompts)</b><br>mixed C4 aggregate: <b>431.0 here · 560.4 sidecar</b><br>pick this when: <b>you have only the GB300, or traffic shifts in ways no fixed map covers</b></div></div>
   </div>
   <div class="fid"><div class="lbl">Output fidelity — does the recipe change what the model says?</div>

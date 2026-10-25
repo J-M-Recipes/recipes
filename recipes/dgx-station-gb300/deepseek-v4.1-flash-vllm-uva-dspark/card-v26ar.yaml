@@ -3,7 +3,7 @@
 # Every number traces to results/2026-10-23-ar-adaptive-residency/ (run1-AR0-AR2, run3-AR3, probes). Unmeasured = pending.
 title: "DeepSeek-V4.1-Flash · 1× DGX Station GB300 · adaptive expert residency"
 subtitle: "The v23 recipe, but the 295 HBM experts per layer follow live traffic: one relaxed atomic per routed token in a kernel that already runs, swaps between steps. Off-domain decode doubles; nothing else changes."
-version: "v26ar.1 = v23 launch + hook v26ar.1 (counter + guarded swaps) · measured 2026-10-23 on two boots · NOT promoted"
+version: "v26ar.1 · measured 2026-10-23 · NOT promoted · superseded by v26 Seeded Adaptive"
 status: experimental
 run_id: 2026-10-23-ar-adaptive-residency (AR0–AR3)
 handles: "github.com/J-M-Recipes/recipes · al-engr.com/gb300-adaptive-expert-residency.html · planner idea: vLLM #56177 (01554)"
@@ -34,7 +34,7 @@ secondary:
       "counter cost (GB300 microbench, 40 layers)": "2–6 µs per step relaxed · acq_rel default was 25–78 µs"
       "same-boot A/B, count on vs off": "−0.21% ± 0.36% over 12 pairs (not significant)"
       "swaps": "≤ 8 per step, ~150 µs each · 15,382 swaps, 0 stale, 0 errors"
-      "convergence after a domain shift": "60–90 s"
+      "convergence after a domain shift": "CORRECTED 2026-10-24: cold < 1% in 9–16 s (60–90 s was a windowing artifact)"
   - label: "Versus the RTX-sidecar sibling, same workloads, same night"
     items:
       "mixed C1 aggregate": "194.1 here · 208.9 sidecar (held-out prompts)"

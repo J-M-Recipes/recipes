@@ -1,0 +1,22 @@
+Card KV3 full battery verdict: PASS   suffix KV3PASS
+
+| gate | result | detail |
+|---|---|---|
+| G1_kv_tokens | PASS | GPU KV cache size must be 4,400,013 on all arms: K0=4,400,013 K1=4,400,013 K0R=4,400,013 |
+| G2_c1 | PASS | K1 C1 agg_tok_s_all mean 219.89 vs K0/K0R 219.48 (+0.19%); bar -2.04% = max(2%, 1.5 x pooled spread 1.36%); bracket drift K0->K0R 0.26% |
+| G2_ttft64k | PASS | K1 cold-64K TTFT-proxy median 1.424s vs K0/K0R mean 1.404s (+1.47%; bar +5%) [K0 1.401 K0R 1.406; first probe dropped] |
+| G2_warm_r2 | PASS | K1 warm r2 177.48 tok/s vs min(K0 195.52, K0R 183.72) = 183.72 (-3.40%; bar -5%); mode {'K0': 'ignore_eos+min_tokens', 'K1': 'ignore_eos+min_tokens', 'K0R': 'ignore_eos+min_tokens'}; forced_len {'K0': True, 'K1': True, 'K0R': True} |
+| G3_tier | PASS | evict-replay hits=True identical=True recall=True errors=False | connector=True pin_warn=0 controls_tier_free=True | 7929tok(mod256=249) hit=True load=True ident=True recall=True x1.54; 31629tok(mod256=141) hit=True load=True ident=True recall=True x3.2 (speedup info only) |
+| G4_watchdog | PASS | K0: timeouts=0 trips=0 alive=True; K1: timeouts=0 trips=0 alive=True; K0R: timeouts=0 trips=0 alive=True |
+| G4_errors | PASS | K0: server=0 harness=0 (sidecar=0, info); K1: server=0 harness=0 (sidecar=0, info); K0R: server=0 harness=0 (sidecar=0, info) |
+| G4_needles | PASS | K0: recall=True pt=954028 wall=32.88s; K1: recall=True pt=954028 wall=32.79s; K0R: recall=True pt=954028 wall=32.97s (need recall and prompt_tokens >= 800000) |
+| G4_mem | PASS | MemAvailable min GiB K0:boot=161.3 K0:cells=177.7 K1:boot=131.4 K1:cells=129.8 K0R:boot=162.6 K0R:cells=178.9 (floor 60); oom_kill_lines_delta=0 |
+| G5_gauntlet | PASS | K1 gauntlet 12/12 (need 12/12) |
+
+| arm | KV tokens | C1 mean (all) | C1 spread | C1 post60 | cold64K med s | warm r1 | warm r2 | 1M needle | wd t/trips | err srv | mem min boot/cells |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| K0 | 4,400,013 | 219.76 | 2.09% | 221.88 | 1.401 | 183.86 | 195.52 | True (32.9s) | 0/0 | 0 | 161.3/177.7 |
+| K1 | 4,400,013 | 219.89 | 0.96% | 224.29 | 1.424 | 195.83 | 177.48 | True (32.8s) | 0/0 | 0 | 131.4/129.8 |
+| K0R | 4,400,013 | 219.20 | 0.63% | 222.51 | 1.406 | 179.38 | 183.72 | True (33.0s) | 0/0 | 0 | 162.6/178.9 |
+
+cross-arm evict outputs identical to controls (info): 8205:True, 33010:True

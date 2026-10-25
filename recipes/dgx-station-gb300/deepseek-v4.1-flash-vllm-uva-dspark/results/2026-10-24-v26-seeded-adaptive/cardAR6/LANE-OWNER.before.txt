@@ -1,0 +1,10 @@
+OWNER: none (Milo, 2026-10-24 07:28 CDT). James: keep v25m; gates re-run (Card GV 9/10, cosine FAIL); L39 test (Card GV2) also FAIL (noise at ~0 cold share; does NOT clear v25m). Gate R2 registered.
+LANE :30006 = dsv41-vllm-1017-v25m-MIXMAP (v25 sidecar + rowmap-mixed-ar-v1.json), EXPERIMENTAL. Booted 2026-10-24 07:12 by cardGV2 fallback.
+SOAK 48 h: 2026-10-24 07:12:57 -> 2026-10-26 07:12:57 CDT. Fail-stop watchdog pid 3831694. Mac monitor cron b21c968dc851 (old v25 cron 0bd2fcf8896c stays paused).
+Do NOT stop/launch on :30006 during the soak without James. Receipts: ~/dsv41/m3/gv/results-cardGV/, results-cardGV2/.
+KEPT stopped: v25 BOUND-REF pair (static), v26ar AR/AR3, GV-K-EXP-DONE, GV2-K-EXP-DONE, v23 RETIRED-REF. Map v2-l39s kept in hook dir (failed gate). Back to v25 static: ~/dsv41/ar/RESTORE-v25.md
+BOOKED: Card GS (pid 3903063, ~/dsv41/m3/gv/cardGS_runner.sh) waits for soak end Mon 2026-10-26 07:13:30, then 2 static check boots (~35-40 min dark) + restore v25m + R2 re-judge. Do not kill without James.
+OWNER: Milo (Hermes, 2026-10-24 ~21:30 CDT) — desk-only until Card GS completes. BOOKED: Card AR6 (seed map + convergence policy sweep, v26ar hook on v23) chains AFTER GS restore, Mon 10-26 ~08:15, ~90 min dark, ends with v25m restored + watchdog re-armed. Spec: Mac ~/hermes/research/dsv41-prefetch-20261023/ar/AR6-SPEC.md. Gates pending James registration.
+
+UPDATE 2026-10-24 ~17:3x CDT (Milo, James instruction): SOAK ABORTED by James — unnecessary; v25m recipe likely orphaned by a better version soon. Card GS runner (pid 3903063) KILLED; its R2 re-judge of archived boots can run desk-side anytime. v25m stays SERVING (consumers live) but is no longer under test. Lane is FREE for cards. OWNER: Milo. NEXT: Card KV3 (host prefix KV tier research + boot) then Card AR6 v2 (specs in Mac ~/hermes/research/). Watchdog pid 3831694 stays armed; Mac cron b21c968dc851 stays as health monitor.
+PRIORITY 2026-10-24 ~17:5x CDT (James): experts first — Card AR6 v2 (adaptive residency) is the primary card this round; Card KV3 (host prefix tier) is secondary and runs AFTER AR6 settles, only if the W5 source verdict supports it.
