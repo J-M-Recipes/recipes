@@ -328,28 +328,26 @@ metrics:
 verification:
   gates:
     schema:
-      how: "python3 scripts/check_recipe.py on this recipe.yaml (jsonschema + README headings + every metric's raw file + patch sha256)"
-      last_pass_utc: "2026-10-26T21:45:00Z"
-      run_id: 2026-10-26-br1-block-verification
+      how: "python3 scripts/check_recipe.py on this recipe.yaml (jsonschema + README headings + every metric's raw file + patch sha256 + rollback script exists), plus pytest tests and render_index.py --check"
+      last_pass_utc: "2026-10-26T22:10:28Z"
+      run_id: check_recipe 2026-10-26
+      notes: "v27 serving config (dsv41-vllm-1017-v27-block-BOUND-REF + -rtx). Stamped on branch recipe/dsv41-sidecar-v27-rollback-and-gates (the PR that added scripts/rollback-v27.sh); clock = date -u at the validator pass."
     digest:
-      how: "image @sha256:3af6a45b… on BOTH GPUs; every mounted file's sha256 recorded in raw/hook-lock.txt from inside the running containers; checkpoint revision + total bytes in raw/weights-1017-receipt.txt"
-      last_pass_utc: "2026-10-22T13:48:36Z"
-      run_id: 2026-10-22-v25-sidecar
+      how: "image @sha256:3af6a45b060d681aa6254200f87859d1bb3c1f962afb3d15540b4b31d4a41063 on BOTH GPUs (af7f9488 nightly; tag rotated off Docker Hub, pull by digest); the digest in runtime.container must equal the image.txt captured from the running containers of each BR1 arm; every mounted file's sha256 in the v25 bundle's raw/hook-lock.txt; checkpoint revision + bytes in raw/weights-1017-receipt.txt"
+      last_pass_utc: "2026-10-26T01:22:46Z"
+      run_id: 2026-10-26-br1-block-verification
+      notes: "raw/B/image.txt (arm B = the v27 config, block key on; bound 2026-10-25 20:22:46 CDT) = raw/A/image.txt = raw/A2/image.txt = sha256:3af6a45b060d681aa6254200f87859d1bb3c1f962afb3d15540b4b31d4a41063; scripts/launch_br1.sh pins the same digest. Re-checked 2026-10-26T22:10:28Z: recipe digest == all three image.txt files. The promotion log (raw/promote-v27.log) does not itself print the image id of the promoted container. Prior stamp - 2026-10-22T13:48:36Z, run 2026-10-22-v25-sidecar (hook-lock)."
     health:
-      how: "two-container boot: sidecar logs 'serving' before the server starts; server log shows peer mode 2 / 295-89 rowmap / fp8_ds_mla / KV line / bounded-replay line; watchdog status has trip=null and words[2]=0; scripts/soak_check.sh returns OK"
-      last_pass_utc: "2026-10-22T13:55:25Z"
-      run_id: 2026-10-22-v25-sidecar
-      notes: "soak window RESTARTED with the KV change: 2026-10-22 18:52 -> 2026-10-24 18:52 CDT (the 06:02 window was cut by two reboots and a launch-line change); this row refers to the serving boot plus the live counter read, not the completed soak"
+      how: "two-container boot: sidecar logs 'prepared 40 layers' / 'serving' before the server starts; server binds and /v1/models lists dsv41-flash-uva; KV line 'GPU KV cache size: 4,400,013 tokens'; one chat smoke (reasoning_effort low) and one tool-call smoke; fail-stop watchdog armed in enforce mode with PPID 1. scripts/soak_check.sh (trip=null, words[2]=0) is the running check."
+      last_pass_utc: "2026-10-26T09:08:25Z"
+      run_id: 2026-10-26-br1-block-verification
+      notes: "raw/promote-v27.log - sidecar dsv41-vllm-1017-v27-block-BOUND-REF-rtx 'prepared 40 layers in 47s' + 560 graphs + 'serving' before the server launch; server BOUND after 528 s (04:08:21 CDT); 'GPU KV cache size: 4,400,013 tokens | block_in_args=1'; SMOKE low 'v27 ok'; SMOKE tool ['shell']; watchdog armed pid 2561111 ppid 1, --mode enforce --interval 1 --stall 2 (04:08:25 CDT). A soak_check.sh read is not in that log. The 48 h soak clock restarted at the last restore 2026-10-26 16:36 CDT (no bundle receipt for that restore yet). Prior stamp - 2026-10-22T13:55:25Z, run 2026-10-22-v25-sidecar (v25 static map)."
     quality:
-      how: "SC2's 12 pre-registered gates: teacher-forced margin-weighted flips inside the same-map control floor, BFCL dev + held-out, GSM8K-1319, 500-needle, gauntlet, reasoning-effort vocabulary, image request, per-class decode wall-clock, tool emission, 20-min soak, 0 sidecar timeouts. Plus the SC0 cosine bring-up gate (min cos 0.99906, 40/40 layers)."
-      last_pass_utc: "2026-10-22T05:11:00Z"
-      run_id: 2026-10-22-v25-sidecar
-      notes: "SC2 PASS 12/12 on arm C (295/89, replay ON). The 285/99 placement map FAILED its own cosine bar and is not used."
+      how: "SC2's 12 pre-registered gates: teacher-forced margin-weighted flips inside the same-map control floor, BFCL dev + held-out, GSM8K-1319, 500-needle, gauntlet, reasoning-effort vocabulary, image request, per-class decode wall-clock, tool emission, 20-min soak, 0 sidecar timeouts. Plus the SC0 cosine bring-up gate (min cos 0.99906, 40/40 layers). For v27 - T2 quality (needle + GSM8K-200 paired) per docs/benchmarking.md."
+      notes: "PENDING T2/T1 2026-10-26 (run in progress on the live lane) - NOT stamped for v27. Prior pass, a different config - v25 static 295/89 map without block verification: 2026-10-22T05:11:00Z, run 2026-10-22-v25-sidecar (SC2 PASS 12/12 on arm C, replay ON; the 285/99 map FAILED its own cosine bar and is not used). The stamp fields were moved here so status cannot be flipped to verified on that older pass. BR1 (2026-10-26-br1-block-verification) TF flips at the control floor and 12/12 gauntlet on arm B are candidacy evidence, not this gate; the v25m map's cosine R2 re-judge is running."
     performance:
-      how: "bracketed same-window ladders (CTL1 incumbent -> CAND1 -> CAND2 -> CTL2 incumbent) on the 8.2K/1,024 real-text harness plus the agent-text knee, with acceptance and TTFT recorded per cell"
-      last_pass_utc: "2026-10-22T05:11:00Z"
-      run_id: 2026-10-22-v25-sidecar
-      notes: "every pre-registered speed bar passed (knee C1 >= 198, knee C16 >= 974, sidecar C16 >= M3G +3%, 0 timeouts). Power bars were FAILED by the incumbent too — see limits."
+      how: "bracketed same-window ladders (CTL1 incumbent -> CAND1 -> CAND2 -> CTL2 incumbent) on the 8.2K/1,024 real-text harness plus the agent-text knee, with acceptance and TTFT recorded per cell. For v27 - T1 perf per docs/benchmarking.md, then the T3 promotion bench."
+      notes: "PENDING T2/T1 2026-10-26 (run in progress on the live lane) - NOT stamped for v27; T3 promotion bench not run. Prior pass, a different config - v25 static map: 2026-10-22T05:11:00Z, run 2026-10-22-v25-sidecar (every pre-registered speed bar passed - knee C1 >= 198, knee C16 >= 974, sidecar C16 >= M3G +3%, 0 timeouts; power bars FAILED by the incumbent too, see limits). BR1's temperature-1.0 C1 0.996-1.054x per class is candidacy evidence, not this gate."
   quality_gate:
     reference_build: "the same lane with the sidecar path replaced by the GB300's own TRT-LLM cold path (MEGA_PEER_CHECK=100000 MEGA_COLD_TRT=1) for bring-up, and the v23 Grace-offload incumbent for output quality"
     method: "teacher-forced, margin-weighted top-1 flips against a same-map floor plus a same-window incumbent arm; per-class decode wall-clock as the drafter-side gate; greedy parity and tool-call suites as pass/fail rows"
@@ -385,9 +383,8 @@ limits:
   - "Boot is 527 s warm (sidecar 46-50 s of that), and the GB300-only lane is ~30 min cold if the JIT caches are missing. The image's Docker Hub tag is gone; pull by digest."
 
 rollback:
-  script: scripts/launch-sidecar.sh
-  summary: "The lane is two containers plus a watchdog. Stop order matters: kill the watchdog, `bash scripts/launch-sidecar.sh stop` (server first, sidecar second), then `docker start` the previous lane. Since the v27 promotion that is the pair dsv41-vllm-1017-v25m-kvtier-RETIRED-REF-rtx (sidecar first, wait for serving) then dsv41-vllm-1017-v25m-kvtier-RETIRED-REF = v27 without the block key (CORRECTED 2026-10-26 - this named dsv41-vllm-1017-v23-pinexact-RETIRED-REF, the Grace-offload v23 lane, which stays kept as the older fallback and binds in ~260 s). To undo only the KV change, start the kept util-0.97 pair (dsv41-vllm-1017-v25-sidecar-kv4.9-KEPT + -rtx, sidecar first); it bound in ~7 min. If you have no previous lane, the GB300-only recipe in this repo is the fallback (same checkpoint, Grace offload, no RTX card). Watchdog fail-stop means a trip leaves the lane DOWN by design: nobody auto-starts the incumbent behind a wrong-token trip."
-
+  script: scripts/rollback-v27.sh
+  summary: "bash scripts/rollback-v27.sh [--dry-run] [--from <server>] [--to <server>], run on the Station. Default pair - FROM dsv41-vllm-1017-v27-block-BOUND-REF + -rtx (v27, serving) -> TO dsv41-vllm-1017-v25m-kvtier-RETIRED-REF + -rtx (v25m-kvtier = v27 without the block key, stopped and kept). It refuses while a card runner is live; kills the fail-stop watchdog (pid file, fallback pgrep) and confirms it gone; stops FROM server (-t 60) then sidecar (-t 30) and renames both to FROM-ROLLED-BACK-<ts> (kept); starts TO-rtx and waits <= 3 min for 'serving'/'prepared 40 layers'; starts TO and waits <= 45 min for /v1/models (~8 min hash-hit); prints the KV line (expect 4,400,013); one chat smoke (reasoning_effort low) and one tool-call smoke; re-arms the watchdog from the argv captured at promotion (~/dsv41/m3/logs/promote-v27-wd-argv.txt) with --server TO and --log sidecar_watchdog.rollback.log, setsid nohup, PPID 1 checked; appends LANE-OWNER and ledger lines. Idempotent; exits 4 with NEEDS HANDS on any failure. Older fallbacks (by hand, sidecar first) - the util-0.97 pair dsv41-vllm-1017-v25-sidecar-kv4.9-KEPT (+ -rtx) undoes the KV change; dsv41-vllm-1017-v23-pinexact-RETIRED-REF is the Grace-offload v23 lane (~260 s); with no previous lane, the GB300-only sibling recipe. Watchdog fail-stop means a trip leaves the lane DOWN by design - nobody auto-starts the incumbent behind a wrong-token trip; run the script by hand after reading the watchdog log."
 links:
   blog: https://al-engr.com/gb300-dsv41-rtx6000-sidecar.html
   sibling_recipe: recipes/dgx-station-gb300/deepseek-v4.1-flash-vllm-uva-dspark
