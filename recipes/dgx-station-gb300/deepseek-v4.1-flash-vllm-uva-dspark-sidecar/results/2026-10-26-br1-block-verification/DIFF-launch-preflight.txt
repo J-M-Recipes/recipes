@@ -1,0 +1,9 @@
+1a2,3
+> # launch_br1.sh — Card BR1 variant of launch_sidecar.sh (2026-10-25, Milo desk): identical except SPEC_EXTRA, spliced into the
+> # --speculative-config JSON before its closing brace. Empty = byte-identical production args; arm B: SPEC_EXTRA=',"rejection_sample_method":"block"'.
+31a34
+> SPEC_EXTRA=${SPEC_EXTRA:-}
+105c108
+<   --speculative-config "{\"method\":\"dspark\",\"num_speculative_tokens\":5,\"num_speculative_tokens_per_batch_size\":$KSCHED,\"draft_sample_method\":\"probabilistic\"}" \
+---
+>   --speculative-config "{\"method\":\"dspark\",\"num_speculative_tokens\":5,\"num_speculative_tokens_per_batch_size\":$KSCHED,\"draft_sample_method\":\"probabilistic\"$SPEC_EXTRA}" \

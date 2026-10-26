@@ -46,7 +46,7 @@
       <h1>DeepSeek-V4.1-Flash · 1× DGX Station GB300 + RTX PRO 6000 sidecar</h1>
       <div class="sub">The 89 cold experts per layer don&#x27;t live in Grace — they live on the second GPU in the chassis, and they are computed there. Full 1M context, 3× the C16 decode of Grace offload.</div>
     </div>
-    <div class="brand"><b>J-M-RECIPES</b><br>v25 sidecar + KV 8.5 GiB · 48 h soak cut 10-23 at ~25 h · :30006 now runs the v25m variant (card-v25m) · 2026-10-24<br>status: experimental</div>
+    <div class="brand"><b>J-M-RECIPES</b><br>v27 = v25m-kvtier + block verification · promoted 10-26 04:08 CDT · live on :30006 · 2026-10-26<br>status: experimental</div>
   </div>
   <div class="pills">
 <span class="pill type"><b>MoE</b> · 384 routed experts + Engram; 295 hot in HBM, 89 computed on the RTX 6000</span>
@@ -62,7 +62,7 @@
 <div class="box"><div class="lbl">Prompt reading · cold 64K prefill</div><div class="hero">50119<small>tok/s</small></div><div class="note">incumbent 23,439 tok/s same window · 1M-token prompt: first token 33.2 s (incumbent 81.4 s) · 128K cold prefill 2.61 s</div></div>
   </div>
   <div class="row2">
-<div class="box"><div class="lbl">Guesser</div><div class="kv"><b>DSpark</b> · in-checkpoint MTP (mtp.0–2), 1017 revision<br>k = 5 at 1–4 seqs, 3 at 5–8 and 9–32 (batch-size schedule)<br><span class="acc">accept: <span class="pend-inline">PENDING</span></span></div></div>
+<div class="box"><div class="lbl">Guesser</div><div class="kv"><b>DSpark</b> · in-checkpoint MTP (mtp.0–2), 1017 revision<br>k = 5 at 1–4 seqs, 3 at 5–8 and 9–32 (batch-size schedule)<br><span class="acc">accept: <span>real-text C1 <b>2.96</b></span> <span>temp-1.0 C1 per class <b>prose 2.85 · structured 3.03 · code 3.83 · shell 3.98 · tool-JSON 3.63 (blend 3.20)</b></span> <span>block verif. <b>+2.0%</b></span> <span>k=9 <b>−8…−21% speed</b></span></span></div></div>
 <div class="box"><div class="lbl">Guard — a missed sidecar deadline is wrong output, not a slow one</div><div class="kv">bring-up cosine gate: <b>min 0.99906 · 40/40 layers · ≥32 cold rows · 0 timeouts</b><br>spin limit: <b>VLLM_EXP_PEER_SPINS=2e9 → a dead sidecar hangs instead of dropping the cold add</b><br>watchdog: <b>fail-closed, trips in ~3 s on timeout / stall / dead sidecar; fault-tested (rollback bound 260 s)</b><br>live counters (3 h): <b>4.26M sidecar calls · 0 timeouts · 0.0048 ms wait per call · 0 trips</b></div></div>
 <div class="box"><div class="lbl">Quality and cost of the win</div><div class="kv">SC2 gates: <b>12/12 PASS · per-class decode 20/20 cells within −3%</b><br>BFCL: <b>dev 92.67 vs 92.33 · held-out 77.65 vs 77.88 (our grader)</b><br>GSM8K-1319 / needle / gauntlet: <b>96.97 = incumbent · 500/500 exact · 12/12</b><br>power: <b>module p99 1,353 W in 64K prefill, sw_power_cap 89.5% of samples (incumbent 65%) — measured under that throttling</b></div></div>
   </div>
@@ -73,6 +73,7 @@
 <li class="ok">Speculation is target-verified (DSpark drafts are accepted by the full model at T=0)</li>
 <li class="ok">Teacher-forced margin-weighted flips vs the same-map control inside the control floor (W=3.014 vs floor 1.866); BFCL dev +0.34 pt, held-out −0.23 pt</li>
 <li class="ok">GSM8K-1319 96.97% identical to the incumbent (1,279/1,319); 500/500 exact needle; gauntlet 12/12; image request reads the picture</li>
+<li class="ok">One public bench we ran: fraserprice&#x27;s BRRR codegen harness ported stdlib — 2K/C1 466 tok/s at 5.13 tok/step vs their 4× RTX PRO 6000 703; 64K prefill 46,246 vs 17,852 tok/s</li>
 <li class="meas">One temp-0 GSM8K item ran to the token cap on this image (0/32 at a 32K cap on repeat) — attributed to the image&#x27;s effort-75 tail, not the sidecar</li>
     </ul>
   </div>

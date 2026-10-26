@@ -1,0 +1,89 @@
+<!doctype html>
+<html><head><meta charset="utf-8">
+<style>
+  html,body{margin:0;background:#0b0f14;}
+  .card{width:1200px;box-sizing:border-box;padding:36px 44px;background:linear-gradient(160deg,#0b0f14 0%,#0f1620 100%);color:#e6edf3;font-family:Inter,-apple-system,Segoe UI,Helvetica,Arial,sans-serif;border:1px solid #1e2a38;border-radius:14px;}
+  .mono{font-family:"JetBrains Mono",SFMono-Regular,Menlo,Consolas,monospace;}
+  .top{display:flex;justify-content:space-between;align-items:flex-start;}
+  h1{margin:0;font-size:38px;font-weight:800;letter-spacing:-0.5px;}
+  .sub{margin-top:6px;font-size:15px;color:#9fb0c3;}
+  .brand{text-align:right;font-size:13px;color:#9fb0c3;line-height:1.5;white-space:nowrap}
+  .brand b{color:#6ee7b7;font-size:16px;letter-spacing:1px}
+  .pills{display:flex;flex-wrap:wrap;gap:8px;margin:18px 0 22px}
+  .pill{border:1px solid #2a3a4d;background:#111a25;border-radius:999px;padding:6px 12px;font-size:13px;color:#cfd9e4}
+  .pill b{color:#fff;font-weight:600}
+  .pill.type{border-color:#6ee7b7;color:#6ee7b7}
+  .grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px}
+  .box{background:#111a25;border:1px solid #1e2a38;border-radius:10px;padding:16px 18px}
+  .lbl{font-size:11px;letter-spacing:1.6px;text-transform:uppercase;color:#7f93a8;margin-bottom:6px}
+  .hero{font-size:56px;font-weight:800;line-height:1;color:#fff}
+  .hero small{font-size:18px;font-weight:500;color:#9fb0c3;margin-left:6px}
+  .note{font-size:12px;color:#9fb0c3;margin-top:8px;line-height:1.4}
+  .row2{display:grid;grid-template-columns:1.2fr 1fr 1fr;gap:14px;margin-top:14px}
+  .kv{font-size:14px;line-height:1.75}
+  .kv b{color:#fff;font-weight:600}
+  .acc span{display:inline-block;margin-right:12px}
+  .fid{margin-top:14px;background:#0e1a17;border:1px solid #1f4d3d;border-radius:10px;padding:16px 18px}
+  .fid .lbl{color:#6ee7b7}
+  .fid ul{margin:0;padding-left:0;list-style:none;display:grid;grid-template-columns:1fr 1fr;gap:6px 24px;font-size:14px;line-height:1.5}
+  .ok::before{content:"✓ ";color:#6ee7b7;font-weight:700}
+  .pend::before{content:"◌ ";color:#f59e0b;font-weight:700}
+  .pend{color:#d9c58a}
+  .meas::before{content:"≈ ";color:#93c5fd;font-weight:700}
+  .fail::before{content:"✗ ";color:#f87171;font-weight:700}
+  .fail{color:#fca5a5}
+  .pend-inline{color:#f59e0b;font-size:0.6em;font-weight:600;letter-spacing:1px}
+  .foot{display:flex;justify-content:space-between;margin-top:18px;font-size:12px;color:#7f93a8}
+  .foot .mono{color:#9fb0c3}
+  .fid li.pair { list-style: none; margin: 6px 0 2px -18px; padding: 10px 12px; border: 1px solid rgba(255,255,255,.14); border-radius: 8px; background: rgba(255,255,255,.04); }
+  .fid li.pair .big { font-size: 20px; font-weight: 700; color: #e8f0ff; letter-spacing: -.2px; }
+  .fid li.pair .sep { color: rgba(255,255,255,.35); margin: 0 6px; }
+  .fid li.pair .dim { font-size: 11.5px; color: rgba(255,255,255,.62); }
+</style></head><body>
+<div class="card">
+  <div class="top">
+    <div>
+      <h1>DeepSeek-V4.1-Flash · 1× DGX Station GB300 + RTX PRO 6000 · block verification (Card BR1)</h1>
+      <div class="sub">The live sidecar lane (v25m map + Grace prefix-KV tier) with one key added to the speculative config: rejection_sample_method block. The drafted block is verified jointly instead of token by token, with the same output distribution. It only acts when temperature &gt; 0.</div>
+    </div>
+    <div class="brand"><b>J-M-RECIPES</b><br>block-verification = v25m-kvtier + 1 spec key · Card BR1 10-25 · PASS re-scored · PROMOTED as v27 10-26 04:08 CDT · 2026-10-26<br>status: experimental</div>
+  </div>
+  <div class="pills">
+<span class="pill type"><b>MoE</b> · 384 routed experts + Engram; 295 hot in HBM, 89 computed on the RTX 6000 (v25m mixed map)</span>
+<span class="pill"><b>552B</b> total · <b>8B prefill / 16B decode</b> active</span>
+<span class="pill">checkpoint <b>510.3 GB</b> · rev <span class="mono">1bae0e10</span></span>
+<span class="pill">weights <b>as shipped · MXFP4 experts / FP8 attn+Engram · nothing re-quantized</b></span>
+<span class="pill">engine <b>vLLM <span class="mono">af7f9488c</span> · nightly-af7f9488 (sha256:3af6a45b) on BOTH GPUs · el8 hook @87af662 · b12x @2cc7f66a · vllm#58132 bounded replay · --speculative-config + &quot;rejection_sample_method&quot;:&quot;block&quot;</b></span>
+<span class="pill">memory <b>GPU KV declared 8.5 GiB = 4,400,013 tok on every arm + 48 GiB Grace prefix tier · autotune hash hit (boot 528 s vs controls 529 s)</b></span>
+  </div>
+  <div class="grid">
+<div class="box"><div class="lbl">Decode · C1, block verification (prose, temp 1.0, 256 forced)</div><div class="hero">278.3<small>tok/s</small></div><div class="note">controls A 266.7 / A2 270.2 → 1.037× · per class C1: structured 305.3 (1.013×) · code 357.3 (1.013×) · shell 378.1 (0.996×) · tool-JSON 347.6 (1.054×) · 40 private transcript prompts per class, mean of r1/r2, seeded</div></div>
+<div class="box"><div class="lbl">Decode · C8 aggregate, shell_ops, temp 1.0</div><div class="hero">1320.3<small>tok/s</small></div><div class="note">controls 1,194.2 / 1,245.8 → 1.082× · C8 per class 1.008–1.082× · the 32-seat lane&#x27;s batch schedule runs k=3 above 4 sequences</div></div>
+<div class="box"><div class="lbl">Accepted tokens per verify step · temp-1.0 window</div><div class="hero">3.262<small>tok/step</small></div><div class="note">controls 3.204 / 3.189 → +2.0% · mixed-traffic C1 2.105 vs 2.092 / 2.088 · mixed C1 decode 212.77 vs 212.05 / 212.65 tok/s (+0.20%)</div></div>
+  </div>
+  <div class="row2">
+<div class="box"><div class="lbl">Guesser</div><div class="kv"><b>DSpark</b> · in-checkpoint MTP (mtp.0–2), 1017 revision<br>k = 5 at 1–4 seqs, 3 at 5–8 and 9–32 (unchanged) · rejection_sample_method block<br><span class="acc">accept: <span>temp-1.0 C1, block / ctrl <b>prose 2.95/2.83 · structured 3.25/3.20 · code 3.85/3.79 · shell 4.07/4.08 · tool-JSON 3.74/3.53</b></span> <span>temp 0 <b>no-op (greedy rows skip block verification)</b></span></span></div></div>
+<div class="box"><div class="lbl">What changed and what it does not cover</div><div class="kv">change: <b>one key in --speculative-config; not a compute-hash factor → hash-hit boot, same autotune store</b><br>temperature 0: <b>vLLM applies it only when not is_greedy → a temp-0 bench reads B = A (prose −0.9%, code −2.2%, shell +1.1%; bars 2.6–4.1%)</b><br>verdicts: <b>pre-registered FAIL BR1FAIL-G0-G2b (order-sensitive env compare; temp-0 bar tighter than the controls&#x27; r1/r2 spread) · re-scored PASS BR1PASS · both kept</b><br>status: <b>promotion candidate, NOT promoted (James decides)</b></div></div>
+<div class="box"><div class="lbl">Guard — same as the sidecar lane</div><div class="kv">watchdog: <b>fail-closed, enforce mode on A, B and A2 · 0 timeouts · 0 trips · FF errors 0</b><br>isolation: <b>lane firewalled to loopback while dark · 0 foreign clients on every arm</b><br>KV / args: <b>4,400,013 tokens on all arms · block key in args 0/1/0 (docker inspect)</b></div></div>
+  </div>
+  <div class="fid"><div class="lbl">Output fidelity — does the recipe change what the model says?</div>
+    <ul>
+<li class="ok">Weights unchanged: 1017 checkpoint as shipped; block verification is a verification rule and keeps the target distribution (Sun et al.)</li>
+<li class="ok">Teacher-forced top-1 flips B-vs-A 2.166%, B-vs-A2 2.176% vs control floor A2-vs-A 2.172% (79,544 positions, 39 docs, 0 token-mismatch docs)</li>
+<li class="ok">Margin-weighted flips: hi_agent_tool = 0 on all three compares; W 2.839 / 2.751 vs floor 2.773</li>
+<li class="ok">Gauntlet 12/12 on A, B and A2 · replay_turns tool-turn emission B [7, 7]/12 vs controls [6, 8] and [7, 6] · x3 acceptance canary (temp 0) within noise</li>
+<li class="meas">Speed gain measured at temperature 1.0 / top_p 1.0 only (C1 0.996–1.054× per class); clients sending temperature 0 get nothing from it</li>
+<li class="pend">GSM8K-1319, BFCL and a soak not run with block verification on</li>
+    </ul>
+  </div>
+  <div class="fid"><div class="lbl">Agent claim card — fixed protocol, held-out sibling, cost per solved task</div>
+    <ul>
+<li class="pend">harness card pending — protocol hash, held-out sibling suite, cost per solved task</li>
+    </ul>
+  </div>
+  <div class="foot">
+    <span>recipe <span class="mono">recipes/dgx-station-gb300/deepseek-v4.1-flash-vllm-uva-dspark-sidecar</span> · run <span class="mono">2026-10-26-br1-block-verification</span></span>
+    <span>github.com/J-M-Recipes/recipes · al-engr.com · block verification: Sun et al. (arXiv 2403.10444) · sidecar recipe: RonanLabsAI · hook: original-el8</span>
+  </div>
+</div>
+</body></html>

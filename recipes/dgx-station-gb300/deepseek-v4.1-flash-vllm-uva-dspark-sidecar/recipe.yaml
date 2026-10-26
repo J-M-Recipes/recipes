@@ -22,9 +22,9 @@ summary: >
   (sidecar) must be alive for the lane to be correct. The KV pool is declared, not inferred:
   --kv-cache-memory 8.5 GiB gives 4,400,013 tokens (4.20x one 1M request, +73% over util 0.97), stress-tested
   with four ~1M contexts resident at once (KV peak 75%, 0 preemptions, 0 timeouts) and no decode cost.
-status: experimental     # measured and gated; 48 h soak RESTARTED with the KV change 2026-10-22 18:52, CUT 2026-10-23 20:14 CDT (lane given to the AR campaign after ~25 h; that partial window was not evaluated). Soak now running on the v25m variant 2026-10-24 07:12 -> 10-26 07:12 CDT (restarted after Card GV2). Verified only on a clean 48 h soak. 2026-10-24 - the AR campaign ended, the v25m soak was cancelled by James, and lane :30006 was handed to the v26 GB300-only config (sibling recipe); this recipe documents the sidecar lane plus the kv-host-tier variant (Card KV3, results/2026-10-24-kv3-host-prefix-tier/).
+status: experimental     # measured and gated; 48 h soak RESTARTED with the KV change 2026-10-22 18:52, CUT 2026-10-23 20:14 CDT (lane given to the AR campaign after ~25 h; that partial window was not evaluated). Soak now running on the v25m variant 2026-10-24 07:12 -> 10-26 07:12 CDT (restarted after Card GV2). Verified only on a clean 48 h soak. 2026-10-24 - the AR campaign ended, the v25m soak was cancelled by James, and lane :30006 was handed to the v26 GB300-only config (sibling recipe); this recipe documents the sidecar lane plus the kv-host-tier variant (Card KV3, results/2026-10-24-kv3-host-prefix-tier/). CORRECTED 2026-10-26 - since 2026-10-24 23:16 CDT :30006 serves THIS recipe's v25m + kv-host-tier lane (dsv41-vllm-1017-v25m-kvtier + -rtx, fail-stop watchdog enforce); the v26 GB300-only config served only ~21:30-23:16 that evening. 2026-10-25 Card BR1 (results/2026-10-26-br1-block-verification/) - block verification (rejection_sample_method block) PASS re-scored (pre-registered FAIL BR1FAIL-G0-G2b on two instrument defects, both kept), temp-1.0 C1 0.996-1.054x per class, +2.0% tokens/step, TF flips at the control floor; promotion candidate, NOT promoted. Card BR2 (results/2026-10-26-br2-k-ladder-peerbench/) - k=9 + block reads 0.79-0.92x production at C1 (k=5 stays; per-position acceptance falls past position 6), k=9 booted as an autotune hash hit; BRRR peer harness on this lane 2K/C1 466 tok/s at 5.13 tok/step, 64K prefill 46,246 tok/s.
 owners: [jmeadlock, milo]
-updated: "2026-10-25"
+updated: "2026-10-26"
 tags: [deepseek-v4.1-flash, mxfp4, vllm, expert-sidecar, rtx-pro-6000, pcie, dspark, speculative-decoding, 1m-context, agent]
 
 model:
@@ -36,7 +36,7 @@ model:
   draft:
     repo: in-checkpoint (mtp.{0,1,2}.* tensors, 97 params)
     revision: 1bae0e1088993b9b82de08f59de5be5a34e42170
-    method: DSpark, num_speculative_tokens=5, num_speculative_tokens_per_batch_size=[[1,4,5],[5,8,3],[9,32,3]], draft_sample_method=probabilistic (launcher default; SC4 would re-tune the k schedule with the sidecar and was deliberately not run this round)
+    method: DSpark, num_speculative_tokens=5, num_speculative_tokens_per_batch_size=[[1,4,5],[5,8,3],[9,32,3]], draft_sample_method=probabilistic (launcher default; SC4 would re-tune the k schedule with the sidecar and was deliberately not run this round; 2026-10-25 Card BR2 measured k=9 with block verification at 0.79-0.92x on real traffic, so k=5 stays)
 
 hardware:
   profile: hardware/dgx-station-gb300-rtx6000.yaml
@@ -81,6 +81,7 @@ launch:
   health: "curl -fs http://localhost:30006/v1/models ; the server log must contain 'MEGA_PEER patched ... (peer mode 2, check 0)', 'MEGA_PEER layer 0 ... 295 hot experts in MegaMoE, 89 cold on the host; peer mode 2', 'Using DeepSeek's fp8_ds_mla KV cache format', 'reserved 8.5 GiB memory for KV Cache as specified by kv_cache_memory_bytes config', 'GPU KV cache size: 4,400,013 tokens ... 4.20x' (2,537,081 / 2.42x means EXTRA was dropped and util 0.97 sized the pool), and 'Decoder SWA bounded replay'; the sidecar log must say 'prepared 40 layers', 'captured 560 graphs', 'serving'; RTX memory.used settles near 66,213 MiB."
   warmup: "scripts/soak_check.sh <ssh-host> <server-container> gives one health reading (watchdog status, timeouts, sidecar container, /v1/models). First request of each shape pays a few seconds of JIT. The 64K cold-prefill figure must be measured cold — with prefix caching on, a second identical prompt is a cache hit."
   notable_flags:
+    - "VARIANT block-verification - production spec config + rejection_sample_method block (Card BR1 PASS; PROMOTED 2026-10-26 04:08 CDT as v27 = container dsv41-vllm-1017-v27-block-BOUND-REF, rollback pair ...-v25m-kvtier-RETIRED-REF); temp>0 only. Append the key to the --speculative-config JSON, nothing else changes; autotune hash hit (boot 528 s). vLLM af7f9488 skips block verification on greedy rows, so a temp-0 bench reads it as a no-op. Measured on the v25m + kv-host-tier lane; receipts in results/2026-10-26-br1-block-verification/."
     - "VARIANT kv-host-tier - --kv-offloading-size 48 --kv-offloading-backend native (Card KV3 2026-10-24 - 10/10 gates, speed-neutral, +~31M Grace prefix tokens). Append both flags to EXTRA after --kv-cache-memory 9126805504; no VLLM_SERVER_DEV_MODE (the card set it only to reach /reset_prefix_cache). Measured on the v25m map; GPU KV unchanged at 4,400,013; the boot log must show 'Creating v1 connector with name: OffloadingConnector' and a 51.54 GB /dev/shm/vllm_offload_*.mmap. Receipts in results/2026-10-24-kv3-host-prefix-tier/."
     - "VARIANT v25m mixed-traffic map (EXPERIMENTAL, 2026-10-23) - identical launch with ROWMAP=rowmap-mixed-ar-v1.json for BOTH steps (sidecar --rowmap and server MEGA_ROWMAP); the map file and its fitter are in results/2026-10-23-ar5-mixed-map/. No code change."
     - "TWO CONTAINERS: <name> on the GB300 (vllm serve) and <name>-rtx on the RTX card (peer server). Both must be up; the watchdog treats a dead sidecar as fatal, not degraded."
@@ -93,6 +94,45 @@ launch:
     - "MEGA_FI_TUNE_FILE is intentionally empty: FlashInfer live-tunes at boot, so boot-to-boot C1 moves a few percent. Never compare two separately tuned boots; bracket with a control on each side (the receipts do)."
 
 metrics:
+  - name: decode_c1_prose_t1_block
+    value: 278.3
+    unit: tok/s
+    workload: "C1, per-class fixture prose, 40 private Hermes-transcript prompts x 256 forced tokens, temperature 1.0 top_p 1.0 seeded, block verification on (production lane v25m + kv-host-tier)"
+    aggregation: "mean of r1/r2; bracketed controls A 266.7 / A2 270.2 (mean 268.5) -> 1.037x"
+    acceptance_len: 2.95
+    provenance: { run_id: 2026-10-26-br1-block-verification, method: "Card BR1 bracketed A -> B (block) -> A2, gate G2_perclass_t1; acceptance per class from verdict-rescore.json", raw: raw/B/perclass-t1/perclass-table-BR1-B-t1.md }
+  - name: decode_c1_tool_json_t1_block
+    value: 347.6
+    unit: tok/s
+    workload: "C1, per-class fixture tool_json, 40 prompts x 256 forced, temperature 1.0 top_p 1.0 seeded, block verification on"
+    aggregation: "mean of r1/r2; controls A 333.4 / A2 326.4 (mean 329.9) -> 1.054x"
+    acceptance_len: 3.74
+    provenance: { run_id: 2026-10-26-br1-block-verification, method: "Card BR1 gate G2_perclass_t1", raw: raw/B/perclass-t1/perclass-table-BR1-B-t1.md }
+  - name: accept_tok_per_step_t1_block
+    value: 3.262
+    unit: tok/step
+    workload: "whole temperature-1.0 per-class window (5 classes x C1/C8 x r1/r2), block verification on"
+    aggregation: "1 + accepted/drafts from vllm:spec_decode /metrics deltas; controls A 3.204 / A2 3.189 (mean 3.197) -> 1.020x; mixed C1 2.105 vs 2.092 / 2.088"
+    provenance: { run_id: 2026-10-26-br1-block-verification, method: "Card BR1 annotation tokens_per_verify_step_t1", raw: verdict-rescore.json }
+  - name: peer_harness_c1_2k_codegen
+    value: 466
+    unit: tok/s
+    workload: "BRRR peer harness (stdlib port of fraserprice bench.py), coding prompt padded to 2,148 tokens, C1, natural EOS <= 2048, thinking off, temperature 1.0 top_p 1.0; production lane (arm A, k=5, no block)"
+    aggregation: "TG p50 over 2 rounds (peer runs 5); A2 467; the peer's published 4x RTX PRO 6000 Max-Q figure for the same cell is 703 tok/s at 5.94 tok/step (their table, not re-run by us)"
+    acceptance_len: 5.13
+    provenance: { run_id: 2026-10-26-br2-k-ladder-peerbench, method: "Card BR2 peerbench on arm A; the peer number is quoted from huggingface.co/fraserprice/DeepSeek-4.1-Flash-1017-BRRR", raw: raw/A/peerbench-BR2-A.md }
+  - name: peer_harness_prefill_64k
+    value: 46246
+    unit: tok/s
+    workload: "BRRR peer harness, 65,636-token padded coding prompt, C1, prefill pass (max_tokens 1), production lane (arm A)"
+    aggregation: "PP p50 over 2 rounds, TTFT p50 1,419 ms; A2 45,918; the peer's published figure for the same cell is 17,852 tok/s (TTFT 3,677 ms), their table, not re-run by us"
+    provenance: { run_id: 2026-10-26-br2-k-ladder-peerbench, method: "Card BR2 peerbench on arm A", raw: raw/A/peerbench-BR2-A.md }
+  - name: k9_mixed_c1_ratio
+    value: 0.793
+    unit: x
+    workload: "ar_mixed_t C1, temperature 1.0, 3 x 120 s; K9 = block verification + num_speculative_tokens 9 + [[1,4,9],[5,8,3],[9,32,3]] vs production k=5 controls"
+    aggregation: "K9 168.4 tok/s / mean(A 212.3, A2 212.5); per-class C1 0.813-0.918, C8 0.882-0.930; exploratory arm, not gated"
+    provenance: { run_id: 2026-10-26-br2-k-ladder-peerbench, method: "Card BR2 annotation speed_t1_vs_ctrl", raw: VERDICT-rescore.txt }
   - name: decode_c1_mixed_heldout_kv_host_tier
     value: 219.89
     unit: tok/s
@@ -317,6 +357,8 @@ verification:
       - "Compare two separately FlashInfer-tuned boots and call the difference a config effect."
 
 limits:
+  - "BLOCK VERIFICATION (Card BR1, 2026-10-25, results/2026-10-26-br1-block-verification/) acts only at temperature > 0 - vLLM af7f9488 applies it only when not is_greedy, so a temperature-0 bench cannot measure it (BR1's temp-0 window read B within noise of A on every class). The C1 gain (0.996-1.054x per class, +2.0% tokens/step) was measured at temperature 1.0 / top_p 1.0 seeded on 40 private transcript prompts per class. Promotion candidate, NOT promoted. The pre-registered verdict FAILED (BR1FAIL-G0-G2b) on two instrument defects (order-sensitive env compare; a temp-0 no-op bar tighter than the controls' own r1/r2 spread) and the re-score PASSED (BR1PASS); both are kept."
+  - "k > 5 LOSES on real traffic with this drafter (Card BR2, results/2026-10-26-br2-k-ladder-peerbench/) - k=9 with block verification reads 0.81-0.92x at C1 per class and 0.79x on mixed C1. Per-position acceptance shows why - marginal acceptance 0.61-0.82 through position 5 falls to 0.51-0.67 from position 7 (the checkpoint's dspark_block_size is 5), and position-1 acceptance drops too (prose .72 -> .61). k=9 only paid on padded single-stream codegen (peer harness 64K/C1 489 vs 453). BR2's controls ran sequential verification, so k is not isolated from block verification. num_speculative_tokens is NOT in the autotune hash on af7f9488 (K9 booted as a hash hit, 529 s)."
   - "KV-HOST-TIER VARIANT (Card KV3, 2026-10-24, results/2026-10-24-kv3-host-prefix-tier/) - what it does not cover. (1) The card's launcher set VLLM_SERVER_DEV_MODE=1 to reach /reset_prefix_cache for the evict-replay probe; production is the two flags without dev mode, and that exact no-dev-mode boot was not separately measured. (2) Measured on the v25m mixed map (ROWMAP=rowmap-mixed-ar-v1.json), not the static 295/89 map. (3) ~31M prefix tokens is 48 GiB / 1,656 B per hit token measured on this lane's fp8_ds_mla KV, not a portable figure. (4) Speed-neutral on the gated cells (C1 +0.19%, cold-64K TTFT +1.47%, warm-replay r2 -3.4% inside the controls' own 183.7-195.5 spread); real multi-user prefix traffic, hit rates under eviction pressure and C>1 with the tier were not measured. (5) Fidelity evidence is identical short outputs on two evict-replay probes, 12/12 gauntlet, the 954K needle and 0 errors / 0 watchdog events - no teacher-forced, GSM8K or BFCL run on the tier arm. (6) Host cost: MemAvailable min 129.8 GiB with the tier vs ~178 GiB without; the connector is a 51.54 GB /dev/shm mmap and vLLM marks KVConnectorBase_V1 experimental. (7) Upstream vllm#47890 (speculative decoding can zero CPU-tier hits) did not reproduce here - hits and loads at 7,929 and 31,629 tokens with DSpark on - but only two lengths were probed. (8) LMCache was not used: it needs the hybrid KV manager off, which this lane does not do."
   - "EXPERIMENTAL VARIANT 2026-10-23 (v25m, mixed-traffic static map; measured, not promoted): rowmap-mixed-ar-v1.json = top-295 per layer from cumulative decode counts of ~100k JP/DE + ~105k agent/tool tokens (GB300-only adaptive campaign), 42.5 experts moved per layer. Held-out prompts, post-60 s: mixed C1 208.9 -> 221.1 tok/s (+5.8%; JP/DE 179.5 -> 206.7 = +15%, agent 250.8 -> 246.4), mixed C4 560.4 -> 558.5 (no change). Shift protocol (in-sample prompts): JP/DE 186 -> 206.9, agent 244.3 -> 247.9. GB300 stall on the RTX during JP/DE 11.8% -> 0.5% of wall. KV unchanged (4,400,013). Greedy parity is not a usable gate on this lane: two captures of the SAME map agree 14/50 (probabilistic draft sampling + sidecar), v25 static vs v25m 15/50 = at that floor. Gates re-run 2026-10-24 (Card GV, results/2026-10-24-gv-v25m-gates/): 9/10 PASS - TF flips PASS vs v23 and vs v25, GSM8K-1319 96.82 vs 96.97, BFCL dev/held-out identical (556/600, 1018/1311), gauntlet 12/12, needle 500/500, 0 timeouts - but the bring-up cosine gate FAILS (min cos 0.99811 vs 0.999; 1 of 1,439 gated checks, layer 39; p1 0.99968 vs v25 0.99970); bar not moved, stays experimental. Same-instrument real-text C1 -2%, knee C8 -5%, C16 flat. Card GV2 (results/2026-10-24-gv2-l39-static/): layer 39 restored to the static split still fails (min 0.99831; worst check again L39 at ~0 cold share = noise); this does NOT clear v25m (its failing check had cold share 0.079) - corrected 2026-10-24 08:15. Cosine gate R2 (error / layer output, bar from 3 v25-static boots) registered before re-judging: results/2026-10-26-gs-cosine-r2/, runs 2026-10-26 after the soak. 48 h soak on v25m restarted 2026-10-24 07:12 -> 10-26 07:12 CDT. results/2026-10-23-ar5-mixed-map/."
   - "Live adaptive residency on this lane is feasible but not built (2026-10-23): both expert layouts are per-expert separable (DeepGEMM MegaMoE transform of one expert == its slice of the bank; b12x prepares in place), so a hot<->cold swap needs a cross-process mailbox in the peer shm plus raw-expert reads. Ceiling measured from the GB300's stall on the RTX: ~ +13% off-domain C1, ~0 in-domain; a refit static map already took most of it."
@@ -325,7 +367,7 @@ limits:
   - "The rowmap must be uniform (same cold count in every layer) unless you port el8's per-layer-plan change. Our 285/99 nested map failed the pre-registered cosine bar (min 0.99885 vs 0.999, two layer-39 T=128 checks) and is not adopted — the bar sits inside that check class's tail noise, but it was pre-registered, so 295/89 serves. 285/99 also buys ~6.09M KV tokens vs 2.54M; its SPEED with the sidecar is unmeasured."
   - "Reasoning-effort mapping differs between this image and the GB300-only lane's 0909 image: af7f9488 maps low 50 / high 75 / xhigh 75 / max 100 and defaults to high; the 0909 image maps low 25 / high 50 / xhigh 75 / max 100. A client that sends 'low' gets twice the thinking budget after a move to this lane, and default-effort GSM8K answers get longer. Pin an integer effort in chat_template_kwargs if you need the old behaviour."
   - "One temp-0 GSM8K item (1304) ran to the 131,072-token cap on this arm (incumbent: stopped at 2,245 and was correct); SC5's repeat probe read 0/32 runaways at a 32K cap and 0/8 at pinned efforts. Treated as the image's effort-75 tail rather than a sidecar effect, but a client-side max_tokens remains the only real guard."
-  - "Per-class speculative acceptance is NOT reported here (only the blended 2.96 tokens/step on the real-text C1 cell). The per-class numbers in this recipe are decode wall-clock, not acceptance."
+  - "Per-class speculative acceptance is NOT reported here (only the blended 2.96 tokens/step on the real-text C1 cell). The per-class numbers in this recipe are decode wall-clock, not acceptance. CORRECTED 2026-10-26 - measured at temperature 1.0 in Card BR2 (C1 tokens/step prose 2.85, structured 3.03, code 3.83, shell 3.98, tool-JSON 3.63 on arm A; per-position curves in results/2026-10-26-br2-k-ladder-peerbench/raw/per-position-curves.json)."
   - "FlashInfer tactics are live-tuned (MEGA_FI_TUNE_FILE empty): C1 varies a few percent boot to boot, and the autotuner warns that some mxfp8_gemm shapes fall back to tactic=-1. Bracket every comparison; pin a tune file if you need reproducibility more than speed."
   - "The RTX card is also the display GPU. It is hidden from containers by DGX OS without a CDI spec, the launcher refuses to start above 2,048 MiB of foreign use, and a GUI app can cost you the sidecar's headroom."
   - "vLLM v0.31.0 as the server image was measured in SC5 and NOT adopted: quality identical (TF, GSM8K 1279/1319, needle 500/500) but knee C8 read -3.8% against a -3% bar and the runaway cell (C31) tripped. It stays a candidate, not this recipe."
@@ -347,3 +389,6 @@ links:
   ronan_launcher: https://github.com/RonanLabsAI/dgx-station-frontier/tree/main/recipes/dsv41-flash-sidecar
   b12x: https://github.com/local-inference-lab/b12x/tree/2cc7f66aaef76a9c7cbb660a1efb865cf3f26c88
   vllm_pr_bounded_replay: https://github.com/vllm-project/vllm/pull/58132
+  blog_brrr_side_by_side: https://al-engr.com/gb300-vs-4x-rtx6000-dsv41-flash-brrr.html
+  peer_recipe_brrr: https://huggingface.co/fraserprice/DeepSeek-4.1-Flash-1017-BRRR
+  block_verification_paper: https://arxiv.org/abs/2403.10444

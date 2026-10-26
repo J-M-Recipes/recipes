@@ -1,0 +1,25 @@
+2c2,7
+< """perclass_decode_t.py — Card BR1 copy of perclass_decode.py (2026-10-25, Milo desk) + --temperature/--seed/--top-p.
+---
+> """br2_perclass_decode_t.py — Card BR2 copy of br1/perclass_decode_t.py (2026-10-25, Milo desk). ONLY change: every class-run
+> also records the per-position accepted-token deltas of vllm:spec_decode_num_accepted_tokens_per_pos_total (label position="0".."k-1",
+> vllm/v1/spec_decode/metrics.py at af7f9488; summed over the other labels) -> res[cls]["acc_per_pos"] (list, index = position) and
+> res[cls]["draft_tokens_per_draft"] (= effective k of the class-run). Request bodies, timing and every other field are unchanged.
+> Card BR1 header follows.
+> perclass_decode_t.py — Card BR1 copy of perclass_decode.py (2026-10-25, Milo desk) + --temperature/--seed/--top-p.
+29c34
+< import argparse, json, os, statistics as st, sys, threading, time, urllib.request, hashlib
+---
+> import argparse, json, os, re, statistics as st, sys, threading, time, urllib.request, hashlib
+36a42,43
+> PER_POS = ("vllm:spec_decode_num_accepted_tokens_per_pos_total", "vllm:spec_decode_num_accepted_tokens_per_pos")   # BR2 (not _created)
+> POS_RE = re.compile(r'position="(\d+)"')
+44a52,54
+>         elif name in PER_POS:   # BR2: per-position accepted counter, summed over engine/model labels
+>             p = POS_RE.search(l)
+>             if p: d.setdefault("pos", {})[int(p.group(1))] = d.get("pos", {}).get(int(p.group(1)), 0.0) + float(l.split()[-1])
+130a141,142
+>     p0, p1 = m0.get("pos", {}), m1.get("pos", {})   # BR2
+>     acc_pos = [p1.get(i, 0.0) - p0.get(i, 0.0) for i in range(max(list(p0) + list(p1) + [-1]) + 1)] if (p0 or p1) else None
+143a156
+>          "acc_per_pos": acc_pos, "draft_tokens_per_draft": round(d["draft"] / d["steps"], 4) if d["steps"] else None,   # BR2

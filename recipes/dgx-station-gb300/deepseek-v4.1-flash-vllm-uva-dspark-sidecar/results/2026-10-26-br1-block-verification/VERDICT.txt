@@ -1,0 +1,27 @@
+Card BR1 verdict: FAIL   suffix BR1FAIL-G0-G2b
+
+| gate | status | detail |
+|---|---|---|
+| G0_binding | FAIL | A: kv=4,400,013 block_in_args=0(want 0) args==prod True env==prod False rtx_args==prod True; B: kv=4,400,013 block_in_args=1(want 1) args==prod-except-spec True spec==prod+block True env==prod False rtx_args==prod True; A2: kv=4,400,013 block_in_args=0(want 0) args==prod True env==prod False rtx_args==prod True | hash-hit shape (info): A loaded=117 saved=117 same_dir=True autotune_span=254.0s boot=529s; B loaded=117 saved=117 same_dir=True autotune_span=253.0s boot=528s; A2 loaded=117 saved=117 same_dir=True autotune_span=257.0s boot=529s; one autotune key across arms: True; B boot / controls = 1.00 (<= 1.5 expected) |
+| G0b_foreign | PASS | non-127.0.0.1 POST /v1 per arm: A=0 {'bind': 0, 'cells': 0}; B=0 {'bind': 0, 'cells': 0}; A2=0 {'bind': 0, 'cells': 0} |
+| G1_controls | PASS | C1 per class: t1/prose/c1 d=1.3%; t1/structured/c1 d=0.5%; t1/code/c1 d=0.1%; t1/shell_ops/c1 d=3.0%; t1/tool_json/c1 d=2.1%; t0/prose/c1 d=1.0%; t0/structured/c1 d=0.7%; t0/code/c1 d=1.0%; t0/shell_ops/c1 d=2.7%; t0/tool_json/c1 d=1.1% | C8 (info, bimodal class): t1/prose/c8 d=0.6%; t1/structured/c8 d=3.4%; t1/code/c8 d=1.2%; t1/shell_ops/c8 d=4.2%; t1/tool_json/c8 d=2.4%; t0/prose/c8 d=0.0%; t0/structured/c8 d=1.7%; t0/code/c8 d=0.1%; t0/shell_ops/c8 d=1.8%; t0/tool_json/c8 d=2.8% |
+| G2_perclass_t1 | PASS | temp 1.0 forced-length decode tok/s: prose/c1 B/ctrl=1.037 (A 266.7 A2 270.2 B 278.3; bar -2.0%); prose/c8 B/ctrl=1.008 (A 972.4 A2 978.7 B 983.0; bar -2.0%); structured/c1 B/ctrl=1.013 (A 302.2 A2 300.8 B 305.3; bar -2.0%); structured/c8 B/ctrl=1.025 (A 1059.8 A2 1024.8 B 1068.2; bar -5.0%); code/c1 B/ctrl=1.013 (A 352.8 A2 353.0 B 357.3; bar -2.0%); code/c8 B/ctrl=1.047 (A 1173.9 A2 1159.6 B 1221.1; bar -2.0%); shell_ops/c1 B/ctrl=0.996 (A 374.0 A2 385.5 B 378.1; bar -4.5%); shell_ops/c8 B/ctrl=1.082 (A 1194.2 A2 1245.8 B 1320.3; bar -6.3%); tool_json/c1 B/ctrl=1.054 (A 333.4 A2 326.4 B 347.6; bar -3.2%); tool_json/c8 B/ctrl=1.028 (A 1184.1 A2 1156.0 B 1202.5; bar -3.6%) |
+| G2b_t0_noop | FAIL | stock temp-0 window (greedy rows never use block verification; B must equal A within noise): prose/c1 B -0.9% (|.| bar 2.0%); structured/c1 B -0.2% (|.| bar 2.0%); code/c1 B -2.2% (|.| bar 2.0%) OUTSIDE NOISE; shell_ops/c1 B +1.1% (|.| bar 4.1%); tool_json/c1 B +0.7% (|.| bar 2.0%) | C8 info: prose/c8 B/ctrl=1.000; structured/c8 B/ctrl=0.989; code/c8 B/ctrl=1.022; shell_ops/c8 B/ctrl=1.020; tool_json/c8 B/ctrl=1.008 |
+| G3_mixed_c1_t1 | PASS | ar_mixed_t C1 agg_tok_s_all at temp 1.0: B mean 212.77 vs ctrl 212.35 (+0.20%; A 212.05 A2 212.65; bar -2.00%) reps B=[213.7, 212.7, 211.9] errors B=0 |
+| G4_tf | PASS | B-vs-A flips 2.166% (bar <=3% and <= 1.5 x floor 2.172% = 3.259%; token-mismatch docs 0); B-vs-A2 flips 2.176% (bar <=3% and <= 1.5 x floor 2.172% = 3.259%; token-mismatch docs 0); margin flips at ref p>=0.9 on agent/tool docs: vs A=0 (skipped_docs 0), vs A2=0 (skipped_docs 0) |
+| G5_gauntlet | PASS | B 12/12; controls A 12/12, A2 12/12 (temp 0: run_suite.py) |
+| G6_turns | PASS | B per pass [7, 7]/12 vs control range [6,8] (A [6, 8], A2 [7, 6]); B errors 0; text-turn emissions B [5, 3] (temp 0: replay_turns.py) |
+| G7_watchdog | PASS | A: timeouts=0 trips=0 alive=True ff=0 (sidecar ff=0); B: timeouts=0 trips=0 alive=True ff=0 (sidecar ff=0); A2: timeouts=0 trips=0 alive=True ff=0 (sidecar ff=0) |
+
+| arm | KV tokens | block_in_args | boot s | mixed C1 t1 mean | t1 prose C1 | t1 tool_json C1 | t0 prose C1 | wd t/trips | ff | foreign |
+|---|---|---|---|---|---|---|---|---|---|---|
+| A | 4,400,013 | 0 | 529 | 212.05 | 266.7 | 333.4 | 294.6 | 0/0 | 0 | 0 |
+| B | 4,400,013 | 1 | 528 | 212.77 | 278.3 | 347.6 | 290.6 | 0/0 | 0 | 0 |
+| A2 | 4,400,013 | 0 | 529 | 212.65 | 270.2 | 326.4 | 291.8 | 0/0 | 0 | 0 |
+
+ANNOTATION (not a gate) — accepted tokens per verify step at temp 1.0 (1 + accepted/drafts from /metrics):
+  pct1 window: A=3.204, B=3.262, A2=3.189  B/ctrl=1.020;  mixed C1: A=2.092, B=2.105, A2=2.088  B/ctrl=1.007
+  per class (B vs ctrl mean): prose/c1 2.95/2.83; prose/c8 2.58/2.57; structured/c1 3.25/3.20; structured/c8 2.80/2.75; code/c1 3.85/3.79; code/c8 3.19/3.10; shell_ops/c1 4.07/4.08; shell_ops/c8 3.28/3.18; tool_json/c1 3.74/3.53; tool_json/c8 3.04/3.01
+ANNOTATION — x3 acceptance canary (agent_fixture_x3, temp 0, inside each window): t1/prose 0.263/0.263/0.257; t1/structured 0.446/0.458/0.487; t1/code 0.765/0.749/0.754; t1/shell_ops 0.727/0.748/0.714; t1/tool_json 0.809/0.811/0.855 (A/B/A2)
+ANNOTATION — G2 B/mean(A,A2) by cell: {'prose/c1': 1.0368, 'prose/c8': 1.0076, 'structured/c1': 1.0126, 'structured/c8': 1.0248, 'code/c1': 1.0126, 'code/c8': 1.0466, 'shell_ops/c1': 0.9958, 'shell_ops/c8': 1.0823, 'tool_json/c1': 1.0536, 'tool_json/c8': 1.0277}
+ANNOTATION — production watchdog after restore: {'pid': 2057392, 'ppid': '1', 'ppid_is_1': True}

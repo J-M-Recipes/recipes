@@ -1,0 +1,690 @@
+{
+ "card": "BR1 block verification",
+ "result": "FAIL",
+ "suffix": "BR1FAIL-G0-G2b",
+ "gates": {
+  "G0_binding": [
+   "FAIL",
+   "A: kv=4,400,013 block_in_args=0(want 0) args==prod True env==prod False rtx_args==prod True; B: kv=4,400,013 block_in_args=1(want 1) args==prod-except-spec True spec==prod+block True env==prod False rtx_args==prod True; A2: kv=4,400,013 block_in_args=0(want 0) args==prod True env==prod False rtx_args==prod True | hash-hit shape (info): A loaded=117 saved=117 same_dir=True autotune_span=254.0s boot=529s; B loaded=117 saved=117 same_dir=True autotune_span=253.0s boot=528s; A2 loaded=117 saved=117 same_dir=True autotune_span=257.0s boot=529s; one autotune key across arms: True; B boot / controls = 1.00 (<= 1.5 expected)"
+  ],
+  "G0b_foreign": [
+   "PASS",
+   "non-127.0.0.1 POST /v1 per arm: A=0 {'bind': 0, 'cells': 0}; B=0 {'bind': 0, 'cells': 0}; A2=0 {'bind': 0, 'cells': 0}"
+  ],
+  "G1_controls": [
+   "PASS",
+   "C1 per class: t1/prose/c1 d=1.3%; t1/structured/c1 d=0.5%; t1/code/c1 d=0.1%; t1/shell_ops/c1 d=3.0%; t1/tool_json/c1 d=2.1%; t0/prose/c1 d=1.0%; t0/structured/c1 d=0.7%; t0/code/c1 d=1.0%; t0/shell_ops/c1 d=2.7%; t0/tool_json/c1 d=1.1% | C8 (info, bimodal class): t1/prose/c8 d=0.6%; t1/structured/c8 d=3.4%; t1/code/c8 d=1.2%; t1/shell_ops/c8 d=4.2%; t1/tool_json/c8 d=2.4%; t0/prose/c8 d=0.0%; t0/structured/c8 d=1.7%; t0/code/c8 d=0.1%; t0/shell_ops/c8 d=1.8%; t0/tool_json/c8 d=2.8%"
+  ],
+  "G2_perclass_t1": [
+   "PASS",
+   "temp 1.0 forced-length decode tok/s: prose/c1 B/ctrl=1.037 (A 266.7 A2 270.2 B 278.3; bar -2.0%); prose/c8 B/ctrl=1.008 (A 972.4 A2 978.7 B 983.0; bar -2.0%); structured/c1 B/ctrl=1.013 (A 302.2 A2 300.8 B 305.3; bar -2.0%); structured/c8 B/ctrl=1.025 (A 1059.8 A2 1024.8 B 1068.2; bar -5.0%); code/c1 B/ctrl=1.013 (A 352.8 A2 353.0 B 357.3; bar -2.0%); code/c8 B/ctrl=1.047 (A 1173.9 A2 1159.6 B 1221.1; bar -2.0%); shell_ops/c1 B/ctrl=0.996 (A 374.0 A2 385.5 B 378.1; bar -4.5%); shell_ops/c8 B/ctrl=1.082 (A 1194.2 A2 1245.8 B 1320.3; bar -6.3%); tool_json/c1 B/ctrl=1.054 (A 333.4 A2 326.4 B 347.6; bar -3.2%); tool_json/c8 B/ctrl=1.028 (A 1184.1 A2 1156.0 B 1202.5; bar -3.6%)"
+  ],
+  "G2b_t0_noop": [
+   "FAIL",
+   "stock temp-0 window (greedy rows never use block verification; B must equal A within noise): prose/c1 B -0.9% (|.| bar 2.0%); structured/c1 B -0.2% (|.| bar 2.0%); code/c1 B -2.2% (|.| bar 2.0%) OUTSIDE NOISE; shell_ops/c1 B +1.1% (|.| bar 4.1%); tool_json/c1 B +0.7% (|.| bar 2.0%) | C8 info: prose/c8 B/ctrl=1.000; structured/c8 B/ctrl=0.989; code/c8 B/ctrl=1.022; shell_ops/c8 B/ctrl=1.020; tool_json/c8 B/ctrl=1.008"
+  ],
+  "G3_mixed_c1_t1": [
+   "PASS",
+   "ar_mixed_t C1 agg_tok_s_all at temp 1.0: B mean 212.77 vs ctrl 212.35 (+0.20%; A 212.05 A2 212.65; bar -2.00%) reps B=[213.7, 212.7, 211.9] errors B=0"
+  ],
+  "G4_tf": [
+   "PASS",
+   "B-vs-A flips 2.166% (bar <=3% and <= 1.5 x floor 2.172% = 3.259%; token-mismatch docs 0); B-vs-A2 flips 2.176% (bar <=3% and <= 1.5 x floor 2.172% = 3.259%; token-mismatch docs 0); margin flips at ref p>=0.9 on agent/tool docs: vs A=0 (skipped_docs 0), vs A2=0 (skipped_docs 0)"
+  ],
+  "G5_gauntlet": [
+   "PASS",
+   "B 12/12; controls A 12/12, A2 12/12 (temp 0: run_suite.py)"
+  ],
+  "G6_turns": [
+   "PASS",
+   "B per pass [7, 7]/12 vs control range [6,8] (A [6, 8], A2 [7, 6]); B errors 0; text-turn emissions B [5, 3] (temp 0: replay_turns.py)"
+  ],
+  "G7_watchdog": [
+   "PASS",
+   "A: timeouts=0 trips=0 alive=True ff=0 (sidecar ff=0); B: timeouts=0 trips=0 alive=True ff=0 (sidecar ff=0); A2: timeouts=0 trips=0 alive=True ff=0 (sidecar ff=0)"
+  ]
+ },
+ "gate_status": {
+  "G0_binding": "FAIL",
+  "G0b_foreign": "PASS",
+  "G1_controls": "PASS",
+  "G2_perclass_t1": "PASS",
+  "G2b_t0_noop": "FAIL",
+  "G3_mixed_c1_t1": "PASS",
+  "G4_tf": "PASS",
+  "G5_gauntlet": "PASS",
+  "G6_turns": "PASS",
+  "G7_watchdog": "PASS"
+ },
+ "invalid_arms": [],
+ "valid": true,
+ "annotations": {
+  "tokens_per_verify_step_t1": {
+   "pct1_window": {
+    "A": 3.2040241661488835,
+    "B": 3.261505347413735,
+    "A2": 3.188892693462572
+   },
+   "mixed_c1": {
+    "A": 2.0918594547626803,
+    "B": 2.1046006825938566,
+    "A2": 2.0876213592233013
+   },
+   "B_over_ctrl_pct1": 1.0203496835752563,
+   "B_over_ctrl_mixed": 1.0071110629584126
+  },
+  "tokens_per_verify_step_t1_per_class": {
+   "prose/c1": {
+    "B": 2.94717197817973,
+    "ctrl": 2.8340472232670213
+   },
+   "prose/c8": {
+    "B": 2.5819258885807916,
+    "ctrl": 2.5740923416605828
+   },
+   "structured/c1": {
+    "B": 3.2546002538071064,
+    "ctrl": 3.1989118424780774
+   },
+   "structured/c8": {
+    "B": 2.7962331104135387,
+    "ctrl": 2.747007966432111
+   },
+   "code/c1": {
+    "B": 3.852908067542214,
+    "ctrl": 3.7855851335233393
+   },
+   "code/c8": {
+    "B": 3.191350342252645,
+    "ctrl": 3.10170141839677
+   },
+   "shell_ops/c1": {
+    "B": 4.0745292368681865,
+    "ctrl": 4.0788355872895785
+   },
+   "shell_ops/c8": {
+    "B": 3.284136385465023,
+    "ctrl": 3.1815511717009457
+   },
+   "tool_json/c1": {
+    "B": 3.741806263656227,
+    "ctrl": 3.5317428992378472
+   },
+   "tool_json/c8": {
+    "B": 3.0443817723022115,
+    "ctrl": 3.011572304167566
+   }
+  },
+  "x3_accept_canary": {
+   "t1": {
+    "prose": {
+     "A": 0.2628,
+     "B": 0.2634,
+     "A2": 0.2574
+    },
+    "structured": {
+     "A": 0.4458,
+     "B": 0.4579,
+     "A2": 0.4871
+    },
+    "code": {
+     "A": 0.7648,
+     "B": 0.7489,
+     "A2": 0.754
+    },
+    "shell_ops": {
+     "A": 0.7269,
+     "B": 0.7481,
+     "A2": 0.7143
+    },
+    "tool_json": {
+     "A": 0.8095,
+     "B": 0.8115,
+     "A2": 0.8554
+    }
+   },
+   "t0": {
+    "prose": {
+     "A": 0.2494,
+     "B": 0.2566,
+     "A2": 0.2428
+    },
+    "structured": {
+     "A": 0.4752,
+     "B": 0.4817,
+     "A2": 0.4627
+    },
+    "code": {
+     "A": 0.7612,
+     "B": 0.743,
+     "A2": 0.7723
+    },
+    "shell_ops": {
+     "A": 0.7083,
+     "B": 0.7586,
+     "A2": 0.7603
+    },
+    "tool_json": {
+     "A": 0.8574,
+     "B": 0.846,
+     "A2": 0.8653
+    }
+   }
+  },
+  "perclass_hygiene": {
+   "A/t1": [
+    "prose c1 foreign tokens [0.0, 3.0]"
+   ],
+   "A/t0": [
+    "code c1 foreign tokens [0.0, 3.0]"
+   ],
+   "B/t1": [],
+   "B/t0": [
+    "structured c1 foreign tokens [3.0, 0.0]"
+   ],
+   "A2/t1": [
+    "tool_json c1 foreign tokens [0.0, 3.0]"
+   ],
+   "A2/t0": []
+  },
+  "boot_block_lines": {
+   "A": [],
+   "B": [
+    "(APIServer pid=1) INFO 10-26 01:15:37 [api_utils.py:286] non-default args: {'model_tag': '/model', 'enable_auto_tool_choice': True, 'tool_call_parser': 'deepseek_v41', 'host': '0.0.0.0', 'port': 30006, 'model': '/model', 'trust_remote_code': True, 'max_model_len': 1048576, 'served_model_name': ['dsv"
+   ],
+   "A2": []
+  },
+  "mem_min_by_phase": {
+   "pre": 130.9,
+   "A:preboot": 451.4,
+   "A:boot": 131.2,
+   "A:cells": 129.4,
+   "A:post": 129.4,
+   "B:preboot": 450.6,
+   "B:boot": 131.9,
+   "B:cells": 129.9,
+   "B:post": 344.5,
+   "A2:preboot": 450.0,
+   "A2:boot": 132.4,
+   "A2:cells": 129.9,
+   "A2:post": 129.9,
+   "restore": 132.8
+  },
+  "restore_watchdog": {
+   "pid": 2057392,
+   "ppid": "1",
+   "ppid_is_1": true
+  }
+ },
+ "calc": {
+  "G2_rows": [
+   {
+    "class": "prose",
+    "mode": "c1",
+    "A": 266.68,
+    "A2": 270.2,
+    "B": 278.31,
+    "ratio": 1.0367679928475637,
+    "spread": 0.01311279988079266,
+    "bar": 0.02,
+    "pass": true
+   },
+   {
+    "class": "prose",
+    "mode": "c8",
+    "A": 972.4,
+    "A2": 978.71,
+    "B": 982.98,
+    "ratio": 1.007611052170303,
+    "spread": 0.006468113022843467,
+    "bar": 0.02,
+    "pass": true
+   },
+   {
+    "class": "structured",
+    "mode": "c1",
+    "A": 302.18,
+    "A2": 300.78,
+    "B": 305.27,
+    "ratio": 1.0125713148467559,
+    "spread": 0.00464375746318175,
+    "bar": 0.02,
+    "pass": true
+   },
+   {
+    "class": "structured",
+    "mode": "c8",
+    "A": 1059.75,
+    "A2": 1024.83,
+    "B": 1068.16,
+    "ratio": 1.0248203475040536,
+    "spread": 0.033503151714014405,
+    "bar": 0.050254727571021604,
+    "pass": true
+   },
+   {
+    "class": "code",
+    "mode": "c1",
+    "A": 352.77,
+    "A2": 352.99,
+    "B": 357.31,
+    "ratio": 1.012553842666062,
+    "spread": 0.0006234413965088055,
+    "bar": 0.02,
+    "pass": true
+   },
+   {
+    "class": "code",
+    "mode": "c8",
+    "A": 1173.87,
+    "A2": 1159.62,
+    "B": 1221.13,
+    "ratio": 1.0466125845836067,
+    "spread": 0.012213465667305197,
+    "bar": 0.02,
+    "pass": true
+   },
+   {
+    "class": "shell_ops",
+    "mode": "c1",
+    "A": 373.97,
+    "A2": 385.48,
+    "B": 378.14,
+    "ratio": 0.9958259266574494,
+    "spread": 0.030311409572717073,
+    "bar": 0.045467114359075606,
+    "pass": true
+   },
+   {
+    "class": "shell_ops",
+    "mode": "c8",
+    "A": 1194.18,
+    "A2": 1245.78,
+    "B": 1320.34,
+    "ratio": 1.0822636436662896,
+    "spread": 0.04229577534057928,
+    "bar": 0.06344366301086893,
+    "pass": true
+   },
+   {
+    "class": "tool_json",
+    "mode": "c1",
+    "A": 333.44,
+    "A2": 326.41,
+    "B": 347.6,
+    "ratio": 1.053572781692809,
+    "spread": 0.021307873001439638,
+    "bar": 0.03196180950215946,
+    "pass": true
+   },
+   {
+    "class": "tool_json",
+    "mode": "c8",
+    "A": 1184.1,
+    "A2": 1155.99,
+    "B": 1202.46,
+    "ratio": 1.0277040626642564,
+    "spread": 0.02402471699806409,
+    "bar": 0.03603707549709614,
+    "pass": true
+   }
+  ],
+  "G3": {
+   "B": 212.76666666666665,
+   "A": 212.05,
+   "A2": 212.65333333333334,
+   "ctrl_mean": 212.3516666666667,
+   "spread": 0.0028411989545643213,
+   "bar": 0.02,
+   "rel": 0.0019543053582498082
+  },
+  "G2_ratio_by_cell": {
+   "prose/c1": 1.0368,
+   "prose/c8": 1.0076,
+   "structured/c1": 1.0126,
+   "structured/c8": 1.0248,
+   "code/c1": 1.0126,
+   "code/c8": 1.0466,
+   "shell_ops/c1": 0.9958,
+   "shell_ops/c8": 1.0823,
+   "tool_json/c1": 1.0536,
+   "tool_json/c8": 1.0277
+  }
+ },
+ "cells": {
+  "A": {
+   "facts": {
+    "arm": "A",
+    "name": "dsv41-vllm-1017-BR1-A",
+    "kv_tokens": "4,400,013",
+    "kv_expect": "4,400,013",
+    "block_in_args": 0,
+    "block_boot_lines": 0,
+    "ff_boot": 0,
+    "loaded_lines": 1,
+    "saved_lines": 1,
+    "autotune_starts": 25,
+    "autotune_ends": 25,
+    "boot_s": 529,
+    "bound_at": 1792975503
+   },
+   "autotune": {
+    "loaded": 117,
+    "saved": 117,
+    "loaded_dir": "/root/.cache/vllm/flashinfer_autotune_cache/0.7.0/103a/e968dfa8bc6ca6071b4224ef8e440b592ac33e2f685c3e8592797df7aec05c98/autotune_configs.json",
+    "saved_dir": "/root/.cache/vllm/flashinfer_autotune_cache/0.7.0/103a/e968dfa8bc6ca6071b4224ef8e440b592ac33e2f685c3e8592797df7aec05c98/autotune_configs.json",
+    "elapsed_s": 254.0,
+    "pairs": 25,
+    "hash_hit_shape": true
+   },
+   "mixed": [
+    {
+     "rep": 1,
+     "agg_tok_s_all": 212.55,
+     "errors": 0,
+     "n": 66,
+     "temperature": 1.0
+    },
+    {
+     "rep": 2,
+     "agg_tok_s_all": 212.13,
+     "errors": 0,
+     "n": 65,
+     "temperature": 1.0
+    },
+    {
+     "rep": 3,
+     "agg_tok_s_all": 211.47,
+     "errors": 0,
+     "n": 65,
+     "temperature": 1.0
+    }
+   ],
+   "perclass_t1": {
+    "prose/c1": 266.68,
+    "prose/c8": 972.4,
+    "structured/c1": 302.18,
+    "structured/c8": 1059.75,
+    "code/c1": 352.77,
+    "code/c8": 1173.87,
+    "shell_ops/c1": 373.97,
+    "shell_ops/c8": 1194.18,
+    "tool_json/c1": 333.44,
+    "tool_json/c8": 1184.1
+   },
+   "perclass_t0": {
+    "prose/c1": 294.64,
+    "prose/c8": 1026.29,
+    "structured/c1": 296.16,
+    "structured/c8": 1010.57,
+    "code/c1": 403.74,
+    "code/c8": 1257.95,
+    "shell_ops/c1": 386.32,
+    "shell_ops/c8": 1322.04,
+    "tool_json/c1": 363.17,
+    "tool_json/c8": 1225.79
+   },
+   "turns": [
+    {
+     "tool_emitted": 6,
+     "tool_turns": 12,
+     "text_emitted": 3,
+     "errors": 0
+    },
+    {
+     "tool_emitted": 8,
+     "tool_turns": 12,
+     "text_emitted": 3,
+     "errors": 0
+    }
+   ],
+   "wd": {
+    "timeouts": 0,
+    "trips": 0,
+    "alive_at_collect": true
+   },
+   "errcount_server": 0,
+   "errcount_sidecar": 0,
+   "foreign": {
+    "bind": 0,
+    "cells": 0
+   },
+   "metrics_pct1": {
+    "drafts": 75643.0,
+    "draft_tokens": 312673.0,
+    "accepted": 166719.0,
+    "acc_per_draft": 2.2040241661488835,
+    "tokens_per_verify_step": 3.2040241661488835,
+    "accept_rate": 0.5332056173702239
+   },
+   "metrics_mixed": {
+    "accepted": 40211.0,
+    "drafts": 36828.0,
+    "tokens_per_verify_step": 2.0918594547626803
+   }
+  },
+  "B": {
+   "facts": {
+    "arm": "B",
+    "name": "dsv41-vllm-1017-BR1-B",
+    "kv_tokens": "4,400,013",
+    "kv_expect": "4,400,013",
+    "block_in_args": 1,
+    "block_boot_lines": 1,
+    "ff_boot": 0,
+    "loaded_lines": 1,
+    "saved_lines": 1,
+    "autotune_starts": 25,
+    "autotune_ends": 25,
+    "boot_s": 528,
+    "bound_at": 1792977766
+   },
+   "autotune": {
+    "loaded": 117,
+    "saved": 117,
+    "loaded_dir": "/root/.cache/vllm/flashinfer_autotune_cache/0.7.0/103a/e968dfa8bc6ca6071b4224ef8e440b592ac33e2f685c3e8592797df7aec05c98/autotune_configs.json",
+    "saved_dir": "/root/.cache/vllm/flashinfer_autotune_cache/0.7.0/103a/e968dfa8bc6ca6071b4224ef8e440b592ac33e2f685c3e8592797df7aec05c98/autotune_configs.json",
+    "elapsed_s": 253.0,
+    "pairs": 25,
+    "hash_hit_shape": true
+   },
+   "mixed": [
+    {
+     "rep": 1,
+     "agg_tok_s_all": 213.7,
+     "errors": 0,
+     "n": 65,
+     "temperature": 1.0
+    },
+    {
+     "rep": 2,
+     "agg_tok_s_all": 212.69,
+     "errors": 0,
+     "n": 65,
+     "temperature": 1.0
+    },
+    {
+     "rep": 3,
+     "agg_tok_s_all": 211.91,
+     "errors": 0,
+     "n": 64,
+     "temperature": 1.0
+    }
+   ],
+   "perclass_t1": {
+    "prose/c1": 278.31,
+    "prose/c8": 982.98,
+    "structured/c1": 305.27,
+    "structured/c8": 1068.16,
+    "code/c1": 357.31,
+    "code/c8": 1221.13,
+    "shell_ops/c1": 378.14,
+    "shell_ops/c8": 1320.34,
+    "tool_json/c1": 347.6,
+    "tool_json/c8": 1202.46
+   },
+   "perclass_t0": {
+    "prose/c1": 290.57,
+    "prose/c8": 1026.38,
+    "structured/c1": 296.52,
+    "structured/c8": 990.45,
+    "code/c1": 397.05,
+    "code/c8": 1285.67,
+    "shell_ops/c1": 395.94,
+    "shell_ops/c8": 1360.14,
+    "tool_json/c1": 367.76,
+    "tool_json/c8": 1253.67
+   },
+   "turns": [
+    {
+     "tool_emitted": 7,
+     "tool_turns": 12,
+     "text_emitted": 5,
+     "errors": 0
+    },
+    {
+     "tool_emitted": 7,
+     "tool_turns": 12,
+     "text_emitted": 3,
+     "errors": 0
+    }
+   ],
+   "wd": {
+    "timeouts": 0,
+    "trips": 0,
+    "alive_at_collect": true
+   },
+   "errcount_server": 0,
+   "errcount_sidecar": 0,
+   "foreign": {
+    "bind": 0,
+    "cells": 0
+   },
+   "metrics_pct1": {
+    "drafts": 74335.0,
+    "draft_tokens": 305883.0,
+    "accepted": 168109.0,
+    "acc_per_draft": 2.261505347413735,
+    "tokens_per_verify_step": 3.261505347413735,
+    "accept_rate": 0.549585952798946
+   },
+   "metrics_mixed": {
+    "accepted": 40456.0,
+    "drafts": 36625.0,
+    "tokens_per_verify_step": 2.1046006825938566
+   }
+  },
+  "A2": {
+   "facts": {
+    "arm": "A2",
+    "name": "dsv41-vllm-1017-BR1-A2",
+    "kv_tokens": "4,400,013",
+    "kv_expect": "4,400,013",
+    "block_in_args": 0,
+    "block_boot_lines": 0,
+    "ff_boot": 0,
+    "loaded_lines": 1,
+    "saved_lines": 1,
+    "autotune_starts": 25,
+    "autotune_ends": 25,
+    "boot_s": 529,
+    "bound_at": 1792980015
+   },
+   "autotune": {
+    "loaded": 117,
+    "saved": 117,
+    "loaded_dir": "/root/.cache/vllm/flashinfer_autotune_cache/0.7.0/103a/e968dfa8bc6ca6071b4224ef8e440b592ac33e2f685c3e8592797df7aec05c98/autotune_configs.json",
+    "saved_dir": "/root/.cache/vllm/flashinfer_autotune_cache/0.7.0/103a/e968dfa8bc6ca6071b4224ef8e440b592ac33e2f685c3e8592797df7aec05c98/autotune_configs.json",
+    "elapsed_s": 257.0,
+    "pairs": 25,
+    "hash_hit_shape": true
+   },
+   "mixed": [
+    {
+     "rep": 1,
+     "agg_tok_s_all": 211.41,
+     "errors": 0,
+     "n": 65,
+     "temperature": 1.0
+    },
+    {
+     "rep": 2,
+     "agg_tok_s_all": 213.62,
+     "errors": 0,
+     "n": 65,
+     "temperature": 1.0
+    },
+    {
+     "rep": 3,
+     "agg_tok_s_all": 212.93,
+     "errors": 0,
+     "n": 65,
+     "temperature": 1.0
+    }
+   ],
+   "perclass_t1": {
+    "prose/c1": 270.2,
+    "prose/c8": 978.71,
+    "structured/c1": 300.78,
+    "structured/c8": 1024.83,
+    "code/c1": 352.99,
+    "code/c8": 1159.62,
+    "shell_ops/c1": 385.48,
+    "shell_ops/c8": 1245.78,
+    "tool_json/c1": 326.41,
+    "tool_json/c8": 1155.99
+   },
+   "perclass_t0": {
+    "prose/c1": 291.78,
+    "prose/c8": 1026.55,
+    "structured/c1": 298.24,
+    "structured/c8": 993.19,
+    "code/c1": 407.98,
+    "code/c8": 1258.99,
+    "shell_ops/c1": 397.08,
+    "shell_ops/c8": 1345.41,
+    "tool_json/c1": 367.08,
+    "tool_json/c8": 1260.49
+   },
+   "turns": [
+    {
+     "tool_emitted": 7,
+     "tool_turns": 12,
+     "text_emitted": 3,
+     "errors": 0
+    },
+    {
+     "tool_emitted": 6,
+     "tool_turns": 12,
+     "text_emitted": 4,
+     "errors": 0
+    }
+   ],
+   "wd": {
+    "timeouts": 0,
+    "trips": 0,
+    "alive_at_collect": true
+   },
+   "errcount_server": 0,
+   "errcount_sidecar": 0,
+   "foreign": {
+    "bind": 0,
+    "cells": 0
+   },
+   "metrics_pct1": {
+    "drafts": 75932.0,
+    "draft_tokens": 312796.0,
+    "accepted": 166207.0,
+    "acc_per_draft": 2.188892693462572,
+    "tokens_per_verify_step": 3.188892693462572,
+    "accept_rate": 0.5313590966636402
+   },
+   "metrics_mixed": {
+    "accepted": 40329.0,
+    "drafts": 37080.0,
+    "tokens_per_verify_step": 2.0876213592233013
+   }
+  }
+ },
+ "R": "~/dsv41/m3/br1/results-cardBR1"
+}
