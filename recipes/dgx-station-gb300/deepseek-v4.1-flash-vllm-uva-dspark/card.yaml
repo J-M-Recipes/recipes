@@ -33,7 +33,7 @@ secondary:
     items:
       "change": "one key in --speculative-config · hash-hit boot 485 s · same autotune store"
       "mixed traffic C1, temp 1.0": "181.1 vs 179.9 tok/s (+0.7%)"
-      "+ block verification (PB)": "+1.5% tok/step over P · failed 2 temp-0 parity gates → candidate"
+      "+ block verification (PB)": "+1.5% (BR4) / +2.5% (BR5) tok/step · G6 replay tripped both ways → retired pending BR6"
       "block verification on greedy drafts (BR3)": "0.999× tok/step — a null"
       "serving": ":30006 = sidecar sibling's v27 pair · v28 parked as reference"
   - label: "v26 base, unchanged in v28 (Card AR6, 2026-10-24)"
@@ -48,6 +48,7 @@ fidelity:
   - { status: pass,    text: "Speculation is target-verified: every emitted token accepted by the full model; probabilistic drafting keeps the target distribution (full p/q ratio test)" }
   - { status: pass,    text: "Teacher-forced top-1 flips v28 vs controls 1.129% / 1.098% vs control floor 1.136% (79,544 positions, 39 docs, 0 token-mismatch) · margin-weighted flips 0 (Card BR4)" }
   - { status: pass,    text: "Card BR4: gauntlet 12/12 on all four arms · replay tool turns [6, 8]/12 in control range 6–8 · temp-0 parity on every class · 0 errors, 0 foreign requests" }
+  - { status: measured, text: "Card BR5 (+ block vs v28-prob): speed and fidelity PASS (TF flips 1.06–1.07% vs floor 1.075%, gauntlet 12/12, temp-0 parity) · G6 replay [6, 7] vs 8–9 FAIL, opposite of BR4 → instrument too narrow; PB retired pending BR6" }
   - { status: pass,    text: "Greedy parity 49/50, September static map vs seed map, cross-boot (Card AR6) — the one miss, agent-tool-1, is the documented noise prompt that also flips within one map" }
   - { status: pass,    text: "Restore round trip: static map → 15,382 swaps → restore_map → parity back at the fixed-map 49/50; unit test T6 restore_map PASS (v26ar.1, 2026-10-23)" }
   - { status: pass,    text: "Agentic gauntlet 12/12 on the fixed seed map and 12/12 live under adaptation on the promoted lane (2026-10-24) · 0 stale swaps, 0 server errors" }

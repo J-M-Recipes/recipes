@@ -7,8 +7,11 @@
 > not a routing change.** `:30006` has served the **sidecar sibling's** pair since 2026-10-24 23:16 CDT: v25m-kvtier
 > until 2026-10-26 03:58 CDT, and **v27 (+ block verification)** since 04:08 CDT
 > ([`../deepseek-v4.1-flash-vllm-uva-dspark-sidecar`](../deepseek-v4.1-flash-vllm-uva-dspark-sidecar/README.md)). v26 served this recipe on `:30006` only from 2026-10-24 ~21:30 to 23:16 CDT.
-> Latest round: **Card BR4, probabilistic drafting = PASS, promoted as the reference v28-prob; + block verification
-> = candidate** (below). The round before it, Card BR3 (block verification with greedy drafting), was a null.
+> Latest round: **Card BR5, block verification re-bracketed against v28-prob = FAIL-G6 (instrument): every speed and
+> fidelity gate passed (+2.5% tokens per verify step), replay_turns tripped the opposite way from BR4; PB retired
+> pending BR6.** The reference stays v28-prob.
+> Before it: **Card BR4, probabilistic drafting = PASS, promoted as the reference v28-prob; + block verification
+> = candidate** (retired by BR5). Before that, Card BR3 (block verification with greedy drafting) was a null.
 
 **2026-10-24 ~21:30 CDT — v26 "Seeded Adaptive" promoted** (on `:30006` until 23:16 CDT that night; see the status above).
 v26 is the v23 launch (same image, same flags), plus three changes:
@@ -28,6 +31,82 @@ round adds a 48 GiB Grace host prefix-KV tier. This recipe is the reference for 
 
 **Before v26 — Pin Exact, v23** (serving 2026-10-18 → 2026-10-22; v26 launches from it) (v22 + exact-size pinned host allocations: pinned host 328.0 → 252.8 GiB, boot-guard margin 12 → 198 GiB, decode and greedy non-tool output unchanged; **188.2 tok/s C1 real text, accept 2.99/step**; BFCL held-out 77.65; see the 2026-10-18 round) · rollback **v22** (k=5 band to 8 sequences, 2026-10-17) · **candidate, not promoted:** vLLM nightly-39983a5e "config C" passed all seven pre-registered gates (+6% C1, TTFT 8K 0.43 s, KV +55%; GSM8K exactly at its bar), pending James · previous **Fused Split, v21** (2026-09-27: v18 launch on the 0909 image + hook v21 — `split_ids()` as one Triton kernel; **182.8 tok/s C1 prose, +6.2 % vs v18 bracketing controls 171.8 / 172.5**, C8 687 (+4.6 %), C16 993 (+4.0 %), non-tool greedy 16/16 vs both controls; held-out BFCL on v21 pending; see Round 12) · documented release **Clean Nightly, v20** (2026-09-21: vLLM nightly `2671fedf` — the last before the #56633 mHC-fold drift — + v15 hook + off54 + fp8_ds_mla + v18's 24-seat/cudagraph flags; **181 tok/s C1 prose (+5.1% pair mean vs v18)**, KV 2.55M tokens, C24 warm agent p95 2.4–2.8 s vs 3.4; **held-out BFCL live sibling 78.8% vs v18 78.9%**, dev 92.7–93.5%; tools 64/64 ×3; $0.008 per 1000 solved tasks; see Round 11b) · rollback **Many Seat, v18** (2026-09-18: v15 hook + `--max-num-seqs 24` + token-sized `--cudagraph-capture-sizes`; 172 tok/s C1 prose, KV 2.50M tokens, C24 warm agent turn 0.55 s p50; **BFCL v4 tool-call exact-match 93.3%**) · **v19 "Nightly" was promoted and reverted on 2026-09-20** (see Round 10) · previous **v15 Pin Hot Experts** (retired 2026-09-18) · **v14 Sixty-K Agent** (retired 2026-09-17) · Historical **v13: 90 tok/s single-stream prose · 140–160 tok/s on agent/code text · 429 agg tok/s at C16** (v12: 89 / 140–160 / 311 · v11: 82 / 130–150 / 287) · 972K-token prompt prefilled in 85 s · Hermes tool-calling 10/10
 
+
+## 2026-10-26 round — Card BR5: block verification re-bracketed against v28-prob = FAIL-G6 (an instrument finding); PB retired pending BR6
+
+**What changed.** BR4's candidate PB, bracketed alone against the new reference as BR4 asked:
+- **A / A2** = v28-prob (v26 + `"draft_sample_method":"probabilistic"`), byte-identical to
+  `dsv41-vllm-1017-v28-prob-BOUND-REF` (G0);
+- **B** = v28-prob + `"rejection_sample_method":"block"`.
+
+Same cells, gates and bars as BR3/BR4, **pre-registered before launch**
+([`PREREG-BR5.md`](results/2026-10-26-br5-block-rebracket/PREREG-BR5.md)): a trip in any class is a FAIL;
+"REPRODUCED" = the same cell trips in the same direction; if G6 fails again, PB is retired on this lane until a third
+design with more replay passes exists. Bracket A → B → A2, 2026-10-26 11:33–13:52 CDT:
+- every arm was a hash-hit boot, ready at 474–475 s; KV 2,481,694 tokens on all three arms;
+- adaptive residency was unfrozen (GO + `ctrl freeze=false`) on every arm;
+- 0 foreign requests reached any arm; the production v27 pair was restored with its watchdog (PPID 1) at 13:51.
+
+Receipts: [`results/2026-10-26-br5-block-rebracket/`](results/2026-10-26-br5-block-rebracket/README.md).
+
+**Verdict: `FAIL`, suffix `BR5FAIL-G6`** (pre-registered, not re-scored). Nine of ten gates passed, including the
+G2b temperature-0 parity gate that PB failed in BR4. G6 replay_turns failed.
+
+| temp 1.0, B ÷ mean(A, A2) | B | ctrl |
+|---|--:|--:|
+| accepted tokens per verify step (per-class window) | **1.025** (3.513) | 3.427 (A 3.417, A2 3.437) |
+| mixed traffic tok/s, C1 (`ar_mixed_t.py`, 3 × 120 s) | 1.009 (182.54) | 180.96 |
+
+| temp 1.0, decode tok/s B ÷ ctrl | C1 | C8 |
+|---|--:|--:|
+| prose | 1.013 | 1.041 |
+| structured | 1.025 | 1.030 |
+| code | **1.054** (286.8 vs 272.3 tok/s) | 1.050 |
+| shell_ops | 1.039 | 0.985 (bar −2.0%) |
+| tool_json | 1.017 | 1.008 |
+
+Per-position acceptance: B .787/.602/.462/.365/.297 vs control mean .782/.585/.441/.344/.275.
+
+**Parity re-check (BR4's two trips).**
+- **G2b** temperature-0 shell_ops C1: B +2.4% against a 10.3% bar (control r1/r2 spread 6.9%), and inside BR4's
+  fixed 2.6% bar as well. **The BR4 trip (+3.6% vs 2.6%) did not reproduce.** All five classes passed.
+- **G6** replay_turns: B per pass [6, 7]/12 against a control range of 8–9 (A [9, 8], A2 [8, 8]). **FAIL, in the
+  opposite direction from BR4** (PB [8, 9] against 6–8).
+
+**Fidelity is unchanged.** Teacher-forced top-1 flips B-vs-A 1.072% and B-vs-A2 1.064% against an A2-vs-A floor of
+1.075%; margin-weighted flips 0; gauntlet 12/12 on all arms; 0 errors, 0 foreign requests.
+
+**G6 history** (tool turns emitted per pass, of 12; temperature 0, `replay_turns.py`):
+
+| card | arm | config | pass 1 | pass 2 | gate bar (range of the 4 control passes) |
+|---|---|---|--:|--:|---|
+| BR4 | A | v26 (greedy drafting) | 6 | 7 | control |
+| BR4 | P | + probabilistic | 6 | 8 | 6–8 → PASS |
+| BR4 | PB | + probabilistic + block | **8** | **9** | 6–8 → FAIL (more) |
+| BR4 | A2 | v26 (greedy drafting) | 8 | 8 | control |
+| BR5 | A | v28-prob | 9 | 8 | control |
+| BR5 | B | v28-prob + block | **6** | **7** | 8–9 → FAIL (fewer) |
+| BR5 | A2 | v28-prob | 8 | 8 | control |
+
+**Instrument diagnosis.** Across the five probabilistic-drafting arms the ten per-pass counts are
+6, 6, 7, 8, 8, 8, 8, 8, 9, 9 (all seven arms: 6 ×3, 7 ×2, 8 ×7, 9 ×2). The two block-on arms sit at both ends; the
+block-off arms span 6–9 by themselves. The count does not follow the block key, which at temperature 0 never touches
+a greedy row. A range from two controls × two passes is too narrow a bar for a temperature-0 replay that is not
+deterministic on this lane: the controls alone spanned 6–8 in BR4 and 8–9 in BR5. This reading fits every receipt;
+it is not a tested result, and the pre-registered verdict stands.
+
+**Decision.** Per the pre-registration, **PB is RETIRED on this lane** pending **Card BR6** (queued 2026-10-26): the
+same bracket with a redesigned G6 — 4 replay passes per arm, a pooled-control bar ±1, a control-agreement validity
+check, and a per-transcript annotation. **The reference stays v28-prob** (unchanged); `:30006` keeps serving the
+sidecar sibling's v27 pair.
+
+The speed and fidelity story for block-on-probabilistic is consistent across three cards: +2.0% tokens per verify
+step on the sidecar lane (Card BR1), +1.5% on top of P (BR4), +2.5% here, with TF flips at the control floor each
+time:
+[BR4 bundle](results/2026-10-26-br4-probabilistic-drafting/README.md),
+[BR3 bundle](results/2026-10-26-br3-block-verification-null/README.md),
+[BR1 bundle](../deepseek-v4.1-flash-vllm-uva-dspark-sidecar/results/2026-10-26-br1-block-verification/README.md),
+[blog](https://al-engr.com/gb300-vs-4x-rtx6000-dsv41-flash-brrr.html).
 
 ## 2026-10-26 round — Card BR4: probabilistic drafting = PASS, promoted as the reference v28-prob; +block = candidate
 
@@ -975,6 +1054,12 @@ Zero preemptions at 972K; HBM peaked at 243 GiB. Warm prefix on an 8.8K-token sy
 
 See `limits:` in [`recipe.yaml`](recipe.yaml).
 
+2026-10-26 addition (Card BR5):
+- **replay_turns G6 with 2 passes is too narrow on this lane (see BR5).** The temperature-0 replay is not
+  deterministic here: per-pass tool-turn counts ran 6–9 of 12 across seven arms of BR4 and BR5, with no relation to
+  the block key, and a range drawn from two controls × two passes tripped PB once in each direction. PB (v28-prob +
+  block) is retired on this lane until Card BR6 re-runs the bracket with 4 passes per arm and a pooled-control bar.
+
 2026-10-26 additions (Card BR4, v28-prob):
 - **The +10% is a temperature > 0 result.** At temperature 0 probabilistic drafting returns the argmax and v28 runs
   exactly like v26. Clients that send temperature 0 get nothing from it.
@@ -983,6 +1068,7 @@ See `limits:` in [`recipe.yaml`](recipe.yaml).
 - **PB (+ block verification) is a candidate, not the release.** It was +1.5% tokens per step over P at temperature
   1.0, but it failed two pre-registered temperature-0 parity gates: G2b shell_ops C1 +3.6% vs a 2.6% bar, and G6
   replay tool-turns 9/12 in one pass vs a control range of 6–8. It needs its own bracket against v28-prob.
+  *(Done 2026-10-26, Card BR5: G2b passed; G6 failed the other way, [6, 7] vs 8–9 → PB retired pending BR6.)*
 - **Not re-run on v28:** BFCL, GSM8K, long context (128K / 1M), C16+, and a soak. The park boot verified facts and
   two smoke requests only.
 

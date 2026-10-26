@@ -1,0 +1,329 @@
+2,10c2,19
+< # cardBR3_runner.sh — Card BR3: DSpark BLOCK verification ("rejection_sample_method":"block") vs the default sequential
+< # rejection sampler, on the GB300-ONLY v26 "Seeded Adaptive" recipe (Grace UVA offload, no RTX sidecar), bracketed A -> B -> A2,
+< # lane :30006, GB300. Clone of ~/dsv41/m3/br1/cardBR1_runner.sh (DIFF-br3-runner-vs-br1.txt shows every change).
+< # CONTROL = exactly the stopped-kept container dsv41-vllm-1017-v26seed-BOUND-REF (launch_ar6.sh, image 0909, hook v26ar2,
+< # ROWMAP rowmap-mixed-ar-v1.json, --offload-backend uva --cpu-offload-gb 60, greedy drafting, k-schedule [[1,8,5],[9,24,1]],
+< # seqs 24). ONE AXIS = SPEC_EXTRA=',"rejection_sample_method":"block"' spliced into --speculative-config by launch_br3.sh
+< # (empty on A/A2 => Args byte-identical to v26seed). Not a compute-hash factor => hash-hit boot (~474-484 s on 0909) expected.
+< # Block verification is a no-op on greedy rows => the primary speed cells sample at temperature 1.0 (perclass_run_t.sh,
+< # ar_mixed_t.py — the BR1 instruments, reused by absolute path); the stock temp-0 window is a parity sanity cell (G2b).
+---
+> # cardBR5_runner.sh — Card BR5: DSpark BLOCK verification ("rejection_sample_method":"block") re-bracketed ALONE against the new
+> # GB300-only reference v28-prob (= v26 "Seeded Adaptive" + "draft_sample_method":"probabilistic", Card BR4 P PASS), bracketed
+> # A -> B -> A2, lane :30006, GB300. Clone of ~/dsv41/m3/br3/cardBR3_runner.sh @58ea2774 (DIFF-br5-runner-vs-br3.txt shows every
+> # change); prob_in_args fact + per-position metrics follow ~/dsv41/m3/br4/cardBR4_runner.sh.
+> # WHY: in BR4, PB (= v28-prob + block) FAILED two temp-0 parity gates (G2b shell_ops C1 +3.6 % vs a 2.6 % bar; G6 replay_turns one
+> # pass 9/12 vs control range [6,8]) while P passed. BR5 asks ONE question: do those two parity trips reproduce when PB is
+> # re-bracketed alone against P-as-control? Same lane, same launcher, same cells, same gates, same bars — pre-registered, NOT loosened.
+> # CONTROL = exactly the stopped-kept container dsv41-vllm-1017-v28-prob-BOUND-REF (booted 2026-10-26 10:49 by park_v28_prob.sh via
+> # ~/dsv41/m3/br3/launch_br3.sh, image 0909, hook v26ar2, ROWMAP rowmap-mixed-ar-v1.json, --offload-backend uva --cpu-offload-gb 60,
+> # k-schedule [[1,8,5],[9,24,1]], seqs 24, SPEC_EXTRA=',"draft_sample_method":"probabilistic"').
+> # AXIS via SPEC_EXTRA spliced into --speculative-config by the REUSED BR3 launcher ~/dsv41/m3/br3/launch_br3.sh (absolute path,
+> # sha1 pinned 8066045c, not copied):
+> #   A/A2 : ,"draft_sample_method":"probabilistic"                                   (Args byte-identical to v28-prob)
+> #   B    : ,"draft_sample_method":"probabilistic","rejection_sample_method":"block" (= BR4 PB)
+> # Not a compute-hash factor => hash-hit boot (~474-485 s on 0909) expected. Block verification allocates nothing => all three arms
+> # must show the SAME GPU KV token count (v28-prob boot log: 2,481,694; BR4 P and PB both 2,481,694).
+> # At temperature 0 block verification is skipped on greedy rows => the stock temp-0 window is a PARITY cell (G2b). The primary speed
+> # cells sample at temperature 1.0 (perclass_run_t.sh, ar_mixed_t.py — the BR1 instruments, by absolute path).
+16,17c25,27
+< # Detached: cd ~/dsv41/m3/br3 && setsid nohup bash cardBR3_runner.sh > /dev/null 2>&1 < /dev/null & echo $! > cardBR3.pid
+< # Abort: touch ~/dsv41/m3/br3/results-cardBR3/ABORT (checked between cells/boots) or kill -TERM <pid>.
+---
+> # REFERENCES: v28-prob and v26seed-BOUND-REF stay STOPPED throughout (inspect/logs read-only; never started/stopped/renamed).
+> # Detached: cd ~/dsv41/m3/br5 && setsid nohup bash cardBR5_runner.sh > /dev/null 2>&1 < /dev/null & echo $! > cardBR5.pid
+> # Abort: touch ~/dsv41/m3/br5/results-cardBR5/ABORT (checked between cells/boots) or kill -TERM <pid>.
+20c30
+< #     -> stop the v27-block pair (kept) -> ISOLATE -> REFUSE (and restore) if the RTX still holds > 2048 MiB (BR3 is Grace-only)
+---
+> #     -> stop the v27-block pair (kept) -> ISOLATE -> REFUSE (and restore) if the RTX still holds > 2048 MiB (BR5 is Grace-only)
+22,24c32,34
+< #       (single step, no sidecar, no card watchdog) -> wait_bind -> boot facts (KV, args/env/binds vs v26seed, hook guard lines,
+< #       hash-hit shape, block_in_args) -> GO + unfreeze + 90 s settle
+< #     cells (each via bg() with a timeout; /metrics vllm:spec_decode_* + /ar line counts at every cell start/end):
+---
+> #       (single step, no sidecar, no card watchdog) -> wait_bind -> boot facts (KV, args/env/binds vs v28-prob, hook guard lines,
+> #       hash-hit shape, prob_in_args, block_in_args) -> GO + unfreeze + 90 s settle
+> #     cells (each via bg() with a timeout; /metrics vllm:spec_decode_* incl. per-position + /ar line counts at every cell start/end):
+26c36
+< #       (2) pct0  : stock perclass_run.sh (temp 0, full r1+r2) -> X/perclass-t0   (no-op sanity, G2b)
+---
+> #       (2) pct0  : stock perclass_run.sh (temp 0, full r1+r2) -> X/perclass-t0   (parity, G2b — BR4 PB tripped shell_ops here)
+29c39
+< #       (5) gauntlet (tags br3-X; G5)   (6) turns: replay_turns.py PASSES=2 (G6)
+---
+> #       (5) gauntlet (tags br5-X; G5)   (6) turns: replay_turns.py PASSES=2 (G6 — BR4 PB tripped here)
+32c42
+< #   END: restore production v27 pair + fail-stop watchdog (BR1 restore_lane; -rtx first, wait 'serving', server; double-forked
+---
+> #   END: restore production v27 pair + fail-stop watchdog (BR1/BR3/BR4 restore_lane; -rtx first, wait 'serving', server; double-forked
+36,38c46,48
+< HM=${BR3_HOME:-~}   # desk dry-run override only; production = ~
+< DS=$HM/dsv41; D=$DS/m3; B1=$D/br1; B3=$D/br3
+< R=$B3/results-cardBR3
+---
+> HM=${BR5_HOME:-~}   # desk dry-run override only; production = ~
+> DS=$HM/dsv41; D=$DS/m3; B1=$D/br1; B3=$D/br3; B5=$D/br5
+> R=$B5/results-cardBR5
+40c50
+< IMAGE=vllm/vllm-openai:deepseekv41-flash-0909                                         # = launch_ar6.sh / v26seed
+---
+> IMAGE=vllm/vllm-openai:deepseekv41-flash-0909                                         # = launch_ar6.sh / v26seed / v28-prob
+43c53
+< MODEL=${BR3_MODEL_DIR:-/models/DeepSeek-V4.1-Flash-1017-1bae0e1088993b9b82de08f59de5be5a34e42170}
+---
+> MODEL=${BR5_MODEL_DIR:-/models/DeepSeek-V4.1-Flash-1017-1bae0e1088993b9b82de08f59de5be5a34e42170}
+47,48c57,58
+< LAUNCH=$B3/launch_br3.sh; LAUNCH_REF=$DS/ar/launch_ar6.sh
+< VERDICT=$B3/br3_verdict.py
+---
+> LAUNCH=$B3/launch_br3.sh; LAUNCH_REF=$DS/ar/launch_ar6.sh   # BR3 launcher REUSED by absolute path (not copied)
+> VERDICT=$B5/br5_verdict.py
+56,57c66,68
+< WD=$D/sidecar_watchdog.py   # PRODUCTION watchdog only (re-armed at restore); BR3 arms run no card watchdog (no sidecar)
+< REF=dsv41-vllm-1017-v26seed-BOUND-REF   # control ground truth: STOPPED-and-kept, never started/stopped/renamed by this card
+---
+> WD=$D/sidecar_watchdog.py   # PRODUCTION watchdog only (re-armed at restore); BR5 arms run no card watchdog (no sidecar)
+> REF=dsv41-vllm-1017-v28-prob-BOUND-REF   # control ground truth: STOPPED-and-kept, never started/stopped/renamed by this card
+> V26=dsv41-vllm-1017-v26seed-BOUND-REF    # v28's rollback: STOPPED-and-kept, never touched (state logged at preflight/FINAL)
+60c71
+< N_A=dsv41-vllm-1017-BR3-A; N_B=dsv41-vllm-1017-BR3-B; N_A2=dsv41-vllm-1017-BR3-A2
+---
+> N_A=dsv41-vllm-1017-BR5-A; N_B=dsv41-vllm-1017-BR5-B; N_A2=dsv41-vllm-1017-BR5-A2
+62c73,75
+< SPEC_B=',"rejection_sample_method":"block"'
+---
+> SPEC_A=',"draft_sample_method":"probabilistic"'                                     # A/A2 = v28-prob (the reference)
+> SPEC_BLOCK=',"rejection_sample_method":"block"'                                     # the ONE axis
+> SPEC_B="$SPEC_A$SPEC_BLOCK"                                                          # B = v28-prob + block (= BR4 PB)
+71,73c84,87
+< # >>>>> TODO-SHA (Milo, after review + rename of the BR3 drafts): fill the 8-char sha1 prefixes of launch_br3.sh and
+< # >>>>> br3_verdict.py below. TODO-SHA never matches, so the runner REFUSES at preflight until these are filled.
+< SHA_LAUNCH=${SHA_LAUNCH-8066045c}; SHA_VERDICT=${SHA_VERDICT-da59e401}
+---
+> # launch_br3.sh is the REVIEWED BR3 launcher (used by the finished BR3/BR4 runs and the v28 park), reused by absolute path: pin filled.
+> # >>>>> TODO-SHA (Milo, after review + rename of the BR5 drafts): fill the 8-char sha1 prefix of br5_verdict.py below.
+> # >>>>> TODO-SHA never matches, so the runner REFUSES at preflight until it is filled.
+> SHA_LAUNCH=${SHA_LAUNCH-8066045c}; SHA_VERDICT=${SHA_VERDICT-TODO-SHA}
+89c103
+< if [[ -e $R ]]; then echo "$(date '+%F %T %Z') REFUSE: $R exists (refuse to mix runs; move it aside)" | tee -a "$B3/cardBR3.refused.log" >&2; exit 5; fi
+---
+> if [[ -e $R ]]; then echo "$(date '+%F %T %Z') REFUSE: $R exists (refuse to mix runs; move it aside)" | tee -a "$B5/cardBR5.refused.log" >&2; exit 5; fi
+108c122
+<   ps -eo pid,args | grep -E '^ *[0-9]+ bash .*(runner\.sh|perclass_run\.sh|perclass_run_t\.sh)' | grep -v "cardBR3_runner.sh" | grep -v grep \
+---
+>   ps -eo pid,args | grep -E '^ *[0-9]+ bash .*(runner\.sh|perclass_run\.sh|perclass_run_t\.sh)' | grep -v "cardBR5_runner.sh" | grep -v grep \
+147c161
+< FW_TAG=cardBR3-isolate
+---
+> FW_TAG=cardBR5-isolate
+188c202
+<   bg bash -c 'cd "$1" && shift && exec timeout 1200 python3 run_suite.py "$@"' _ "$GDIR" --base-url $U/v1 --model $M --output "$R/gauntlet-$tag" --tag "br3-$tag" --cache-salt "br3-$tag" --sandbox-image "$GIMG" --workers 4 > "$R/gauntlet-log-$tag.txt" 2>&1 || log "gauntlet $tag nonzero rc"
+---
+>   bg bash -c 'cd "$1" && shift && exec timeout 1200 python3 run_suite.py "$@"' _ "$GDIR" --base-url $U/v1 --model $M --output "$R/gauntlet-$tag" --tag "br5-$tag" --cache-salt "br5-$tag" --sandbox-image "$GIMG" --workers 4 > "$R/gauntlet-log-$tag.txt" 2>&1 || log "gauntlet $tag nonzero rc"
+210c224
+< # ---- BR3 arms are single GB300-only containers: no sidecar, no card watchdog. stop_arm never touches any -rtx container.
+---
+> # ---- BR5 arms are single GB300-only containers: no sidecar, no card watchdog. stop_arm never touches any -rtx container.
+238c252
+< restore_lane(){ # idempotent: BR3 arms stop-and-keep, v27-block pair docker start (flags kept), fail-stop watchdog re-armed
+---
+> restore_lane(){ # idempotent: BR5 arms stop-and-keep, v27-block pair docker start (flags kept), fail-stop watchdog re-armed
+258c272
+<     own "cardBR3 done; lane restored to $V27 pair + watchdog pid ${NEWWD:-NONE} (ppid $(ps -o ppid= -p "${NEWWD:-0}" 2>/dev/null | tr -d ' ')); ISOLATE removed (receipts $R)"
+---
+>     own "cardBR5 done; lane restored to $V27 pair + watchdog pid ${NEWWD:-NONE} (ppid $(ps -o ppid= -p "${NEWWD:-0}" 2>/dev/null | tr -d ' ')); ISOLATE removed (receipts $R)"
+260,261c274,275
+<     log "RESTORE FAILED — lane dark, needs hands (BRIEF-BR3.md §Restore)"
+<     own "OWNER: cardBR3 RESTORE FAILED — lane dark; see $R/runner.log (manual: docker start $V27R; wait 'serving'; docker start $V27; re-arm watchdog from $WARGV)"
+---
+>     log "RESTORE FAILED — lane dark, needs hands (BRIEF-BR5.md §Restore)"
+>     own "OWNER: cardBR5 RESTORE FAILED — lane dark; see $R/runner.log (manual: docker start $V27R; wait 'serving'; docker start $V27; re-arm watchdog from $WARGV)"
+274c288
+<     log "===== CARD BR3 END (ABORTED rc=$rc; lane = $(docker ps --format '{{.Names}}' | grep -E '^dsv41-' | tr '\n' ' ') watchdog=$(wd_pids)) ====="
+---
+>     log "===== CARD BR5 END (ABORTED rc=$rc; lane = $(docker ps --format '{{.Names}}' | grep -E '^dsv41-' | tr '\n' ' ') watchdog=$(wd_pids)) ====="
+279c293
+< # ---- GO + unfreeze + fixed settle: the v26seed production regime (seed map + adaptive unfrozen), identical on every arm
+---
+> # ---- GO + unfreeze + fixed settle: the v26seed/v28 production regime (seed map + adaptive unfrozen), identical on every arm
+297c311
+< boot_br3(){ # arm name spec_extra
+---
+> boot_br5(){ # arm name spec_extra
+306c320
+<   u=$(rtx_used); [[ -n $u && $u -lt $RTX_IDLE_MIB ]] || { log "REFUSE boot $arm: RTX busy (${u:-?} MiB >= $RTX_IDLE_MIB) — BR3 arms are Grace-only"; return 1; }
+---
+>   u=$(rtx_used); [[ -n $u && $u -lt $RTX_IDLE_MIB ]] || { log "REFUSE boot $arm: RTX busy (${u:-?} MiB >= $RTX_IDLE_MIB) — BR5 arms are Grace-only"; return 1; }
+324a339
+>   tr '\r' '\n' < "$A/boot.log" | grep -iE 'probabilistic|draft_sample|draft logits' | cut -c1-300 > "$A/boot-prob.log"
+326c341
+<   local kv blk bl ffb ld sv as ae rl rd l9 pab hf km k ae_ref ee_ref be_ref im ru
+---
+>   local kv blk prb bl pl ffb ld sv as ae rl rd l9 pab hf km k ae_ref ee_ref be_ref im ru wantp
+329c344,345
+<   bl=$(grep -c . "$A/boot-block.log"); ffb=$(tr '\r' '\n' < "$A/boot.log" | grep -cE "$FF")
+---
+>   prb=$(grep -o 'draft_sample_method' "$A/args.json" | wc -l | tr -d ' ')
+>   bl=$(grep -c . "$A/boot-block.log"); pl=$(grep -c . "$A/boot-prob.log"); ffb=$(tr '\r' '\n' < "$A/boot.log" | grep -cE "$FF")
+349c365
+<     block_in_args="${blk:-0}" block_boot_lines="${bl:-0}" ff_boot="${ffb:-0}" loaded_lines="${ld:-0}" saved_lines="${sv:-0}" \
+---
+>     block_in_args="${blk:-0}" prob_in_args="${prb:-0}" block_boot_lines="${bl:-0}" prob_boot_lines="${pl:-0}" spec_extra="$spec" ff_boot="${ffb:-0}" loaded_lines="${ld:-0}" saved_lines="${sv:-0}" \
+353,354c369,370
+<   want=0; [[ -n $spec ]] && want=1
+<   log "FACTS $arm: kv=[${kv:-MISSING}] (v26seed log: $(cat "$R/kv-ref.txt" 2>/dev/null)) block_in_args=$blk (want $want) block_boot_lines=$bl ff_boot=$ffb autotune loaded=$ld saved=$sv starts=$as ends=$ae | rehome layers=$rl done40=$rd host_avail@L9=${l9:-?}GiB pin_abort=$pab hook_failed=$hf keys_missing=[${km}] | args_eq_v26seed=$ae_ref env_eq_v26seed(sorted)=$ee_ref binds_eq_v26seed(except /ar)=$be_ref image=${im:0:19} rtx_after_bind=${ru}MiB"
+---
+>   case $arm in A|A2) wantp=1; want=0;; B) wantp=1; want=1;; *) wantp=x; want=x;; esac   # prob 1/1/1, block 0/1/0
+>   log "FACTS $arm: kv=[${kv:-MISSING}] (v28-prob log: $(cat "$R/kv-ref.txt" 2>/dev/null)) prob_in_args=$prb (want $wantp) block_in_args=$blk (want $want) prob_boot_lines=$pl block_boot_lines=$bl ff_boot=$ffb autotune loaded=$ld saved=$sv starts=$as ends=$ae | rehome layers=$rl done40=$rd host_avail@L9=${l9:-?}GiB pin_abort=$pab hook_failed=$hf keys_missing=[${km}] | args_eq_v28prob=$ae_ref env_eq_v28prob(sorted)=$ee_ref binds_eq_v28prob(except /ar)=$be_ref image=${im:0:19} rtx_after_bind=${ru}MiB"
+355a372
+>   [[ ${prb:-0} == "$wantp" ]] || log "WARN $arm: prob_in_args=$prb, expected $wantp (G0 will FAIL; cells continue for receipts)"
+357c374
+<     [[ -n $kv && $kv == "$kva" ]] || log "WARN $arm: GPU KV cache size [${kv:-MISSING}] != arm A [${kva:-MISSING}] (G0 rule: B and A2 equal A)"; fi
+---
+>     [[ -n $kv && $kv == "$kva" ]] || log "WARN $arm: GPU KV cache size [${kv:-MISSING}] != arm A [${kva:-MISSING}] (G0 rule: B and A2 equal A — block allocates nothing; v28-prob log $(cat "$R/kv-ref.txt" 2>/dev/null))"; fi
+376c393
+<   # (1) PRIMARY: per-class window at temperature 1.0 (block verification is a no-op on greedy rows)
+---
+>   # (1) PRIMARY: per-class window at temperature 1.0 (block verification only runs on non-greedy rows)
+378,380c395,397
+<     "$BENCH" "BR3-$arm-t1" "$A/perclass-t1" "$TEMP_T" "$SEED_T" "$TOP_P_T" "$PCDEC_T" "$T_PERCLASS" "$PERCLASS_T"
+<   # (2) no-op sanity: the STOCK temp-0 window (perclass_run.sh has no r1-only switch -> full r1+r2)
+<   cell pct0 bash -c 'cd "$1" && ARM="$2" OUTDIR="$3" exec timeout "$4" bash perclass_run.sh' _ "$BENCH" "BR3-$arm-t0" "$A/perclass-t0" "$T_PERCLASS"
+---
+>     "$BENCH" "BR5-$arm-t1" "$A/perclass-t1" "$TEMP_T" "$SEED_T" "$TOP_P_T" "$PCDEC_T" "$T_PERCLASS" "$PERCLASS_T"
+>   # (2) parity: the STOCK temp-0 window (perclass_run.sh has no r1-only switch -> full r1+r2); BR4 PB tripped shell_ops C1 here
+>   cell pct0 bash -c 'cd "$1" && ARM="$2" OUTDIR="$3" exec timeout "$4" bash perclass_run.sh' _ "$BENCH" "BR5-$arm-t0" "$A/perclass-t0" "$T_PERCLASS"
+383c400
+<     cell "c1-r$r" timeout "$T_MIXED" env HELDOUT=1 python3 "$MIXED_T" "BR3-$arm-c1-r$r" "$A" 1 "$MIX_S" --temperature "$TEMP_T" --seed "$SEED_T" --top-p "$TOP_P_T" || break
+---
+>     cell "c1-r$r" timeout "$T_MIXED" env HELDOUT=1 python3 "$MIXED_T" "BR5-$arm-c1-r$r" "$A" 1 "$MIX_S" --temperature "$TEMP_T" --seed "$SEED_T" --top-p "$TOP_P_T" || break
+385,386c402,403
+<   # (4) teacher-forced TF capture (prefill only; temperature-independent) -> $A/tf-BR3-<arm>.jsonl
+<   cell tf bash -c 'cd "$1" && MAXPOS=4096 CONC=4 exec timeout "$2" python3 "$3" capture "$4" "$5"' _ "$A" "$T_TF" "$TF" "BR3-$arm" "$CORPUS"
+---
+>   # (4) teacher-forced TF capture (prefill only; temperature-independent) -> $A/tf-BR5-<arm>.jsonl
+>   cell tf bash -c 'cd "$1" && MAXPOS=4096 CONC=4 exec timeout "$2" python3 "$3" capture "$4" "$5"' _ "$A" "$T_TF" "$TF" "BR5-$arm" "$CORPUS"
+390,391c407,408
+<   cell turns env TAG="BR3-$arm" PASSES=2 timeout "$T_TURNS" python3 "$TURNS"
+<   [[ -s $TURNS_OUT/turns-BR3-$arm.json ]] && mv "$TURNS_OUT/turns-BR3-$arm.json" "$A/" && log "TURNS $arm: moved turns-BR3-$arm.json into $A"
+---
+>   cell turns env TAG="BR5-$arm" PASSES=2 timeout "$T_TURNS" python3 "$TURNS"
+>   [[ -s $TURNS_OUT/turns-BR5-$arm.json ]] && mv "$TURNS_OUT/turns-BR5-$arm.json" "$A/" && log "TURNS $arm: moved turns-BR5-$arm.json into $A"
+399c416
+< log "===== CARD BR3 START (arms=$ARMS spec_B=[$SPEC_B] temp_t=$TEMP_T seed_t=$SEED_T mix_s=$MIX_S c1_reps=$C1_REPS settle_s=$SETTLE_S adapt_settle_s=$ADAPT_SETTLE_S isolate=$ISOLATE mem_min=$MEM_MIN boot_min=$BOOT_MIN R=$R) ====="
+---
+> log "===== CARD BR5 START (arms=$ARMS spec_A/A2=[$SPEC_A] spec_B=[$SPEC_B] ref=$REF temp_t=$TEMP_T seed_t=$SEED_T mix_s=$MIX_S c1_reps=$C1_REPS settle_s=$SETTLE_S adapt_settle_s=$ADAPT_SETTLE_S isolate=$ISOLATE mem_min=$MEM_MIN boot_min=$BOOT_MIN R=$R) ====="
+408a426,427
+> is_up "$V26" && { log "ABORT: $V26 is RUNNING (expected stopped-and-kept) — lane untouched"; exit 5; }
+> log "references: $REF exists=$(exists "$REF" && echo 1 || echo 0) running=$(docker inspect -f '{{.State.Running}}' "$REF" 2>/dev/null); $V26 exists=$(exists "$V26" && echo 1 || echo 0) running=$(docker inspect -f '{{.State.Running}}' "$V26" 2>/dev/null) (both stay stopped)"
+410,411c429,430
+< for n in $ALLN; do exists "$n" && { log "ABORT: BR3 container already exists: $n"; exit 5; }; exists "$n-rtx" && { log "ABORT: unexpected $n-rtx exists"; exit 5; }; done
+< ls "$TURNS_OUT"/turns-BR3-* >/dev/null 2>&1 && { log "ABORT: $TURNS_OUT/turns-BR3-* already exist (tag clash)"; exit 5; }
+---
+> for n in $ALLN; do exists "$n" && { log "ABORT: BR5 container already exists: $n"; exit 5; }; exists "$n-rtx" && { log "ABORT: unexpected $n-rtx exists"; exit 5; }; done
+> ls "$TURNS_OUT"/turns-BR5-* >/dev/null 2>&1 && { log "ABORT: $TURNS_OUT/turns-BR5-* already exist (tag clash)"; exit 5; }
+442c461
+<   echo "arm image $IMAGE ($IMAGE_ID)"; echo "production image $PROD_IMAGE_ID"; echo "gauntlet image $GIMG"; echo "B SPEC_EXTRA=[$SPEC_B]"
+---
+>   echo "arm image $IMAGE ($IMAGE_ID)"; echo "production image $PROD_IMAGE_ID"; echo "gauntlet image $GIMG"; echo "A/A2 SPEC_EXTRA=[$SPEC_A]"; echo "B SPEC_EXTRA=[$SPEC_B]"; echo "control ground truth $REF (stopped); v26seed $V26 (stopped, untouched)"
+449c468
+< # control ground truth (read-only inspect of the stopped v26seed container)
+---
+> # control ground truth (read-only inspect of the stopped v28-prob container)
+454c473,474
+<   && ! grep -q rejection_sample_method "$R/args-ref-$REF.json" && ! grep -q draft_sample_method "$R/args-ref-$REF.json" \
+---
+>   && ! grep -q rejection_sample_method "$R/args-ref-$REF.json" && [[ $(grep -o draft_sample_method "$R/args-ref-$REF.json" | wc -l) == 1 ]] \
+>   && grep -qF '\"draft_sample_method\":\"probabilistic\"}' "$R/args-ref-$REF.json" \
+456,457c476,478
+<   || { log "ABORT: $REF args/env/binds are not the expected v26seed recipe (uva, k [[1,8,5],[9,24,1]], seqs 24, greedy draft, no block, freeze=1, $ROWMAP, /w=$HOOK)"; exit 5; }
+< # rendered spec element (launcher line evaluated with SPEC_EXTRA) vs the v26seed Args element
+---
+>   || { log "ABORT: $REF args/env/binds are not the expected v28-prob recipe (uva, k [[1,8,5],[9,24,1]], seqs 24, probabilistic draft, no block, freeze=1, $ROWMAP, /w=$HOOK)"; exit 5; }
+> [[ -s $R/kv-ref.txt ]] || log "WARN: no 'GPU KV cache size' line in the $REF log (kv-ref.txt empty) — KV rule is B/A2 == A; the v28 value is annotation only"
+> # rendered spec element (launcher line evaluated with SPEC_EXTRA) vs the v28-prob Args element
+459,461c480,487
+< se=$(spec_el "$R/args-ref-$REF.json"); r0=$(render_spec ""); rb=$(render_spec "$SPEC_B")
+< [[ -n $se && $r0 == "$se" && $rb == "${se%\}}$SPEC_B}" ]] || { log "ABORT: launch_br3.sh renders spec [$r0] / B [$rb]; v26seed has [$se]"; exit 5; }
+< log "spec render OK: A/A2 == v26seed [$se]; B == v26seed + block"
+---
+> se=$(spec_el "$R/args-ref-$REF.json"); r0=$(render_spec "$SPEC_A"); rb=$(render_spec "$SPEC_B"); re=$(render_spec "")
+> [[ -n $se && $r0 == "$se" && $rb == "${se%\}}$SPEC_BLOCK}" && $se == "${re%\}}$SPEC_A}" ]] \
+>   || { log "ABORT: launch_br3.sh renders spec A [$r0] / B [$rb] / empty [$re]; v28-prob has [$se]"; exit 5; }
+> python3 -c 'import json,sys
+> se,r0,rb,re_=(json.loads(x) for x in sys.argv[1:5])
+> ok = r0 == se and se == dict(re_, draft_sample_method="probabilistic") and rb == dict(se, rejection_sample_method="block")
+> sys.exit(0 if ok else 1)' "$se" "$r0" "$rb" "$re" || { log "ABORT: rendered A/B spec JSON is not v28-prob / v28-prob + block (json-level)"; exit 5; }
+> log "spec render OK: A/A2 == v28-prob [$se]; B == v28-prob + block [$rb]"
+474c500
+< own "cardBR3 runner pid $$ preflight OK — about to take :30006 dark (A=$N_A, B=$N_B, A2=$N_A2; GB300-only, ~2.5 h); restores $V27 pair + watchdog at END. Receipts $R"
+---
+> own "cardBR5 runner pid $$ preflight OK — about to take :30006 dark (A=$N_A, B=$N_B, A2=$N_A2 vs reference $REF; GB300-only, ~2.5 h); restores $V27 pair + watchdog at END. Receipts $R"
+480c506
+< echo "cardBR3 $(date '+%F %T %Z')" > "$D/logs/MAINTENANCE"
+---
+> echo "cardBR5 $(date '+%F %T %Z')" > "$D/logs/MAINTENANCE"
+482c508
+< for p in $(wd_pids); do kill "$p" 2>/dev/null && log "fail-stop watchdog $p stopped (cardBR3)"; done
+---
+> for p in $(wd_pids); do kill "$p" 2>/dev/null && log "fail-stop watchdog $p stopped (cardBR5)"; done
+485,486c511,512
+< echo "$(date '+%F %T %Z') watchdog stopped by cardBR3 (re-armed after restore)" >> "$WDLOG"
+< mv "$WDLOG" "$WDLOG.pre-cardBR3-$(date +%Y%m%d-%H%M%S)"
+---
+> echo "$(date '+%F %T %Z') watchdog stopped by cardBR5 (re-armed after restore)" >> "$WDLOG"
+> mv "$WDLOG" "$WDLOG.pre-cardBR5-$(date +%Y%m%d-%H%M%S)"
+489c515
+< own "cardBR3: lane :30006 DARK (watchdog $WP stopped, $V27 + $V27R stopped-and-kept)"
+---
+> own "cardBR5: lane :30006 DARK (watchdog $WP stopped, $V27 + $V27R stopped-and-kept)"
+495c521
+<   log "REFUSE: RTX still holds ${u:-?} MiB (>= $RTX_IDLE_MIB) 60 s after the production pair stopped — BR3 is Grace-only; restoring production"
+---
+>   log "REFUSE: RTX still holds ${u:-?} MiB (>= $RTX_IDLE_MIB) 60 s after the production pair stopped — BR5 is Grace-only; restoring production"
+499c525
+< # ================= arms: A (control) -> B (block verification) -> A2 (control) =================
+---
+> # ================= arms: A (v28-prob control) -> B (v28-prob + block verification) -> A2 (v28-prob control) =================
+502c528
+<     A) n=$N_A; sx="";;
+---
+>     A) n=$N_A; sx="$SPEC_A";;
+504c530
+<     A2) n=$N_A2; sx="";;
+---
+>     A2) n=$N_A2; sx="$SPEC_A";;
+507c533
+<   if boot_br3 "$arm" "$n" "$sx"; then
+---
+>   if boot_br5 "$arm" "$n" "$sx"; then
+523,525c549,551
+<   if [[ -s $R/$1/tf-BR3-$1.jsonl && -s $R/$2/tf-BR3-$2.jsonl ]]; then
+<     ( cd "$R" && timeout 600 python3 "$TF" compare "$1/tf-BR3-$1.jsonl" "$2/tf-BR3-$2.jsonl" ) > "$R/tfcmp-$2-vs-$1.log" 2>&1; log "TFCMP $2 vs $1: $(tail -1 "$R/tfcmp-$2-vs-$1.log" | cut -c1-240)"
+<   else log "TFCMP $2 vs $1: UNMEASURED (missing tf-BR3-$1.jsonl or tf-BR3-$2.jsonl)"; fi; done
+---
+>   if [[ -s $R/$1/tf-BR5-$1.jsonl && -s $R/$2/tf-BR5-$2.jsonl ]]; then
+>     ( cd "$R" && timeout 600 python3 "$TF" compare "$1/tf-BR5-$1.jsonl" "$2/tf-BR5-$2.jsonl" ) > "$R/tfcmp-$2-vs-$1.log" 2>&1; log "TFCMP $2 vs $1: $(tail -1 "$R/tfcmp-$2-vs-$1.log" | cut -c1-240)"
+>   else log "TFCMP $2 vs $1: UNMEASURED (missing tf-BR5-$1.jsonl or tf-BR5-$2.jsonl)"; fi; done
+528,529c554,555
+<   [[ -s $R/$ref/tf-BR3-$ref.jsonl && -s $R/$cand/tf-BR3-$cand.jsonl ]] || { log "FLIPSM $cand vs $ref: UNMEASURED (missing capture)"; return 0; }
+<   ( cd "$R" && timeout 600 python3 "$FLIPS" "$ref/tf-BR3-$ref.jsonl" "$cand/tf-BR3-$cand.jsonl" --label "$cand-vs-$ref" ${cal:+--calib "$cal/tf-BR3-$cal.jsonl"} ) > "$out" 2>&1
+---
+>   [[ -s $R/$ref/tf-BR5-$ref.jsonl && -s $R/$cand/tf-BR5-$cand.jsonl ]] || { log "FLIPSM $cand vs $ref: UNMEASURED (missing capture)"; return 0; }
+>   ( cd "$R" && timeout 600 python3 "$FLIPS" "$ref/tf-BR5-$ref.jsonl" "$cand/tf-BR5-$cand.jsonl" --label "$cand-vs-$ref" ${cal:+--calib "$cal/tf-BR5-$cal.jsonl"} ) > "$out" 2>&1
+533c559
+< SUF=$(python3 -c "import json;print(json.load(open('$R/verdict.json'))['suffix'])" 2>/dev/null); SUF=${SUF:-BR3-NOVERDICT}
+---
+> SUF=$(python3 -c "import json;print(json.load(open('$R/verdict.json'))['suffix'])" 2>/dev/null); SUF=${SUF:-BR5-NOVERDICT}
+538c564
+< { echo; echo "## $(date '+%F %H:%M %Z') — Card BR3: DSpark block verification (rejection_sample_method block) vs sequential, A/B/A2 on the GB300-only v26seed (Seeded Adaptive) recipe, :30006 — $(python3 -c "import json;d=json.load(open('$R/verdict.json'));print(d['result'], d['suffix'])" 2>/dev/null)"
+---
+> { echo; echo "## $(date '+%F %H:%M %Z') — Card BR5: DSpark block verification (rejection_sample_method block) re-bracketed ALONE vs the v28-prob reference (v26seed + probabilistic drafting), A/B/A2, GB300-only, :30006 (BR4 PB parity re-check) — $(python3 -c "import json;d=json.load(open('$R/verdict.json'));print(d['result'], d['suffix'])" 2>/dev/null)"
+540a567
+> log "FINAL references: $REF running=$(docker inspect -f '{{.State.Running}}' "$REF" 2>/dev/null) $V26 running=$(docker inspect -f '{{.State.Running}}' "$V26" 2>/dev/null) (want false/false)"
+542c569
+< log "===== CARD BR3 END (lane = $V27) ====="
+---
+> log "===== CARD BR5 END (lane = $V27) ====="

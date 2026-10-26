@@ -1,0 +1,35 @@
+Card BR5 verdict: FAIL   suffix BR5FAIL-G6
+
+| gate | status | detail |
+|---|---|---|
+| G0_binding | PASS | ground truth dsv41-vllm-1017-v28-prob-BOUND-REF spec carries probabilistic drafting and no block: True; A: kv=2,481,694 prob_in_args=1(want 1) block_in_args=0(want 0) args==v28prob True env==v28prob(sorted) True binds==v28prob(except /ar) True image0909 True hook rehome 40/40 done=1 abort=0 failed=0 missing=[] host_avail@L9=196.88GiB GO+unfreeze 1/1 ctrl={"freeze": false, "baseline": true}; B: kv=2,481,694 prob_in_args=1(want 1) block_in_args=1(want 1) args==v28prob-except-spec True spec==v28prob+block True env==v28prob(sorted) True binds==v28prob(except /ar) True image0909 True hook rehome 40/40 done=1 abort=0 failed=0 missing=[] host_avail@L9=198.20GiB GO+unfreeze 1/1 ctrl={"freeze": false, "baseline": true}; A2: kv=2,481,694 prob_in_args=1(want 1) block_in_args=0(want 0) args==v28prob True env==v28prob(sorted) True binds==v28prob(except /ar) True image0909 True hook rehome 40/40 done=1 abort=0 failed=0 missing=[] host_avail@L9=197.36GiB GO+unfreeze 1/1 ctrl={"freeze": false, "baseline": true}; KV A=2,481,694 B=2,481,694 A2=2,481,694 (v28-prob boot log 2,481,694, info; rule: B and A2 equal A — block allocates nothing) | hash-hit shape (info): A loaded=189 saved=189 same_dir=True autotune_span=5.0s boot=474s; B loaded=189 saved=189 same_dir=True autotune_span=5.0s boot=474s; A2 loaded=189 saved=189 same_dir=True autotune_span=6.0s boot=475s; one autotune key across arms: True; 0909 hash-hit shape (Loaded N == Saved N, same dir, span <= 60 s): A=True, B=True, A2=True; B boot / controls = 1.00 (<= 1.5 expected) |
+| G0b_foreign | PASS | non-127.0.0.1 POST /v1 per arm: A=0 {'bind': 0, 'cells': 0}; B=0 {'bind': 0, 'cells': 0}; A2=0 {'bind': 0, 'cells': 0} |
+| G1_controls | PASS | C1 per class: t1/prose/c1 d=0.6%; t1/structured/c1 d=2.0%; t1/code/c1 d=0.6%; t1/shell_ops/c1 d=1.2%; t1/tool_json/c1 d=3.5%; t0/prose/c1 d=0.6%; t0/structured/c1 d=0.8%; t0/code/c1 d=1.3%; t0/shell_ops/c1 d=1.2%; t0/tool_json/c1 d=2.8% | C8 (info, bimodal class): t1/prose/c8 d=0.4%; t1/structured/c8 d=2.5%; t1/code/c8 d=5.6%; t1/shell_ops/c8 d=0.2%; t1/tool_json/c8 d=0.8%; t0/prose/c8 d=1.6%; t0/structured/c8 d=1.7%; t0/code/c8 d=1.0%; t0/shell_ops/c8 d=0.7%; t0/tool_json/c8 d=9.7% |
+| G2_perclass_t1 | PASS | temp 1.0 forced-length decode tok/s: prose/c1 B/ctrl=1.013 (A 218.7 A2 220.0 B 222.1; bar -2.0%); prose/c8 B/ctrl=1.041 (A 494.7 A2 492.6 B 513.9; bar -2.0%); structured/c1 B/ctrl=1.025 (A 239.4 A2 244.1 B 247.8; bar -2.9%); structured/c8 B/ctrl=1.030 (A 604.9 A2 590.1 B 615.2; bar -3.7%); code/c1 B/ctrl=1.054 (A 271.4 A2 273.1 B 286.8; bar -2.0%); code/c8 B/ctrl=1.050 (A 621.2 A2 656.9 B 670.7; bar -8.4%); shell_ops/c1 B/ctrl=1.039 (A 321.2 A2 325.2 B 335.7; bar -2.0%); shell_ops/c8 B/ctrl=0.985 (A 724.2 A2 726.0 B 714.4; bar -2.0%); tool_json/c1 B/ctrl=1.017 (A 282.6 A2 292.7 B 292.4; bar -5.3%); tool_json/c8 B/ctrl=1.008 (A 768.2 A2 762.4 B 771.2; bar -2.0%) |
+| G2b_t0_parity | PASS | stock temp-0 window (PARITY: greedy rows never use block verification; B must equal A within noise): prose/c1 B -1.5% (|.| bar 12.8%, ctrl r1/r2 spread 8.5%); structured/c1 B -1.2% (|.| bar 3.7%, ctrl r1/r2 spread 2.5%); code/c1 B +0.7% (|.| bar 2.7%, ctrl r1/r2 spread 1.8%); shell_ops/c1 B +2.4% (|.| bar 10.3%, ctrl r1/r2 spread 6.9%); tool_json/c1 B -1.8% (|.| bar 8.1%, ctrl r1/r2 spread 5.4%) | C8 info: prose/c8 B/ctrl=0.997; structured/c8 B/ctrl=1.010; code/c8 B/ctrl=1.007; shell_ops/c8 B/ctrl=1.053; tool_json/c8 B/ctrl=0.955 |
+| G3_mixed_c1_t1 | PASS | ar_mixed_t C1 agg_tok_s_all at temp 1.0: B mean 182.54 vs ctrl 180.96 (+0.87%; A 180.95 A2 180.98; bar -2.00%) reps B=[177.7, 184.9, 185.0] errors B=0 |
+| G4_tf | PASS | B-vs-A flips 1.072% (bar <=3% and <= 1.5 x floor 1.075% = 1.612%; token-mismatch docs 0); B-vs-A2 flips 1.064% (bar <=3% and <= 1.5 x floor 1.075% = 1.612%; token-mismatch docs 0); margin flips at ref p>=0.9 on agent/tool docs: vs A=0 (skipped_docs 0), vs A2=0 (skipped_docs 0) |
+| G5_gauntlet | PASS | B 12/12; controls A 12/12, A2 12/12 (temp 0: run_suite.py) |
+| G6_turns | FAIL | B per pass [6, 7]/12 vs control range [8,9] (A [9, 8], A2 [8, 8]); B errors 0; text-turn emissions B [6, 4] (temp 0: replay_turns.py) |
+| G7_errors | PASS | A: ff=0 foreign=0; B: ff=0 foreign=0; A2: ff=0 foreign=0 |
+
+| arm | KV tokens | prob_in_args | block_in_args | boot s | mixed C1 t1 mean | t1 prose C1 | t1 tool_json C1 | t0 prose C1 | swaps during cells | ff | foreign |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| A | 2,481,694 | 1 | 0 | 474 | 180.95 | 218.7 | 282.6 | 237.6 | 82809 | 0 | 0 |
+| B | 2,481,694 | 1 | 1 | 474 | 182.54 | 222.1 | 292.4 | 233.3 | 82354 | 0 | 0 |
+| A2 | 2,481,694 | 1 | 0 | 475 | 180.98 | 220.0 | 292.7 | 236.2 | 82303 | 0 | 0 |
+
+ANNOTATION (not a gate) — accepted tokens per verify step at temp 1.0 (1 + accepted/drafts from /metrics):
+  pct1 window: A=3.417, B=3.513, A2=3.437  B/ctrl=1.025;  mixed C1: A=2.100, B=2.124, A2=2.100  B/ctrl=1.012
+  per class (B vs ctrl mean): prose/c1 2.92/2.82; prose/c8 2.93/2.81; structured/c1 3.14/3.04; structured/c8 3.12/3.04; code/c1 3.91/3.77; code/c8 3.98/3.92; shell_ops/c1 4.28/4.12; shell_ops/c8 4.01/4.07; tool_json/c1 3.68/3.66; tool_json/c8 3.73/3.60
+ANNOTATION — x3 acceptance canary (agent_fixture_x3, temp 0, inside each window): t1/prose 0.247/0.247/0.247; t1/structured 0.468/0.468/0.468; t1/code 0.784/0.784/0.784; t1/shell_ops 0.770/0.770/0.770; t1/tool_json 0.831/0.831/0.831 (A/B/A2)
+ANNOTATION — G2 B/mean(A,A2) by cell: {'prose/c1': 1.0128, 'prose/c8': 1.041, 'structured/c1': 1.025, 'structured/c8': 1.0297, 'code/c1': 1.0537, 'code/c8': 1.0495, 'shell_ops/c1': 1.0387, 'shell_ops/c8': 0.9853, 'tool_json/c1': 1.0165, 'tool_json/c8': 1.0077}
+ANNOTATION — per-position acceptance (pct1 window, accepted_pos/drafts): {'A': [0.7813, 0.5841, 0.4388, 0.3408, 0.2722], 'B': [0.7871, 0.6019, 0.4621, 0.3654, 0.2965], 'A2': [0.7833, 0.5856, 0.4432, 0.3468, 0.2776]}
+ANNOTATION — KV tokens in the v28-prob boot log: 2,481,694; host_avail at rehome layer 9 (GiB): {'A': '196.88', 'B': '198.20', 'A2': '197.36'}
+ANNOTATION — adaptive residency during cells (/ar line deltas pct1-start -> turns-end): {'A': {'swaps': 82809, 'telemetry': 1920, 'steps_bytes': 4084672}, 'B': {'swaps': 82354, 'telemetry': 1902, 'steps_bytes': 4044320}, 'A2': {'swaps': 82303, 'telemetry': 1916, 'steps_bytes': 4075456}}
+ANNOTATION — production (v27) watchdog after restore: {'pid': 2801642, 'ppid': '1', 'ppid_is_1': True}
+
+BR4 PARITY RE-CHECK (annotation, not a gate — the gates above decide):
+  G2b shell_ops t0 C1: NOT-REPRODUCED. BR4 PB +3.6% vs bar 2.6% (ctrl spread 1.7%); BR5 B +2.4% vs mean(A,A2) (|.| bar 10.3%, ctrl r1/r2 spread 6.9%; A 342.1 A2 337.9 B 348.3)
+  G6 replay_turns: NOT-REPRODUCED. BR4 PB per pass [8, 9]/12 vs control range [6, 8]; BR5 B per pass [6, 7]/12 vs control range [8,9] (B errors 0) — opposite-direction trip
+  neither BR4 parity trip reproduced (gate status this card: G2b PASS, G6 FAIL)
