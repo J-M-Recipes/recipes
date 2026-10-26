@@ -6,7 +6,9 @@ leaves a serial ~350 GB/s read on the critical path of every decode step. This r
 keep the hot experts in HBM and move the cold ones to the **RTX PRO 6000 Max-Q in the same chassis, where
 they are computed**, not read. Only activations cross PCIe.
 
-Same box, same checkpoint, same harness, bracketed controls in one window:
+Same box, same checkpoint, same harness, bracketed controls in one window (2026-10-22, measured on the v25 base
+launch; the serving release v27 adds the v25m map, a Grace prefix-KV tier and block verification, whose deltas are
+Cards GV, KV3 and BR1 below):
 
 | | GB300 only (sibling recipe, v23) | GB300 + RTX 6000 sidecar (this recipe) |
 |---|--:|--:|
@@ -32,26 +34,56 @@ sibling is the one that needs nothing but the GB300.
 > the 295/89 map, the agreement gate run on real prompts, the ack-before-bookkeeping sidecar fix, the
 > fail-closed watchdog and the bracketed measurement discipline. See [Credits](#credits).
 
-> **Status, 2026-10-26 04:08 CDT (recipe stays experimental): PROMOTED v27 = block verification.** Lane `:30006`
-> on the reference box now serves `dsv41-vllm-1017-v27-block-BOUND-REF` + `-rtx` with the fail-stop watchdog in
-> enforce mode: the v25m-kvtier launch below plus `"rejection_sample_method":"block"` (Card BR1). Hash-hit boot
-> 528 s, KV 4,400,013 tokens, smoke (`reasoning_effort: low`, tool call) and consumer checks (Hermes one-shot with
-> tool calls, Forge guest gateway `deepseek-v4.1-flash`) passed; rollback pair `dsv41-vllm-1017-v25m-kvtier-RETIRED-REF`
-> (+`-rtx`) stopped-and-kept; launcher `launch_br1.sh` (= `launch_sidecar.sh` + `SPEC_EXTRA`). From 2026-10-24 23:16
-> to 2026-10-26 03:58 CDT the lane served `dsv41-vllm-1017-v25m-kvtier` + `-rtx` (the same launch without the key),
-> i.e. the v25m variant (`ROWMAP=rowmap-mixed-ar-v1.json`) with the kv-host-tier flags
-> (`EXTRA="--kv-cache-memory 9126805504 --kv-offloading-size 48 --kv-offloading-backend native"`), the production
-> spec config `{"method":"dspark","num_speculative_tokens":5,"num_speculative_tokens_per_batch_size":[[1,4,5],[5,8,3],[9,32,3]],"draft_sample_method":"probabilistic"}`,
-> image nightly-af7f9488 (`sha256:3af6a45b…`) and a KV pool of 4,400,013 tokens. *(Corrected 2026-10-26: an earlier
-> banner said the lane served the GB300-only sibling's v26 config. That was true only from 2026-10-24 ~21:30 to
-> 23:16 CDT.)* The adaptive-residency campaign has ended, and the v25m 48 h soak was cancelled on 2026-10-24.
-> Block verification (Card BR1, below) passed and was **promoted on 2026-10-26 04:08 CDT (v27)**.
+> **Status, 2026-10-26 16:45 CDT (recipe stays experimental): v27 is the serving release.** Lane `:30006` on the
+> reference box serves **v27 = `dsv41-vllm-1017-v27-block-BOUND-REF` + `-rtx`**: the v25m-kvtier sidecar launch
+> (`ROWMAP=rowmap-mixed-ar-v1.json`,
+> `EXTRA="--kv-cache-memory 9126805504 --kv-offloading-size 48 --kv-offloading-backend native"`) plus one spec key,
+> `{"method":"dspark","num_speculative_tokens":5,"num_speculative_tokens_per_batch_size":[[1,4,5],[5,8,3],[9,32,3]],"draft_sample_method":"probabilistic","rejection_sample_method":"block"}`,
+> image nightly-af7f9488 (`sha256:3af6a45b…`), KV pool 4,400,013 tokens, fail-stop watchdog in enforce mode. It was
+> promoted on 2026-10-26 04:08 CDT on Card BR1 (PASS re-scored, James's call): hash-hit boot 528 s, smoke
+> (`reasoning_effort: low`, tool call) and consumer checks (Hermes one-shot with tool calls, Forge guest gateway
+> `deepseek-v4.1-flash`) passed; promotion log `results/2026-10-26-br1-block-verification/raw/promote-v27.log`.
+> Rollback pair `dsv41-vllm-1017-v25m-kvtier-RETIRED-REF` (+`-rtx`, v27 without the block key), stopped-and-kept.
+> During the day the same box ran four GB300-only sibling cards and one park window. v27 was stopped for each and
+> restored after each (after BR3 06:49, BR4 10:28, park 11:06, BR5 13:52 and BR6 16:36 CDT). Every restore was
+> re-verified: KV 4,400,013, the block key in the args, and the watchdog re-armed with PPID 1. The Forge guest
+> gateway re-listed the lane at 16:45 CDT. Earlier history: from 2026-10-24 23:16 to 2026-10-26 03:58 CDT the lane
+> served `dsv41-vllm-1017-v25m-kvtier` + `-rtx` (the same launch without the key). *(Corrected 2026-10-26: an
+> earlier banner said the lane served the GB300-only sibling's v26 config. That was true only from 2026-10-24
+> ~21:30 to 23:16 CDT.)* The adaptive-residency campaign has ended, and the v25m 48 h soak was cancelled on
+> 2026-10-24, so no 48 h soak has run on v27 either.
 > **Cross-links:** GB300-only sibling
 > [`../deepseek-v4.1-flash-vllm-uva-dspark`](../deepseek-v4.1-flash-vllm-uva-dspark/README.md). Blogs:
 > [GB300 + sidecar vs 4× RTX PRO 6000 (BRRR)](https://al-engr.com/gb300-vs-4x-rtx6000-dsv41-flash-brrr.html),
 > [Adaptive Residency Part 3, the seed map](https://al-engr.com/gb300-adaptive-residency-seed-map.html) and
 > [Part 1, with its convergence correction](https://al-engr.com/gb300-adaptive-expert-residency.html). Peer recipe:
 > [fraserprice/DeepSeek-4.1-Flash-1017-BRRR](https://huggingface.co/fraserprice/DeepSeek-4.1-Flash-1017-BRRR).
+
+## 2026-10-26 (pm): what happened on the GB300-only sibling, and why it does not change this recipe
+
+The GB300-only sibling ([`../deepseek-v4.1-flash-vllm-uva-dspark`](../deepseek-v4.1-flash-vllm-uva-dspark/README.md)) tried the same key on its own lane: no sidecar, Grace
+offload, a **greedy** drafter and the k schedule `[[1,8,5],[9,24,1]]`.
+
+- **Block verification alone was a null there** (Card BR3,
+  [`results/2026-10-26-br3-block-verification-null/`](../deepseek-v4.1-flash-vllm-uva-dspark/results/2026-10-26-br3-block-verification-null/)): tokens per verify step 0.999× the control. Block
+  verification works on the draft distribution. A greedy drafter gives it a point mass, and it degenerates to
+  standard verification.
+- **Probabilistic drafting was the lever** (Card BR4,
+  [`results/2026-10-26-br4-probabilistic-drafting/`](../deepseek-v4.1-flash-vllm-uva-dspark/results/2026-10-26-br4-probabilistic-drafting/)): +10.3% tokens per step at temperature 1.0. It is now
+  that recipe's reference, `v28-prob`.
+- **Block on top of probabilistic drafting never passed a bracket cleanly in three tries:** BR4's PB arm, BR5
+  ([`results/2026-10-26-br5-block-rebracket/`](../deepseek-v4.1-flash-vllm-uva-dspark/results/2026-10-26-br5-block-rebracket/)) and BR6 with a redesigned G6
+  ([`results/2026-10-26-br6-block-g6-redesign/`](../deepseek-v4.1-flash-vllm-uva-dspark/results/2026-10-26-br6-block-g6-redesign/), added by a parallel PR). Its speed and teacher-forced gates
+  passed, but a temperature-0 parity gate tripped each time (shell_ops in BR4's G2b; tool-turn emission in G6 on
+  BR4 and BR5; BR6 in its own bundle). The sibling retired the key for cause.
+
+**Why this lane is different:** its drafter was already probabilistic. `"draft_sample_method":"probabilistic"` has
+been in this launch since v25, so block verification had a distribution to work on. Card BR1 passed here: +2.0%
+tokens per step, no class lost beyond noise (C1 0.996–1.054×, C8 1.008–1.082×), TF flips at the control floor,
+gauntlet 12/12 and replay_turns inside the controls. The pass is the re-score; the pre-registered FAIL was two
+instrument defects, and both verdicts are kept (see below). v27 stays the serving release. None of the sibling's
+cards were measured on this lane. Write-up with the addendum:
+[GB300 + sidecar vs 4× RTX PRO 6000](https://al-engr.com/gb300-vs-4x-rtx6000-dsv41-flash-brrr.html).
 
 ## 2026-10-26: block verification (Card BR1) — PASS, PROMOTED as v27; k ladder (Card BR2) — k=9 loses; peer harness side-by-side
 
@@ -66,7 +98,8 @@ Block verification ([Sun et al.](https://arxiv.org/abs/2403.10444)) verifies the
 token by token. The output distribution is the same. **Result: PASS (re-scored); promoted to `:30006` as v27 on
 2026-10-26 04:08 CDT** (James's call; promotion log `results/2026-10-26-br1-block-verification/raw/promote-v27.log`).
 
-Bracketed A (control) → B (block) → A2 (control) on the production lane config, 2026-10-25 19:33–21:35 CDT.
+Bracketed A (control) → B (block) → A2 (control) on the then-production v25m-kvtier lane config, 2026-10-25
+19:33–21:35 CDT.
 All three boots were autotune hash hits (528–529 s; `rejection_sample_method` is not a compute-hash factor). Every
 arm had KV 4,400,013, and the block key appeared in the args on B only (0/1/0, read from `docker inspect`). Every
 arm read 0 foreign clients (the lane was firewalled to loopback while dark), 0 sidecar timeouts, 0 watchdog trips
@@ -100,7 +133,9 @@ class and 256 forced tokens, r1/r2. The stock temperature-0 window was kept as a
 ### Card BR2 — k ladder (A → K9 → A2) + the peer harness on every arm
 
 K9 = block verification + `num_speculative_tokens 9` + `[[1,4,9],[5,8,3],[9,32,3]]`. The controls A and A2 are the
-production config, **without** block verification, so the K9 ratios measure block + k=9 against production.
+v25m-kvtier config, which was production when BR2 ran, **without** block verification. The K9 ratios therefore
+measure block + k=9 against that config, not against v27. *(Corrected 2026-10-26: this said "the production
+config"; production is now v27, which has block verification on.)*
 Run 2026-10-25 21:36–23:24 CDT; receipts:
 [`results/2026-10-26-br2-k-ladder-peerbench/`](results/2026-10-26-br2-k-ladder-peerbench/).
 
@@ -168,7 +203,7 @@ logged). Our server omits `prompt_tokens_details`, so the cache-bust check reads
 **Theirs** is the "Thinking off" table published on the BRRR model card, copied and not re-run by us: 4× RTX PRO
 6000 Blackwell Max-Q at 325 W, Threadripper 9960X, 64 GB RAM, Samsung 990 PRO, adaptive verification off, DSpark 7
 draft tokens, 5 rounds. **Ours** is Card BR2 arm A: one GB300 plus one RTX PRO 6000 Max-Q sidecar, this lane's
-production config, DSpark k=5 at C1–C4 and k=3 above batch 4 (hence our lower C8/C16 accept), 2 rounds.
+v25m-kvtier config (production until v27; no block verification), DSpark k=5 at C1–C4 and k=3 above batch 4 (hence our lower C8/C16 accept), 2 rounds.
 [`raw/A/peerbench-BR2-A.md`](results/2026-10-26-br2-k-ladder-peerbench/raw/A/peerbench-BR2-A.md). Arm A2 agrees
 with A within 0–2.5% on TG in all 12 cells. Their box wins single-stream decode by 1.45–1.51×. Ours wins prefill
 2.3–2.8× at 16K/64K, TTFT at every cell, and TG at 64K/C16. At C4–C16 the two are mostly level.
@@ -255,7 +290,9 @@ collected on ~100k JP/DE and ~105k agent/tool tokens during the
 | GB300 stall on the RTX, JP/DE / agent | 11.8 % / 0.5 % | **0.5 %** / 0.4 % |
 
 - **What it buys:** single-stream off-domain prose, +11–15 %. At C4 the GB300's own step time already hides the RTX work.
-- **Fidelity (Card GV, 2026-10-24): 9 of 10 gates pass, the bring-up cosine gate fails.** Greedy parity cannot gate this lane (the same map self-agrees 14/50), so the gates are SC2's. Teacher-forced flips PASS against both v23 and v25 static; GSM8K-1319 96.82 vs 96.97; BFCL dev/held-out **identical** to v25 (556/600, 1018/1311); gauntlet 12/12; needle 500/500; tool emission, effort and image probes pass; 0 sidecar timeouts. **The bring-up cosine gate misses: min cos 0.99811 vs the 0.999 bar.** That is one of 1,439 gated checks, at layer 39 (the worst layer on every map), and the rest of the distribution matches v25 static (p1 0.99968 vs 0.99970). The same gate rejected the 285/99 map, so the bar stays where it is and v25m stays **experimental**. **Follow-up (Card GV2):** restoring layer 39 to v25's exact static split did not fix it (min 0.99831; worst check again layer 39, where the cold experts carried ~0 % of the output norm); see [`results/2026-10-24-gv2-l39-static/`](results/2026-10-24-gv2-l39-static/). **Correction (2026-10-24 08:15):** an earlier version said the v25m miss was check noise, not the map. That overreached. GV2 shows layer 39's checks are noisy when the cold experts carry ~0 of the output, but v25m's own failing check had them at 7.9 %, so GV2 does not clear v25m. The open question goes to a new, pre-registered gate (R2, below). **Cosine gate R2, registered 2026-10-24 before re-judging** ([`results/2026-10-26-gs-cosine-r2/`](results/2026-10-26-gs-cosine-r2/)): judge the sidecar's error as a fraction of the whole layer output, e = rel_diff × cold share, against a bar of 1.5 × the worst e from three v25-static check boots (the SC0 boot plus two more after the soak, 2026-10-26). Every archived boot is re-judged and the table published whatever it says. Receipts: [`results/2026-10-24-gv-v25m-gates/`](results/2026-10-24-gv-v25m-gates/).
+- **Fidelity (Card GV, 2026-10-24): 9 of 10 gates pass, the bring-up cosine gate fails.** Greedy parity cannot gate this lane (the same map self-agrees 14/50), so the gates are SC2's. Teacher-forced flips PASS against both v23 and v25 static; GSM8K-1319 96.82 vs 96.97; BFCL dev/held-out **identical** to v25 (556/600, 1018/1311); gauntlet 12/12; needle 500/500; tool emission, effort and image probes pass; 0 sidecar timeouts. **The bring-up cosine gate misses: min cos 0.99811 vs the 0.999 bar.** That is one of 1,439 gated checks, at layer 39 (the worst layer on every map), and the rest of the distribution matches v25 static (p1 0.99968 vs 0.99970). The same gate rejected the 285/99 map, so the bar stays where it is and v25m stays **experimental**. **Follow-up (Card GV2):** restoring layer 39 to v25's exact static split did not fix it (min 0.99831; worst check again layer 39, where the cold experts carried ~0 % of the output norm); see [`results/2026-10-24-gv2-l39-static/`](results/2026-10-24-gv2-l39-static/). **Correction (2026-10-24 08:15):** an earlier version said the v25m miss was check noise, not the map. That overreached. GV2 shows layer 39's checks are noisy when the cold experts carry ~0 of the output, but v25m's own failing check had them at 7.9 %, so GV2 does not clear v25m. The open question goes to a new, pre-registered gate (R2, below). **Cosine gate R2, registered 2026-10-24 before re-judging** ([`results/2026-10-26-gs-cosine-r2/`](results/2026-10-26-gs-cosine-r2/)): judge the sidecar's error as a fraction of the whole layer output, e = rel_diff × cold share, against a bar of 1.5 × the worst e from three v25-static check boots (the SC0 boot plus two more after the soak, 2026-10-26). Every archived boot is re-judged and the table published whatever it says. *(Corrected 2026-10-26: the re-judge
+has not run. Card GS was cancelled with the soak on 2026-10-24, and v27 serves on this map with the miss open; see
+Known limits.)* Receipts: [`results/2026-10-24-gv-v25m-gates/`](results/2026-10-24-gv-v25m-gates/).
 - **Same-instrument speed vs v25:** real-text English C1 273.2 vs 279.2 (−2 %), knee C8 887 vs 934 (−5 %), C16 1,411 vs 1,409. The mixed map trades a little English-only speed for +15 % on JP/DE.
 - **Soak:** 48 h on v25m, restarted after Card GV2 at 07:12 Sat 10-24 → 07:12 Mon 10-26 CDT, fail-stop watchdog armed. Card GS (static check boots + R2 re-judge) runs right after. **Cancelled 2026-10-24 by James** (soak and Card GS); v25m was never soak-cleared.
 - **Card:** [`card-v25m.png`](card-v25m.png) (base v25 card: [`card.png`](card.png)).
@@ -273,6 +310,11 @@ full **1,048,576-token** context, on:
 * **RTX PRO 6000 Max-Q** — original-el8's peer tier-2 server (b12x kernels) holding the other **89 experts
   per layer** and computing their contribution on demand. The two processes share one `/dev/shm` buffer with
   a device-side sequence counter: the GB300 publishes a step, the card answers, the GB300 adds the result.
+
+**As served (v27, since 2026-10-26 04:08 CDT):** the base launch plus the v25m mixed map
+(`rowmap-mixed-ar-v1.json`, still 295 hot / 89 cold per layer), the 48 GiB Grace prefix-KV tier, and
+`"rejection_sample_method":"block"` in the spec config. The base launch (static map, no tier, sequential
+verification) is what the 2026-10-22 headline numbers were measured on.
 
 Why it is faster: the cold-expert contribution stops being a serial C2C read and becomes a parallel GEMM on a
 second GPU. Measured step time on this chassis falls from ~14.6 ms (Grace offload, C1) to ~10.6 ms, which is
@@ -340,10 +382,21 @@ bash scripts/launch-sidecar.sh sidecar
 EXTRA="--kv-cache-memory 9126805504" bash scripts/launch-sidecar.sh server
 ```
 
+**The serving release, v27** — the base launch plus the v25m map, the kv-host-tier flags and block verification.
+`SPEC_EXTRA` is spliced into the `--speculative-config` JSON before its closing brace. It defaults to empty, which
+gives the base launch's args byte for byte.
+
+```bash
+export NAME=dsv41-vllm-1017-v27-block-BOUND-REF ROWMAP=rowmap-mixed-ar-v1.json
+bash scripts/launch-sidecar.sh sidecar
+EXTRA="--kv-cache-memory 9126805504 --kv-offloading-size 48 --kv-offloading-backend native" \
+SPEC_EXTRA=',"rejection_sample_method":"block"' bash scripts/launch-sidecar.sh server
+```
+
 Defaults you may need: `M3_DIR` (`~/dsv41/m3` — hook checkout, overlay tree, logs, `local/peer_server2_local.py`),
 `B12X_DIR` (`~/dsv41/b12x`), `MODEL_DIR`, `CACHE_DIR` (`~/dsv41/cache-a`), `ROWMAP`
 (`rowmap-static-v1.json` = 295/89), `NAME`, `SEQS` (32), `GPU_UTIL` (0.97), `MAXLEN` (1048576), `PORT` (30006),
-`PEER_SPINS` (2e9), `REPLAY_OVERLAY` (1), `EXTRA` (empty). `bash scripts/launch-sidecar.sh stop` stops
+`PEER_SPINS` (2e9), `REPLAY_OVERLAY` (1), `EXTRA` (empty), `SPEC_EXTRA` (empty). `bash scripts/launch-sidecar.sh stop` stops
 server-then-sidecar and keeps both containers.
 
 **`EXTRA` carries the KV size and defaults to empty.** Without it the pool is whatever util 0.97 leaves after
@@ -384,7 +437,8 @@ bash scripts/soak_check.sh <ssh-host> "$NAME"     # one health sample from anoth
 | output quality | teacher-forced flips vs a same-map floor, BFCL dev+held-out, GSM8K-1319, 500-needle, gauntlet, reasoning-effort vocabulary, one image request | SC2's 12 pre-registered gates |
 | drafter | per-class decode wall-clock, 20 cells × {C1, C8} | no cell worse than −3% vs both controls |
 | speed | bracketed ladders with a control on each side | knee C1 ≥ 198, knee C16 ≥ 974, sidecar C16 ≥ Grace-only +3% |
-| soak | 48 h, sampled every 5 min — restarted with the KV change: 2026-10-22 18:52 → 2026-10-24 18:52 CDT | no timeout, no trip, no stall |
+| soak | 48 h, sampled every 5 min — restarted with the KV change: 2026-10-22 18:52 → 2026-10-24 18:52 CDT. *(Corrected 2026-10-26: that window was cut at ~25 h and the v25m window was cancelled; no 48 h soak has completed on any sidecar config, v27 included.)* | no timeout, no trip, no stall |
+| v27 serving release | boot log KV line 4,400,013; `docker inspect` args contain `"rejection_sample_method":"block"`; watchdog in enforce mode with PPID 1, `trip=null` | checked at promotion (2026-10-26 04:08) and after each of the day's five restores |
 | kv-host-tier (variant) | boot log `Creating v1 connector with name: OffloadingConnector` + `Created mmap file /dev/shm/vllm_offload_….mmap (51.54 GB)`, GPU KV line still 4,400,013; evict-replay probe in `results/2026-10-24-kv3-host-prefix-tier/scripts/kv3_cells.py` (needs dev mode, test boots only) | host-tier hit + load, identical output; Card KV3's 10 gates |
 
 Nothing here is promoted on throughput alone: the cosine gate and the 0-timeout soak are pass/fail, and a
@@ -392,12 +446,18 @@ timeout is treated as a correctness bug rather than a slow request.
 
 ## Results
 
+### v27 = the serving release (promoted 2026-10-26 04:08 CDT)
+
+v27's measured delta over v25m-kvtier is Card BR1 (below). The promoted container got smoke, consumer and
+restore checks, not a new speed bracket. The headline table at the top was measured on the v25 base launch on
+2026-10-22.
+
 ### Card BR2: k ladder + peer harness (2026-10-25 21:36–23:24 CDT, `results/2026-10-26-br2-k-ladder-peerbench/`)
 
 Bundle: [`results/2026-10-26-br2-k-ladder-peerbench/`](results/2026-10-26-br2-k-ladder-peerbench/). It holds
 `throughput.csv` (per-class, mixed, tokens/step and every peerbench TG/PP cell per arm), `raw/per-position-curves.json`,
 `raw/<arm>/peerbench-BR2-<arm>.md/.json`, both verdicts and the scripts, including `peerbench.py`. K9 (block + k=9)
-reads 0.79–0.92× production at C1 and 0.88–0.93× at C8; k=5 stays. On the BRRR peer harness this lane reads 2K/C1 466
+reads 0.79–0.92× the v25m-kvtier controls at C1 and 0.88–0.93× at C8; k=5 stays. On the BRRR peer harness this lane reads 2K/C1 466
 tok/s TG p50 at 5.13 tok/step and 64K prefill 46,246 tok/s. The full 12-row side-by-side is in the 2026-10-26
 section above.
 
@@ -492,6 +552,14 @@ in prefill (2,062 incumbent); RTX p99 ≤ 194 W against its 300 W cap. Full tabl
   temperature 1.0 / top_p 1.0 with 40 private transcript prompts per class. Clients that send temperature 0 get
   nothing from it. **Promoted as v27 on 2026-10-26** (one key on the v25m-kvtier launch; rollback = the
   `-RETIRED-REF` pair).
+* **Block verification is lane-specific:** it needs probabilistic drafting, and it was not clean on the
+  Grace-only sibling (BR3 null at 0.999× tokens/step with a greedy drafter; with probabilistic drafting BR4 PB,
+  BR5 and BR6 each tripped a temperature-0 parity gate, and it was retired there). Do not copy this key to
+  another lane without its own bracket.
+* **v27 serves on the v25m map, which missed the bring-up cosine gate** (Card GV: min cos 0.99811 vs the 0.999
+  bar, 1 of 1,439 gated checks, at layer 39). It passed the other 9 gates, and it was put on `:30006` as
+  v25m-kvtier and then v27 with that miss open. The pre-registered R2 re-judge
+  (`results/2026-10-26-gs-cosine-r2/`) has not run. The 0.99906 pass in Verify is the v25 static map.
 * **k > 5 is a loss on real traffic with this drafter (Card BR2).** k=9 (with block verification) reads 0.81–0.92×
   at C1 per class and 0.79× on mixed traffic. The per-position curves show why: marginal acceptance drops from
   0.61–0.82 (positions 1–5) to 0.51–0.67 from position 7, and position-1 acceptance itself falls (prose .72 → .61).
@@ -552,9 +620,15 @@ in prefill (2,062 incumbent); RTX p99 ≤ 194 W against its 300 W cap. Full tabl
 pkill -f sidecar_watchdog.py
 # 2. server, then sidecar
 bash scripts/launch-sidecar.sh stop
-# 3. bring the previous lane back (kept, stopped, same box)
-docker start dsv41-vllm-1017-v23-pinexact-RETIRED-REF     # binds in ~260 s
+# 3. bring the previous lane back (kept, stopped, same box): v25m-kvtier = v27 without the block key
+docker start dsv41-vllm-1017-v25m-kvtier-RETIRED-REF-rtx   # sidecar first; wait for 'serving' in its log
+docker start dsv41-vllm-1017-v25m-kvtier-RETIRED-REF
 ```
+
+*(Corrected 2026-10-26: step 3 named `dsv41-vllm-1017-v23-pinexact-RETIRED-REF`, the Grace-offload v23 lane. Since
+the v27 promotion the previous lane is the v25m-kvtier pair above. v23 stays kept as the older fallback:
+`docker start dsv41-vllm-1017-v23-pinexact-RETIRED-REF` binds in ~260 s.)* On a fresh box, undo only block
+verification by relaunching the server step with `SPEC_EXTRA` empty.
 
 To undo only the KV change, start the kept util-0.97 pair instead (sidecar first, then server):
 `docker start dsv41-vllm-1017-v25-sidecar-kv4.9-KEPT-rtx && docker start dsv41-vllm-1017-v25-sidecar-kv4.9-KEPT`
