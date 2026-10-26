@@ -1,0 +1,1326 @@
+{
+ "card": "BR4 probabilistic drafting (P) and probabilistic + block (PB) (GB300-only v26seed)",
+ "result": "PASS-P",
+ "suffix": "BR4-PPASS_PBFAIL-G2b-G6",
+ "gates": {
+  "G0_binding": [
+   "PASS",
+   "A: kv=2,495,694 prob_in_args=0(want 0) block_in_args=0(want 0) args==v26seed True env==v26seed(sorted) True binds==v26seed(except /ar) True image0909 True hook rehome 40/40 done=1 abort=0 failed=0 missing=[] host_avail@L9=196.96GiB GO+unfreeze 1/1 ctrl={\"freeze\": false, \"baseline\": true}; P: kv=2,481,694 prob_in_args=1(want 1) block_in_args=0(want 0) args==v26seed-except-spec True spec==v26seed+probabilistic True env==v26seed(sorted) True binds==v26seed(except /ar) True image0909 True hook rehome 40/40 done=1 abort=0 failed=0 missing=[] host_avail@L9=196.91GiB GO+unfreeze 1/1 ctrl={\"freeze\": false, \"baseline\": true}; PB: kv=2,481,694 prob_in_args=1(want 1) block_in_args=1(want 1) args==v26seed-except-spec True spec==v26seed+probabilistic+block True env==v26seed(sorted) True binds==v26seed(except /ar) True image0909 True hook rehome 40/40 done=1 abort=0 failed=0 missing=[] host_avail@L9=196.86GiB GO+unfreeze 1/1 ctrl={\"freeze\": false, \"baseline\": true}; A2: kv=2,495,694 prob_in_args=0(want 0) block_in_args=0(want 0) args==v26seed True env==v26seed(sorted) True binds==v26seed(except /ar) True image0909 True hook rehome 40/40 done=1 abort=0 failed=0 missing=[] host_avail@L9=196.14GiB GO+unfreeze 1/1 ctrl={\"freeze\": false, \"baseline\": true}; KV A=2,495,694 P=2,481,694 PB=2,481,694 A2=2,495,694 (v26seed boot log 2,495,694; candidate drop bar 1.5%); P vs A -0.56%; PB vs A -0.56%; P==PB True (info) | hash-hit shape (info): A loaded=189 saved=189 same_dir=True autotune_span=5.0s boot=474s; P loaded=189 saved=189 same_dir=True autotune_span=6.0s boot=485s; PB loaded=189 saved=189 same_dir=True autotune_span=5.0s boot=484s; A2 loaded=189 saved=189 same_dir=True autotune_span=5.0s boot=484s; one autotune key across arms: True; 0909 hash-hit shape (Loaded N == Saved N, same dir, span <= 60 s): A=True, P=True, PB=True, A2=True; P boot / controls = 1.01 (<= 1.5 expected); PB boot / controls = 1.01 (<= 1.5 expected)"
+  ],
+  "G0b_foreign": [
+   "PASS",
+   "non-127.0.0.1 POST /v1 per arm: A=0 {'bind': 0, 'cells': 0}; P=0 {'bind': 0, 'cells': 0}; PB=0 {'bind': 0, 'cells': 0}; A2=0 {'bind': 0, 'cells': 0}"
+  ],
+  "G1_controls": [
+   "PASS",
+   "C1 per class: t1/prose/c1 d=0.1%; t1/structured/c1 d=0.8%; t1/code/c1 d=2.1%; t1/shell_ops/c1 d=3.2%; t1/tool_json/c1 d=1.2%; t0/prose/c1 d=0.2%; t0/structured/c1 d=0.7%; t0/code/c1 d=2.0%; t0/shell_ops/c1 d=0.8%; t0/tool_json/c1 d=0.1% | C8 (info, bimodal class): t1/prose/c8 d=0.6%; t1/structured/c8 d=1.9%; t1/code/c8 d=3.7%; t1/shell_ops/c8 d=1.0%; t1/tool_json/c8 d=1.5%; t0/prose/c8 d=4.2%; t0/structured/c8 d=0.6%; t0/code/c8 d=1.9%; t0/shell_ops/c8 d=2.5%; t0/tool_json/c8 d=6.1%"
+  ],
+  "G2_perclass_t1": [
+   "PASS",
+   "temp 1.0 forced-length decode tok/s: [P] prose/c1 P/ctrl=1.101 (A 197.4 A2 197.2 P 217.2; bar -2.0%); prose/c8 P/ctrl=1.091 (A 451.8 A2 454.6 P 494.3; bar -2.0%); structured/c1 P/ctrl=1.109 (A 219.0 A2 217.2 P 241.9; bar -2.0%); structured/c8 P/ctrl=1.082 (A 539.7 A2 550.0 P 589.6; bar -2.8%); code/c1 P/ctrl=1.045 (A 255.4 A2 260.9 P 269.9; bar -3.2%); code/c8 P/ctrl=1.099 (A 580.9 A2 559.6 P 626.8; bar -5.6%); shell_ops/c1 P/ctrl=1.113 (A 291.9 A2 282.6 P 319.8; bar -4.9%); shell_ops/c8 P/ctrl=1.132 (A 642.2 A2 635.8 P 723.3; bar -2.0%); tool_json/c1 P/ctrl=1.162 (A 254.6 A2 251.4 P 294.0; bar -2.0%); tool_json/c8 P/ctrl=1.187 (A 671.9 A2 661.9 P 791.8; bar -2.3%) || [PB] prose/c1 PB/ctrl=1.114 (A 197.4 A2 197.2 PB 219.9; bar -2.0%); prose/c8 PB/ctrl=1.126 (A 451.8 A2 454.6 PB 510.1; bar -2.0%); structured/c1 PB/ctrl=1.139 (A 219.0 A2 217.2 PB 248.4; bar -2.0%); structured/c8 PB/ctrl=1.122 (A 539.7 A2 550.0 PB 611.4; bar -2.8%); code/c1 PB/ctrl=1.078 (A 255.4 A2 260.9 PB 278.3; bar -3.2%); code/c8 PB/ctrl=1.130 (A 580.9 A2 559.6 PB 644.6; bar -5.6%); shell_ops/c1 PB/ctrl=1.126 (A 291.9 A2 282.6 PB 323.4; bar -4.9%); shell_ops/c8 PB/ctrl=1.157 (A 642.2 A2 635.8 PB 739.1; bar -2.0%); tool_json/c1 PB/ctrl=1.154 (A 254.6 A2 251.4 PB 292.0; bar -2.0%); tool_json/c8 PB/ctrl=1.170 (A 671.9 A2 661.9 PB 780.0; bar -2.3%)"
+  ],
+  "G2b_t0_parity": [
+   "FAIL",
+   "[P:PASS PB:FAIL] stock temp-0 window (PARITY: draft_sample_method and block are no-ops on greedy rows; X must equal A within noise): [P] prose/c1 P +2.2% (|.| bar 7.0%, ctrl r1/r2 spread 4.7%); structured/c1 P -0.5% (|.| bar 9.2%, ctrl r1/r2 spread 6.1%); code/c1 P +2.6% (|.| bar 7.9%, ctrl r1/r2 spread 5.3%); shell_ops/c1 P +0.2% (|.| bar 2.6%, ctrl r1/r2 spread 1.7%); tool_json/c1 P +1.3% (|.| bar 13.1%, ctrl r1/r2 spread 8.7%) || [PB] prose/c1 PB +1.1% (|.| bar 7.0%, ctrl r1/r2 spread 4.7%); structured/c1 PB -0.9% (|.| bar 9.2%, ctrl r1/r2 spread 6.1%); code/c1 PB -0.3% (|.| bar 7.9%, ctrl r1/r2 spread 5.3%); shell_ops/c1 PB +3.6% (|.| bar 2.6%, ctrl r1/r2 spread 1.7%) OUTSIDE NOISE; tool_json/c1 PB +3.9% (|.| bar 13.1%, ctrl r1/r2 spread 8.7%) | C8 info: P prose/c8 P/ctrl=1.047; P structured/c8 P/ctrl=0.979; P code/c8 P/ctrl=0.951; P shell_ops/c8 P/ctrl=0.999; P tool_json/c8 P/ctrl=1.028; PB prose/c8 PB/ctrl=1.018; PB structured/c8 PB/ctrl=1.012; PB code/c8 PB/ctrl=0.981; PB shell_ops/c8 PB/ctrl=1.044; PB tool_json/c8 PB/ctrl=1.026"
+  ],
+  "G3_mixed_c1_t1": [
+   "PASS",
+   "ar_mixed_t C1 agg_tok_s_all at temp 1.0: [P] mean 181.09 vs ctrl 179.86 (+0.68%; A 179.79 A2 179.93; bar -2.00%) reps=[176.1, 183.6, 183.6] errors=0; [PB] mean 182.45 vs ctrl 179.86 (+1.44%; A 179.79 A2 179.93; bar -2.00%) reps=[177.6, 184.9, 184.9] errors=0"
+  ],
+  "G4_tf": [
+   "PASS",
+   "[P] P-vs-A flips 1.129% (bar <=3% and <= 1.5 x floor 1.136% = 1.705%; token-mismatch docs 0); P-vs-A2 flips 1.098% (bar <=3% and <= 1.5 x floor 1.136% = 1.705%; token-mismatch docs 0); margin flips at ref p>=0.9 on agent/tool docs: vs A=0 (skipped_docs 0), vs A2=0 (skipped_docs 0); [PB] PB-vs-A flips 1.095% (bar <=3% and <= 1.5 x floor 1.136% = 1.705%; token-mismatch docs 0); PB-vs-A2 flips 1.099% (bar <=3% and <= 1.5 x floor 1.136% = 1.705%; token-mismatch docs 0); margin flips at ref p>=0.9 on agent/tool docs: vs A=0 (skipped_docs 0), vs A2=0 (skipped_docs 0)"
+  ],
+  "G5_gauntlet": [
+   "PASS",
+   "P 12/12; PB 12/12; controls A 12/12, A2 12/12 (temp 0: run_suite.py)"
+  ],
+  "G6_turns": [
+   "FAIL",
+   "[P:PASS PB:FAIL] [P] per pass [6, 8]/12 vs control range [6,8] (A [6, 7], A2 [8, 8]); errors 0; text-turn emissions [5, 4]; [PB] per pass [8, 9]/12 vs control range [6,8] (A [6, 7], A2 [8, 8]); errors 0; text-turn emissions [6, 4] FAIL; (temp 0: replay_turns.py)"
+  ],
+  "G7_errors": [
+   "PASS",
+   "A: ff=0 foreign=0; P: ff=0 foreign=0; PB: ff=0 foreign=0; A2: ff=0 foreign=0"
+  ]
+ },
+ "gate_status": {
+  "G0_binding": "PASS",
+  "G0b_foreign": "PASS",
+  "G1_controls": "PASS",
+  "G2_perclass_t1": "PASS",
+  "G2b_t0_parity": "FAIL",
+  "G3_mixed_c1_t1": "PASS",
+  "G4_tf": "PASS",
+  "G5_gauntlet": "PASS",
+  "G6_turns": "FAIL",
+  "G7_errors": "PASS"
+ },
+ "gate_status_by_candidate": {
+  "G0_binding": {
+   "P": "PASS",
+   "PB": "PASS"
+  },
+  "G0b_foreign": {
+   "P": "PASS",
+   "PB": "PASS"
+  },
+  "G1_controls": {
+   "P": "PASS",
+   "PB": "PASS"
+  },
+  "G2_perclass_t1": {
+   "P": "PASS",
+   "PB": "PASS"
+  },
+  "G2b_t0_parity": {
+   "P": "PASS",
+   "PB": "FAIL"
+  },
+  "G3_mixed_c1_t1": {
+   "P": "PASS",
+   "PB": "PASS"
+  },
+  "G4_tf": {
+   "P": "PASS",
+   "PB": "PASS"
+  },
+  "G5_gauntlet": {
+   "P": "PASS",
+   "PB": "PASS"
+  },
+  "G6_turns": {
+   "P": "PASS",
+   "PB": "FAIL"
+  },
+  "G7_errors": {
+   "P": "PASS",
+   "PB": "PASS"
+  }
+ },
+ "per_candidate": {
+  "P": {
+   "result": "PASS",
+   "failed": []
+  },
+  "PB": {
+   "result": "FAIL",
+   "failed": [
+    "G2b_t0_parity",
+    "G6_turns"
+   ]
+  }
+ },
+ "invalid_arms": [],
+ "invalid_candidates": [],
+ "valid": true,
+ "annotations": {
+  "tokens_per_verify_step_t1": {
+   "pct1_window": {
+    "A": 3.1224285512621432,
+    "P": 3.438324063355826,
+    "PB": 3.4913811632205647,
+    "A2": 3.1146517193278815
+   },
+   "mixed_c1": {
+    "A": 2.087282274590164,
+    "P": 2.099692760673366,
+    "PB": 2.124015239571226,
+    "A2": 2.087282274590164
+   },
+   "P_over_ctrl_pct1": 1.102542829076196,
+   "PB_over_ctrl_pct1": 1.1195562704824005,
+   "PB_over_P_pct1": 1.015431093430139,
+   "P_over_ctrl_mixed": 1.0059457631745754,
+   "PB_over_ctrl_mixed": 1.0175984654439105,
+   "PB_over_P_mixed": 1.0115838275739255
+  },
+  "tokens_per_verify_step_t1_per_class": {
+   "prose/c1": {
+    "P": 2.8081236323851204,
+    "PB": 2.8922535211267606,
+    "ctrl": 2.56227151644131
+   },
+   "prose/c8": {
+    "P": 2.8872803935347857,
+    "PB": 2.9353731770088647,
+    "ctrl": 2.5682375436733835
+   },
+   "structured/c1": {
+    "P": 3.0456573468173707,
+    "PB": 3.155312932492696,
+    "ctrl": 2.765176587474742
+   },
+   "structured/c8": {
+    "P": 3.0719316649183277,
+    "PB": 3.0858046063525517,
+    "ctrl": 2.7694270434263037
+   },
+   "code/c1": {
+    "P": 3.7258708272859216,
+    "PB": 3.847679640718563,
+    "ctrl": 3.5571337260077662
+   },
+   "code/c8": {
+    "P": 3.846585594013096,
+    "PB": 3.881087202718007,
+    "ctrl": 3.571127843712235
+   },
+   "shell_ops/c1": {
+    "P": 4.1049160671462825,
+    "PB": 4.099541192898464,
+    "ctrl": 3.691453482782109
+   },
+   "shell_ops/c8": {
+    "P": 4.032928263426108,
+    "PB": 4.007020280811233,
+    "ctrl": 3.5977775415695756
+   },
+   "tool_json/c1": {
+    "P": 3.711601011926274,
+    "PB": 3.7349200581395348,
+    "ctrl": 3.229615545224242
+   },
+   "tool_json/c8": {
+    "P": 3.6670829616413916,
+    "PB": 3.7248005801305295,
+    "ctrl": 3.25609318640022
+   }
+  },
+  "tok_s_ratio_t1_per_class": {
+   "prose/c1": {
+    "P/ctrl": 1.1006259027443428,
+    "PB/ctrl": 1.114309606466817,
+    "PB/P": 1.0124326564442603
+   },
+   "prose/c8": {
+    "P/ctrl": 1.0906804064565245,
+    "PB/ctrl": 1.1255006233657339,
+    "PB/P": 1.0319252245690702
+   },
+   "structured/c1": {
+    "P/ctrl": 1.1093585217112203,
+    "PB/ctrl": 1.1387959099454357,
+    "PB/P": 1.0265355046705795
+   },
+   "structured/c8": {
+    "P/ctrl": 1.0821342045371118,
+    "PB/ctrl": 1.1221459511049114,
+    "PB/P": 1.0369748469275257
+   },
+   "code/c1": {
+    "P/ctrl": 1.0454202095721399,
+    "PB/ctrl": 1.0782312266361929,
+    "PB/P": 1.0313854818986918
+   },
+   "code/c8": {
+    "P/ctrl": 1.0991477571633992,
+    "PB/ctrl": 1.130396661172097,
+    "PB/P": 1.0284301212507978
+   },
+   "shell_ops/c1": {
+    "P/ctrl": 1.1132387501087997,
+    "PB/ctrl": 1.1260858212202975,
+    "PB/P": 1.0115402658326818
+   },
+   "shell_ops/c8": {
+    "P/ctrl": 1.1319160256961995,
+    "PB/ctrl": 1.1567045641270413,
+    "PB/P": 1.0218996267109084
+   },
+   "tool_json/c1": {
+    "P/ctrl": 1.1620387754698709,
+    "PB/ctrl": 1.1542125338445424,
+    "PB/P": 0.9932650770434368
+   },
+   "tool_json/c8": {
+    "P/ctrl": 1.1872600767754318,
+    "PB/ctrl": 1.1695957293666028,
+    "PB/P": 0.985121754066889
+   }
+  },
+  "headline_PB_P_A": {
+   "pct1_tokens_per_step_PB>P>ctrl": true,
+   "mixed_tokens_per_step_PB>P>ctrl": true,
+   "c1_classes_tokens_per_step_PB>P>ctrl": "4/5",
+   "c1_classes_tok_s_PB>P>ctrl": "4/5",
+   "c8_classes_tokens_per_step_PB>P>ctrl": "4/5",
+   "c8_classes_tok_s_PB>P>ctrl": "4/5"
+  },
+  "accept_per_position_pct1": {
+   "A": [
+    0.6986,
+    0.5018,
+    0.3779,
+    0.2989,
+    0.2452
+   ],
+   "P": [
+    0.785,
+    0.5866,
+    0.4427,
+    0.3459,
+    0.2781
+   ],
+   "PB": [
+    0.7861,
+    0.5981,
+    0.4566,
+    0.3602,
+    0.2904
+   ],
+   "A2": [
+    0.6991,
+    0.5,
+    0.3758,
+    0.2962,
+    0.2435
+   ]
+  },
+  "tf_P_vs_PB": {
+   "top1_flip_rate": 0.01032133159006336,
+   "docs_token_mismatch": 0
+  },
+  "x3_accept_canary": {
+   "t1": {
+    "prose": {
+     "A": 0.2468,
+     "P": 0.2468,
+     "PB": 0.2468,
+     "A2": 0.2468
+    },
+    "structured": {
+     "A": 0.468,
+     "P": 0.468,
+     "PB": 0.468,
+     "A2": 0.468
+    },
+    "code": {
+     "A": 0.7837,
+     "P": 0.7837,
+     "PB": 0.7837,
+     "A2": 0.7837
+    },
+    "shell_ops": {
+     "A": 0.7703,
+     "P": 0.7703,
+     "PB": 0.7703,
+     "A2": 0.7703
+    },
+    "tool_json": {
+     "A": 0.8311,
+     "P": 0.8311,
+     "PB": 0.8311,
+     "A2": 0.8311
+    }
+   },
+   "t0": {
+    "prose": {
+     "A": 0.2468,
+     "P": 0.2468,
+     "PB": 0.2468,
+     "A2": 0.2468
+    },
+    "structured": {
+     "A": 0.468,
+     "P": 0.468,
+     "PB": 0.468,
+     "A2": 0.468
+    },
+    "code": {
+     "A": 0.7837,
+     "P": 0.7837,
+     "PB": 0.7837,
+     "A2": 0.7837
+    },
+    "shell_ops": {
+     "A": 0.7703,
+     "P": 0.7703,
+     "PB": 0.7703,
+     "A2": 0.7703
+    },
+    "tool_json": {
+     "A": 0.8311,
+     "P": 0.8311,
+     "PB": 0.8311,
+     "A2": 0.8311
+    }
+   }
+  },
+  "perclass_hygiene": {
+   "A/t1": [],
+   "A/t0": [],
+   "P/t1": [],
+   "P/t0": [],
+   "PB/t1": [],
+   "PB/t0": [],
+   "A2/t1": [],
+   "A2/t0": []
+  },
+  "boot_block_lines": {
+   "A": [
+    "(EngineCore pid=364) INFO 10-26 12:32:53 [spec_decode_rejection_warmup.py:64] Warming up spec-decode rejection sampler kernels (vocab=129280, num_spec=5, dtype_pairs=[('torch.bfloat16', 'torch.float32'), ('torch.float32', 'torch.float32'), ('torch.bfloat16', 'torch.bfloat16'), ('torch.float32', 'tor"
+   ],
+   "P": [
+    "(EngineCore pid=364) INFO 10-26 13:17:33 [spec_decode_rejection_warmup.py:64] Warming up spec-decode rejection sampler kernels (vocab=129280, num_spec=5, dtype_pairs=[('torch.bfloat16', 'torch.bfloat16'), ('torch.float32', 'torch.bfloat16'), ('torch.bfloat16', 'torch.float32'), ('torch.float32', 'to"
+   ],
+   "PB": [
+    "(APIServer pid=1) INFO 10-26 13:54:22 [api_utils.py:286] non-default args: {'model_tag': '/model', 'enable_auto_tool_choice': True, 'tool_call_parser': 'deepseek_v41', 'host': '0.0.0.0', 'port': 30006, 'model': '/model', 'trust_remote_code': True, 'max_model_len': 1048576, 'served_model_name': ['dsv",
+    "(EngineCore pid=364) INFO 10-26 14:01:03 [spec_decode_rejection_warmup.py:64] Warming up spec-decode rejection sampler kernels (vocab=129280, num_spec=5, dtype_pairs=[('torch.float32', 'torch.bfloat16'), ('torch.bfloat16', 'torch.float32'), ('torch.float32', 'torch.float32'), ('torch.bfloat16', 'tor"
+   ],
+   "A2": [
+    "(EngineCore pid=364) INFO 10-26 14:44:19 [spec_decode_rejection_warmup.py:64] Warming up spec-decode rejection sampler kernels (vocab=129280, num_spec=5, dtype_pairs=[('torch.float32', 'torch.bfloat16'), ('torch.bfloat16', 'torch.bfloat16'), ('torch.bfloat16', 'torch.float32'), ('torch.float32', 'to"
+   ]
+  },
+  "boot_prob_lines": {
+   "A": [],
+   "P": [
+    "(APIServer pid=1) INFO 10-26 13:10:52 [api_utils.py:286] non-default args: {'model_tag': '/model', 'enable_auto_tool_choice': True, 'tool_call_parser': 'deepseek_v41', 'host': '0.0.0.0', 'port': 30006, 'model': '/model', 'trust_remote_code': True, 'max_model_len': 1048576, 'served_model_name': ['dsv"
+   ],
+   "PB": [
+    "(APIServer pid=1) INFO 10-26 13:54:22 [api_utils.py:286] non-default args: {'model_tag': '/model', 'enable_auto_tool_choice': True, 'tool_call_parser': 'deepseek_v41', 'host': '0.0.0.0', 'port': 30006, 'model': '/model', 'trust_remote_code': True, 'max_model_len': 1048576, 'served_model_name': ['dsv"
+   ],
+   "A2": []
+  },
+  "mem_min_by_phase": {
+   "pre": 129.7,
+   "A:preboot": 449.9,
+   "A:boot": 152.8,
+   "A:go": 193.8,
+   "A:adapt-settle": 193.8,
+   "A:cells": 192.1,
+   "A:post": 421.5,
+   "P:preboot": 449.2,
+   "P:boot": 157.4,
+   "P:go": 194.2,
+   "P:adapt-settle": 194.1,
+   "P:cells": 193.0,
+   "P:post": 195.8,
+   "PB:preboot": 449.8,
+   "PB:boot": 157.1,
+   "PB:go": 193.9,
+   "PB:adapt-settle": 193.9,
+   "PB:cells": 193.1,
+   "PB:post": 448.6,
+   "A2:preboot": 449.5,
+   "A2:boot": 157.4,
+   "A2:go": 193.3,
+   "A2:adapt-settle": 193.3,
+   "A2:cells": 192.1,
+   "A2:post": 447.9,
+   "restore": 132.9
+  },
+  "restore_watchdog": {
+   "pid": 2703526,
+   "ppid": "1",
+   "ppid_is_1": true
+  },
+  "kv_v26seed_boot_log": "2,495,694",
+  "adaptive_ar_lines_cells_delta": {
+   "A": {
+    "swaps": 86566,
+    "telemetry": 1992,
+    "steps_bytes": 4233856
+   },
+   "P": {
+    "swaps": 83214,
+    "telemetry": 1922,
+    "steps_bytes": 4087232
+   },
+   "PB": {
+    "swaps": 82571,
+    "telemetry": 1902,
+    "steps_bytes": 4044288
+   },
+   "A2": {
+    "swaps": 86392,
+    "telemetry": 1997,
+    "steps_bytes": 4247072
+   }
+  },
+  "go": {
+   "A": {
+    "go_seen_log": 1,
+    "unfreeze_log": 1,
+    "baseline_go_tel": 1,
+    "unfreeze_tel": 1,
+    "ctrl": {
+     "freeze": false,
+     "baseline": true
+    },
+    "settle_s": 90
+   },
+   "P": {
+    "go_seen_log": 1,
+    "unfreeze_log": 1,
+    "baseline_go_tel": 1,
+    "unfreeze_tel": 1,
+    "ctrl": {
+     "freeze": false,
+     "baseline": true
+    },
+    "settle_s": 90
+   },
+   "PB": {
+    "go_seen_log": 1,
+    "unfreeze_log": 1,
+    "baseline_go_tel": 1,
+    "unfreeze_tel": 1,
+    "ctrl": {
+     "freeze": false,
+     "baseline": true
+    },
+    "settle_s": 90
+   },
+   "A2": {
+    "go_seen_log": 1,
+    "unfreeze_log": 1,
+    "baseline_go_tel": 1,
+    "unfreeze_tel": 1,
+    "ctrl": {
+     "freeze": false,
+     "baseline": true
+    },
+    "settle_s": 90
+   }
+  },
+  "host_avail_l9_gib": {
+   "A": "196.96",
+   "P": "196.91",
+   "PB": "196.86",
+   "A2": "196.14"
+  },
+  "rtx_used_after_bind_mib": {
+   "A": 47,
+   "P": 47,
+   "PB": 47,
+   "A2": 47
+  }
+ },
+ "calc": {
+  "kv": {
+   "tokens": {
+    "A": 2495694,
+    "P": 2481694,
+    "PB": 2481694,
+    "A2": 2495694
+   },
+   "v26seed_log": 2495694,
+   "cand_drop": {
+    "P": 0.005609662081969985,
+    "PB": 0.005609662081969985
+   }
+  },
+  "G2_rows": [
+   {
+    "cand": "P",
+    "class": "prose",
+    "mode": "c1",
+    "A": 197.44,
+    "A2": 197.19,
+    "X": 217.17,
+    "ratio": 1.1006259027443428,
+    "spread": 0.0012670096039327978,
+    "bar": 0.02,
+    "pass": true
+   },
+   {
+    "cand": "P",
+    "class": "prose",
+    "mode": "c8",
+    "A": 451.78,
+    "A2": 454.59,
+    "X": 494.28,
+    "ratio": 1.0906804064565245,
+    "spread": 0.006200558270904824,
+    "bar": 0.02,
+    "pass": true
+   },
+   {
+    "cand": "P",
+    "class": "structured",
+    "mode": "c1",
+    "A": 219.01,
+    "A2": 217.17,
+    "X": 241.94,
+    "ratio": 1.1093585217112203,
+    "spread": 0.008436883855289118,
+    "bar": 0.02,
+    "pass": true
+   },
+   {
+    "cand": "P",
+    "class": "structured",
+    "mode": "c8",
+    "A": 539.73,
+    "A2": 549.95,
+    "X": 589.59,
+    "ratio": 1.0821342045371118,
+    "spread": 0.018757800455179552,
+    "bar": 0.028136700682769328,
+    "pass": true
+   },
+   {
+    "cand": "P",
+    "class": "code",
+    "mode": "c1",
+    "A": 255.39,
+    "A2": 260.9,
+    "X": 269.87,
+    "ratio": 1.0454202095721399,
+    "spread": 0.021344593155009747,
+    "bar": 0.03201688973251462,
+    "pass": true
+   },
+   {
+    "cand": "P",
+    "class": "code",
+    "mode": "c8",
+    "A": 580.88,
+    "A2": 559.64,
+    "X": 626.8,
+    "ratio": 1.0991477571633992,
+    "spread": 0.03724616841440748,
+    "bar": 0.055869252621611215,
+    "pass": true
+   },
+   {
+    "cand": "P",
+    "class": "shell_ops",
+    "mode": "c1",
+    "A": 291.88,
+    "A2": 282.57,
+    "X": 319.75,
+    "ratio": 1.1132387501087997,
+    "spread": 0.03241361302115067,
+    "bar": 0.04862041953172601,
+    "pass": true
+   },
+   {
+    "cand": "P",
+    "class": "shell_ops",
+    "mode": "c8",
+    "A": 642.18,
+    "A2": 635.83,
+    "X": 723.3,
+    "ratio": 1.1319160256961995,
+    "spread": 0.009937324434080968,
+    "bar": 0.02,
+    "pass": true
+   },
+   {
+    "cand": "P",
+    "class": "tool_json",
+    "mode": "c1",
+    "A": 254.55,
+    "A2": 251.44,
+    "X": 293.99,
+    "ratio": 1.1620387754698709,
+    "spread": 0.012292733057965625,
+    "bar": 0.02,
+    "pass": true
+   },
+   {
+    "cand": "P",
+    "class": "tool_json",
+    "mode": "c8",
+    "A": 671.89,
+    "A2": 661.87,
+    "X": 791.76,
+    "ratio": 1.1872600767754318,
+    "spread": 0.015025191938579627,
+    "bar": 0.022537787907869443,
+    "pass": true
+   },
+   {
+    "cand": "PB",
+    "class": "prose",
+    "mode": "c1",
+    "A": 197.44,
+    "A2": 197.19,
+    "X": 219.87,
+    "ratio": 1.114309606466817,
+    "spread": 0.0012670096039327978,
+    "bar": 0.02,
+    "pass": true
+   },
+   {
+    "cand": "PB",
+    "class": "prose",
+    "mode": "c8",
+    "A": 451.78,
+    "A2": 454.59,
+    "X": 510.06,
+    "ratio": 1.1255006233657339,
+    "spread": 0.006200558270904824,
+    "bar": 0.02,
+    "pass": true
+   },
+   {
+    "cand": "PB",
+    "class": "structured",
+    "mode": "c1",
+    "A": 219.01,
+    "A2": 217.17,
+    "X": 248.36,
+    "ratio": 1.1387959099454357,
+    "spread": 0.008436883855289118,
+    "bar": 0.02,
+    "pass": true
+   },
+   {
+    "cand": "PB",
+    "class": "structured",
+    "mode": "c8",
+    "A": 539.73,
+    "A2": 549.95,
+    "X": 611.39,
+    "ratio": 1.1221459511049114,
+    "spread": 0.018757800455179552,
+    "bar": 0.028136700682769328,
+    "pass": true
+   },
+   {
+    "cand": "PB",
+    "class": "code",
+    "mode": "c1",
+    "A": 255.39,
+    "A2": 260.9,
+    "X": 278.34,
+    "ratio": 1.0782312266361929,
+    "spread": 0.021344593155009747,
+    "bar": 0.03201688973251462,
+    "pass": true
+   },
+   {
+    "cand": "PB",
+    "class": "code",
+    "mode": "c8",
+    "A": 580.88,
+    "A2": 559.64,
+    "X": 644.62,
+    "ratio": 1.130396661172097,
+    "spread": 0.03724616841440748,
+    "bar": 0.055869252621611215,
+    "pass": true
+   },
+   {
+    "cand": "PB",
+    "class": "shell_ops",
+    "mode": "c1",
+    "A": 291.88,
+    "A2": 282.57,
+    "X": 323.44,
+    "ratio": 1.1260858212202975,
+    "spread": 0.03241361302115067,
+    "bar": 0.04862041953172601,
+    "pass": true
+   },
+   {
+    "cand": "PB",
+    "class": "shell_ops",
+    "mode": "c8",
+    "A": 642.18,
+    "A2": 635.83,
+    "X": 739.14,
+    "ratio": 1.1567045641270413,
+    "spread": 0.009937324434080968,
+    "bar": 0.02,
+    "pass": true
+   },
+   {
+    "cand": "PB",
+    "class": "tool_json",
+    "mode": "c1",
+    "A": 254.55,
+    "A2": 251.44,
+    "X": 292.01,
+    "ratio": 1.1542125338445424,
+    "spread": 0.012292733057965625,
+    "bar": 0.02,
+    "pass": true
+   },
+   {
+    "cand": "PB",
+    "class": "tool_json",
+    "mode": "c8",
+    "A": 671.89,
+    "A2": 661.87,
+    "X": 779.98,
+    "ratio": 1.1695957293666028,
+    "spread": 0.015025191938579627,
+    "bar": 0.022537787907869443,
+    "pass": true
+   }
+  ],
+  "G3": {
+   "P": {
+    "X": 181.08666666666667,
+    "A": 179.79,
+    "A2": 179.93,
+    "ctrl_mean": 179.86,
+    "spread": 0.0007783831869232446,
+    "bar": 0.02,
+    "rel": 0.006820119352088705
+   },
+   "PB": {
+    "X": 182.45333333333335,
+    "A": 179.79,
+    "A2": 179.93,
+    "ctrl_mean": 179.86,
+    "spread": 0.0007783831869232446,
+    "bar": 0.02,
+    "rel": 0.014418621891100436
+   }
+  },
+  "G2_ratio_by_cell": {
+   "P prose/c1": 1.1006,
+   "P prose/c8": 1.0907,
+   "P structured/c1": 1.1094,
+   "P structured/c8": 1.0821,
+   "P code/c1": 1.0454,
+   "P code/c8": 1.0991,
+   "P shell_ops/c1": 1.1132,
+   "P shell_ops/c8": 1.1319,
+   "P tool_json/c1": 1.162,
+   "P tool_json/c8": 1.1873,
+   "PB prose/c1": 1.1143,
+   "PB prose/c8": 1.1255,
+   "PB structured/c1": 1.1388,
+   "PB structured/c8": 1.1221,
+   "PB code/c1": 1.0782,
+   "PB code/c8": 1.1304,
+   "PB shell_ops/c1": 1.1261,
+   "PB shell_ops/c8": 1.1567,
+   "PB tool_json/c1": 1.1542,
+   "PB tool_json/c8": 1.1696
+  }
+ },
+ "cells": {
+  "A": {
+   "facts": {
+    "arm": "A",
+    "name": "dsv41-vllm-1017-BR4-A",
+    "kv_tokens": "2,495,694",
+    "kv_ref": "2,495,694",
+    "block_in_args": 0,
+    "prob_in_args": 0,
+    "block_boot_lines": 1,
+    "prob_boot_lines": 0,
+    "spec_extra": "",
+    "ff_boot": 0,
+    "loaded_lines": 1,
+    "saved_lines": 1,
+    "autotune_starts": 1,
+    "autotune_ends": 1,
+    "rehome_layers": 40,
+    "rehome_done": 1,
+    "host_avail_l9_gib": "196.96",
+    "pin_abort": 0,
+    "hook_failed": 0,
+    "hook_keys_missing": "",
+    "args_eq_ref": 1,
+    "env_eq_ref_sorted": 1,
+    "binds_eq_ref_except_ar": 1,
+    "image": "sha256:00d577a6a63281e15336029d5bcee4e9a2cf182214a4f20ba6111b1c8e79893d",
+    "rtx_used_after_bind_mib": 47,
+    "boot_s": 474,
+    "bound_at": 1793018018
+   },
+   "autotune": {
+    "loaded": 189,
+    "saved": 189,
+    "loaded_dir": "/root/.cache/vllm/flashinfer_autotune_cache/0.6.18/103a/62426808ae2b0ddbdfbf2278702ac4e367078b9884817c169ddee40495c4e6a6/autotune_configs.json",
+    "saved_dir": "/root/.cache/vllm/flashinfer_autotune_cache/0.6.18/103a/62426808ae2b0ddbdfbf2278702ac4e367078b9884817c169ddee40495c4e6a6/autotune_configs.json",
+    "elapsed_s": 5.0,
+    "pairs": 1,
+    "hash_hit_shape": true
+   },
+   "mixed": [
+    {
+     "rep": 1,
+     "agg_tok_s_all": 174.84,
+     "errors": 0,
+     "n": 53,
+     "temperature": 1.0
+    },
+    {
+     "rep": 2,
+     "agg_tok_s_all": 182.22,
+     "errors": 0,
+     "n": 55,
+     "temperature": 1.0
+    },
+    {
+     "rep": 3,
+     "agg_tok_s_all": 182.31,
+     "errors": 0,
+     "n": 55,
+     "temperature": 1.0
+    }
+   ],
+   "perclass_t1": {
+    "prose/c1": 197.44,
+    "prose/c8": 451.78,
+    "structured/c1": 219.01,
+    "structured/c8": 539.73,
+    "code/c1": 255.39,
+    "code/c8": 580.88,
+    "shell_ops/c1": 291.88,
+    "shell_ops/c8": 642.18,
+    "tool_json/c1": 254.55,
+    "tool_json/c8": 671.89
+   },
+   "perclass_t0": {
+    "prose/c1": 233.33,
+    "prose/c8": 502.63,
+    "structured/c1": 254.41,
+    "structured/c8": 563.94,
+    "code/c1": 317.23,
+    "code/c8": 746.12,
+    "shell_ops/c1": 344.81,
+    "shell_ops/c8": 817.99,
+    "tool_json/c1": 303.21,
+    "tool_json/c8": 853.67
+   },
+   "turns": [
+    {
+     "tool_emitted": 6,
+     "tool_turns": 12,
+     "text_emitted": 4,
+     "errors": 0
+    },
+    {
+     "tool_emitted": 7,
+     "tool_turns": 12,
+     "text_emitted": 3,
+     "errors": 0
+    }
+   ],
+   "ar_cells_delta": {
+    "swaps": 86566,
+    "telemetry": 1992,
+    "steps_bytes": 4233856
+   },
+   "errcount_server": 0,
+   "foreign": {
+    "bind": 0,
+    "cells": 0
+   },
+   "metrics_pct1": {
+    "drafts": 77923.0,
+    "draft_tokens": 389615.0,
+    "accepted": 165386.0,
+    "acc_per_draft": 2.1224285512621432,
+    "tokens_per_verify_step": 3.1224285512621432,
+    "accept_rate": 0.4244857102524287,
+    "accept_per_pos": [
+     0.6986,
+     0.5018,
+     0.3779,
+     0.2989,
+     0.2452
+    ]
+   },
+   "metrics_mixed": {
+    "accepted": 33958.0,
+    "drafts": 31232.0,
+    "tokens_per_verify_step": 2.087282274590164
+   }
+  },
+  "P": {
+   "facts": {
+    "arm": "P",
+    "name": "dsv41-vllm-1017-BR4-P",
+    "kv_tokens": "2,481,694",
+    "kv_ref": "2,495,694",
+    "block_in_args": 0,
+    "prob_in_args": 1,
+    "block_boot_lines": 1,
+    "prob_boot_lines": 1,
+    "spec_extra": ",\"draft_sample_method\":\"probabilistic\"",
+    "ff_boot": 0,
+    "loaded_lines": 1,
+    "saved_lines": 1,
+    "autotune_starts": 1,
+    "autotune_ends": 1,
+    "rehome_layers": 40,
+    "rehome_done": 1,
+    "host_avail_l9_gib": "196.91",
+    "pin_abort": 0,
+    "hook_failed": 0,
+    "hook_keys_missing": "",
+    "args_eq_ref": 0,
+    "env_eq_ref_sorted": 1,
+    "binds_eq_ref_except_ar": 1,
+    "image": "sha256:00d577a6a63281e15336029d5bcee4e9a2cf182214a4f20ba6111b1c8e79893d",
+    "rtx_used_after_bind_mib": 47,
+    "boot_s": 485,
+    "bound_at": 1793020705
+   },
+   "autotune": {
+    "loaded": 189,
+    "saved": 189,
+    "loaded_dir": "/root/.cache/vllm/flashinfer_autotune_cache/0.6.18/103a/62426808ae2b0ddbdfbf2278702ac4e367078b9884817c169ddee40495c4e6a6/autotune_configs.json",
+    "saved_dir": "/root/.cache/vllm/flashinfer_autotune_cache/0.6.18/103a/62426808ae2b0ddbdfbf2278702ac4e367078b9884817c169ddee40495c4e6a6/autotune_configs.json",
+    "elapsed_s": 6.0,
+    "pairs": 1,
+    "hash_hit_shape": true
+   },
+   "mixed": [
+    {
+     "rep": 1,
+     "agg_tok_s_all": 176.1,
+     "errors": 0,
+     "n": 54,
+     "temperature": 1.0
+    },
+    {
+     "rep": 2,
+     "agg_tok_s_all": 183.56,
+     "errors": 0,
+     "n": 56,
+     "temperature": 1.0
+    },
+    {
+     "rep": 3,
+     "agg_tok_s_all": 183.6,
+     "errors": 0,
+     "n": 56,
+     "temperature": 1.0
+    }
+   ],
+   "perclass_t1": {
+    "prose/c1": 217.17,
+    "prose/c8": 494.28,
+    "structured/c1": 241.94,
+    "structured/c8": 589.59,
+    "code/c1": 269.87,
+    "code/c8": 626.8,
+    "shell_ops/c1": 319.75,
+    "shell_ops/c8": 723.3,
+    "tool_json/c1": 293.99,
+    "tool_json/c8": 791.76
+   },
+   "perclass_t0": {
+    "prose/c1": 238.13,
+    "prose/c8": 537.34,
+    "structured/c1": 254.07,
+    "structured/c8": 553.54,
+    "code/c1": 328.66,
+    "code/c8": 702.95,
+    "shell_ops/c1": 347.09,
+    "shell_ops/c8": 806.62,
+    "tool_json/c1": 307.25,
+    "tool_json/c8": 851.17
+   },
+   "turns": [
+    {
+     "tool_emitted": 6,
+     "tool_turns": 12,
+     "text_emitted": 5,
+     "errors": 0
+    },
+    {
+     "tool_emitted": 8,
+     "tool_turns": 12,
+     "text_emitted": 4,
+     "errors": 0
+    }
+   ],
+   "ar_cells_delta": {
+    "swaps": 83214,
+    "telemetry": 1922,
+    "steps_bytes": 4087232
+   },
+   "errcount_server": 0,
+   "foreign": {
+    "bind": 0,
+    "cells": 0
+   },
+   "metrics_pct1": {
+    "drafts": 70838.0,
+    "draft_tokens": 354190.0,
+    "accepted": 172726.0,
+    "acc_per_draft": 2.438324063355826,
+    "tokens_per_verify_step": 3.438324063355826,
+    "accept_rate": 0.4876648126711652,
+    "accept_per_pos": [
+     0.785,
+     0.5866,
+     0.4427,
+     0.3459,
+     0.2781
+    ]
+   },
+   "metrics_mixed": {
+    "accepted": 34361.0,
+    "drafts": 31246.0,
+    "tokens_per_verify_step": 2.099692760673366
+   }
+  },
+  "PB": {
+   "facts": {
+    "arm": "PB",
+    "name": "dsv41-vllm-1017-BR4-PB",
+    "kv_tokens": "2,481,694",
+    "kv_ref": "2,495,694",
+    "block_in_args": 1,
+    "prob_in_args": 1,
+    "block_boot_lines": 2,
+    "prob_boot_lines": 1,
+    "spec_extra": ",\"draft_sample_method\":\"probabilistic\",\"rejection_sample_method\":\"block\"",
+    "ff_boot": 0,
+    "loaded_lines": 1,
+    "saved_lines": 1,
+    "autotune_starts": 1,
+    "autotune_ends": 1,
+    "rehome_layers": 40,
+    "rehome_done": 1,
+    "host_avail_l9_gib": "196.86",
+    "pin_abort": 0,
+    "hook_failed": 0,
+    "hook_keys_missing": "",
+    "args_eq_ref": 0,
+    "env_eq_ref_sorted": 1,
+    "binds_eq_ref_except_ar": 1,
+    "image": "sha256:00d577a6a63281e15336029d5bcee4e9a2cf182214a4f20ba6111b1c8e79893d",
+    "rtx_used_after_bind_mib": 47,
+    "boot_s": 484,
+    "bound_at": 1793023314
+   },
+   "autotune": {
+    "loaded": 189,
+    "saved": 189,
+    "loaded_dir": "/root/.cache/vllm/flashinfer_autotune_cache/0.6.18/103a/62426808ae2b0ddbdfbf2278702ac4e367078b9884817c169ddee40495c4e6a6/autotune_configs.json",
+    "saved_dir": "/root/.cache/vllm/flashinfer_autotune_cache/0.6.18/103a/62426808ae2b0ddbdfbf2278702ac4e367078b9884817c169ddee40495c4e6a6/autotune_configs.json",
+    "elapsed_s": 5.0,
+    "pairs": 1,
+    "hash_hit_shape": true
+   },
+   "mixed": [
+    {
+     "rep": 1,
+     "agg_tok_s_all": 177.56,
+     "errors": 0,
+     "n": 54,
+     "temperature": 1.0
+    },
+    {
+     "rep": 2,
+     "agg_tok_s_all": 184.94,
+     "errors": 0,
+     "n": 56,
+     "temperature": 1.0
+    },
+    {
+     "rep": 3,
+     "agg_tok_s_all": 184.86,
+     "errors": 0,
+     "n": 56,
+     "temperature": 1.0
+    }
+   ],
+   "perclass_t1": {
+    "prose/c1": 219.87,
+    "prose/c8": 510.06,
+    "structured/c1": 248.36,
+    "structured/c8": 611.39,
+    "code/c1": 278.34,
+    "code/c8": 644.62,
+    "shell_ops/c1": 323.44,
+    "shell_ops/c8": 739.14,
+    "tool_json/c1": 292.01,
+    "tool_json/c8": 779.98
+   },
+   "perclass_t0": {
+    "prose/c1": 235.59,
+    "prose/c8": 522.73,
+    "structured/c1": 253.06,
+    "structured/c8": 572.55,
+    "code/c1": 319.41,
+    "code/c8": 724.8,
+    "shell_ops/c1": 358.59,
+    "shell_ops/c8": 843.25,
+    "tool_json/c1": 315.04,
+    "tool_json/c8": 849.99
+   },
+   "turns": [
+    {
+     "tool_emitted": 8,
+     "tool_turns": 12,
+     "text_emitted": 6,
+     "errors": 0
+    },
+    {
+     "tool_emitted": 9,
+     "tool_turns": 12,
+     "text_emitted": 4,
+     "errors": 0
+    }
+   ],
+   "ar_cells_delta": {
+    "swaps": 82571,
+    "telemetry": 1902,
+    "steps_bytes": 4044288
+   },
+   "errcount_server": 0,
+   "foreign": {
+    "bind": 0,
+    "cells": 0
+   },
+   "metrics_pct1": {
+    "drafts": 69789.0,
+    "draft_tokens": 348945.0,
+    "accepted": 173871.0,
+    "acc_per_draft": 2.4913811632205647,
+    "tokens_per_verify_step": 3.4913811632205647,
+    "accept_rate": 0.49827623264411297,
+    "accept_per_pos": [
+     0.7861,
+     0.5981,
+     0.4566,
+     0.3602,
+     0.2904
+    ]
+   },
+   "metrics_mixed": {
+    "accepted": 34813.0,
+    "drafts": 30972.0,
+    "tokens_per_verify_step": 2.124015239571226
+   }
+  },
+  "A2": {
+   "facts": {
+    "arm": "A2",
+    "name": "dsv41-vllm-1017-BR4-A2",
+    "kv_tokens": "2,495,694",
+    "kv_ref": "2,495,694",
+    "block_in_args": 0,
+    "prob_in_args": 0,
+    "block_boot_lines": 1,
+    "prob_boot_lines": 0,
+    "spec_extra": "",
+    "ff_boot": 0,
+    "loaded_lines": 1,
+    "saved_lines": 1,
+    "autotune_starts": 1,
+    "autotune_ends": 1,
+    "rehome_layers": 40,
+    "rehome_done": 1,
+    "host_avail_l9_gib": "196.14",
+    "pin_abort": 0,
+    "hook_failed": 0,
+    "hook_keys_missing": "",
+    "args_eq_ref": 1,
+    "env_eq_ref_sorted": 1,
+    "binds_eq_ref_except_ar": 1,
+    "image": "sha256:00d577a6a63281e15336029d5bcee4e9a2cf182214a4f20ba6111b1c8e79893d",
+    "rtx_used_after_bind_mib": 47,
+    "boot_s": 484,
+    "bound_at": 1793025910
+   },
+   "autotune": {
+    "loaded": 189,
+    "saved": 189,
+    "loaded_dir": "/root/.cache/vllm/flashinfer_autotune_cache/0.6.18/103a/62426808ae2b0ddbdfbf2278702ac4e367078b9884817c169ddee40495c4e6a6/autotune_configs.json",
+    "saved_dir": "/root/.cache/vllm/flashinfer_autotune_cache/0.6.18/103a/62426808ae2b0ddbdfbf2278702ac4e367078b9884817c169ddee40495c4e6a6/autotune_configs.json",
+    "elapsed_s": 5.0,
+    "pairs": 1,
+    "hash_hit_shape": true
+   },
+   "mixed": [
+    {
+     "rep": 1,
+     "agg_tok_s_all": 175.32,
+     "errors": 0,
+     "n": 53,
+     "temperature": 1.0
+    },
+    {
+     "rep": 2,
+     "agg_tok_s_all": 182.19,
+     "errors": 0,
+     "n": 55,
+     "temperature": 1.0
+    },
+    {
+     "rep": 3,
+     "agg_tok_s_all": 182.28,
+     "errors": 0,
+     "n": 55,
+     "temperature": 1.0
+    }
+   ],
+   "perclass_t1": {
+    "prose/c1": 197.19,
+    "prose/c8": 454.59,
+    "structured/c1": 217.17,
+    "structured/c8": 549.95,
+    "code/c1": 260.9,
+    "code/c8": 559.64,
+    "shell_ops/c1": 282.57,
+    "shell_ops/c8": 635.83,
+    "tool_json/c1": 251.44,
+    "tool_json/c8": 661.87
+   },
+   "perclass_t0": {
+    "prose/c1": 232.81,
+    "prose/c8": 524.11,
+    "structured/c1": 256.27,
+    "structured/c8": 567.13,
+    "code/c1": 323.48,
+    "code/c8": 731.76,
+    "shell_ops/c1": 347.72,
+    "shell_ops/c8": 797.45,
+    "tool_json/c1": 303.38,
+    "tool_json/c8": 802.83
+   },
+   "turns": [
+    {
+     "tool_emitted": 8,
+     "tool_turns": 12,
+     "text_emitted": 4,
+     "errors": 0
+    },
+    {
+     "tool_emitted": 8,
+     "tool_turns": 12,
+     "text_emitted": 4,
+     "errors": 0
+    }
+   ],
+   "ar_cells_delta": {
+    "swaps": 86392,
+    "telemetry": 1997,
+    "steps_bytes": 4247072
+   },
+   "errcount_server": 0,
+   "foreign": {
+    "bind": 0,
+    "cells": 0
+   },
+   "metrics_pct1": {
+    "drafts": 78141.0,
+    "draft_tokens": 390705.0,
+    "accepted": 165241.0,
+    "acc_per_draft": 2.1146517193278815,
+    "tokens_per_verify_step": 3.1146517193278815,
+    "accept_rate": 0.4229303438655763,
+    "accept_per_pos": [
+     0.6991,
+     0.5,
+     0.3758,
+     0.2962,
+     0.2435
+    ]
+   },
+   "metrics_mixed": {
+    "accepted": 33958.0,
+    "drafts": 31232.0,
+    "tokens_per_verify_step": 2.087282274590164
+   }
+  }
+ },
+ "R": "~/dsv41/m3/br4/results-cardBR4"
+}

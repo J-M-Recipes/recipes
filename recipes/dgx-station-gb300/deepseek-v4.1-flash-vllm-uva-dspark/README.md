@@ -1,12 +1,14 @@
 # DeepSeek-V4.1-Flash at 1M context on one DGX Station GB300
 
-> **Status, 2026-10-26: `:30006` does NOT serve this recipe.** v26 served it only from 2026-10-24 ~21:30 to 23:16 CDT.
-> Since then the lane has served the **sidecar sibling's** pair: v25m-kvtier until 2026-10-26 03:58 CDT, and **v27
-> (+ block verification)** since 04:08 CDT
-> ([`../deepseek-v4.1-flash-vllm-uva-dspark-sidecar`](../deepseek-v4.1-flash-vllm-uva-dspark-sidecar/README.md)).
-> v26 is still this recipe's release for a GB300 with no second GPU. Its container `dsv41-vllm-1017-v26seed-BOUND-REF`
-> is kept stopped. *(Corrected 2026-10-26: this banner said "`:30006` serves this GB300-only recipe again".)*
-> Latest round: **Card BR3, block verification on v26 = a NULL, not promoted** (below).
+> **Status, 2026-10-26: this recipe's release is now `v28-prob`, and `:30006` still does NOT serve it.**
+> v28-prob = v26 "Seeded Adaptive" + one speculative-config key, `"draft_sample_method":"probabilistic"` (Card BR4,
+> PASS). Its container `dsv41-vllm-1017-v28-prob-BOUND-REF` was booted once on 2026-10-26 (10:49–10:57 CDT: bound after 476 s, KV 2,481,694 tokens, smoke and tool call OK), verified
+> and stopped-and-kept; `dsv41-vllm-1017-v26seed-BOUND-REF` is kept as its rollback. **This is a reference update,
+> not a routing change.** `:30006` has served the **sidecar sibling's** pair since 2026-10-24 23:16 CDT: v25m-kvtier
+> until 2026-10-26 03:58 CDT, and **v27 (+ block verification)** since 04:08 CDT
+> ([`../deepseek-v4.1-flash-vllm-uva-dspark-sidecar`](../deepseek-v4.1-flash-vllm-uva-dspark-sidecar/README.md)). v26 served this recipe on `:30006` only from 2026-10-24 ~21:30 to 23:16 CDT.
+> Latest round: **Card BR4, probabilistic drafting = PASS, promoted as the reference v28-prob; + block verification
+> = candidate** (below). The round before it, Card BR3 (block verification with greedy drafting), was a null.
 
 **2026-10-24 ~21:30 CDT — v26 "Seeded Adaptive" promoted** (on `:30006` until 23:16 CDT that night; see the status above).
 v26 is the v23 launch (same image, same flags), plus three changes:
@@ -26,6 +28,80 @@ round adds a 48 GiB Grace host prefix-KV tier. This recipe is the reference for 
 
 **Before v26 — Pin Exact, v23** (serving 2026-10-18 → 2026-10-22; v26 launches from it) (v22 + exact-size pinned host allocations: pinned host 328.0 → 252.8 GiB, boot-guard margin 12 → 198 GiB, decode and greedy non-tool output unchanged; **188.2 tok/s C1 real text, accept 2.99/step**; BFCL held-out 77.65; see the 2026-10-18 round) · rollback **v22** (k=5 band to 8 sequences, 2026-10-17) · **candidate, not promoted:** vLLM nightly-39983a5e "config C" passed all seven pre-registered gates (+6% C1, TTFT 8K 0.43 s, KV +55%; GSM8K exactly at its bar), pending James · previous **Fused Split, v21** (2026-09-27: v18 launch on the 0909 image + hook v21 — `split_ids()` as one Triton kernel; **182.8 tok/s C1 prose, +6.2 % vs v18 bracketing controls 171.8 / 172.5**, C8 687 (+4.6 %), C16 993 (+4.0 %), non-tool greedy 16/16 vs both controls; held-out BFCL on v21 pending; see Round 12) · documented release **Clean Nightly, v20** (2026-09-21: vLLM nightly `2671fedf` — the last before the #56633 mHC-fold drift — + v15 hook + off54 + fp8_ds_mla + v18's 24-seat/cudagraph flags; **181 tok/s C1 prose (+5.1% pair mean vs v18)**, KV 2.55M tokens, C24 warm agent p95 2.4–2.8 s vs 3.4; **held-out BFCL live sibling 78.8% vs v18 78.9%**, dev 92.7–93.5%; tools 64/64 ×3; $0.008 per 1000 solved tasks; see Round 11b) · rollback **Many Seat, v18** (2026-09-18: v15 hook + `--max-num-seqs 24` + token-sized `--cudagraph-capture-sizes`; 172 tok/s C1 prose, KV 2.50M tokens, C24 warm agent turn 0.55 s p50; **BFCL v4 tool-call exact-match 93.3%**) · **v19 "Nightly" was promoted and reverted on 2026-09-20** (see Round 10) · previous **v15 Pin Hot Experts** (retired 2026-09-18) · **v14 Sixty-K Agent** (retired 2026-09-17) · Historical **v13: 90 tok/s single-stream prose · 140–160 tok/s on agent/code text · 429 agg tok/s at C16** (v12: 89 / 140–160 / 311 · v11: 82 / 130–150 / 287) · 972K-token prompt prefilled in 85 s · Hermes tool-calling 10/10
 
+
+## 2026-10-26 round — Card BR4: probabilistic drafting = PASS, promoted as the reference v28-prob; +block = candidate
+
+**What changed.** Two candidates against the v26 lane, each one key in `--speculative-config`:
+- **P** = v26 + `"draft_sample_method":"probabilistic"`: the DSpark drafter samples its proposals instead of taking
+  the argmax;
+- **PB** = P + `"rejection_sample_method":"block"` (block verification, Sun et al.).
+
+Both keys came to this lab from the config of
+[fraserprice/DeepSeek-4.1-Flash-1017-BRRR](https://huggingface.co/fraserprice/DeepSeek-4.1-Flash-1017-BRRR).
+Everything else is the v26 lane as booted: image 0909, `launch_br3.sh` (= `launch_ar6.sh` + `SPEC_EXTRA`), k-schedule
+`[[1,8,5],[9,24,1]]`, 24 seqs. The controls draft greedy, as v26 does. Bracket A → P → PB → A2, 2026-10-26
+07:23–10:28 CDT:
+- every arm was a hash-hit boot, 474–485 s;
+- adaptive residency was unfrozen (GO + `ctrl freeze=false`) on every arm;
+- 0 foreign requests reached any arm; the production v27 pair was restored with its watchdog at 10:28.
+
+Receipts: [`results/2026-10-26-br4-probabilistic-drafting/`](results/2026-10-26-br4-probabilistic-drafting/README.md).
+
+**Verdict: `PASS-P`, suffix `BR4-PPASS_PBFAIL-G2b-G6`** (pre-registered, not re-scored). P passed all ten gates. PB
+passed every speed and fidelity gate and failed two temperature-0 parity gates (explained below).
+
+| temp 1.0, ÷ mean(A, A2) | **P** | PB | PB ÷ P |
+|---|--:|--:|--:|
+| accepted tokens per verify step (per-class window) | **1.103** (3.438 vs 3.119) | 1.120 (3.491) | 1.015 |
+| mixed traffic tok/s, C1 (`ar_mixed_t.py`, 3 × 120 s) | 1.007 (181.09 vs 179.86) | 1.014 (182.45) | 1.008 |
+
+| temp 1.0, decode tok/s ÷ ctrl | C1 **P** | C1 PB | C8 **P** | C8 PB |
+|---|--:|--:|--:|--:|
+| prose | **1.101** | 1.114 | **1.091** | 1.126 |
+| structured | **1.109** | 1.139 | **1.082** | 1.122 |
+| code | **1.045** | 1.078 | **1.099** | 1.130 |
+| shell_ops | **1.113** | 1.126 | **1.132** | 1.157 |
+| tool_json | **1.162** (294.0 vs 253.0 tok/s) | 1.154 | **1.187** (791.8 vs 666.9) | 1.170 |
+
+Per-position acceptance (temp-1.0 window, accepted at draft position ÷ drafts):
+
+| position | 1 | 2 | 3 | 4 | 5 |
+|---|--:|--:|--:|--:|--:|
+| control, mean(A, A2) | .699 | .501 | .378 | .299 | .245 |
+| **P** | **.785** | **.587** | **.443** | **.346** | **.278** |
+| PB | .786 | .598 | .457 | .360 | .290 |
+
+**Fidelity is unchanged.**
+- Teacher-forced top-1 flips: P 1.10–1.13%, PB 1.10%, against an A-vs-A2 control floor of 1.136%; margin-weighted
+  flips 0 on every compare.
+- Gauntlet 12/12 on all arms; P's replay_turns tool-turn emission [6, 8]/12 is inside the control range 6–8.
+- P's temperature-0 window is a no-op on every class (G2b PASS).
+- 0 errors, 0 foreign requests.
+- **KV 2,481,694 tokens on P and PB vs 2,495,694 (−0.56%).** With probabilistic drafting vLLM allocates a bf16
+  draft-logits cache (24 × 5 × 129,280 × 2 B ≈ 31 MB) before KV profiling. The brief predicted the drop before the run
+  and the G0 rule allowed up to 1.5%.
+
+**Why PB is a candidate and not the release.** Both of its failures are on temperature-0 PARITY gates, where neither
+key touches a greedy row:
+- **G2b** shell_ops C1 read +3.6% against a 2.6% bar (1.5 × a 1.7% control spread);
+- **G6** replay_turns emitted tool calls on 9/12 tool turns in one pass, against a control range of 6–8.
+
+Both trips are in the "faster / more" direction. We read them as run-to-run nondeterminism against two tight bars,
+but the pre-registered verdict stands and is not re-scored. PB will be re-bracketed alone against v28-prob later.
+
+**Mechanism (our reading).** With a temperature > 0 target, the drafter's samples match the target's distribution
+far better than its argmax does: acceptance rose by 0.03–0.09 at every draft position. Greedy drafting was this
+lane's missing lever. It also explains Card BR3: block verification only pays once drafting is probabilistic. It
+gained nothing here with greedy drafts (BR3, 0.999× tokens per step), +1.5% on top of probabilistic drafts (PB ÷ P),
+and +2.0% on the sidecar lane, which already drafts probabilistically (Card BR1):
+[BR3 bundle](results/2026-10-26-br3-block-verification-null/README.md),
+[BR1 bundle](../deepseek-v4.1-flash-vllm-uva-dspark-sidecar/results/2026-10-26-br1-block-verification/README.md),
+[blog](https://al-engr.com/gb300-vs-4x-rtx6000-dsv41-flash-brrr.html).
+
+**Decision:** **P is promoted as this recipe's reference, `v28-prob`**
+(`dsv41-vllm-1017-v28-prob-BOUND-REF`, booted once by `park_v28_prob.sh` with the production soak `/ar` bind,
+verified, stopped-and-kept; park facts OK — KV 2,481,694, probabilistic key in Args, smoke and tool call OK; the lane was dark 10:49–11:06 CDT and the v27 pair plus watchdog were restored). v26seed is kept as the rollback. `:30006` keeps serving the
+sidecar sibling's v27 pair. **PB stays a candidate.**
 
 ## 2026-10-26 round — block verification on v26 (Card BR3): a NULL, NOT promoted
 
@@ -72,7 +148,8 @@ there (Card BR1, promoted as v27):
 [blog](https://al-engr.com/gb300-vs-4x-rtx6000-dsv41-flash-brrr.html).
 
 **Decision:** not promoted on this lane; v26 stays as published. **Next: Card BR4.** It tests probabilistic drafting
-alone, then probabilistic + block, in the same bracket (queued 2026-10-26).
+alone, then probabilistic + block, in the same bracket (queued 2026-10-26). *(It ran the same morning: probabilistic
+drafting PASS, promoted as the reference v28-prob; see the round above.)*
 
 ## 2026-10-24 round — v26 "Seeded Adaptive": seed map + adaptive residency, PROMOTED (48 h soak waived)
 
@@ -565,7 +642,25 @@ Full lock: [`results/…/software-lock.txt`](results/2026-09-10-v11-1M-k5-lpt614
 
 ## Launch
 
-**v26, the serving launch (since 2026-10-24).** This is the v23 `docker run` with the hook directory and its env
+**v28-prob, this recipe's reference (since 2026-10-26).** The v26 launch below plus one key in
+`--speculative-config`. `launch_br3.sh` is `launch_ar6.sh` with a `SPEC_EXTRA` splice
+([`DIFF-br3-launch.txt`](results/2026-10-26-br4-probabilistic-drafting/scripts/DIFF-br3-launch.txt)); with `SPEC_EXTRA` empty it renders the v26 args
+byte-for-byte. Same hook, seed map, GO/ctrl steps and autotune hash (hash-hit boot ~8 min).
+
+```bash
+NAME=dsv41-vllm-1017-v28-prob-BOUND-REF RUN=$HOME/dsv41/ar/v28 ROWMAP=rowmap-mixed-ar-v1.json \
+SPEC_EXTRA=',"draft_sample_method":"probabilistic"' \
+  bash results/2026-10-26-br4-probabilistic-drafting/scripts/launch_br3.sh      # boots FROZEN; then GO + ctrl.json exactly as for v26 below
+touch $RUN/GO
+echo '{"freeze": false, "baseline": true}' > $RUN/ctrl.json.tmp && mv $RUN/ctrl.json.tmp $RUN/ctrl.json
+bash scripts/smoke_vllm.sh
+```
+
+- **Boot facts to check:** `GPU KV cache size: 2,481,694 tokens` (v26: 2,495,694; the −0.56% is the draft-logits
+  cache), `Loaded 189 configs`, `draft_sample_method` present in `docker inspect` Args.
+- **Speedup needs temperature > 0.** At temperature 0 the drafter's sample is its argmax and v28 behaves as v26.
+
+**v26, the previous launch (2026-10-24; v28's rollback).** This is the v23 `docker run` with the hook directory and its env
 changed. Edit the model, cache and hook paths at the top. The hook directory must contain the v26ar.2 hook
 (sha1s in [`hook.txt`](results/2026-10-24-v26-seeded-adaptive/hook.txt)) and the seed map
 [`rowmap-mixed-ar-v1.json`](results/2026-10-24-v26-seeded-adaptive/hook/rowmap-mixed-ar-v1.json).
@@ -647,6 +742,8 @@ FlashInfer autotunes the MXFP4 MoE kernels and caches the result under a hash of
 | performance (v26) | Card AR6 v2, registered bars, same window: H1 held-out mixed C1 ≥ ×1.2 (×1.445), agent within 2 % (−0.7 %), adaptive steady state within 2 % of the static boot (−0.2 / −0.1 %) | 2026-10-24 |
 | fidelity (v26) | gauntlet 12/12 on the fixed seed map and 12/12 live under adaptation; greedy parity 49/50 static vs seed (documented noise prompt); 0 stale swaps, 0 server errors. BFCL / GSM8K / TF not re-run | 2026-10-24 |
 | soak (v26) | **waived** at promotion (James); longest unattended window ~1 h | — |
+| performance (v28-prob) | Card BR4, registered bars, bracket A → P → PB → A2: per-class temp-1.0 decode C1/C8 all 10 cells ≥ ctrl − bar (P 1.045–1.187×), mixed C1 +0.68% (bar −2%), tokens/step 1.103× | 2026-10-26 |
+| fidelity (v28-prob) | TF top-1 flips 1.10–1.13% vs floor 1.136%, margin flips 0, gauntlet 12/12, replay turns [6, 8] in range 6–8, temp-0 parity on every class, 0 errors; BFCL / GSM8K / soak not re-run | 2026-10-26 |
 
 ### Promotion gates (amended 2026-10-18, accepted by James)
 
@@ -666,7 +763,30 @@ FlashInfer autotunes the MXFP4 MoE kernels and caches the result under a hash of
 
 ## Results
 
-### v26 — Seeded Adaptive (this recipe's release; served `:30006` 2026-10-24 ~21:30–23:16 CDT)
+### v28 — Probabilistic drafting (this recipe's release since 2026-10-26; not served on `:30006`)
+
+The launch is v26 + one key: `launch_br3.sh` with `SPEC_EXTRA=',"draft_sample_method":"probabilistic"'` (see Launch).
+Container `dsv41-vllm-1017-v28-prob-BOUND-REF`, stopped-and-kept; rollback v26seed. Bundle:
+[`results/2026-10-26-br4-probabilistic-drafting/`](results/2026-10-26-br4-probabilistic-drafting/README.md); every cell is in [`throughput.csv`](results/2026-10-26-br4-probabilistic-drafting/throughput.csv).
+
+The instrument is the per-class temperature-1.0 window (40 private Hermes-transcript prompts per class, 256 forced
+tokens, seeded) and `ar_mixed_t.py` at temperature 1.0, against bracketing v26 controls in the same window.
+
+| cell | v28-prob | v26 controls A / A2 |
+|---|---|---|
+| accepted tokens per verify step, temp 1.0 | **3.438** | 3.122 / 3.115 |
+| tool_json decode C1 / C8, temp 1.0 | **294.0 / 791.8** | 254.6 / 251.4 · 671.9 / 661.9 |
+| prose decode C1 / C8, temp 1.0 | **217.2 / 494.3** | 197.4 / 197.2 · 451.8 / 454.6 |
+| shell_ops decode C1 / C8, temp 1.0 | **319.8 / 723.3** | 291.9 / 282.6 · 642.2 / 635.8 |
+| mixed C1 tok/s, temp 1.0 | 181.09 | 179.79 / 179.93 |
+| acceptance at draft position 1 / 5 | **.785 / .278** | .699 / .245 |
+| TF top-1 flips vs controls | 1.129% / 1.098% | floor 1.136% |
+| KV at 1M, boot | 2,481,694 tokens (2.37×) | 2,495,694 (2.38×) |
+
+Temperature 0 is unchanged from v26 (G2b parity PASS on every class). Not re-run on v28: BFCL, GSM8K, long context,
+C16+, a soak.
+
+### v26 — Seeded Adaptive (previous release, 2026-10-24 → 2026-10-26; v28's rollback; served `:30006` 2026-10-24 ~21:30–23:16 CDT)
 
 2026-10-26: block verification on v26 (Card BR3) is a null, with 0.999× tokens per verify step at temperature 1.0. It was
 not adopted; see the 2026-10-26 round and [`results/2026-10-26-br3-block-verification-null/`](results/2026-10-26-br3-block-verification-null/README.md).
@@ -855,12 +975,24 @@ Zero preemptions at 972K; HBM peaked at 243 GiB. Warm prefix on an 8.8K-token sy
 
 See `limits:` in [`recipe.yaml`](recipe.yaml).
 
+2026-10-26 additions (Card BR4, v28-prob):
+- **The +10% is a temperature > 0 result.** At temperature 0 probabilistic drafting returns the argmax and v28 runs
+  exactly like v26. Clients that send temperature 0 get nothing from it.
+- **KV is −0.56% (2,481,694 vs 2,495,694 tokens).** vLLM allocates a bf16 draft-logits cache (~31 MB at 24 seqs × k=5
+  × 129,280 vocab) before KV profiling. Max concurrency at 1M tokens goes 2.38× → 2.37×.
+- **PB (+ block verification) is a candidate, not the release.** It was +1.5% tokens per step over P at temperature
+  1.0, but it failed two pre-registered temperature-0 parity gates: G2b shell_ops C1 +3.6% vs a 2.6% bar, and G6
+  replay tool-turns 9/12 in one pass vs a control range of 6–8. It needs its own bracket against v28-prob.
+- **Not re-run on v28:** BFCL, GSM8K, long context (128K / 1M), C16+, and a soak. The park boot verified facts and
+  two smoke requests only.
+
 2026-10-26 addition (Card BR3):
 - **Block verification is a no-op with greedy drafting. Measure spec-decode changes at temperature > 0.**
   `rejection_sample_method: block` on v26 (greedy DSpark drafts) moved tokens per verify step by 0.999× at
   temperature 1.0. At temperature 0 block verification is never applied. Any stock temperature-0 speed instrument
   therefore reads a verifier change as a null by construction. The sidecar lane drafts probabilistically, and there
-  the same key is +2.0%. Card BR4 tests probabilistic drafting on this lane.
+  the same key is +2.0%. Card BR4 tests probabilistic drafting on this lane. *(Done 2026-10-26: probabilistic
+  drafting +10.3% tokens per step → v28-prob; block on top +1.5%, candidate.)*
 
 2026-10-24 additions (v26):
 - **The 48 h soak was waived at promotion** (James, 2026-10-24). The AR5 soak ran ~19:57 → ~20:4x CDT and was cancelled. The longest unattended window on v26 so far is ~1 h plus the Card AR6 / gauntlet battery traffic. Multi-day memory drift and multi-hour swap churn under real traffic are unmeasured.
@@ -878,6 +1010,10 @@ See `limits:` in [`recipe.yaml`](recipe.yaml).
 
 ## Rollback
 
+**v28-prob → v26:** `docker stop dsv41-vllm-1017-v28-prob-BOUND-REF && docker start dsv41-vllm-1017-v26seed-BOUND-REF`
+(hash hit, ~8 min; then GO + ctrl as in Launch). Or relaunch with `SPEC_EXTRA` empty. A client can also get v26
+behaviour on v28 by sending temperature 0.
+
 **v26 → v23 behaviour, no reboot:** write `{"freeze": true}`, then `{"restore_map": true}`, to the run dir's `ctrl.json`. The hook stops swapping and returns to the boot map.
 
 **Exact v23 runtime:** `docker stop dsv41-vllm-1017-v26seed-BOUND-REF`, then `docker start` the kept v23 container (hash hit, ~5 min).
@@ -887,6 +1023,13 @@ See `limits:` in [`recipe.yaml`](recipe.yaml).
 v23 → v22: `docker stop dsv41-vllm-1017-v23-pinexact-BOUND-REF && docker start dsv41-vllm-1017-v22-ksched1to8-RETIRED-REF` (~5 min, autotune hash hit). Every bound config is kept as a stopped container `dsv41-vllm-<tag>`. `docker stop` the lane, `docker start` the previous one; ~4 min. Production surfaces on other ports are never part of this lane.
 
 ## Credits
+
+2026-10-26 round (Card BR4, v28-prob):
+- **Probabilistic drafting and block verification as a pair:** the config of
+  [fraserprice/DeepSeek-4.1-Flash-1017-BRRR](https://huggingface.co/fraserprice/DeepSeek-4.1-Flash-1017-BRRR), which
+  set both `draft_sample_method: probabilistic` and `rejection_sample_method: block`.
+- **Block verification:** Sun et al., as implemented in vLLM's `rejection_sample_method: block`.
+- **Runner, verdict, park and write-up:** Milo (Hermes). Promotion of P as the reference: James ("go").
 
 2026-10-26 round (Card BR3):
 - **Block verification:** Sun et al. (block verification, a distribution-preserving verifier for speculative
