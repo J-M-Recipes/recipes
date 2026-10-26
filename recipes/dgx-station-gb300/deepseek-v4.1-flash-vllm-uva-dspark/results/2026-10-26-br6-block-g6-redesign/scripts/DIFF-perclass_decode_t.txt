@@ -1,0 +1,28 @@
+2c2,7
+< """perclass_decode.py — per-class decode wall-clock instrument for the :30006 DSV4.1 lane (stdlib only).
+---
+> """perclass_decode_t.py — Card BR1 copy of perclass_decode.py (2026-10-25, Milo desk) + --temperature/--seed/--top-p.
+> BR1: block verification only applies to non-greedy rows (rejection_sampler_utils.py at af7f9488: USE_BLOCK_VERIFICATION and
+> not is_greedy), so the BR1 primary cell samples at temperature 1.0. seed per request = --seed + row index in the prompts file
+> (prompts differ, arms repeat). Defaults (0 / 42 / 1.0) send temperature 0 like the original (+ seed, top_p fields).
+> Original docstring follows.
+> perclass_decode.py — per-class decode wall-clock instrument for the :30006 DSV4.1 lane (stdlib only).
+26a32
+> SAMP = {"temperature": 0.0, "seed": 42, "top_p": 1.0}   # BR1: set from the CLI in main()
+56c62,63
+<     body = {"model": model, "messages": row["messages"], "max_tokens": fl, "temperature": 0,
+---
+>     body = {"model": model, "messages": row["messages"], "max_tokens": fl, "temperature": SAMP["temperature"],
+>             "top_p": SAMP["top_p"], "seed": SAMP["seed"] + row.get("_idx", 0),
+159a167,168
+>     ap.add_argument("--temperature", type=float, default=0.0); ap.add_argument("--seed", type=int, default=42)
+>     ap.add_argument("--top-p", type=float, default=1.0)
+160a170
+>     SAMP.update(temperature=a.temperature, seed=a.seed, top_p=a.top_p)
+162a173
+>     for i, r in enumerate(rows): r["_idx"] = i   # BR1: per-request seed offset (file order, before any filter)
+173c184,185
+<            "ts_start": time.strftime("%Y-%m-%dT%H:%M:%S%z"), "base": a.base, "res": {}, "rows": {}}
+---
+>            "ts_start": time.strftime("%Y-%m-%dT%H:%M:%S%z"), "base": a.base, "res": {}, "rows": {},
+>            "sampling": {"temperature": a.temperature, "seed_base": a.seed, "seed_rule": "seed_base + row index", "top_p": a.top_p}}

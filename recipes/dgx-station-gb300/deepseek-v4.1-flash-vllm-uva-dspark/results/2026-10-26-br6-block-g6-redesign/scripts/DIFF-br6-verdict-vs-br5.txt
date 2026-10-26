@@ -1,0 +1,375 @@
+2,5c2,4
+< """br5_verdict.py — Card BR5 verdict: DSpark BLOCK verification re-bracketed ALONE against the new GB300-only reference v28-prob
+< (= v26seed "Seeded Adaptive" + "draft_sample_method":"probabilistic", Card BR4 P PASS), A -> B -> A2, Grace UVA offload, no RTX
+< sidecar. Pure stdlib. Clone of br3_verdict.py @da59e401 (DIFF-br5-verdict-vs-br3.txt shows every change); per-position acceptance
+< parsing taken from br4_verdict.py.
+---
+> """br6_verdict.py — Card BR6 verdict: DSpark BLOCK verification bracketed against the GB300-only reference v28-prob
+> (= v26seed "Seeded Adaptive" + "draft_sample_method":"probabilistic"), A -> B -> A2, Grace UVA offload, no RTX sidecar. Pure stdlib.
+> Clone of br5_verdict.py @acf14b79 (DIFF-br6-verdict-vs-br5.txt shows every change).
+7c6
+< Usage:  br5_verdict.py <R> [--out verdict.json]   -> <R>/verdict.json + human table on stdout.
+---
+> Usage:  br6_verdict.py <R> [--out verdict.json]   -> <R>/verdict.json (or --out) + human table on stdout.
+15,24c14,27
+< Differences vs BR3 (gates and bars UNCHANGED — pre-registered, not loosened):
+<   * ground truth = the stopped v28-prob container (args-ref-<REF>.json, env-ref-, binds-ref-, kv-ref.txt from its boot log).
+<   * G0: prob_in_args want 1/1/1, block_in_args want 0/1/0; A/A2 Args == v28-prob byte for byte; B Args == v28-prob except the spec
+<     element, which must equal v28-prob's spec + ',"rejection_sample_method":"block"' (string AND json level); the ground-truth spec
+<     itself must carry draft_sample_method=probabilistic and no rejection_sample_method. KV rule unchanged (B and A2 equal A exactly:
+<     block allocates nothing); the v28-prob boot-log value (2,481,694) is an annotation.
+<   * G2b key renamed G2b_t0_noop -> G2b_t0_parity (BR4's name; same two-sided bar max(2 %, 1.5 x |A-A2|/mean, 1.5 x ctrl r1/r2 spread)).
+<   * annotations: tokens/verify-step B/ctrl (pct1, mixed C1), per-position acceptance (vllm:spec_decode_num_accepted_tokens_per_pos),
+<     and a "BR4 parity re-check" block naming the two cells PB tripped in BR4 (G2b shell_ops t0 C1 +3.6 % vs 2.6 % bar; G6 one pass
+<     9/12 vs control range [6,8]) with REPRODUCED / NOT-REPRODUCED each. Annotation only — the gates decide.
+---
+> Differences vs BR5 (G0..G5, G7 and their bars UNCHANGED):
+>   * tags BR5-* -> BR6-* (perclass, mixed, tf, tf-compare, turns).
+>   * G6 REDESIGN (pre-registered, BRIEF-BR6.md 'G6 redesign'): replay_turns.py runs TURNS_REQ = 4 passes per arm (one file per
+>     pass, <X>/turns-BR6-<X>-p<k>.json; a legacy single file <X>/turns-BR6-<X>.json with N passes is also read). Statistic = per-arm
+>     MEAN tool-turns emitted per pass (of 12). PASS iff B has exactly 4 passes (first 4 used if more), every B pass has 0 errors,
+>     and mean(B) lies within [min(pooled 8 control passes) - 1, max(pooled 8 control passes) + 1]. Control validity: each control
+>     needs 4 error-free passes AND |mean(A) - mean(A2)| <= 1.5, else G6 INVALID-CONTROL(A,A2). Fewer than 4 passes = "INSUFFICIENT
+>     PASSES" (B -> FAIL, control -> INVALID); an exploratory reading on the passes present is printed, never gated.
+>     Reported: B pass min/max, pooled control distribution, per-arm means, and a per-transcript agreement table (which of the 12
+>     tool transcripts emitted a tool call in each pass, per arm; consistent B flips flagged) — ANNOTATION, not a gate.
+>   * the BR4 parity re-check block is replaced by a 'BR4/BR5 G6 history' annotation (earlier per-pass counts next to BR6's, and the
+>     new statistic applied to those 2-pass receipts as information) plus a one-line G2b shell_ops t0 C1 history.
+>   * suffix of an INVALID card also names the INVALID gate(s): BR6-INVALID-CONTROL-<arms>-<gates> (e.g. ...-A-A2-G6).
+>   * ar-lines cells delta ends at turns-p4-end (falls back to the last turns-p<k>-end, turns-end, stop).
+26c29
+< Inputs (<R> = ~/dsv41/m3/br5/results-cardBR5, written by cardBR5_runner.sh):
+---
+> Inputs (<R> = ~/dsv41/m3/br6/results-cardBR6, written by cardBR6_runner.sh):
+29,32c32,35
+<   <X>/perclass-t1/perclass-table-BR5-<X>-t1.json (+ raw perclass-BR5-<X>-t1-r{1,2}-{c1,c8}.json)   temp 1.0 (G1, G2)
+<   <X>/perclass-t0/perclass-table-BR5-<X>-t0.json                                         stock temp-0 window (G1, G2b)
+<   <X>/mixed-BR5-<X>-c1-r<k>.json      ar_mixed_t.py C1 120 s at temp 1.0 (G3)
+<   tf-compare-BR5-A-vs-BR5-B.json, tf-compare-BR5-A2-vs-BR5-B.json, tf-compare-BR5-A-vs-BR5-A2.json; <X>/tf-BR5-<X>.jsonl (G4)
+---
+>   <X>/perclass-t1/perclass-table-BR6-<X>-t1.json (+ raw perclass-BR6-<X>-t1-r{1,2}-{c1,c8}.json)   temp 1.0 (G1, G2)
+>   <X>/perclass-t0/perclass-table-BR6-<X>-t0.json                                         stock temp-0 window (G1, G2b)
+>   <X>/mixed-BR6-<X>-c1-r<k>.json      ar_mixed_t.py C1 120 s at temp 1.0 (G3)
+>   tf-compare-BR6-A-vs-BR6-B.json, tf-compare-BR6-A2-vs-BR6-B.json, tf-compare-BR6-A-vs-BR6-A2.json; <X>/tf-BR6-<X>.jsonl (G4)
+34c37
+<   gauntlet-<X>/summary.json (G5) ; <X>/turns-BR5-<X>.json (G6) ; errcount-<X>.txt (G7)
+---
+>   gauntlet-<X>/summary.json (G5) ; <X>/turns-BR6-<X>-p{1..4}.json (G6) ; errcount-<X>.txt (G7)
+59,61c62,72
+< # BR4 receipts (results-cardBR4/VERDICT.txt, 2026-10-26): the two PB parity trips this card re-checks (annotation only)
+< BR4_G2B_SHELL = {"delta": 0.036, "bar": 0.026, "ctrl_spread": 0.017}
+< BR4_G6 = {"passes": [8, 9], "ctrl_range": [6, 8]}
+---
+> # G6 redesign (pre-registered, BRIEF-BR6.md): 4 passes per arm, mean statistic, pooled-control bar +-1, control means within 1.5
+> TURNS_REQ = 4
+> TURNS_N = 12             # tool transcripts in transcript_fixture.json (sha1 e3f1aea4)
+> G6_MARGIN = 1.0
+> G6_CTRL_MEAN_TOL = 1.5
+> # G6 history (annotation only): per-pass tool-turn counts /12 from the finished receipts (replay_turns.py PASSES=2, temp 0)
+> #   BR4 (results-cardBR4, controls A/A2 = v26seed WITHOUT probabilistic drafting; P = v26seed+prob; PB = P + block)
+> #   BR5 (results-cardBR5, controls A/A2 = v28-prob = BR4 P; B = v28-prob + block = BR4 PB)
+> G6_HISTORY = {"BR4": {"ctrl": {"A": [6, 7], "A2": [8, 8]}, "cand": {"P": [6, 8], "PB": [8, 9]}, "old_gate": {"P": "PASS", "PB": "FAIL"}},
+>               "BR5": {"ctrl": {"A": [9, 8], "A2": [8, 8]}, "cand": {"B": [6, 7]}, "old_gate": {"B": "FAIL"}}}
+> G2B_SHELL_HISTORY = {"BR4 PB": "+3.6% vs bar 2.6% (FAIL)", "BR5 B": "+2.4% vs bar 10.3% (PASS)"}
+199c210,211
+<     s, e = out.get("pct1-start"), out.get("turns-end") or out.get("stop")
+---
+>     tend = sorted((k for k in out if re.fullmatch(r"turns-p\d+-end", k)), key=lambda k: int(k.split("-p")[1].split("-")[0]))
+>     s, e = out.get("pct1-start"), out.get("turns-p%d-end" % TURNS_REQ) or (out.get(tend[-1]) if tend else None) or out.get("turns-end") or out.get("stop")
+211c223
+<     tag = f"BR5-{arm}-{win}"
+---
+>     tag = f"BR6-{arm}-{win}"
+245c257
+<     for f in sorted(glob.glob(str(A / f"mixed-BR5-{arm}-c1-r*.json")), key=lambda s: int(s.rsplit("-r", 1)[1].split(".")[0])):
+---
+>     for f in sorted(glob.glob(str(A / f"mixed-BR6-{arm}-c1-r*.json")), key=lambda s: int(s.rsplit("-r", 1)[1].split(".")[0])):
+252c264
+<     c["tf_capture"] = (A / f"tf-BR5-{arm}.jsonl").exists() and (A / f"tf-BR5-{arm}.jsonl").stat().st_size > 0
+---
+>     c["tf_capture"] = (A / f"tf-BR6-{arm}.jsonl").exists() and (A / f"tf-BR6-{arm}.jsonl").stat().st_size > 0
+254,261c266
+<     t = jl(A / f"turns-BR5-{arm}.json")
+<     if t and t.get("passes"):
+<         c["turns"] = [{"tool_emitted": sum(1 for r in p if r.get("has_tool") and r.get("emitted")),
+<                        "tool_turns": sum(1 for r in p if r.get("has_tool")),
+<                        "text_emitted": sum(1 for r in p if not r.get("has_tool") and r.get("emitted")),
+<                        "errors": sum(1 for r in p if r.get("error"))} for p in t["passes"]]
+<     else:
+<         c["turns"] = None
+---
+>     c["turns"], c["turns_src"] = load_turns(A, arm)
+277a283,310
+> def turn_pass(p, src):
+>     tool = [r for r in p if r.get("has_tool")]
+>     return {"tool_emitted": sum(1 for r in tool if r.get("emitted")), "tool_turns": len(tool),
+>             "text_emitted": sum(1 for r in p if not r.get("has_tool") and r.get("emitted")),
+>             "errors": sum(1 for r in p if r.get("error")),
+>             "tool_idx": [r.get("i", k) for k, r in enumerate(p) if r.get("has_tool")],
+>             "emitted_idx": [r.get("i", k) for k, r in enumerate(p) if r.get("has_tool") and r.get("emitted")], "src": src}
+> 
+> 
+> def load_turns(A, arm):
+>     """G6 redesign: one replay_turns.py file per pass (<X>/turns-BR6-<X>-p<k>.json, PASSES=1 each, k ascending); a legacy single
+>     file <X>/turns-BR6-<X>.json holding N passes is read when no per-pass file exists (BR5-receipt replay). -> (passes|None, src)"""
+>     files = sorted(glob.glob(str(A / f"turns-BR6-{arm}-p*.json")), key=lambda s: s)
+>     files = [f for f in files if re.search(r"-p(\d+)\.json$", f)]
+>     files.sort(key=lambda f: int(re.search(r"-p(\d+)\.json$", f).group(1)))
+>     out = []
+>     for f in files:
+>         t = jl(f)
+>         for p in ((t or {}).get("passes") or []):
+>             out.append(turn_pass(p, Path(f).name))
+>     if files:
+>         return (out or None), "per-pass files: " + ",".join(Path(f).name for f in files)
+>     t = jl(A / f"turns-BR6-{arm}.json")
+>     if t and t.get("passes"):
+>         return [turn_pass(p, f"turns-BR6-{arm}.json#{k}") for k, p in enumerate(t["passes"])], f"legacy single file turns-BR6-{arm}.json"
+>     return None, "missing"
+> 
+> 
+521,522c554,555
+<         fl = jl(R / "tf-compare-BR5-A-vs-BR5-A2.json")
+<         cmp = {a: jl(R / f"tf-compare-BR5-{a}-vs-BR5-B.json") for a in CTRL}
+---
+>         fl = jl(R / "tf-compare-BR6-A-vs-BR6-A2.json")
+>         cmp = {a: jl(R / f"tf-compare-BR6-{a}-vs-BR6-B.json") for a in CTRL}
+563c596,597
+<     # ---- G6 replay_turns tool-call emission per pass within [min, max] of A and A2 passes
+---
+>     # ---- G6 REDESIGN (pre-registered): per-arm MEAN tool-turns over TURNS_REQ passes; B mean within the pooled control
+>     # [min - 1, max + 1]; controls' means within 1.5 of each other (else INVALID-CONTROL for G6); errors 0 on every B pass (hard)
+565,579c599,602
+<     tb = cells["B"]["turns"]
+<     tc = [p["tool_emitted"] for a in CTRL for p in (cells[a]["turns"] or [])]
+<     if not tb:
+<         g.fail = True; g.txt.append("B UNMEASURED")
+<     elif any(cells[a]["turns"] is None for a in CTRL):
+<         g.inv.update([a for a in CTRL if cells[a]["turns"] is None]); g.txt.append("control UNMEASURED")
+<     else:
+<         lo, hi = min(tc), max(tc)
+<         be = [p["tool_emitted"] for p in tb]; berr = sum(p["errors"] for p in tb)
+<         ok = all(lo <= x <= hi for x in be) and berr == 0
+<         g.fail = not ok
+<         calc["G6"] = {"B": be, "range": [lo, hi], "B_errors": berr, "pass": ok}
+<         g.txt.append(f"B per pass {be}/{tb[0]['tool_turns']} vs control range [{lo},{hi}] (A {[p['tool_emitted'] for p in cells['A']['turns']]}, "
+<                      f"A2 {[p['tool_emitted'] for p in cells['A2']['turns']]}); B errors {berr}; text-turn emissions B "
+<                      f"{[p['text_emitted'] for p in tb]} (temp 0: replay_turns.py)")
+---
+>     g6 = g6_eval(cells)
+>     calc["G6"] = g6
+>     g.fail, g.inv = g6["fail"], set(g6["inv"])
+>     g.txt = g6["txt"]
+602c625,626
+<         res = "INVALID-CONTROL-" + "-".join(inv); suffix = "BR5-" + res
+---
+>         res = "INVALID-CONTROL-" + "-".join(inv)
+>         suffix = "BR6-" + res + "-" + "-".join(SHORT[k] for k, s in status.items() if s == "INVALID")
+604c628
+<         res = "INVALID-B"; suffix = "BR5-INVALID-B"
+---
+>         res = "INVALID-B"; suffix = "BR6-INVALID-B"
+606c630
+<         res = "FAIL"; suffix = "BR5FAIL-" + "-".join(SHORT[k] for k in failed)
+---
+>         res = "FAIL"; suffix = "BR6FAIL-" + "-".join(SHORT[k] for k in failed)
+608c632
+<         res = "PASS"; suffix = "BR5PASS"
+---
+>         res = "PASS"; suffix = "BR6PASS"
+634c658,662
+<     ann["br4_parity_recheck"] = br4_recheck(calc, status, sorted({a for x in gs.values() for a in x[0].inv}, key=ARMS.index))
+---
+>     ann["g6_history"] = g6_history(calc.get("G6") or {}, status, inv)
+>     ann["g6_per_transcript"] = (calc.get("G6") or {}).get("per_transcript")
+>     ann["g2b_shell_ops_history"] = dict(G2B_SHELL_HISTORY, BR6_B=(None if not (calc.get("G2b_rows") or {}).get("shell_ops") else
+>                                         f"{calc['G2b_rows']['shell_ops']['rel'] * 100:+.1f}% vs bar {calc['G2b_rows']['shell_ops']['bar'] * 100:.1f}% "
+>                                         f"({'PASS' if calc['G2b_rows']['shell_ops']['pass'] else 'FAIL'})"))
+646c674
+<                 "turns": cells[a]["turns"], "ar_cells_delta": (cells[a]["ar_lines"] or {}).get("_cells_delta"),
+---
+>                 "turns": cells[a]["turns"], "turns_src": cells[a]["turns_src"], "ar_cells_delta": (cells[a]["ar_lines"] or {}).get("_cells_delta"),
+649c677
+<     return {"card": "BR5 block verification re-bracketed alone vs v28-prob (GB300-only)", "result": res, "suffix": suffix, "gates": gates, "gate_status": status,
+---
+>     return {"card": "BR6 block verification vs v28-prob (GB300-only), G6 redesign (4 replay passes/arm, pooled-control mean bar)", "result": res, "suffix": suffix, "gates": gates, "gate_status": status,
+653,673c681,743
+< def br4_recheck(calc, status, inv=()):
+<     """BR4 PB tripped (a) G2b shell_ops t0 C1 +3.6 % vs a 2.6 % bar and (b) G6 one replay pass 9/12 vs control range [6,8].
+<     REPRODUCED = the same cell trips again in the SAME direction (shell_ops: B above the controls by more than its bar; turns: a B
+<     pass above the control max). A trip in the opposite direction is reported as NOT-REPRODUCED (opposite-direction trip) — the
+<     gate still FAILs on it. UNMEASURED when the cell is missing; when the card is INVALID-CONTROL the words are printed but flagged
+<     as not interpretable (a polluted control moves the bar and the range)."""
+<     out = []
+<     r = (calc.get("G2b_rows") or {}).get("shell_ops")
+<     b4 = BR4_G2B_SHELL
+<     if not r:
+<         w, extra = "UNMEASURED", ""
+<     else:
+<         trip = abs(r["rel"]) > r["bar"]
+<         w = "REPRODUCED" if (trip and r["rel"] > 0) else "NOT-REPRODUCED"
+<         extra = (f"BR5 B {r['rel'] * 100:+.1f}% vs mean(A,A2) (|.| bar {r['bar'] * 100:.1f}%, ctrl r1/r2 spread {r['ctrl_r1r2_spread'] * 100:.1f}%; "
+<                  f"A {r['A']:.1f} A2 {r['A2']:.1f} B {r['B']:.1f})" + (" — opposite-direction trip" if (trip and r["rel"] < 0) else ""))
+<     out.append({"cell": "G2b shell_ops t0 C1", "word": w,
+<                 "line": f"G2b shell_ops t0 C1: {w}. BR4 PB {b4['delta'] * 100:+.1f}% vs bar {b4['bar'] * 100:.1f}% (ctrl spread {b4['ctrl_spread'] * 100:.1f}%); {extra}"})
+<     t = calc.get("G6")
+<     if not t:
+<         w, extra = "UNMEASURED", ""
+---
+> def g6_rule(ctrl_passes, b_passes):
+>     """the pre-registered G6 statistic on lists of per-pass counts -> dict (no validity checks; used for BR6 and the history)"""
+>     pool = [x for a in ctrl_passes for x in a]
+>     means = [statistics.mean(a) if a else None for a in ctrl_passes]
+>     lo, hi = (min(pool) - G6_MARGIN, max(pool) + G6_MARGIN) if pool else (None, None)
+>     mb = statistics.mean(b_passes) if b_passes else None
+>     dm = abs(means[0] - means[1]) if (len(means) == 2 and None not in means) else None
+>     inside = (mb is not None and lo is not None and lo <= mb <= hi)
+>     return {"pool": sorted(pool), "ctrl_means": means, "ctrl_mean_diff": dm, "bar": [lo, hi], "B_mean": mb,
+>             "inside": inside, "ctrl_agree": (dm is not None and dm <= G6_CTRL_MEAN_TOL)}
+> 
+> 
+> def g6_eval(cells):
+>     fail, inv, txt = False, set(), []
+>     P = {a: (cells[a]["turns"] or []) for a in ARMS}
+>     srcs = {a: cells[a].get("turns_src") for a in ARMS}
+>     cnt = {a: [p["tool_emitted"] for p in P[a]] for a in ARMS}
+>     out = {"spec": f"{TURNS_REQ} passes/arm; mean(B) in [min(pooled ctrl) - {G6_MARGIN:g}, max(pooled ctrl) + {G6_MARGIN:g}]; "
+>                    f"|mean(A) - mean(A2)| <= {G6_CTRL_MEAN_TOL:g} else INVALID-CONTROL; B errors 0",
+>            "passes": cnt, "src": srcs}
+>     # per-arm validity: exactly TURNS_REQ passes used (first TURNS_REQ if more), each with TURNS_N tool turns; errors
+>     use, problems = {}, {}
+>     for a in ARMS:
+>         ps = P[a]
+>         pr = []
+>         if not ps:
+>             pr.append("UNMEASURED")
+>         elif len(ps) < TURNS_REQ:
+>             pr.append(f"INSUFFICIENT PASSES ({len(ps)} < {TURNS_REQ})")
+>         if len(ps) > TURNS_REQ:
+>             txt.append(f"{a}: {len(ps)} passes present, first {TURNS_REQ} used (pre-registered count)")
+>         u = ps[:TURNS_REQ]
+>         bad_n = [k + 1 for k, p in enumerate(u) if p["tool_turns"] != TURNS_N]
+>         if bad_n:
+>             pr.append(f"pass(es) {bad_n} have tool_turns != {TURNS_N} (fixture drift)")
+>         er = sum(p["errors"] for p in u)
+>         if er:
+>             pr.append(f"errors {er}")
+>         use[a], problems[a] = u, pr
+>     for a in CTRL:
+>         if problems[a]:
+>             inv.add(a); txt.append(f"control {a}: " + "; ".join(problems[a]) + " -> INVALID")
+>     if problems["B"]:
+>         fail = True; txt.append("B: " + "; ".join(problems["B"]) + " -> FAIL")
+>     ruled = g6_rule([[p["tool_emitted"] for p in use[a]] for a in CTRL], [p["tool_emitted"] for p in use["B"]])
+>     out.update({k: ruled[k] for k in ("pool", "ctrl_means", "ctrl_mean_diff", "bar", "B_mean")})
+>     bc = [p["tool_emitted"] for p in use["B"]]
+>     out["B_min_max"] = [min(bc), max(bc)] if bc else None
+>     out["B_errors"] = sum(p["errors"] for p in use["B"])
+>     full = not any(problems[a] for a in ARMS)
+>     if full:
+>         if not ruled["ctrl_agree"]:
+>             inv.update(CTRL)
+>             txt.append(f"INVALID-CONTROL(G6): control means A {ruled['ctrl_means'][0]:.2f} vs A2 {ruled['ctrl_means'][1]:.2f} differ by "
+>                        f"{ruled['ctrl_mean_diff']:.2f} > {G6_CTRL_MEAN_TOL:g}")
+>         ok = ruled["inside"] and out["B_errors"] == 0
+>         fail = fail or not ok
+>         out["pass"] = ok and ruled["ctrl_agree"]
+>         txt.insert(0, f"B mean {ruled['B_mean']:.2f}/{TURNS_N} (passes {cnt['B'][:TURNS_REQ]}, min/max {out['B_min_max']}) vs pooled-control bar "
+>                       f"[{ruled['bar'][0]:g}, {ruled['bar'][1]:g}] = [min-{G6_MARGIN:g}, max+{G6_MARGIN:g}] of pooled 8 control passes "
+>                       f"{ruled['pool']} (A {cnt['A'][:TURNS_REQ]} mean {ruled['ctrl_means'][0]:.2f}, A2 {cnt['A2'][:TURNS_REQ]} mean "
+>                       f"{ruled['ctrl_means'][1]:.2f}, |dA| {ruled['ctrl_mean_diff']:.2f} <= {G6_CTRL_MEAN_TOL:g}: {ruled['ctrl_agree']}); "
+>                       f"B errors {out['B_errors']}{'' if ok else ' FAIL'}")
+675,689c745,805
+<         lo, hi = t["range"]
+<         above = [x for x in t["B"] if x > hi]; below = [x for x in t["B"] if x < lo]
+<         w = "REPRODUCED" if above else "NOT-REPRODUCED"
+<         extra = (f"BR5 B per pass {t['B']}/12 vs control range [{lo},{hi}] (B errors {t['B_errors']})"
+<                  + (" — opposite-direction trip" if (below and not above) else ""))
+<     out.append({"cell": "G6 replay_turns tool emissions", "word": w,
+<                 "line": f"G6 replay_turns: {w}. BR4 PB per pass {BR4_G6['passes']}/12 vs control range {BR4_G6['ctrl_range']}; {extra}"})
+<     words = [x["word"] for x in out]
+<     summ = ("both BR4 parity trips REPRODUCED" if words == ["REPRODUCED"] * 2 else
+<             "neither BR4 parity trip reproduced" if words == ["NOT-REPRODUCED"] * 2 else
+<             f"mixed: G2b shell_ops {words[0]}, G6 {words[1]}")
+<     summ += f" (gate status this card: G2b {status.get('G2b_t0_parity')}, G6 {status.get('G6_turns')})"
+<     if inv:
+<         summ += f" — card INVALID-CONTROL({','.join(inv)}): re-check words NOT interpretable"
+<     return {"cells": out, "summary": summ}
+---
+>         out["pass"] = False
+>         if all(P[a] for a in ARMS):   # exploratory reading on whatever passes exist — NOT gated
+>             ex = g6_rule([cnt[a] for a in CTRL], cnt["B"])
+>             out["exploratory"] = ex
+>             txt.append(f"exploratory (NOT gated; passes A {cnt['A']} A2 {cnt['A2']} B {cnt['B']}): B mean {ex['B_mean']:.2f} vs "
+>                        f"[{ex['bar'][0]:g}, {ex['bar'][1]:g}] inside={ex['inside']}; ctrl means {[round(m, 2) for m in ex['ctrl_means']]} "
+>                        f"diff {ex['ctrl_mean_diff']:.2f} agree={ex['ctrl_agree']}")
+>     hist = {}
+>     for x in ruled["pool"]:
+>         hist[x] = hist.get(x, 0) + 1
+>     out["pool_hist"] = hist
+>     txt.append(f"pooled control distribution {dict(sorted(hist.items()))}; text-turn emissions B {[p['text_emitted'] for p in use['B']]} "
+>                f"(temp 0: replay_turns.py, {TURNS_REQ} x PASSES=1)")
+>     out["per_transcript"] = per_transcript(P)
+>     out["fail"], out["inv"], out["txt"] = fail, sorted(inv, key=ARMS.index), txt
+>     return out
+> 
+> 
+> def per_transcript(P):
+>     """ANNOTATION: for each tool transcript, the emitted (1) / not (0) string per arm across its passes; flags a CONSISTENT B flip
+>     (B identical on all its >= 2 passes and every control pass (>= 2) the opposite) vs a count wobble."""
+>     idx = sorted({i for a in ARMS for p in P[a] for i in p["tool_idx"]})
+>     rows, flips = [], []
+>     for i in idx:
+>         r = {"i": i}
+>         for a in ARMS:
+>             r[a] = "".join("1" if i in p["emitted_idx"] else "0" for p in P[a] if i in p["tool_idx"])
+>         cp = r["A"] + r["A2"]
+>         allb, allc = set(r["B"]), set(cp)
+>         if len(r["B"]) >= 2 and len(cp) >= 2 and len(allb) == 1 and len(allc) == 1 and allb != allc:
+>             r["flag"] = "B-CONSISTENT-FLIP " + ("(B never emits)" if r["B"][0] == "0" else "(B always emits)")
+>             flips.append(i)
+>         elif len(set(r["A"] + r["A2"] + r["B"])) == 1:
+>             r["flag"] = "stable"
+>         else:
+>             r["flag"] = "wobble"
+>         rows.append(r)
+>     return {"rows": rows, "consistent_B_flips": flips,
+>             "stable": [r["i"] for r in rows if r["flag"] == "stable"], "wobble": [r["i"] for r in rows if r["flag"] == "wobble"]}
+> 
+> 
+> def g6_history(t, status, inv=()):
+>     """ANNOTATION: BR4/BR5 per-pass counts next to BR6's, and the pre-registered BR6 statistic applied to the 2-pass receipts
+>     (information only — those cards were judged by the old 2-pass min..max rule)"""
+>     lines = []
+>     for card, h in G6_HISTORY.items():
+>         ctrl = [h["ctrl"]["A"], h["ctrl"]["A2"]]
+>         for cand, ps in h["cand"].items():
+>             r = g6_rule(ctrl, ps)
+>             lines.append(f"{card} {cand}: passes {ps} vs ctrl A {h['ctrl']['A']} A2 {h['ctrl']['A2']} (old 2-pass rule: {h['old_gate'][cand]}); "
+>                          f"BR6 statistic on 2 passes (info): mean {r['B_mean']:.2f} vs [{r['bar'][0]:g}, {r['bar'][1]:g}] inside={r['inside']}, "
+>                          f"ctrl mean diff {r['ctrl_mean_diff']:.2f} agree={r['ctrl_agree']}")
+>     p = t.get("passes") or {}
+>     bm = t.get("B_mean")
+>     lines.append(f"BR6: A {p.get('A')} A2 {p.get('A2')} B {p.get('B')}; B mean {'-' if bm is None else f'{bm:.2f}'} vs bar {t.get('bar')} "
+>                  f"(G6 {status.get('G6_turns')})" + (f" — card INVALID-CONTROL({','.join(inv)})" if inv else ""))
+>     allp = sorted([x for h in G6_HISTORY.values() for d in (h["ctrl"], h["cand"]) for ps in d.values() for x in ps]
+>                   + [x for a in ARMS for x in (p.get(a) or [])])
+>     lines.append(f"all replay passes on this fixture/lane, BR4+BR5 (constants) + this tree (sorted): {allp}"
+>                  " — in a replay of BR5 receipts 'this tree' duplicates BR5")
+>     return {"lines": lines}
+697c813
+<     L = [f"Card BR5 verdict: {v['result']}   suffix {v['suffix']}", "",
+---
+>     L = [f"Card BR6 verdict: {v['result']}   suffix {v['suffix']}", "",
+725,726c841,848
+<     rc = v["annotations"]["br4_parity_recheck"]
+<     L += ["", "BR4 PARITY RE-CHECK (annotation, not a gate — the gates above decide):"] + ["  " + x["line"] for x in rc["cells"]] + ["  " + rc["summary"]]
+---
+>     pt = v["annotations"].get("g6_per_transcript") or {}
+>     L += ["", "ANNOTATION — G6 per-transcript agreement (tool transcripts; 1 = tool call emitted in that pass, passes in order; not a gate):",
+>           "| transcript | A | B | A2 | flag |", "|---|---|---|---|---|"]
+>     for r in pt.get("rows") or []:
+>         L.append(f"| {r['i']} | {r['A'] or '-'} | {r['B'] or '-'} | {r['A2'] or '-'} | {r['flag']} |")
+>     L.append(f"  consistent B flips: {pt.get('consistent_B_flips')}; stable: {pt.get('stable')}; wobble: {pt.get('wobble')}")
+>     L += ["", "BR4/BR5 G6 HISTORY (annotation, not a gate — the gates above decide):"] + ["  " + x for x in v["annotations"]["g6_history"]["lines"]]
+>     L.append(f"  G2b shell_ops t0 C1 history: {v['annotations']['g2b_shell_ops_history']}")
