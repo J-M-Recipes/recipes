@@ -1,0 +1,5 @@
+# Card BR6 pre-registration (Milo, 2026-10-26 14:13:15 CDT, before launch)
+- G6 per BRIEF-BR6.md with ONE change made before launch: 8 replay passes per arm, not 4 (a pass costs ~15 s; TURNS_PASSES=8, TURNS_REQ=8). Bar unchanged: mean(B) within [min(pooled 16 control passes)-1, max+1]; |mean(A)-mean(A2)| <= 1.5 else INVALID-CONTROL.
+- Per-transcript rule (hand-applied, pre-registered): if any tool transcript is a B-CONSISTENT-FLIP (B identical on all 8 passes AND all 16 control passes the opposite), the card is a FAIL even if the script prints PASS; the script annotation is the receipt. If B is 0/8 on a transcript the controls hit 16/16, the outputs are diffed turn by turn in the writeup before any decision.
+- All other gates/bars = BR5 verbatim. A trip in any class is a FAIL.
+- If BR6 PASSes: PB (v28-prob + block) becomes the GB300-only reference candidate v29 (James call). If G6 FAILs with a consistent flip: block verification is retired on this lane as a behaviour change, not noise. If G6 INVALID-CONTROL: the instrument is still not fit; stop the series.

@@ -1,0 +1,243 @@
+2,8c2,12
+< # cardBR5_runner.sh — Card BR5: DSpark BLOCK verification ("rejection_sample_method":"block") re-bracketed ALONE against the new
+< # GB300-only reference v28-prob (= v26 "Seeded Adaptive" + "draft_sample_method":"probabilistic", Card BR4 P PASS), bracketed
+< # A -> B -> A2, lane :30006, GB300. Clone of ~/dsv41/m3/br3/cardBR3_runner.sh @58ea2774 (DIFF-br5-runner-vs-br3.txt shows every
+< # change); prob_in_args fact + per-position metrics follow ~/dsv41/m3/br4/cardBR4_runner.sh.
+< # WHY: in BR4, PB (= v28-prob + block) FAILED two temp-0 parity gates (G2b shell_ops C1 +3.6 % vs a 2.6 % bar; G6 replay_turns one
+< # pass 9/12 vs control range [6,8]) while P passed. BR5 asks ONE question: do those two parity trips reproduce when PB is
+< # re-bracketed alone against P-as-control? Same lane, same launcher, same cells, same gates, same bars — pre-registered, NOT loosened.
+---
+> # cardBR6_runner.sh — Card BR6: DSpark BLOCK verification ("rejection_sample_method":"block") bracketed against the GB300-only
+> # reference v28-prob (= v26 "Seeded Adaptive" + "draft_sample_method":"probabilistic"), A -> B -> A2, lane :30006, GB300.
+> # Clone of ~/dsv41/m3/br5/cardBR5_runner.sh @8f1d1873 (DIFF-br6-runner-vs-br5.txt shows every change). ONE instrument change:
+> # the G6 turns cell runs replay_turns.py 4 times per arm (PASSES=1 each, tags BR6-<arm>-p1..p4) instead of once with PASSES=2.
+> # WHY: BR5 B PASSED every speed/fidelity gate but FAILED G6 (B [6,7]/12 vs control range [8,9]); in BR4 the same candidate FAILED
+> # G6 in the OPPOSITE direction (PB [8,9] vs [6,8]). Across all probabilistic-drafting arms of BR4+BR5 the per-pass tool-turn counts
+> # span 6..9 with no relation to the block key: the 2-pass min..max bar is too narrow for a replay that is nondeterministic on this
+> # lane (the drafter samples even on greedy rows). BR5 PREREG: on a second G6 fail PB is retired until a design with more replay
+> # passes exists — this is that design. G6 is re-specified (pre-registered in BRIEF-BR6.md 'G6 redesign'): per-arm MEAN tool-turns
+> # over 4 passes; B mean within [min(pooled 8 control passes) - 1, max(...) + 1]; |mean(A) - mean(A2)| <= 1.5 else INVALID-CONTROL
+> # (G6); errors 0 on every B pass (hard). Everything else (G0..G5, G7, cells, bars, launcher, restore) is BR5 verbatim.
+15c19
+< #   B    : ,"draft_sample_method":"probabilistic","rejection_sample_method":"block" (= BR4 PB)
+---
+> #   B    : ,"draft_sample_method":"probabilistic","rejection_sample_method":"block" (= BR4 PB = BR5 B)
+17c21
+< # must show the SAME GPU KV token count (v28-prob boot log: 2,481,694; BR4 P and PB both 2,481,694).
+---
+> # must show the SAME GPU KV token count (v28-prob boot log: 2,481,694; BR4 P/PB and BR5 A/B/A2 all 2,481,694).
+26,27c30,31
+< # Detached: cd ~/dsv41/m3/br5 && setsid nohup bash cardBR5_runner.sh > /dev/null 2>&1 < /dev/null & echo $! > cardBR5.pid
+< # Abort: touch ~/dsv41/m3/br5/results-cardBR5/ABORT (checked between cells/boots) or kill -TERM <pid>.
+---
+> # Detached: cd ~/dsv41/m3/br6 && setsid nohup bash cardBR6_runner.sh > /dev/null 2>&1 < /dev/null & echo $! > cardBR6.pid
+> # Abort: touch ~/dsv41/m3/br6/results-cardBR6/ABORT (checked between cells/boots) or kill -TERM <pid>.
+30c34
+< #     -> stop the v27-block pair (kept) -> ISOLATE -> REFUSE (and restore) if the RTX still holds > 2048 MiB (BR5 is Grace-only)
+---
+> #     -> stop the v27-block pair (kept) -> ISOLATE -> REFUSE (and restore) if the RTX still holds > 2048 MiB (BR6 is Grace-only)
+36c40
+< #       (2) pct0  : stock perclass_run.sh (temp 0, full r1+r2) -> X/perclass-t0   (parity, G2b — BR4 PB tripped shell_ops here)
+---
+> #       (2) pct0  : stock perclass_run.sh (temp 0, full r1+r2) -> X/perclass-t0   (parity, G2b)
+39c43,44
+< #       (5) gauntlet (tags br5-X; G5)   (6) turns: replay_turns.py PASSES=2 (G6 — BR4 PB tripped here)
+---
+> #       (5) gauntlet (tags br6-X; G5)
+> #       (6) turns-p1..p4: replay_turns.py PASSES=1 x 4, tags BR6-X-p<k> (G6 redesign; ~15 s per pass in BR5 receipts)
+42,44c47,49
+< #   END: restore production v27 pair + fail-stop watchdog (BR1/BR3/BR4 restore_lane; -rtx first, wait 'serving', server; double-forked
+< #     watchdog, PPID 1 checked; ISOLATE removed first) -> TF compares + margin flips (CPU) -> verdict -> renames -> SUMMARY
+< #     -> ledger -> LANE-OWNER append -> FINAL
+---
+> #   END: restore production v27 pair + fail-stop watchdog (BR1/BR3/BR4/BR5 restore_lane; -rtx first, wait 'serving', server;
+> #     double-forked watchdog, PPID 1 checked; ISOLATE removed first) -> TF compares + margin flips (CPU) -> verdict -> renames
+> #     -> SUMMARY -> ledger -> LANE-OWNER append -> FINAL
+46,48c51,53
+< HM=${BR5_HOME:-~}   # desk dry-run override only; production = ~
+< DS=$HM/dsv41; D=$DS/m3; B1=$D/br1; B3=$D/br3; B5=$D/br5
+< R=$B5/results-cardBR5
+---
+> HM=${BR6_HOME:-~}   # desk dry-run override only; production = ~
+> DS=$HM/dsv41; D=$DS/m3; B1=$D/br1; B3=$D/br3; B6=$D/br6
+> R=$B6/results-cardBR6
+53c58
+< MODEL=${BR5_MODEL_DIR:-/models/DeepSeek-V4.1-Flash-1017-1bae0e1088993b9b82de08f59de5be5a34e42170}
+---
+> MODEL=${BR6_MODEL_DIR:-/models/DeepSeek-V4.1-Flash-1017-1bae0e1088993b9b82de08f59de5be5a34e42170}
+58c63
+< VERDICT=$B5/br5_verdict.py
+---
+> VERDICT=$B6/br6_verdict.py
+66c71
+< WD=$D/sidecar_watchdog.py   # PRODUCTION watchdog only (re-armed at restore); BR5 arms run no card watchdog (no sidecar)
+---
+> WD=$D/sidecar_watchdog.py   # PRODUCTION watchdog only (re-armed at restore); BR6 arms run no card watchdog (no sidecar)
+71c76
+< N_A=dsv41-vllm-1017-BR5-A; N_B=dsv41-vllm-1017-BR5-B; N_A2=dsv41-vllm-1017-BR5-A2
+---
+> N_A=dsv41-vllm-1017-BR6-A; N_B=dsv41-vllm-1017-BR6-B; N_A2=dsv41-vllm-1017-BR6-A2
+85c90
+< # >>>>> TODO-SHA (Milo, after review + rename of the BR5 drafts): fill the 8-char sha1 prefix of br5_verdict.py below.
+---
+> # >>>>> TODO-SHA (Milo, after review + rename of the BR6 drafts): fill the 8-char sha1 prefix of br6_verdict.py below.
+87c92
+< SHA_LAUNCH=${SHA_LAUNCH-8066045c}; SHA_VERDICT=${SHA_VERDICT-acf14b79}
+---
+> SHA_LAUNCH=${SHA_LAUNCH-8066045c}; SHA_VERDICT=${SHA_VERDICT-TODO-SHA}
+97c102
+< T_PERCLASS=${T_PERCLASS:-2700}; T_MIXED=${T_MIXED:-600}; T_TF=${T_TF:-1800}; T_TURNS=${T_TURNS:-1500}
+---
+> T_PERCLASS=${T_PERCLASS:-2700}; T_MIXED=${T_MIXED:-600}; T_TF=${T_TF:-1800}; T_TURNS=${T_TURNS:-600}   # per replay_turns.py invocation (ONE pass, ~15 s in BR5)
+101a107
+> TURNS_PASSES=4   # G6 redesign: replay_turns.py passes per arm, one invocation each (locked, not env-overridable; BR5 was 2)
+103c109
+< if [[ -e $R ]]; then echo "$(date '+%F %T %Z') REFUSE: $R exists (refuse to mix runs; move it aside)" | tee -a "$B5/cardBR5.refused.log" >&2; exit 5; fi
+---
+> if [[ -e $R ]]; then echo "$(date '+%F %T %Z') REFUSE: $R exists (refuse to mix runs; move it aside)" | tee -a "$B6/cardBR6.refused.log" >&2; exit 5; fi
+122c128
+<   ps -eo pid,args | grep -E '^ *[0-9]+ bash .*(runner\.sh|perclass_run\.sh|perclass_run_t\.sh)' | grep -v "cardBR5_runner.sh" | grep -v grep \
+---
+>   ps -eo pid,args | grep -E '^ *[0-9]+ bash .*(runner\.sh|perclass_run\.sh|perclass_run_t\.sh)' | grep -v "cardBR6_runner.sh" | grep -v grep \
+161c167
+< FW_TAG=cardBR5-isolate
+---
+> FW_TAG=cardBR6-isolate
+202c208
+<   bg bash -c 'cd "$1" && shift && exec timeout 1200 python3 run_suite.py "$@"' _ "$GDIR" --base-url $U/v1 --model $M --output "$R/gauntlet-$tag" --tag "br5-$tag" --cache-salt "br5-$tag" --sandbox-image "$GIMG" --workers 4 > "$R/gauntlet-log-$tag.txt" 2>&1 || log "gauntlet $tag nonzero rc"
+---
+>   bg bash -c 'cd "$1" && shift && exec timeout 1200 python3 run_suite.py "$@"' _ "$GDIR" --base-url $U/v1 --model $M --output "$R/gauntlet-$tag" --tag "br6-$tag" --cache-salt "br6-$tag" --sandbox-image "$GIMG" --workers 4 > "$R/gauntlet-log-$tag.txt" 2>&1 || log "gauntlet $tag nonzero rc"
+224c230
+< # ---- BR5 arms are single GB300-only containers: no sidecar, no card watchdog. stop_arm never touches any -rtx container.
+---
+> # ---- BR6 arms are single GB300-only containers: no sidecar, no card watchdog. stop_arm never touches any -rtx container.
+252c258
+< restore_lane(){ # idempotent: BR5 arms stop-and-keep, v27-block pair docker start (flags kept), fail-stop watchdog re-armed
+---
+> restore_lane(){ # idempotent: BR6 arms stop-and-keep, v27-block pair docker start (flags kept), fail-stop watchdog re-armed
+272c278
+<     own "cardBR5 done; lane restored to $V27 pair + watchdog pid ${NEWWD:-NONE} (ppid $(ps -o ppid= -p "${NEWWD:-0}" 2>/dev/null | tr -d ' ')); ISOLATE removed (receipts $R)"
+---
+>     own "cardBR6 done; lane restored to $V27 pair + watchdog pid ${NEWWD:-NONE} (ppid $(ps -o ppid= -p "${NEWWD:-0}" 2>/dev/null | tr -d ' ')); ISOLATE removed (receipts $R)"
+274,275c280,281
+<     log "RESTORE FAILED — lane dark, needs hands (BRIEF-BR5.md §Restore)"
+<     own "OWNER: cardBR5 RESTORE FAILED — lane dark; see $R/runner.log (manual: docker start $V27R; wait 'serving'; docker start $V27; re-arm watchdog from $WARGV)"
+---
+>     log "RESTORE FAILED — lane dark, needs hands (BRIEF-BR6.md §Restore)"
+>     own "OWNER: cardBR6 RESTORE FAILED — lane dark; see $R/runner.log (manual: docker start $V27R; wait 'serving'; docker start $V27; re-arm watchdog from $WARGV)"
+288c294
+<     log "===== CARD BR5 END (ABORTED rc=$rc; lane = $(docker ps --format '{{.Names}}' | grep -E '^dsv41-' | tr '\n' ' ') watchdog=$(wd_pids)) ====="
+---
+>     log "===== CARD BR6 END (ABORTED rc=$rc; lane = $(docker ps --format '{{.Names}}' | grep -E '^dsv41-' | tr '\n' ' ') watchdog=$(wd_pids)) ====="
+311c317
+< boot_br5(){ # arm name spec_extra
+---
+> boot_br6(){ # arm name spec_extra
+320c326
+<   u=$(rtx_used); [[ -n $u && $u -lt $RTX_IDLE_MIB ]] || { log "REFUSE boot $arm: RTX busy (${u:-?} MiB >= $RTX_IDLE_MIB) — BR5 arms are Grace-only"; return 1; }
+---
+>   u=$(rtx_used); [[ -n $u && $u -lt $RTX_IDLE_MIB ]] || { log "REFUSE boot $arm: RTX busy (${u:-?} MiB >= $RTX_IDLE_MIB) — BR6 arms are Grace-only"; return 1; }
+395c401
+<     "$BENCH" "BR5-$arm-t1" "$A/perclass-t1" "$TEMP_T" "$SEED_T" "$TOP_P_T" "$PCDEC_T" "$T_PERCLASS" "$PERCLASS_T"
+---
+>     "$BENCH" "BR6-$arm-t1" "$A/perclass-t1" "$TEMP_T" "$SEED_T" "$TOP_P_T" "$PCDEC_T" "$T_PERCLASS" "$PERCLASS_T"
+397c403
+<   cell pct0 bash -c 'cd "$1" && ARM="$2" OUTDIR="$3" exec timeout "$4" bash perclass_run.sh' _ "$BENCH" "BR5-$arm-t0" "$A/perclass-t0" "$T_PERCLASS"
+---
+>   cell pct0 bash -c 'cd "$1" && ARM="$2" OUTDIR="$3" exec timeout "$4" bash perclass_run.sh' _ "$BENCH" "BR6-$arm-t0" "$A/perclass-t0" "$T_PERCLASS"
+400c406
+<     cell "c1-r$r" timeout "$T_MIXED" env HELDOUT=1 python3 "$MIXED_T" "BR5-$arm-c1-r$r" "$A" 1 "$MIX_S" --temperature "$TEMP_T" --seed "$SEED_T" --top-p "$TOP_P_T" || break
+---
+>     cell "c1-r$r" timeout "$T_MIXED" env HELDOUT=1 python3 "$MIXED_T" "BR6-$arm-c1-r$r" "$A" 1 "$MIX_S" --temperature "$TEMP_T" --seed "$SEED_T" --top-p "$TOP_P_T" || break
+402,403c408,409
+<   # (4) teacher-forced TF capture (prefill only; temperature-independent) -> $A/tf-BR5-<arm>.jsonl
+<   cell tf bash -c 'cd "$1" && MAXPOS=4096 CONC=4 exec timeout "$2" python3 "$3" capture "$4" "$5"' _ "$A" "$T_TF" "$TF" "BR5-$arm" "$CORPUS"
+---
+>   # (4) teacher-forced TF capture (prefill only; temperature-independent) -> $A/tf-BR6-<arm>.jsonl
+>   cell tf bash -c 'cd "$1" && MAXPOS=4096 CONC=4 exec timeout "$2" python3 "$3" capture "$4" "$5"' _ "$A" "$T_TF" "$TF" "BR6-$arm" "$CORPUS"
+407,408c413,428
+<   cell turns env TAG="BR5-$arm" PASSES=2 timeout "$T_TURNS" python3 "$TURNS"
+<   [[ -s $TURNS_OUT/turns-BR5-$arm.json ]] && mv "$TURNS_OUT/turns-BR5-$arm.json" "$A/" && log "TURNS $arm: moved turns-BR5-$arm.json into $A"
+---
+>   # G6 redesign: TURNS_PASSES separate invocations (PASSES=1 each, distinct tags BR6-<arm>-p<k>) so a hang/death costs one pass,
+>   # each pass gets its own /metrics + /ar markers, and each pass leaves its own raw file + summary in $A
+>   for k in $(seq 1 "$TURNS_PASSES"); do
+>     cell "turns-p$k" env TAG="BR6-$arm-p$k" PASSES=1 timeout "$T_TURNS" python3 "$TURNS" || break
+>     if [[ -s $TURNS_OUT/turns-BR6-$arm-p$k.json ]]; then
+>       mv "$TURNS_OUT/turns-BR6-$arm-p$k.json" "$A/"
+>       python3 -c 'import json,sys
+> d=json.load(open(sys.argv[1])); P=d.get("passes") or [[]]; p=P[0]
+> t=[r for r in p if r.get("has_tool")]
+> json.dump({"tag": d.get("tag"), "pass": int(sys.argv[3]), "passes_in_file": len(P), "tool_turns": len(t),
+>   "tool_emitted": sum(1 for r in t if r.get("emitted")), "text_emitted": sum(1 for r in p if not r.get("has_tool") and r.get("emitted")),
+>   "errors": sum(1 for r in p if r.get("error")), "tool_emitted_idx": [r.get("i") for r in t if r.get("emitted")],
+>   "wall_s": round(sum(r.get("s") or 0 for r in p), 2)}, open(sys.argv[2], "w"))' "$A/turns-BR6-$arm-p$k.json" "$A/turns-BR6-$arm-p$k-summary.json" "$k" 2>/dev/null
+>       log "TURNS $arm p$k: moved turns-BR6-$arm-p$k.json into $A; summary $(cat "$A/turns-BR6-$arm-p$k-summary.json" 2>/dev/null | cut -c1-240)"
+>     else log "WARN TURNS $arm p$k: no turns-BR6-$arm-p$k.json written (pass MISSING; G6 needs $TURNS_PASSES passes per arm)"; fi
+>   done
+416c436
+< log "===== CARD BR5 START (arms=$ARMS spec_A/A2=[$SPEC_A] spec_B=[$SPEC_B] ref=$REF temp_t=$TEMP_T seed_t=$SEED_T mix_s=$MIX_S c1_reps=$C1_REPS settle_s=$SETTLE_S adapt_settle_s=$ADAPT_SETTLE_S isolate=$ISOLATE mem_min=$MEM_MIN boot_min=$BOOT_MIN R=$R) ====="
+---
+> log "===== CARD BR6 START (arms=$ARMS spec_A/A2=[$SPEC_A] spec_B=[$SPEC_B] ref=$REF temp_t=$TEMP_T seed_t=$SEED_T mix_s=$MIX_S c1_reps=$C1_REPS settle_s=$SETTLE_S adapt_settle_s=$ADAPT_SETTLE_S isolate=$ISOLATE mem_min=$MEM_MIN boot_min=$BOOT_MIN R=$R) ====="
+429,430c449,450
+< for n in $ALLN; do exists "$n" && { log "ABORT: BR5 container already exists: $n"; exit 5; }; exists "$n-rtx" && { log "ABORT: unexpected $n-rtx exists"; exit 5; }; done
+< ls "$TURNS_OUT"/turns-BR5-* >/dev/null 2>&1 && { log "ABORT: $TURNS_OUT/turns-BR5-* already exist (tag clash)"; exit 5; }
+---
+> for n in $ALLN; do exists "$n" && { log "ABORT: BR6 container already exists: $n"; exit 5; }; exists "$n-rtx" && { log "ABORT: unexpected $n-rtx exists"; exit 5; }; done
+> ls "$TURNS_OUT"/turns-BR6-* >/dev/null 2>&1 && { log "ABORT: $TURNS_OUT/turns-BR6-* already exist (tag clash)"; exit 5; }
+500c520
+< own "cardBR5 runner pid $$ preflight OK — about to take :30006 dark (A=$N_A, B=$N_B, A2=$N_A2 vs reference $REF; GB300-only, ~2.5 h); restores $V27 pair + watchdog at END. Receipts $R"
+---
+> own "cardBR6 runner pid $$ preflight OK — about to take :30006 dark (A=$N_A, B=$N_B, A2=$N_A2 vs reference $REF; GB300-only, ~2.5 h); restores $V27 pair + watchdog at END. Receipts $R"
+506c526
+< echo "cardBR5 $(date '+%F %T %Z')" > "$D/logs/MAINTENANCE"
+---
+> echo "cardBR6 $(date '+%F %T %Z')" > "$D/logs/MAINTENANCE"
+508c528
+< for p in $(wd_pids); do kill "$p" 2>/dev/null && log "fail-stop watchdog $p stopped (cardBR5)"; done
+---
+> for p in $(wd_pids); do kill "$p" 2>/dev/null && log "fail-stop watchdog $p stopped (cardBR6)"; done
+511,512c531,532
+< echo "$(date '+%F %T %Z') watchdog stopped by cardBR5 (re-armed after restore)" >> "$WDLOG"
+< mv "$WDLOG" "$WDLOG.pre-cardBR5-$(date +%Y%m%d-%H%M%S)"
+---
+> echo "$(date '+%F %T %Z') watchdog stopped by cardBR6 (re-armed after restore)" >> "$WDLOG"
+> mv "$WDLOG" "$WDLOG.pre-cardBR6-$(date +%Y%m%d-%H%M%S)"
+515c535
+< own "cardBR5: lane :30006 DARK (watchdog $WP stopped, $V27 + $V27R stopped-and-kept)"
+---
+> own "cardBR6: lane :30006 DARK (watchdog $WP stopped, $V27 + $V27R stopped-and-kept)"
+521c541
+<   log "REFUSE: RTX still holds ${u:-?} MiB (>= $RTX_IDLE_MIB) 60 s after the production pair stopped — BR5 is Grace-only; restoring production"
+---
+>   log "REFUSE: RTX still holds ${u:-?} MiB (>= $RTX_IDLE_MIB) 60 s after the production pair stopped — BR6 is Grace-only; restoring production"
+533c553
+<   if boot_br5 "$arm" "$n" "$sx"; then
+---
+>   if boot_br6 "$arm" "$n" "$sx"; then
+549,551c569,571
+<   if [[ -s $R/$1/tf-BR5-$1.jsonl && -s $R/$2/tf-BR5-$2.jsonl ]]; then
+<     ( cd "$R" && timeout 600 python3 "$TF" compare "$1/tf-BR5-$1.jsonl" "$2/tf-BR5-$2.jsonl" ) > "$R/tfcmp-$2-vs-$1.log" 2>&1; log "TFCMP $2 vs $1: $(tail -1 "$R/tfcmp-$2-vs-$1.log" | cut -c1-240)"
+<   else log "TFCMP $2 vs $1: UNMEASURED (missing tf-BR5-$1.jsonl or tf-BR5-$2.jsonl)"; fi; done
+---
+>   if [[ -s $R/$1/tf-BR6-$1.jsonl && -s $R/$2/tf-BR6-$2.jsonl ]]; then
+>     ( cd "$R" && timeout 600 python3 "$TF" compare "$1/tf-BR6-$1.jsonl" "$2/tf-BR6-$2.jsonl" ) > "$R/tfcmp-$2-vs-$1.log" 2>&1; log "TFCMP $2 vs $1: $(tail -1 "$R/tfcmp-$2-vs-$1.log" | cut -c1-240)"
+>   else log "TFCMP $2 vs $1: UNMEASURED (missing tf-BR6-$1.jsonl or tf-BR6-$2.jsonl)"; fi; done
+554,555c574,575
+<   [[ -s $R/$ref/tf-BR5-$ref.jsonl && -s $R/$cand/tf-BR5-$cand.jsonl ]] || { log "FLIPSM $cand vs $ref: UNMEASURED (missing capture)"; return 0; }
+<   ( cd "$R" && timeout 600 python3 "$FLIPS" "$ref/tf-BR5-$ref.jsonl" "$cand/tf-BR5-$cand.jsonl" --label "$cand-vs-$ref" ${cal:+--calib "$cal/tf-BR5-$cal.jsonl"} ) > "$out" 2>&1
+---
+>   [[ -s $R/$ref/tf-BR6-$ref.jsonl && -s $R/$cand/tf-BR6-$cand.jsonl ]] || { log "FLIPSM $cand vs $ref: UNMEASURED (missing capture)"; return 0; }
+>   ( cd "$R" && timeout 600 python3 "$FLIPS" "$ref/tf-BR6-$ref.jsonl" "$cand/tf-BR6-$cand.jsonl" --label "$cand-vs-$ref" ${cal:+--calib "$cal/tf-BR6-$cal.jsonl"} ) > "$out" 2>&1
+559c579
+< SUF=$(python3 -c "import json;print(json.load(open('$R/verdict.json'))['suffix'])" 2>/dev/null); SUF=${SUF:-BR5-NOVERDICT}
+---
+> SUF=$(python3 -c "import json;print(json.load(open('$R/verdict.json'))['suffix'])" 2>/dev/null); SUF=${SUF:-BR6-NOVERDICT}
+564c584
+< { echo; echo "## $(date '+%F %H:%M %Z') — Card BR5: DSpark block verification (rejection_sample_method block) re-bracketed ALONE vs the v28-prob reference (v26seed + probabilistic drafting), A/B/A2, GB300-only, :30006 (BR4 PB parity re-check) — $(python3 -c "import json;d=json.load(open('$R/verdict.json'));print(d['result'], d['suffix'])" 2>/dev/null)"
+---
+> { echo; echo "## $(date '+%F %H:%M %Z') — Card BR6: DSpark block verification (rejection_sample_method block) vs the v28-prob reference (v26seed + probabilistic drafting), A/B/A2, GB300-only, :30006 (G6 redesign: 4 replay passes/arm, pooled-control mean bar) — $(python3 -c "import json;d=json.load(open('$R/verdict.json'));print(d['result'], d['suffix'])" 2>/dev/null)"
+569c589
+< log "===== CARD BR5 END (lane = $V27) ====="
+---
+> log "===== CARD BR6 END (lane = $V27) ====="

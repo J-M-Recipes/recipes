@@ -7,11 +7,9 @@
 > not a routing change.** `:30006` has served the **sidecar sibling's** pair since 2026-10-24 23:16 CDT: v25m-kvtier
 > until 2026-10-26 03:58 CDT, and **v27 (+ block verification)** since 04:08 CDT
 > ([`../deepseek-v4.1-flash-vllm-uva-dspark-sidecar`](../deepseek-v4.1-flash-vllm-uva-dspark-sidecar/README.md)). v26 served this recipe on `:30006` only from 2026-10-24 ~21:30 to 23:16 CDT.
-> Latest round: **Card BR5, block verification re-bracketed against v28-prob = FAIL-G6 (instrument): every speed and
-> fidelity gate passed (+2.5% tokens per verify step), replay_turns tripped the opposite way from BR4; PB retired
-> pending BR6.** The reference stays v28-prob.
-> Before it: **Card BR4, probabilistic drafting = PASS, promoted as the reference v28-prob; + block verification
-> = candidate** (retired by BR5). Before that, Card BR3 (block verification with greedy drafting) was a null.
+> **Series closed 2026-10-26: block verification retired on this lane (Cards BR3–BR6); reference stays v28-prob.**
+> Card BR6 (the redesigned 8-pass G6 PASSED; shell_ops G2/G2b FAILED) was the third block-on-probabilistic bracket
+> without a clean pass. See the [speculative-decoding series summary](#speculative-decoding-series-summary-2026-102526).
 
 **2026-10-24 ~21:30 CDT — v26 "Seeded Adaptive" promoted** (on `:30006` until 23:16 CDT that night; see the status above).
 v26 is the v23 launch (same image, same flags), plus three changes:
@@ -31,6 +29,125 @@ round adds a 48 GiB Grace host prefix-KV tier. This recipe is the reference for 
 
 **Before v26 — Pin Exact, v23** (serving 2026-10-18 → 2026-10-22; v26 launches from it) (v22 + exact-size pinned host allocations: pinned host 328.0 → 252.8 GiB, boot-guard margin 12 → 198 GiB, decode and greedy non-tool output unchanged; **188.2 tok/s C1 real text, accept 2.99/step**; BFCL held-out 77.65; see the 2026-10-18 round) · rollback **v22** (k=5 band to 8 sequences, 2026-10-17) · **candidate, not promoted:** vLLM nightly-39983a5e "config C" passed all seven pre-registered gates (+6% C1, TTFT 8K 0.43 s, KV +55%; GSM8K exactly at its bar), pending James · previous **Fused Split, v21** (2026-09-27: v18 launch on the 0909 image + hook v21 — `split_ids()` as one Triton kernel; **182.8 tok/s C1 prose, +6.2 % vs v18 bracketing controls 171.8 / 172.5**, C8 687 (+4.6 %), C16 993 (+4.0 %), non-tool greedy 16/16 vs both controls; held-out BFCL on v21 pending; see Round 12) · documented release **Clean Nightly, v20** (2026-09-21: vLLM nightly `2671fedf` — the last before the #56633 mHC-fold drift — + v15 hook + off54 + fp8_ds_mla + v18's 24-seat/cudagraph flags; **181 tok/s C1 prose (+5.1% pair mean vs v18)**, KV 2.55M tokens, C24 warm agent p95 2.4–2.8 s vs 3.4; **held-out BFCL live sibling 78.8% vs v18 78.9%**, dev 92.7–93.5%; tools 64/64 ×3; $0.008 per 1000 solved tasks; see Round 11b) · rollback **Many Seat, v18** (2026-09-18: v15 hook + `--max-num-seqs 24` + token-sized `--cudagraph-capture-sizes`; 172 tok/s C1 prose, KV 2.50M tokens, C24 warm agent turn 0.55 s p50; **BFCL v4 tool-call exact-match 93.3%**) · **v19 "Nightly" was promoted and reverted on 2026-09-20** (see Round 10) · previous **v15 Pin Hot Experts** (retired 2026-09-18) · **v14 Sixty-K Agent** (retired 2026-09-17) · Historical **v13: 90 tok/s single-stream prose · 140–160 tok/s on agent/code text · 429 agg tok/s at C16** (v12: 89 / 140–160 / 311 · v11: 82 / 130–150 / 287) · 972K-token prompt prefilled in 85 s · Hermes tool-calling 10/10
 
+
+## 2026-10-26 round — Card BR6: block verification with the redesigned G6 = FAIL on shell_ops (G6 PASS); block verification RETIRED for cause, series closed
+
+**What changed.** This is the BR5 bracket again, with one difference: a redesigned G6. The arms were:
+- **A / A2** = v28-prob, byte-identical to `dsv41-vllm-1017-v28-prob-BOUND-REF` (G0);
+- **B** = v28-prob + `"rejection_sample_method":"block"`.
+
+The **G6 redesign was pre-registered before launch**
+([`PREREG-BR6.md`](results/2026-10-26-br6-block-g6-redesign/PREREG-BR6.md), 14:13:15 CDT):
+- 8 `replay_turns.py` passes per arm;
+- statistic = the mean tool turns emitted per pass;
+- bar = [min − 1, max + 1] of the pooled 16 control passes;
+- the two controls must agree within 1.5, or the card is INVALID-CONTROL;
+- a per-transcript consistent flip is a hand-applied FAIL.
+
+Every other gate and bar is BR5 verbatim. Bracket A → B → A2, 2026-10-26 14:13–16:36 CDT:
+- every arm was a hash-hit boot, ready at 484 / 484 / 474 s; KV 2,481,694 tokens on all three arms;
+- adaptive residency was unfrozen on every arm;
+- 0 foreign requests reached any arm; the production v27 pair was restored with its watchdog (PPID 1) at 16:36.
+
+Receipts: [`results/2026-10-26-br6-block-g6-redesign/`](results/2026-10-26-br6-block-g6-redesign/README.md).
+
+**Verdict: `FAIL`, suffix `BR6FAIL-G2-G2b`** (pre-registered, not re-scored). G6 passed. Both failures are on
+shell_ops C1.
+
+| temp 1.0, B ÷ mean(A, A2) | B | ctrl |
+|---|--:|--:|
+| accepted tokens per verify step (per-class window) | **1.014** (3.494) | 3.445 (A 3.457, A2 3.433) |
+| accepted tokens per verify step, mixed C1 | 1.011 (2.123) | 2.100 |
+| mixed traffic tok/s, C1 (`ar_mixed_t.py`, 3 × 120 s) | 1.008 (182.56) | 181.17 |
+
+| temp 1.0, decode tok/s B ÷ ctrl | C1 | C8 |
+|---|--:|--:|
+| prose | 1.016 | 1.077 |
+| structured | 1.002 | 1.027 |
+| code | **1.055** | 1.018 |
+| shell_ops | **0.950 — FAIL** (bar −7.2%) | 1.002 |
+| tool_json | 0.992 | 0.986 (bar −5.2%) |
+
+Per-position acceptance: B .784/.596/.458/.363/.294 vs control mean .786/.588/.444/.347/.279. **Fidelity is
+unchanged:** teacher-forced top-1 flips B-vs-A 1.140% and B-vs-A2 1.075% against an A2-vs-A floor of 1.082%;
+margin-weighted flips 0; gauntlet 12/12 on all arms; 0 errors, 0 foreign requests.
+
+**G6, redesigned — PASS.** Tool turns emitted per pass, of 12:
+
+| arm | passes | mean |
+|---|---|--:|
+| A | 8, 7, 8, 9, 7, 8, 7, 8 | 7.75 |
+| **B** | **8, 9, 8, 5, 8, 6, 6, 6** | **7.00** |
+| A2 | 7, 7, 8, 9, 9, 9, 7, 8 | 8.00 |
+
+- **Bar:** the pooled 16 control passes give **[6, 10]**. B's mean of 7.00 is inside it.
+- **Controls:** they agree, |dA| = 0.25.
+- **Per transcript:** no B-consistent flip. Transcript 7 emitted on B 5/8, A 6/8 and A2 3/8, so the controls alone span
+  the range. The full table is in the bundle.
+
+**The two shell_ops trips, with the rule arithmetic.**
+- **G2 (temp 1.0).**
+  - **Rule:** B ≥ each control × (1 − bar), with bar = max(2%, 1.5 × |A − A2| / mean).
+  - **Bar:** the controls read A 332.98 and A2 317.27 tok/s, a 4.83% spread, so the bar is **7.25%**.
+  - **Result:** the threshold against A is 332.98 × 0.9275 = **308.85 tok/s**. **B read 308.76 and missed by
+    0.09 tok/s.** It cleared A2's threshold of 294.27.
+  - **B's repeats:** r1 295.15 (acceptance .579) and r2 322.37 (.638). B ÷ mean = 0.950.
+- **G2b (temp-0 parity).**
+  - **Why it applies:** a greedy row never uses block verification, so B must equal A within noise.
+  - **Reading:** B 338.79 vs control mean 350.39 = **−3.3%**.
+  - **Bar:** **2.0%**, the floor. The other two terms were smaller: the A/A2 difference ×1.5 = 1.58%, and the control
+    r1/r2 spread 0.95% ×1.5 = 1.43%.
+- **Acceptance:** shell_ops C1 is also the one cell where B accepted fewer tokens per step than the controls (4.04 vs
+  4.16).
+
+**shell_ops across the three block-on-probabilistic cards:**
+
+| card | shell_ops t1 C1 B ÷ ctrl | shell_ops t1 C8 B ÷ ctrl | shell_ops t0 C1 (G2b) | card tripped on |
+|---|--:|--:|---|---|
+| BR4 PB (vs v26 greedy controls) | 1.126 | 1.157 | **+3.6% vs bar 2.6% — FAIL** | G2b shell_ops, G6 |
+| BR5 B (vs v28-prob) | 1.039 | 0.985 (lowest cell; bar −2.0%) | +2.4% vs bar 10.3% | G6 only |
+| BR6 B (vs v28-prob) | **0.950 — FAIL** | 1.002 | **−3.3% vs bar 2.0% — FAIL** | G2 + G2b shell_ops |
+
+**Closing decision (James, 2026-10-26 ~16:45 CDT).** **Block verification is RETIRED for cause on the GB300-only
+lane, and the series is closed.**
+- **No clean pass.** Three brackets (BR4 PB, BR5, BR6) never produced one.
+- **The trips cluster on shell_ops.** Both speed or parity trips were on shell_ops (BR4 G2b +3.6%; BR6 G2 −5.0% and
+  G2b −3.3%). In BR5 shell_ops C8 was the weakest cell (−1.5%, inside its bar).
+- **The gain is inside the noise.** Block's gain on this lane is +1.4–2.5% tokens per verify step. In this card the
+  controls alone differ by up to 4.8% per class at C1, and B's own shell_ops repeats differ by 8.8%.
+- **The G6 redesign is kept** as this lane's standard: the 2-pass G6 false-fails about 33% of the time under
+  independence; the 8-pass pooled bar about 0.05%.
+- **The reference stays v28-prob.**
+- **The sidecar sibling's v27 (+ block) is unaffected.** It passed clean on its own lane (Card BR1), which already
+  drafted probabilistically and uses a different k-schedule.
+
+[BR5 bundle](results/2026-10-26-br5-block-rebracket/README.md),
+[BR4 bundle](results/2026-10-26-br4-probabilistic-drafting/README.md),
+[BR3 bundle](results/2026-10-26-br3-block-verification-null/README.md),
+[sidecar BR1 bundle](../deepseek-v4.1-flash-vllm-uva-dspark-sidecar/results/2026-10-26-br1-block-verification/README.md),
+[blog](https://al-engr.com/gb300-vs-4x-rtx6000-dsv41-flash-brrr.html).
+
+### Speculative-decoding series summary (2026-10-25/26)
+
+- **BR3 — block verification on v26 (greedy drafting): NULL.** 0.999× tokens per verify step; BR3FAIL-G2 on
+  structured. A one-hot greedy draft gives block nothing to reweight.
+  [Bundle](results/2026-10-26-br3-block-verification-null/README.md).
+- **BR4 — probabilistic drafting (P): PASS → reference v28-prob** (+10.3% tokens per verify step at temperature 1.0).
+  **P + block (PB): FAIL** on temp-0 parity (G2b shell_ops +3.6%; G6 2-pass).
+  [Bundle](results/2026-10-26-br4-probabilistic-drafting/README.md).
+- **BR5 — block re-bracketed vs v28-prob: FAIL-G6.** Speed and fidelity passed (+2.5% tokens per verify step); the
+  2-pass replay tripped the opposite way from BR4. [Bundle](results/2026-10-26-br5-block-rebracket/README.md).
+- **BR6 — block with the redesigned 8-pass G6: FAIL-G2-G2b.** G6 passed (mean 7.00 in [6, 10]); shell_ops C1 failed at
+  temperature 1.0 (−5.0%) and at temperature 0 (−3.3%). Block retired for cause; series closed.
+  [Bundle](results/2026-10-26-br6-block-g6-redesign/README.md).
+
+Standing lessons:
+- **Measure spec-decode changes at temperature > 0.** At temperature 0 both keys are no-ops by construction.
+- **Block verification needs probabilistic drafting.** With greedy drafts it is a null (BR3).
+- **Use the 8-pass G6 on this lane.** That means the mean statistic, the pooled-control bar ±1, a control-agreement
+  check and the per-transcript table. A 2-pass range is a coin flip.
+- **shell_ops is the sensitive class on this lane.** It has the highest acceptance (~4.1 tokens per step) and was
+  where both speed or parity trips landed. Give it the most repeats before reading a 1–3% change.
 
 ## 2026-10-26 round — Card BR5: block verification re-bracketed against v28-prob = FAIL-G6 (an instrument finding); PB retired pending BR6
 
@@ -1054,7 +1171,15 @@ Zero preemptions at 972K; HBM peaked at 243 GiB. Warm prefix on an 8.8K-token sy
 
 See `limits:` in [`recipe.yaml`](recipe.yaml).
 
-2026-10-26 addition (Card BR5):
+2026-10-26 additions (Card BR6, series closed):
+- **Block verification is RETIRED for cause on this lane.** Three brackets of `rejection_sample_method=block` on
+  probabilistic drafting (BR4 PB, BR5, BR6) never passed clean. The trips land on shell_ops (BR6: G2 C1 −5.0% and G2b
+  temp-0 −3.3%). The gain, +1.4–2.5% tokens per verify step, sits inside the lane's per-class noise. Do not add the key
+  to the v28-prob launch. The sidecar sibling's v27 (+ block) is a different lane and passed there (Card BR1).
+- **The G6 2-pass limit below is fixed.** BR6 ran the redesigned G6 (8 passes per arm, mean statistic, pooled-control
+  bar ±1, control-agreement check, per-transcript table) and it is now this lane's standard.
+
+2026-10-26 addition (Card BR5) — FIXED by the BR6 G6 redesign:
 - **replay_turns G6 with 2 passes is too narrow on this lane (see BR5).** The temperature-0 replay is not
   deterministic here: per-pass tool-turn counts ran 6–9 of 12 across seven arms of BR4 and BR5, with no relation to
   the block key, and a range drawn from two controls × two passes tripped PB once in each direction. PB (v28-prob +

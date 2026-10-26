@@ -1,0 +1,1907 @@
+{
+ "card": "BR6 block verification vs v28-prob (GB300-only), G6 redesign (4 replay passes/arm, pooled-control mean bar)",
+ "result": "FAIL",
+ "suffix": "BR6FAIL-G2-G2b",
+ "gates": {
+  "G0_binding": [
+   "PASS",
+   "ground truth dsv41-vllm-1017-v28-prob-BOUND-REF spec carries probabilistic drafting and no block: True; A: kv=2,481,694 prob_in_args=1(want 1) block_in_args=0(want 0) args==v28prob True env==v28prob(sorted) True binds==v28prob(except /ar) True image0909 True hook rehome 40/40 done=1 abort=0 failed=0 missing=[] host_avail@L9=196.79GiB GO+unfreeze 1/1 ctrl={\"freeze\": false, \"baseline\": true}; B: kv=2,481,694 prob_in_args=1(want 1) block_in_args=1(want 1) args==v28prob-except-spec True spec==v28prob+block True env==v28prob(sorted) True binds==v28prob(except /ar) True image0909 True hook rehome 40/40 done=1 abort=0 failed=0 missing=[] host_avail@L9=197.59GiB GO+unfreeze 1/1 ctrl={\"freeze\": false, \"baseline\": true}; A2: kv=2,481,694 prob_in_args=1(want 1) block_in_args=0(want 0) args==v28prob True env==v28prob(sorted) True binds==v28prob(except /ar) True image0909 True hook rehome 40/40 done=1 abort=0 failed=0 missing=[] host_avail@L9=196.86GiB GO+unfreeze 1/1 ctrl={\"freeze\": false, \"baseline\": true}; KV A=2,481,694 B=2,481,694 A2=2,481,694 (v28-prob boot log 2,481,694, info; rule: B and A2 equal A \u2014 block allocates nothing) | hash-hit shape (info): A loaded=189 saved=189 same_dir=True autotune_span=5.0s boot=484s; B loaded=189 saved=189 same_dir=True autotune_span=6.0s boot=484s; A2 loaded=189 saved=189 same_dir=True autotune_span=6.0s boot=474s; one autotune key across arms: True; 0909 hash-hit shape (Loaded N == Saved N, same dir, span <= 60 s): A=True, B=True, A2=True; B boot / controls = 1.01 (<= 1.5 expected)"
+  ],
+  "G0b_foreign": [
+   "PASS",
+   "non-127.0.0.1 POST /v1 per arm: A=0 {'bind': 0, 'cells': 0}; B=0 {'bind': 0, 'cells': 0}; A2=0 {'bind': 0, 'cells': 0}"
+  ],
+  "G1_controls": [
+   "PASS",
+   "C1 per class: t1/prose/c1 d=3.7%; t1/structured/c1 d=0.6%; t1/code/c1 d=0.6%; t1/shell_ops/c1 d=4.8%; t1/tool_json/c1 d=1.0%; t0/prose/c1 d=0.4%; t0/structured/c1 d=1.1%; t0/code/c1 d=1.5%; t0/shell_ops/c1 d=1.1%; t0/tool_json/c1 d=2.2% | C8 (info, bimodal class): t1/prose/c8 d=1.0%; t1/structured/c8 d=0.6%; t1/code/c8 d=0.4%; t1/shell_ops/c8 d=0.4%; t1/tool_json/c8 d=3.5%; t0/prose/c8 d=2.5%; t0/structured/c8 d=2.7%; t0/code/c8 d=1.1%; t0/shell_ops/c8 d=4.1%; t0/tool_json/c8 d=3.7%"
+  ],
+  "G2_perclass_t1": [
+   "FAIL",
+   "temp 1.0 forced-length decode tok/s: prose/c1 B/ctrl=1.016 (A 221.6 A2 213.4 B 220.9; bar -5.6%); prose/c8 B/ctrl=1.077 (A 483.4 A2 488.1 B 523.3; bar -2.0%); structured/c1 B/ctrl=1.002 (A 242.9 A2 244.4 B 244.1; bar -2.0%); structured/c8 B/ctrl=1.027 (A 597.4 A2 600.8 B 615.4; bar -2.0%); code/c1 B/ctrl=1.055 (A 277.3 A2 278.9 B 293.3; bar -2.0%); code/c8 B/ctrl=1.018 (A 634.4 A2 636.9 B 646.8; bar -2.0%); shell_ops/c1 B/ctrl=0.950 (A 333.0 A2 317.3 B 308.8; bar -7.2%) FAIL; shell_ops/c8 B/ctrl=1.002 (A 733.1 A2 735.7 B 735.8; bar -2.0%); tool_json/c1 B/ctrl=0.992 (A 285.7 A2 288.6 B 284.9; bar -2.0%); tool_json/c8 B/ctrl=0.986 (A 762.7 A2 789.9 B 765.7; bar -5.2%)"
+  ],
+  "G2b_t0_parity": [
+   "FAIL",
+   "stock temp-0 window (PARITY: greedy rows never use block verification; B must equal A within noise): prose/c1 B +1.7% (|.| bar 6.1%, ctrl r1/r2 spread 4.0%); structured/c1 B +2.2% (|.| bar 5.3%, ctrl r1/r2 spread 3.5%); code/c1 B -0.3% (|.| bar 3.8%, ctrl r1/r2 spread 2.5%); shell_ops/c1 B -3.3% (|.| bar 2.0%, ctrl r1/r2 spread 0.9%) OUTSIDE NOISE; tool_json/c1 B +6.2% (|.| bar 6.5%, ctrl r1/r2 spread 4.4%) | C8 info: prose/c8 B/ctrl=1.020; structured/c8 B/ctrl=1.028; code/c8 B/ctrl=0.998; shell_ops/c8 B/ctrl=1.042; tool_json/c8 B/ctrl=0.998"
+  ],
+  "G3_mixed_c1_t1": [
+   "PASS",
+   "ar_mixed_t C1 agg_tok_s_all at temp 1.0: B mean 182.56 vs ctrl 181.17 (+0.77%; A 181.31 A2 181.03; bar -2.00%) reps B=[178.1, 184.8, 184.8] errors B=0"
+  ],
+  "G4_tf": [
+   "PASS",
+   "B-vs-A flips 1.140% (bar <=3% and <= 1.5 x floor 1.082% = 1.624%; token-mismatch docs 0); B-vs-A2 flips 1.075% (bar <=3% and <= 1.5 x floor 1.082% = 1.624%; token-mismatch docs 0); margin flips at ref p>=0.9 on agent/tool docs: vs A=0 (skipped_docs 0), vs A2=0 (skipped_docs 0)"
+  ],
+  "G5_gauntlet": [
+   "PASS",
+   "B 12/12; controls A 12/12, A2 12/12 (temp 0: run_suite.py)"
+  ],
+  "G6_turns": [
+   "PASS",
+   "B mean 7.00/12 (passes [8, 9, 8, 5, 8, 6, 6, 6], min/max [5, 9]) vs pooled-control bar [6, 10] = [min-1, max+1] of pooled 8 control passes [7, 7, 7, 7, 7, 7, 8, 8, 8, 8, 8, 8, 9, 9, 9, 9] (A [8, 7, 8, 9, 7, 8, 7, 8] mean 7.75, A2 [7, 7, 8, 9, 9, 9, 7, 8] mean 8.00, |dA| 0.25 <= 1.5: True); B errors 0; pooled control distribution {7: 6, 8: 6, 9: 4}; text-turn emissions B [3, 3, 3, 4, 3, 4, 4, 3] (temp 0: replay_turns.py, 8 x PASSES=1)"
+  ],
+  "G7_errors": [
+   "PASS",
+   "A: ff=0 foreign=0; B: ff=0 foreign=0; A2: ff=0 foreign=0"
+  ]
+ },
+ "gate_status": {
+  "G0_binding": "PASS",
+  "G0b_foreign": "PASS",
+  "G1_controls": "PASS",
+  "G2_perclass_t1": "FAIL",
+  "G2b_t0_parity": "FAIL",
+  "G3_mixed_c1_t1": "PASS",
+  "G4_tf": "PASS",
+  "G5_gauntlet": "PASS",
+  "G6_turns": "PASS",
+  "G7_errors": "PASS"
+ },
+ "invalid_arms": [],
+ "valid": true,
+ "annotations": {
+  "tokens_per_verify_step_t1": {
+   "pct1_window": {
+    "A": 3.457222024866785,
+    "B": 3.4944356804818586,
+    "A2": 3.4330370953680007
+   },
+   "mixed_c1": {
+    "A": 2.099692760673366,
+    "B": 2.122846970523142,
+    "A2": 2.099692760673366
+   },
+   "B_over_ctrl_pct1": 1.014311833417024,
+   "B_over_ctrl_mixed": 1.0110274275758089
+  },
+  "tokens_per_verify_step_t1_per_class": {
+   "prose/c1": {
+    "B": 2.8645935016036814,
+    "ctrl": 2.82084199945501
+   },
+   "prose/c8": {
+    "B": 2.903960396039604,
+    "ctrl": 2.8330525104763153
+   },
+   "structured/c1": {
+    "B": 3.123953098827471,
+    "ctrl": 3.0557141815500932
+   },
+   "structured/c8": {
+    "B": 3.1268849961919267,
+    "ctrl": 3.072769486558623
+   },
+   "code/c1": {
+    "B": 3.9935909885414644,
+    "ctrl": 3.83797580965523
+   },
+   "code/c8": {
+    "B": 3.965450685195908,
+    "ctrl": 3.83613271985365
+   },
+   "shell_ops/c1": {
+    "B": 4.038106462384601,
+    "ctrl": 4.161284357855535
+   },
+   "shell_ops/c8": {
+    "B": 4.066600790513834,
+    "ctrl": 4.042845438898718
+   },
+   "tool_json/c1": {
+    "B": 3.655504096900606,
+    "ctrl": 3.672812320733162
+   },
+   "tool_json/c8": {
+    "B": 3.7319550235763512,
+    "ctrl": 3.695500925873577
+   }
+  },
+  "x3_accept_canary": {
+   "t1": {
+    "prose": {
+     "A": 0.2468,
+     "B": 0.2468,
+     "A2": 0.2468
+    },
+    "structured": {
+     "A": 0.468,
+     "B": 0.468,
+     "A2": 0.468
+    },
+    "code": {
+     "A": 0.7837,
+     "B": 0.7837,
+     "A2": 0.7837
+    },
+    "shell_ops": {
+     "A": 0.7703,
+     "B": 0.7703,
+     "A2": 0.7703
+    },
+    "tool_json": {
+     "A": 0.8311,
+     "B": 0.8311,
+     "A2": 0.8311
+    }
+   },
+   "t0": {
+    "prose": {
+     "A": 0.2468,
+     "B": 0.2468,
+     "A2": 0.2468
+    },
+    "structured": {
+     "A": 0.468,
+     "B": 0.468,
+     "A2": 0.468
+    },
+    "code": {
+     "A": 0.7837,
+     "B": 0.7837,
+     "A2": 0.7837
+    },
+    "shell_ops": {
+     "A": 0.7703,
+     "B": 0.7703,
+     "A2": 0.7703
+    },
+    "tool_json": {
+     "A": 0.8311,
+     "B": 0.8311,
+     "A2": 0.8311
+    }
+   }
+  },
+  "perclass_hygiene": {
+   "A/t1": [],
+   "A/t0": [],
+   "B/t1": [],
+   "B/t0": [],
+   "A2/t1": [],
+   "A2/t0": []
+  },
+  "boot_block_lines": {
+   "A": [
+    "(EngineCore pid=364) INFO 10-26 19:23:12 [spec_decode_rejection_warmup.py:64] Warming up spec-decode rejection sampler kernels (vocab=129280, num_spec=5, dtype_pairs=[('torch.bfloat16', 'torch.bfloat16'), ('torch.float32', 'torch.bfloat16'), ('torch.bfloat16', 'torch.float32'), ('torch.float32', 'to"
+   ],
+   "B": [
+    "(APIServer pid=1) INFO 10-26 20:01:03 [api_utils.py:286] non-default args: {'model_tag': '/model', 'enable_auto_tool_choice': True, 'tool_call_parser': 'deepseek_v41', 'host': '0.0.0.0', 'port': 30006, 'model': '/model', 'trust_remote_code': True, 'max_model_len': 1048576, 'served_model_name': ['dsv",
+    "(EngineCore pid=364) INFO 10-26 20:07:44 [spec_decode_rejection_warmup.py:64] Warming up spec-decode rejection sampler kernels (vocab=129280, num_spec=5, dtype_pairs=[('torch.float32', 'torch.float32'), ('torch.bfloat16', 'torch.bfloat16'), ('torch.float32', 'torch.bfloat16'), ('torch.bfloat16', 'to"
+   ],
+   "A2": [
+    "(EngineCore pid=364) INFO 10-26 20:52:14 [spec_decode_rejection_warmup.py:64] Warming up spec-decode rejection sampler kernels (vocab=129280, num_spec=5, dtype_pairs=[('torch.bfloat16', 'torch.bfloat16'), ('torch.float32', 'torch.bfloat16'), ('torch.bfloat16', 'torch.float32'), ('torch.float32', 'to"
+   ]
+  },
+  "boot_prob_lines": {
+   "A": [
+    "(APIServer pid=1) INFO 10-26 19:16:31 [api_utils.py:286] non-default args: {'model_tag': '/model', 'enable_auto_tool_choice': True, 'tool_call_parser': 'deepseek_v41', 'host': '0.0.0.0', 'port': 30006, 'model': '/model', 'trust_remote_code': True, 'max_model_len': 1048576, 'served_model_name': ['dsv"
+   ],
+   "B": [
+    "(APIServer pid=1) INFO 10-26 20:01:03 [api_utils.py:286] non-default args: {'model_tag': '/model', 'enable_auto_tool_choice': True, 'tool_call_parser': 'deepseek_v41', 'host': '0.0.0.0', 'port': 30006, 'model': '/model', 'trust_remote_code': True, 'max_model_len': 1048576, 'served_model_name': ['dsv"
+   ],
+   "A2": [
+    "(APIServer pid=1) INFO 10-26 20:45:37 [api_utils.py:286] non-default args: {'model_tag': '/model', 'enable_auto_tool_choice': True, 'tool_call_parser': 'deepseek_v41', 'host': '0.0.0.0', 'port': 30006, 'model': '/model', 'trust_remote_code': True, 'max_model_len': 1048576, 'served_model_name': ['dsv"
+   ]
+  },
+  "accept_per_position_pct1": {
+   "A": [
+    0.7872,
+    0.5889,
+    0.4467,
+    0.3509,
+    0.2835
+   ],
+   "B": [
+    0.7841,
+    0.596,
+    0.4577,
+    0.3628,
+    0.2939
+   ],
+   "A2": [
+    0.7852,
+    0.5869,
+    0.4422,
+    0.3434,
+    0.2752
+   ]
+  },
+  "g6_history": {
+   "lines": [
+    "BR4 P: passes [6, 8] vs ctrl A [6, 7] A2 [8, 8] (old 2-pass rule: PASS); BR6 statistic on 2 passes (info): mean 7.00 vs [5, 9] inside=True, ctrl mean diff 1.50 agree=True",
+    "BR4 PB: passes [8, 9] vs ctrl A [6, 7] A2 [8, 8] (old 2-pass rule: FAIL); BR6 statistic on 2 passes (info): mean 8.50 vs [5, 9] inside=True, ctrl mean diff 1.50 agree=True",
+    "BR5 B: passes [6, 7] vs ctrl A [9, 8] A2 [8, 8] (old 2-pass rule: FAIL); BR6 statistic on 2 passes (info): mean 6.50 vs [7, 10] inside=False, ctrl mean diff 0.50 agree=True",
+    "BR6: A [8, 7, 8, 9, 7, 8, 7, 8] A2 [7, 7, 8, 9, 9, 9, 7, 8] B [8, 9, 8, 5, 8, 6, 6, 6]; B mean 7.00 vs bar [6.0, 10.0] (G6 PASS)",
+    "all replay passes on this fixture/lane, BR4+BR5 (constants) + this tree (sorted): [5, 6, 6, 6, 6, 6, 6, 7, 7, 7, 7, 7, 7, 7, 7, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 9, 9, 9, 9, 9, 9, 9] \u2014 in a replay of BR5 receipts 'this tree' duplicates BR5"
+   ]
+  },
+  "g6_per_transcript": {
+   "rows": [
+    {
+     "i": 0,
+     "A": "11111111",
+     "B": "11111111",
+     "A2": "11111111",
+     "flag": "stable"
+    },
+    {
+     "i": 1,
+     "A": "11110111",
+     "B": "11101011",
+     "A2": "11111111",
+     "flag": "wobble"
+    },
+    {
+     "i": 2,
+     "A": "00000000",
+     "B": "01001000",
+     "A2": "00011100",
+     "flag": "wobble"
+    },
+    {
+     "i": 3,
+     "A": "11111111",
+     "B": "11111111",
+     "A2": "11111111",
+     "flag": "stable"
+    },
+    {
+     "i": 4,
+     "A": "00000000",
+     "B": "00000000",
+     "A2": "00000000",
+     "flag": "stable"
+    },
+    {
+     "i": 5,
+     "A": "10111111",
+     "B": "11100001",
+     "A2": "11111111",
+     "flag": "wobble"
+    },
+    {
+     "i": 6,
+     "A": "11111111",
+     "B": "11111110",
+     "A2": "11111111",
+     "flag": "wobble"
+    },
+    {
+     "i": 7,
+     "A": "11111100",
+     "B": "11101100",
+     "A2": "00010101",
+     "flag": "wobble"
+    },
+    {
+     "i": 8,
+     "A": "00000000",
+     "B": "00000000",
+     "A2": "00000000",
+     "flag": "stable"
+    },
+    {
+     "i": 9,
+     "A": "11111111",
+     "B": "11111111",
+     "A2": "11111111",
+     "flag": "stable"
+    },
+    {
+     "i": 10,
+     "A": "00010001",
+     "B": "00000000",
+     "A2": "00101000",
+     "flag": "wobble"
+    },
+    {
+     "i": 11,
+     "A": "11111111",
+     "B": "11111111",
+     "A2": "11111111",
+     "flag": "stable"
+    }
+   ],
+   "consistent_B_flips": [],
+   "stable": [
+    0,
+    3,
+    4,
+    8,
+    9,
+    11
+   ],
+   "wobble": [
+    1,
+    2,
+    5,
+    6,
+    7,
+    10
+   ]
+  },
+  "g2b_shell_ops_history": {
+   "BR4 PB": "+3.6% vs bar 2.6% (FAIL)",
+   "BR5 B": "+2.4% vs bar 10.3% (PASS)",
+   "BR6_B": "-3.3% vs bar 2.0% (FAIL)"
+  },
+  "mem_min_by_phase": {
+   "pre": 129.6,
+   "A:preboot": 451.0,
+   "A:boot": 157.1,
+   "A:go": 193.6,
+   "A:adapt-settle": 193.6,
+   "A:cells": 193.1,
+   "A:post": 267.1,
+   "B:preboot": 449.8,
+   "B:boot": 153.4,
+   "B:go": 194.1,
+   "B:adapt-settle": 194.1,
+   "B:cells": 192.4,
+   "B:post": 447.8,
+   "A2:preboot": 449.4,
+   "A2:boot": 157.2,
+   "A2:go": 193.8,
+   "A2:adapt-settle": 193.8,
+   "A2:cells": 193.1,
+   "A2:post": 294.1,
+   "restore": 132.2
+  },
+  "restore_watchdog": {
+   "pid": 2863015,
+   "ppid": "1",
+   "ppid_is_1": true
+  },
+  "kv_v28prob_boot_log": "2,481,694",
+  "adaptive_ar_lines_cells_delta": {
+   "A": {
+    "swaps": 84342,
+    "telemetry": 1990,
+    "steps_bytes": 4232896
+   },
+   "B": {
+    "swaps": 85632,
+    "telemetry": 1989,
+    "steps_bytes": 4230720
+   },
+   "A2": {
+    "swaps": 84421,
+    "telemetry": 2002,
+    "steps_bytes": 4256576
+   }
+  },
+  "go": {
+   "A": {
+    "go_seen_log": 1,
+    "unfreeze_log": 1,
+    "baseline_go_tel": 1,
+    "unfreeze_tel": 1,
+    "ctrl": {
+     "freeze": false,
+     "baseline": true
+    },
+    "settle_s": 90
+   },
+   "B": {
+    "go_seen_log": 1,
+    "unfreeze_log": 1,
+    "baseline_go_tel": 1,
+    "unfreeze_tel": 1,
+    "ctrl": {
+     "freeze": false,
+     "baseline": true
+    },
+    "settle_s": 90
+   },
+   "A2": {
+    "go_seen_log": 1,
+    "unfreeze_log": 1,
+    "baseline_go_tel": 1,
+    "unfreeze_tel": 1,
+    "ctrl": {
+     "freeze": false,
+     "baseline": true
+    },
+    "settle_s": 90
+   }
+  },
+  "host_avail_l9_gib": {
+   "A": "196.79",
+   "B": "197.59",
+   "A2": "196.86"
+  },
+  "rtx_used_after_bind_mib": {
+   "A": 47,
+   "B": 47,
+   "A2": 47
+  }
+ },
+ "calc": {
+  "G2_rows": [
+   {
+    "class": "prose",
+    "mode": "c1",
+    "A": 221.57,
+    "A2": 213.44,
+    "B": 220.94,
+    "ratio": 1.0157927403967726,
+    "spread": 0.03737845107009032,
+    "bar": 0.05606767660513548,
+    "pass": true
+   },
+   {
+    "class": "prose",
+    "mode": "c8",
+    "A": 483.45,
+    "A2": 488.13,
+    "B": 523.28,
+    "ratio": 1.0771732641676446,
+    "spread": 0.009633792379423222,
+    "bar": 0.02,
+    "pass": true
+   },
+   {
+    "class": "structured",
+    "mode": "c1",
+    "A": 242.89,
+    "A2": 244.39,
+    "B": 244.08,
+    "ratio": 1.0018059431948778,
+    "spread": 0.00615662452799212,
+    "bar": 0.02,
+    "pass": true
+   },
+   {
+    "class": "structured",
+    "mode": "c8",
+    "A": 597.41,
+    "A2": 600.84,
+    "B": 615.4,
+    "ratio": 1.0271646150636344,
+    "spread": 0.005725015647819844,
+    "bar": 0.02,
+    "pass": true
+   },
+   {
+    "class": "code",
+    "mode": "c1",
+    "A": 277.32,
+    "A2": 278.9,
+    "B": 293.31,
+    "ratio": 1.0546546330588615,
+    "spread": 0.005681205278486872,
+    "bar": 0.02,
+    "pass": true
+   },
+   {
+    "class": "code",
+    "mode": "c8",
+    "A": 634.38,
+    "A2": 636.86,
+    "B": 646.8,
+    "ratio": 1.0175891255781755,
+    "spread": 0.0039017022749441776,
+    "bar": 0.02,
+    "pass": true
+   },
+   {
+    "class": "shell_ops",
+    "mode": "c1",
+    "A": 332.98,
+    "A2": 317.27,
+    "B": 308.76,
+    "ratio": 0.9496655132641292,
+    "spread": 0.048319876970396115,
+    "bar": 0.07247981545559418,
+    "pass": false
+   },
+   {
+    "class": "shell_ops",
+    "mode": "c8",
+    "A": 733.12,
+    "A2": 735.7,
+    "B": 735.77,
+    "ratio": 1.0018518266363474,
+    "spread": 0.0035130240601299557,
+    "bar": 0.02,
+    "pass": true
+   },
+   {
+    "class": "tool_json",
+    "mode": "c1",
+    "A": 285.71,
+    "A2": 288.56,
+    "B": 284.93,
+    "ratio": 0.9923206853918889,
+    "spread": 0.009925644731572337,
+    "bar": 0.02,
+    "pass": true
+   },
+   {
+    "class": "tool_json",
+    "mode": "c8",
+    "A": 762.72,
+    "A2": 789.89,
+    "B": 765.74,
+    "ratio": 0.9863906583108443,
+    "spread": 0.03499913049638989,
+    "bar": 0.052498695744584836,
+    "pass": true
+   }
+  ],
+  "G2b_rows": {
+   "prose": {
+    "A": 234.26,
+    "A2": 235.2,
+    "B": 238.66,
+    "rel": 0.016742640480552184,
+    "bar": 0.06075,
+    "ctrl_r1r2_spread": 0.0405,
+    "pass": true
+   },
+   "structured": {
+    "A": 252.57,
+    "A2": 255.25,
+    "B": 259.58,
+    "rel": 0.02233074711511951,
+    "bar": 0.052500000000000005,
+    "ctrl_r1r2_spread": 0.035,
+    "pass": true
+   },
+   "code": {
+    "A": 320.68,
+    "A2": 325.65,
+    "B": 322.22,
+    "rel": -0.00292420280661565,
+    "bar": 0.0378,
+    "ctrl_r1r2_spread": 0.0252,
+    "pass": true
+   },
+   "shell_ops": {
+    "A": 348.54,
+    "A2": 352.24,
+    "B": 338.79,
+    "rel": -0.03310596763606255,
+    "bar": 0.02,
+    "ctrl_r1r2_spread": 0.0095,
+    "pass": false
+   },
+   "tool_json": {
+    "A": 302.24,
+    "A2": 308.88,
+    "B": 324.5,
+    "rel": 0.06198455295195715,
+    "bar": 0.0654,
+    "ctrl_r1r2_spread": 0.0436,
+    "pass": true
+   }
+  },
+  "G3": {
+   "B": 182.56,
+   "A": 181.31,
+   "A2": 181.03,
+   "ctrl_mean": 181.17000000000002,
+   "spread": 0.0015455097422310598,
+   "bar": 0.02,
+   "rel": 0.007672351934646882
+  },
+  "G6": {
+   "spec": "8 passes/arm; mean(B) in [min(pooled ctrl) - 1, max(pooled ctrl) + 1]; |mean(A) - mean(A2)| <= 1.5 else INVALID-CONTROL; B errors 0",
+   "passes": {
+    "A": [
+     8,
+     7,
+     8,
+     9,
+     7,
+     8,
+     7,
+     8
+    ],
+    "B": [
+     8,
+     9,
+     8,
+     5,
+     8,
+     6,
+     6,
+     6
+    ],
+    "A2": [
+     7,
+     7,
+     8,
+     9,
+     9,
+     9,
+     7,
+     8
+    ]
+   },
+   "src": {
+    "A": "per-pass files: turns-BR6-A-p1.json,turns-BR6-A-p2.json,turns-BR6-A-p3.json,turns-BR6-A-p4.json,turns-BR6-A-p5.json,turns-BR6-A-p6.json,turns-BR6-A-p7.json,turns-BR6-A-p8.json",
+    "B": "per-pass files: turns-BR6-B-p1.json,turns-BR6-B-p2.json,turns-BR6-B-p3.json,turns-BR6-B-p4.json,turns-BR6-B-p5.json,turns-BR6-B-p6.json,turns-BR6-B-p7.json,turns-BR6-B-p8.json",
+    "A2": "per-pass files: turns-BR6-A2-p1.json,turns-BR6-A2-p2.json,turns-BR6-A2-p3.json,turns-BR6-A2-p4.json,turns-BR6-A2-p5.json,turns-BR6-A2-p6.json,turns-BR6-A2-p7.json,turns-BR6-A2-p8.json"
+   },
+   "pool": [
+    7,
+    7,
+    7,
+    7,
+    7,
+    7,
+    8,
+    8,
+    8,
+    8,
+    8,
+    8,
+    9,
+    9,
+    9,
+    9
+   ],
+   "ctrl_means": [
+    7.75,
+    8
+   ],
+   "ctrl_mean_diff": 0.25,
+   "bar": [
+    6.0,
+    10.0
+   ],
+   "B_mean": 7,
+   "B_min_max": [
+    5,
+    9
+   ],
+   "B_errors": 0,
+   "pass": true,
+   "pool_hist": {
+    "7": 6,
+    "8": 6,
+    "9": 4
+   },
+   "per_transcript": {
+    "rows": [
+     {
+      "i": 0,
+      "A": "11111111",
+      "B": "11111111",
+      "A2": "11111111",
+      "flag": "stable"
+     },
+     {
+      "i": 1,
+      "A": "11110111",
+      "B": "11101011",
+      "A2": "11111111",
+      "flag": "wobble"
+     },
+     {
+      "i": 2,
+      "A": "00000000",
+      "B": "01001000",
+      "A2": "00011100",
+      "flag": "wobble"
+     },
+     {
+      "i": 3,
+      "A": "11111111",
+      "B": "11111111",
+      "A2": "11111111",
+      "flag": "stable"
+     },
+     {
+      "i": 4,
+      "A": "00000000",
+      "B": "00000000",
+      "A2": "00000000",
+      "flag": "stable"
+     },
+     {
+      "i": 5,
+      "A": "10111111",
+      "B": "11100001",
+      "A2": "11111111",
+      "flag": "wobble"
+     },
+     {
+      "i": 6,
+      "A": "11111111",
+      "B": "11111110",
+      "A2": "11111111",
+      "flag": "wobble"
+     },
+     {
+      "i": 7,
+      "A": "11111100",
+      "B": "11101100",
+      "A2": "00010101",
+      "flag": "wobble"
+     },
+     {
+      "i": 8,
+      "A": "00000000",
+      "B": "00000000",
+      "A2": "00000000",
+      "flag": "stable"
+     },
+     {
+      "i": 9,
+      "A": "11111111",
+      "B": "11111111",
+      "A2": "11111111",
+      "flag": "stable"
+     },
+     {
+      "i": 10,
+      "A": "00010001",
+      "B": "00000000",
+      "A2": "00101000",
+      "flag": "wobble"
+     },
+     {
+      "i": 11,
+      "A": "11111111",
+      "B": "11111111",
+      "A2": "11111111",
+      "flag": "stable"
+     }
+    ],
+    "consistent_B_flips": [],
+    "stable": [
+     0,
+     3,
+     4,
+     8,
+     9,
+     11
+    ],
+    "wobble": [
+     1,
+     2,
+     5,
+     6,
+     7,
+     10
+    ]
+   },
+   "fail": false,
+   "inv": [],
+   "txt": [
+    "B mean 7.00/12 (passes [8, 9, 8, 5, 8, 6, 6, 6], min/max [5, 9]) vs pooled-control bar [6, 10] = [min-1, max+1] of pooled 8 control passes [7, 7, 7, 7, 7, 7, 8, 8, 8, 8, 8, 8, 9, 9, 9, 9] (A [8, 7, 8, 9, 7, 8, 7, 8] mean 7.75, A2 [7, 7, 8, 9, 9, 9, 7, 8] mean 8.00, |dA| 0.25 <= 1.5: True); B errors 0",
+    "pooled control distribution {7: 6, 8: 6, 9: 4}; text-turn emissions B [3, 3, 3, 4, 3, 4, 4, 3] (temp 0: replay_turns.py, 8 x PASSES=1)"
+   ]
+  },
+  "G2_ratio_by_cell": {
+   "prose/c1": 1.0158,
+   "prose/c8": 1.0772,
+   "structured/c1": 1.0018,
+   "structured/c8": 1.0272,
+   "code/c1": 1.0547,
+   "code/c8": 1.0176,
+   "shell_ops/c1": 0.9497,
+   "shell_ops/c8": 1.0019,
+   "tool_json/c1": 0.9923,
+   "tool_json/c8": 0.9864
+  }
+ },
+ "cells": {
+  "A": {
+   "facts": {
+    "arm": "A",
+    "name": "dsv41-vllm-1017-BR6-A",
+    "kv_tokens": "2,481,694",
+    "kv_ref": "2,481,694",
+    "block_in_args": 0,
+    "prob_in_args": 1,
+    "block_boot_lines": 1,
+    "prob_boot_lines": 1,
+    "spec_extra": ",\"draft_sample_method\":\"probabilistic\"",
+    "ff_boot": 0,
+    "loaded_lines": 1,
+    "saved_lines": 1,
+    "autotune_starts": 1,
+    "autotune_ends": 1,
+    "rehome_layers": 40,
+    "rehome_done": 1,
+    "host_avail_l9_gib": "196.79",
+    "pin_abort": 0,
+    "hook_failed": 0,
+    "hook_keys_missing": "",
+    "args_eq_ref": 1,
+    "env_eq_ref_sorted": 1,
+    "binds_eq_ref_except_ar": 1,
+    "image": "sha256:00d577a6a63281e15336029d5bcee4e9a2cf182214a4f20ba6111b1c8e79893d",
+    "rtx_used_after_bind_mib": 47,
+    "boot_s": 484,
+    "bound_at": 1793042643
+   },
+   "autotune": {
+    "loaded": 189,
+    "saved": 189,
+    "loaded_dir": "/root/.cache/vllm/flashinfer_autotune_cache/0.6.18/103a/62426808ae2b0ddbdfbf2278702ac4e367078b9884817c169ddee40495c4e6a6/autotune_configs.json",
+    "saved_dir": "/root/.cache/vllm/flashinfer_autotune_cache/0.6.18/103a/62426808ae2b0ddbdfbf2278702ac4e367078b9884817c169ddee40495c4e6a6/autotune_configs.json",
+    "elapsed_s": 5.0,
+    "pairs": 1,
+    "hash_hit_shape": true
+   },
+   "mixed": [
+    {
+     "rep": 1,
+     "agg_tok_s_all": 176.52,
+     "errors": 0,
+     "n": 54,
+     "temperature": 1.0
+    },
+    {
+     "rep": 2,
+     "agg_tok_s_all": 183.66,
+     "errors": 0,
+     "n": 56,
+     "temperature": 1.0
+    },
+    {
+     "rep": 3,
+     "agg_tok_s_all": 183.75,
+     "errors": 0,
+     "n": 56,
+     "temperature": 1.0
+    }
+   ],
+   "perclass_t1": {
+    "prose/c1": 221.57,
+    "prose/c8": 483.45,
+    "structured/c1": 242.89,
+    "structured/c8": 597.41,
+    "code/c1": 277.32,
+    "code/c8": 634.38,
+    "shell_ops/c1": 332.98,
+    "shell_ops/c8": 733.12,
+    "tool_json/c1": 285.71,
+    "tool_json/c8": 762.72
+   },
+   "perclass_t0": {
+    "prose/c1": 234.26,
+    "prose/c8": 512.78,
+    "structured/c1": 252.57,
+    "structured/c8": 563.64,
+    "code/c1": 320.68,
+    "code/c8": 737.67,
+    "shell_ops/c1": 348.54,
+    "shell_ops/c8": 809.49,
+    "tool_json/c1": 302.24,
+    "tool_json/c8": 833.26
+   },
+   "turns": [
+    {
+     "tool_emitted": 8,
+     "tool_turns": 12,
+     "text_emitted": 4,
+     "errors": 0,
+     "tool_idx": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11
+     ],
+     "emitted_idx": [
+      0,
+      1,
+      3,
+      5,
+      6,
+      7,
+      9,
+      11
+     ],
+     "src": "turns-BR6-A-p1.json"
+    },
+    {
+     "tool_emitted": 7,
+     "tool_turns": 12,
+     "text_emitted": 6,
+     "errors": 0,
+     "tool_idx": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11
+     ],
+     "emitted_idx": [
+      0,
+      1,
+      3,
+      6,
+      7,
+      9,
+      11
+     ],
+     "src": "turns-BR6-A-p2.json"
+    },
+    {
+     "tool_emitted": 8,
+     "tool_turns": 12,
+     "text_emitted": 5,
+     "errors": 0,
+     "tool_idx": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11
+     ],
+     "emitted_idx": [
+      0,
+      1,
+      3,
+      5,
+      6,
+      7,
+      9,
+      11
+     ],
+     "src": "turns-BR6-A-p3.json"
+    },
+    {
+     "tool_emitted": 9,
+     "tool_turns": 12,
+     "text_emitted": 5,
+     "errors": 0,
+     "tool_idx": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11
+     ],
+     "emitted_idx": [
+      0,
+      1,
+      3,
+      5,
+      6,
+      7,
+      9,
+      10,
+      11
+     ],
+     "src": "turns-BR6-A-p4.json"
+    },
+    {
+     "tool_emitted": 7,
+     "tool_turns": 12,
+     "text_emitted": 3,
+     "errors": 0,
+     "tool_idx": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11
+     ],
+     "emitted_idx": [
+      0,
+      3,
+      5,
+      6,
+      7,
+      9,
+      11
+     ],
+     "src": "turns-BR6-A-p5.json"
+    },
+    {
+     "tool_emitted": 8,
+     "tool_turns": 12,
+     "text_emitted": 4,
+     "errors": 0,
+     "tool_idx": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11
+     ],
+     "emitted_idx": [
+      0,
+      1,
+      3,
+      5,
+      6,
+      7,
+      9,
+      11
+     ],
+     "src": "turns-BR6-A-p6.json"
+    },
+    {
+     "tool_emitted": 7,
+     "tool_turns": 12,
+     "text_emitted": 5,
+     "errors": 0,
+     "tool_idx": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11
+     ],
+     "emitted_idx": [
+      0,
+      1,
+      3,
+      5,
+      6,
+      9,
+      11
+     ],
+     "src": "turns-BR6-A-p7.json"
+    },
+    {
+     "tool_emitted": 8,
+     "tool_turns": 12,
+     "text_emitted": 5,
+     "errors": 0,
+     "tool_idx": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11
+     ],
+     "emitted_idx": [
+      0,
+      1,
+      3,
+      5,
+      6,
+      9,
+      10,
+      11
+     ],
+     "src": "turns-BR6-A-p8.json"
+    }
+   ],
+   "turns_src": "per-pass files: turns-BR6-A-p1.json,turns-BR6-A-p2.json,turns-BR6-A-p3.json,turns-BR6-A-p4.json,turns-BR6-A-p5.json,turns-BR6-A-p6.json,turns-BR6-A-p7.json,turns-BR6-A-p8.json",
+   "ar_cells_delta": {
+    "swaps": 84342,
+    "telemetry": 1990,
+    "steps_bytes": 4232896
+   },
+   "errcount_server": 0,
+   "foreign": {
+    "bind": 0,
+    "cells": 0
+   },
+   "metrics_pct1": {
+    "drafts": 70375.0,
+    "draft_tokens": 351875.0,
+    "accepted": 172927.0,
+    "acc_per_draft": 2.457222024866785,
+    "tokens_per_verify_step": 3.457222024866785,
+    "accept_rate": 0.491444404973357,
+    "accept_per_pos": [
+     0.7872,
+     0.5889,
+     0.4467,
+     0.3509,
+     0.2835
+    ]
+   },
+   "metrics_mixed": {
+    "accepted": 34361.0,
+    "drafts": 31246.0,
+    "tokens_per_verify_step": 2.099692760673366
+   }
+  },
+  "B": {
+   "facts": {
+    "arm": "B",
+    "name": "dsv41-vllm-1017-BR6-B",
+    "kv_tokens": "2,481,694",
+    "kv_ref": "2,481,694",
+    "block_in_args": 1,
+    "prob_in_args": 1,
+    "block_boot_lines": 2,
+    "prob_boot_lines": 1,
+    "spec_extra": ",\"draft_sample_method\":\"probabilistic\",\"rejection_sample_method\":\"block\"",
+    "ff_boot": 0,
+    "loaded_lines": 1,
+    "saved_lines": 1,
+    "autotune_starts": 1,
+    "autotune_ends": 1,
+    "rehome_layers": 40,
+    "rehome_done": 1,
+    "host_avail_l9_gib": "197.59",
+    "pin_abort": 0,
+    "hook_failed": 0,
+    "hook_keys_missing": "",
+    "args_eq_ref": 0,
+    "env_eq_ref_sorted": 1,
+    "binds_eq_ref_except_ar": 1,
+    "image": "sha256:00d577a6a63281e15336029d5bcee4e9a2cf182214a4f20ba6111b1c8e79893d",
+    "rtx_used_after_bind_mib": 47,
+    "boot_s": 484,
+    "bound_at": 1793045315
+   },
+   "autotune": {
+    "loaded": 189,
+    "saved": 189,
+    "loaded_dir": "/root/.cache/vllm/flashinfer_autotune_cache/0.6.18/103a/62426808ae2b0ddbdfbf2278702ac4e367078b9884817c169ddee40495c4e6a6/autotune_configs.json",
+    "saved_dir": "/root/.cache/vllm/flashinfer_autotune_cache/0.6.18/103a/62426808ae2b0ddbdfbf2278702ac4e367078b9884817c169ddee40495c4e6a6/autotune_configs.json",
+    "elapsed_s": 6.0,
+    "pairs": 1,
+    "hash_hit_shape": true
+   },
+   "mixed": [
+    {
+     "rep": 1,
+     "agg_tok_s_all": 178.07,
+     "errors": 0,
+     "n": 54,
+     "temperature": 1.0
+    },
+    {
+     "rep": 2,
+     "agg_tok_s_all": 184.8,
+     "errors": 0,
+     "n": 56,
+     "temperature": 1.0
+    },
+    {
+     "rep": 3,
+     "agg_tok_s_all": 184.81,
+     "errors": 0,
+     "n": 57,
+     "temperature": 1.0
+    }
+   ],
+   "perclass_t1": {
+    "prose/c1": 220.94,
+    "prose/c8": 523.28,
+    "structured/c1": 244.08,
+    "structured/c8": 615.4,
+    "code/c1": 293.31,
+    "code/c8": 646.8,
+    "shell_ops/c1": 308.76,
+    "shell_ops/c8": 735.77,
+    "tool_json/c1": 284.93,
+    "tool_json/c8": 765.74
+   },
+   "perclass_t0": {
+    "prose/c1": 238.66,
+    "prose/c8": 529.63,
+    "structured/c1": 259.58,
+    "structured/c8": 587.1,
+    "code/c1": 322.22,
+    "code/c8": 732.49,
+    "shell_ops/c1": 338.79,
+    "shell_ops/c8": 826.61,
+    "tool_json/c1": 324.5,
+    "tool_json/c8": 847.4
+   },
+   "turns": [
+    {
+     "tool_emitted": 8,
+     "tool_turns": 12,
+     "text_emitted": 3,
+     "errors": 0,
+     "tool_idx": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11
+     ],
+     "emitted_idx": [
+      0,
+      1,
+      3,
+      5,
+      6,
+      7,
+      9,
+      11
+     ],
+     "src": "turns-BR6-B-p1.json"
+    },
+    {
+     "tool_emitted": 9,
+     "tool_turns": 12,
+     "text_emitted": 3,
+     "errors": 0,
+     "tool_idx": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11
+     ],
+     "emitted_idx": [
+      0,
+      1,
+      2,
+      3,
+      5,
+      6,
+      7,
+      9,
+      11
+     ],
+     "src": "turns-BR6-B-p2.json"
+    },
+    {
+     "tool_emitted": 8,
+     "tool_turns": 12,
+     "text_emitted": 3,
+     "errors": 0,
+     "tool_idx": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11
+     ],
+     "emitted_idx": [
+      0,
+      1,
+      3,
+      5,
+      6,
+      7,
+      9,
+      11
+     ],
+     "src": "turns-BR6-B-p3.json"
+    },
+    {
+     "tool_emitted": 5,
+     "tool_turns": 12,
+     "text_emitted": 4,
+     "errors": 0,
+     "tool_idx": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11
+     ],
+     "emitted_idx": [
+      0,
+      3,
+      6,
+      9,
+      11
+     ],
+     "src": "turns-BR6-B-p4.json"
+    },
+    {
+     "tool_emitted": 8,
+     "tool_turns": 12,
+     "text_emitted": 3,
+     "errors": 0,
+     "tool_idx": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11
+     ],
+     "emitted_idx": [
+      0,
+      1,
+      2,
+      3,
+      6,
+      7,
+      9,
+      11
+     ],
+     "src": "turns-BR6-B-p5.json"
+    },
+    {
+     "tool_emitted": 6,
+     "tool_turns": 12,
+     "text_emitted": 4,
+     "errors": 0,
+     "tool_idx": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11
+     ],
+     "emitted_idx": [
+      0,
+      3,
+      6,
+      7,
+      9,
+      11
+     ],
+     "src": "turns-BR6-B-p6.json"
+    },
+    {
+     "tool_emitted": 6,
+     "tool_turns": 12,
+     "text_emitted": 4,
+     "errors": 0,
+     "tool_idx": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11
+     ],
+     "emitted_idx": [
+      0,
+      1,
+      3,
+      6,
+      9,
+      11
+     ],
+     "src": "turns-BR6-B-p7.json"
+    },
+    {
+     "tool_emitted": 6,
+     "tool_turns": 12,
+     "text_emitted": 3,
+     "errors": 0,
+     "tool_idx": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11
+     ],
+     "emitted_idx": [
+      0,
+      1,
+      3,
+      5,
+      9,
+      11
+     ],
+     "src": "turns-BR6-B-p8.json"
+    }
+   ],
+   "turns_src": "per-pass files: turns-BR6-B-p1.json,turns-BR6-B-p2.json,turns-BR6-B-p3.json,turns-BR6-B-p4.json,turns-BR6-B-p5.json,turns-BR6-B-p6.json,turns-BR6-B-p7.json,turns-BR6-B-p8.json",
+   "ar_cells_delta": {
+    "swaps": 85632,
+    "telemetry": 1989,
+    "steps_bytes": 4230720
+   },
+   "errcount_server": 0,
+   "foreign": {
+    "bind": 0,
+    "cells": 0
+   },
+   "metrics_pct1": {
+    "drafts": 69730.0,
+    "draft_tokens": 348650.0,
+    "accepted": 173937.0,
+    "acc_per_draft": 2.4944356804818586,
+    "tokens_per_verify_step": 3.4944356804818586,
+    "accept_rate": 0.4988871360963717,
+    "accept_per_pos": [
+     0.7841,
+     0.596,
+     0.4577,
+     0.3628,
+     0.2939
+    ]
+   },
+   "metrics_mixed": {
+    "accepted": 35007.0,
+    "drafts": 31177.0,
+    "tokens_per_verify_step": 2.122846970523142
+   }
+  },
+  "A2": {
+   "facts": {
+    "arm": "A2",
+    "name": "dsv41-vllm-1017-BR6-A2",
+    "kv_tokens": "2,481,694",
+    "kv_ref": "2,481,694",
+    "block_in_args": 0,
+    "prob_in_args": 1,
+    "block_boot_lines": 1,
+    "prob_boot_lines": 1,
+    "spec_extra": ",\"draft_sample_method\":\"probabilistic\"",
+    "ff_boot": 0,
+    "loaded_lines": 1,
+    "saved_lines": 1,
+    "autotune_starts": 1,
+    "autotune_ends": 1,
+    "rehome_layers": 40,
+    "rehome_done": 1,
+    "host_avail_l9_gib": "196.86",
+    "pin_abort": 0,
+    "hook_failed": 0,
+    "hook_keys_missing": "",
+    "args_eq_ref": 1,
+    "env_eq_ref_sorted": 1,
+    "binds_eq_ref_except_ar": 1,
+    "image": "sha256:00d577a6a63281e15336029d5bcee4e9a2cf182214a4f20ba6111b1c8e79893d",
+    "rtx_used_after_bind_mib": 47,
+    "boot_s": 474,
+    "bound_at": 1793047979
+   },
+   "autotune": {
+    "loaded": 189,
+    "saved": 189,
+    "loaded_dir": "/root/.cache/vllm/flashinfer_autotune_cache/0.6.18/103a/62426808ae2b0ddbdfbf2278702ac4e367078b9884817c169ddee40495c4e6a6/autotune_configs.json",
+    "saved_dir": "/root/.cache/vllm/flashinfer_autotune_cache/0.6.18/103a/62426808ae2b0ddbdfbf2278702ac4e367078b9884817c169ddee40495c4e6a6/autotune_configs.json",
+    "elapsed_s": 6.0,
+    "pairs": 1,
+    "hash_hit_shape": true
+   },
+   "mixed": [
+    {
+     "rep": 1,
+     "agg_tok_s_all": 175.92,
+     "errors": 0,
+     "n": 54,
+     "temperature": 1.0
+    },
+    {
+     "rep": 2,
+     "agg_tok_s_all": 183.54,
+     "errors": 0,
+     "n": 56,
+     "temperature": 1.0
+    },
+    {
+     "rep": 3,
+     "agg_tok_s_all": 183.63,
+     "errors": 0,
+     "n": 56,
+     "temperature": 1.0
+    }
+   ],
+   "perclass_t1": {
+    "prose/c1": 213.44,
+    "prose/c8": 488.13,
+    "structured/c1": 244.39,
+    "structured/c8": 600.84,
+    "code/c1": 278.9,
+    "code/c8": 636.86,
+    "shell_ops/c1": 317.27,
+    "shell_ops/c8": 735.7,
+    "tool_json/c1": 288.56,
+    "tool_json/c8": 789.89
+   },
+   "perclass_t0": {
+    "prose/c1": 235.2,
+    "prose/c8": 525.62,
+    "structured/c1": 255.25,
+    "structured/c8": 579.11,
+    "code/c1": 325.65,
+    "code/c8": 729.61,
+    "shell_ops/c1": 352.24,
+    "shell_ops/c8": 776.83,
+    "tool_json/c1": 308.88,
+    "tool_json/c8": 864.74
+   },
+   "turns": [
+    {
+     "tool_emitted": 7,
+     "tool_turns": 12,
+     "text_emitted": 4,
+     "errors": 0,
+     "tool_idx": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11
+     ],
+     "emitted_idx": [
+      0,
+      1,
+      3,
+      5,
+      6,
+      9,
+      11
+     ],
+     "src": "turns-BR6-A2-p1.json"
+    },
+    {
+     "tool_emitted": 7,
+     "tool_turns": 12,
+     "text_emitted": 3,
+     "errors": 0,
+     "tool_idx": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11
+     ],
+     "emitted_idx": [
+      0,
+      1,
+      3,
+      5,
+      6,
+      9,
+      11
+     ],
+     "src": "turns-BR6-A2-p2.json"
+    },
+    {
+     "tool_emitted": 8,
+     "tool_turns": 12,
+     "text_emitted": 4,
+     "errors": 0,
+     "tool_idx": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11
+     ],
+     "emitted_idx": [
+      0,
+      1,
+      3,
+      5,
+      6,
+      9,
+      10,
+      11
+     ],
+     "src": "turns-BR6-A2-p3.json"
+    },
+    {
+     "tool_emitted": 9,
+     "tool_turns": 12,
+     "text_emitted": 4,
+     "errors": 0,
+     "tool_idx": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11
+     ],
+     "emitted_idx": [
+      0,
+      1,
+      2,
+      3,
+      5,
+      6,
+      7,
+      9,
+      11
+     ],
+     "src": "turns-BR6-A2-p4.json"
+    },
+    {
+     "tool_emitted": 9,
+     "tool_turns": 12,
+     "text_emitted": 4,
+     "errors": 0,
+     "tool_idx": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11
+     ],
+     "emitted_idx": [
+      0,
+      1,
+      2,
+      3,
+      5,
+      6,
+      9,
+      10,
+      11
+     ],
+     "src": "turns-BR6-A2-p5.json"
+    },
+    {
+     "tool_emitted": 9,
+     "tool_turns": 12,
+     "text_emitted": 4,
+     "errors": 0,
+     "tool_idx": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11
+     ],
+     "emitted_idx": [
+      0,
+      1,
+      2,
+      3,
+      5,
+      6,
+      7,
+      9,
+      11
+     ],
+     "src": "turns-BR6-A2-p6.json"
+    },
+    {
+     "tool_emitted": 7,
+     "tool_turns": 12,
+     "text_emitted": 4,
+     "errors": 0,
+     "tool_idx": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11
+     ],
+     "emitted_idx": [
+      0,
+      1,
+      3,
+      5,
+      6,
+      9,
+      11
+     ],
+     "src": "turns-BR6-A2-p7.json"
+    },
+    {
+     "tool_emitted": 8,
+     "tool_turns": 12,
+     "text_emitted": 4,
+     "errors": 0,
+     "tool_idx": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11
+     ],
+     "emitted_idx": [
+      0,
+      1,
+      3,
+      5,
+      6,
+      7,
+      9,
+      11
+     ],
+     "src": "turns-BR6-A2-p8.json"
+    }
+   ],
+   "turns_src": "per-pass files: turns-BR6-A2-p1.json,turns-BR6-A2-p2.json,turns-BR6-A2-p3.json,turns-BR6-A2-p4.json,turns-BR6-A2-p5.json,turns-BR6-A2-p6.json,turns-BR6-A2-p7.json,turns-BR6-A2-p8.json",
+   "ar_cells_delta": {
+    "swaps": 84421,
+    "telemetry": 2002,
+    "steps_bytes": 4256576
+   },
+   "errcount_server": 0,
+   "foreign": {
+    "bind": 0,
+    "cells": 0
+   },
+   "metrics_pct1": {
+    "drafts": 71114.0,
+    "draft_tokens": 355570.0,
+    "accepted": 173023.0,
+    "acc_per_draft": 2.4330370953680007,
+    "tokens_per_verify_step": 3.4330370953680007,
+    "accept_rate": 0.4866074190736001,
+    "accept_per_pos": [
+     0.7852,
+     0.5869,
+     0.4422,
+     0.3434,
+     0.2752
+    ]
+   },
+   "metrics_mixed": {
+    "accepted": 34361.0,
+    "drafts": 31246.0,
+    "tokens_per_verify_step": 2.099692760673366
+   }
+  }
+ },
+ "R": "~/dsv41/m3/br6/results-cardBR6"
+}
