@@ -1,0 +1,1547 @@
+{
+  "capture_error_count": 0,
+  "expected_task_count": 12,
+  "model": "dsv41-flash-uva",
+  "promotion_authorized": false,
+  "protocol_valid_count": 12,
+  "request_settings": {
+    "cache_salt": "br1-A",
+    "max_tokens": 1500,
+    "max_turns": 12,
+    "reasoning_effort": "low",
+    "seed": 42,
+    "task_timeout_s": 180,
+    "temperature": 0
+  },
+  "results": [
+    {
+      "correct": true,
+      "final_content": "{\"answer\":\"nonce-amber-4d2f8a\"}",
+      "finish_reason": "stop",
+      "kind": "file_chain",
+      "oracle_result": null,
+      "reasons": [],
+      "score_count": 1,
+      "success": true,
+      "task_id": "chain-amber",
+      "tool_call_count": 5,
+      "tool_counts": {
+        "read_file": 5,
+        "run_tests": 0,
+        "unknown": 0,
+        "write_file": 0
+      },
+      "trace": [
+        {
+          "args": {
+            "path": "start.txt"
+          },
+          "event": "tool_call",
+          "id": "chatcmpl-tool-9dc81f60cef39500",
+          "model_turn": 1,
+          "name": "read_file",
+          "raw_arguments": "{\"path\": \"start.txt\"}",
+          "result": {
+            "bytes": 91,
+            "content": "chain-step=1\nRead the next file named exactly: rungs/a17.txt\nDo not guess the final nonce.\n",
+            "ok": true
+          }
+        },
+        {
+          "args": {
+            "path": "rungs/a17.txt"
+          },
+          "event": "tool_call",
+          "id": "chatcmpl-tool-9d241b907f905b3c",
+          "model_turn": 2,
+          "name": "read_file",
+          "raw_arguments": "{\"path\": \"rungs/a17.txt\"}",
+          "result": {
+            "bytes": 97,
+            "content": "chain-step=2\nRead the next file named exactly: rungs/cobalt-42.txt\nDo not guess the final nonce.\n",
+            "ok": true
+          }
+        },
+        {
+          "args": {
+            "path": "rungs/cobalt-42.txt"
+          },
+          "event": "tool_call",
+          "id": "chatcmpl-tool-bc457de266a449bf",
+          "model_turn": 3,
+          "name": "read_file",
+          "raw_arguments": "{\"path\": \"rungs/cobalt-42.txt\"}",
+          "result": {
+            "bytes": 92,
+            "content": "chain-step=3\nRead the next file named exactly: notes/kite.txt\nDo not guess the final nonce.\n",
+            "ok": true
+          }
+        },
+        {
+          "args": {
+            "path": "notes/kite.txt"
+          },
+          "event": "tool_call",
+          "id": "chatcmpl-tool-bf03b9ccccee5db4",
+          "model_turn": 4,
+          "name": "read_file",
+          "raw_arguments": "{\"path\": \"notes/kite.txt\"}",
+          "result": {
+            "bytes": 93,
+            "content": "chain-step=4\nRead the next file named exactly: vault/final.txt\nDo not guess the final nonce.\n",
+            "ok": true
+          }
+        },
+        {
+          "args": {
+            "path": "vault/final.txt"
+          },
+          "event": "tool_call",
+          "id": "chatcmpl-tool-8cb6dc02578cf27e",
+          "model_turn": 5,
+          "name": "read_file",
+          "raw_arguments": "{\"path\": \"vault/final.txt\"}",
+          "result": {
+            "bytes": 84,
+            "content": "chain-step=5\nfinal nonce: nonce-amber-4d2f8a\nReturn it in the required JSON object.\n",
+            "ok": true
+          }
+        }
+      ],
+      "ttft_s": 0.40124441601801664,
+      "usage": {
+        "completion_tokens": 241,
+        "prompt_tokens": 5144,
+        "total_tokens": 5385
+      },
+      "validity": {
+        "final_answer_valid": true,
+        "issues": [],
+        "schema_valid": true,
+        "tool_error_count": 0,
+        "tool_errors": [],
+        "transport_protocol_valid": true
+      },
+      "wall_s": 2.479895898955874
+    },
+    {
+      "correct": true,
+      "final_content": "{\"answer\":\"nonce-basil-91c0ee\"}",
+      "finish_reason": "stop",
+      "kind": "file_chain",
+      "oracle_result": null,
+      "reasons": [],
+      "score_count": 1,
+      "success": true,
+      "task_id": "chain-basil",
+      "tool_call_count": 5,
+      "tool_counts": {
+        "read_file": 5,
+        "run_tests": 0,
+        "unknown": 0,
+        "write_file": 0
+      },
+      "trace": [
+        {
+          "args": {
+            "path": "entry.txt"
+          },
+          "event": "tool_call",
+          "id": "chatcmpl-tool-bea94630c816f728",
+          "model_turn": 1,
+          "name": "read_file",
+          "raw_arguments": "{\"path\": \"entry.txt\"}",
+          "result": {
+            "bytes": 94,
+            "content": "chain-step=1\nRead the next file named exactly: maze/left-03.txt\nDo not guess the final nonce.\n",
+            "ok": true
+          }
+        },
+        {
+          "args": {
+            "path": "maze/left-03.txt"
+          },
+          "event": "tool_call",
+          "id": "chatcmpl-tool-8645ed501c59b362",
+          "model_turn": 2,
+          "name": "read_file",
+          "raw_arguments": "{\"path\": \"maze/left-03.txt\"}",
+          "result": {
+            "bytes": 96,
+            "content": "chain-step=2\nRead the next file named exactly: maze/green-owl.txt\nDo not guess the final nonce.\n",
+            "ok": true
+          }
+        },
+        {
+          "args": {
+            "path": "maze/green-owl.txt"
+          },
+          "event": "tool_call",
+          "id": "chatcmpl-tool-baedbf3ea508b87f",
+          "model_turn": 3,
+          "name": "read_file",
+          "raw_arguments": "{\"path\": \"maze/green-owl.txt\"}",
+          "result": {
+            "bytes": 92,
+            "content": "chain-step=3\nRead the next file named exactly: maze/hinge.txt\nDo not guess the final nonce.\n",
+            "ok": true
+          }
+        },
+        {
+          "args": {
+            "path": "maze/hinge.txt"
+          },
+          "event": "tool_call",
+          "id": "chatcmpl-tool-a370ae983156d7f6",
+          "model_turn": 4,
+          "name": "read_file",
+          "raw_arguments": "{\"path\": \"maze/hinge.txt\"}",
+          "result": {
+            "bytes": 90,
+            "content": "chain-step=4\nRead the next file named exactly: out/last.txt\nDo not guess the final nonce.\n",
+            "ok": true
+          }
+        },
+        {
+          "args": {
+            "path": "out/last.txt"
+          },
+          "event": "tool_call",
+          "id": "chatcmpl-tool-b2991b4219986be2",
+          "model_turn": 5,
+          "name": "read_file",
+          "raw_arguments": "{\"path\": \"out/last.txt\"}",
+          "result": {
+            "bytes": 84,
+            "content": "chain-step=5\nfinal nonce: nonce-basil-91c0ee\nReturn it in the required JSON object.\n",
+            "ok": true
+          }
+        }
+      ],
+      "ttft_s": 0.40179238497512415,
+      "usage": {
+        "completion_tokens": 239,
+        "prompt_tokens": 5138,
+        "total_tokens": 5377
+      },
+      "validity": {
+        "final_answer_valid": true,
+        "issues": [],
+        "schema_valid": true,
+        "tool_error_count": 0,
+        "tool_errors": [],
+        "transport_protocol_valid": true
+      },
+      "wall_s": 2.480862588970922
+    },
+    {
+      "correct": true,
+      "final_content": "{\"answer\":\"nonce-cinder-7aa135\"}",
+      "finish_reason": "stop",
+      "kind": "file_chain",
+      "oracle_result": null,
+      "reasons": [],
+      "score_count": 1,
+      "success": true,
+      "task_id": "chain-cinder",
+      "tool_call_count": 5,
+      "tool_counts": {
+        "read_file": 5,
+        "run_tests": 0,
+        "unknown": 0,
+        "write_file": 0
+      },
+      "trace": [
+        {
+          "args": {
+            "path": "open-me.txt"
+          },
+          "event": "tool_call",
+          "id": "chatcmpl-tool-95e1629bdc3643af",
+          "model_turn": 1,
+          "name": "read_file",
+          "raw_arguments": "{\"path\": \"open-me.txt\"}",
+          "result": {
+            "bytes": 91,
+            "content": "chain-step=1\nRead the next file named exactly: map/river.txt\nDo not guess the final nonce.\n",
+            "ok": true
+          }
+        },
+        {
+          "args": {
+            "path": "map/river.txt"
+          },
+          "event": "tool_call",
+          "id": "chatcmpl-tool-b375eece52c4e885",
+          "model_turn": 2,
+          "name": "read_file",
+          "raw_arguments": "{\"path\": \"map/river.txt\"}",
+          "result": {
+            "bytes": 94,
+            "content": "chain-step=2\nRead the next file named exactly: map/stone-19.txt\nDo not guess the final nonce.\n",
+            "ok": true
+          }
+        },
+        {
+          "args": {
+            "path": "map/stone-19.txt"
+          },
+          "event": "tool_call",
+          "id": "chatcmpl-tool-be91e242801454ea",
+          "model_turn": 3,
+          "name": "read_file",
+          "raw_arguments": "{\"path\": \"map/stone-19.txt\"}",
+          "result": {
+            "bytes": 90,
+            "content": "chain-step=3\nRead the next file named exactly: map/lamp.txt\nDo not guess the final nonce.\n",
+            "ok": true
+          }
+        },
+        {
+          "args": {
+            "path": "map/lamp.txt"
+          },
+          "event": "tool_call",
+          "id": "chatcmpl-tool-a9b72cd02805d663",
+          "model_turn": 4,
+          "name": "read_file",
+          "raw_arguments": "{\"path\": \"map/lamp.txt\"}",
+          "result": {
+            "bytes": 94,
+            "content": "chain-step=4\nRead the next file named exactly: answer/omega.txt\nDo not guess the final nonce.\n",
+            "ok": true
+          }
+        },
+        {
+          "args": {
+            "path": "answer/omega.txt"
+          },
+          "event": "tool_call",
+          "id": "chatcmpl-tool-8ecf636fa565c495",
+          "model_turn": 5,
+          "name": "read_file",
+          "raw_arguments": "{\"path\": \"answer/omega.txt\"}",
+          "result": {
+            "bytes": 85,
+            "content": "chain-step=5\nfinal nonce: nonce-cinder-7aa135\nReturn it in the required JSON object.\n",
+            "ok": true
+          }
+        }
+      ],
+      "ttft_s": 0.39438747201347724,
+      "usage": {
+        "completion_tokens": 233,
+        "prompt_tokens": 5120,
+        "total_tokens": 5353
+      },
+      "validity": {
+        "final_answer_valid": true,
+        "issues": [],
+        "schema_valid": true,
+        "tool_error_count": 0,
+        "tool_errors": [],
+        "transport_protocol_valid": true
+      },
+      "wall_s": 2.3245059449691325
+    },
+    {
+      "correct": true,
+      "final_content": "{\"answer\":\"nonce-delta-b60f2c\"}",
+      "finish_reason": "stop",
+      "kind": "file_chain",
+      "oracle_result": null,
+      "reasons": [],
+      "score_count": 1,
+      "success": true,
+      "task_id": "chain-delta",
+      "tool_call_count": 5,
+      "tool_counts": {
+        "read_file": 5,
+        "run_tests": 0,
+        "unknown": 0,
+        "write_file": 0
+      },
+      "trace": [
+        {
+          "args": {
+            "path": "first.txt"
+          },
+          "event": "tool_call",
+          "id": "chatcmpl-tool-9182e5df2f00ec7d",
+          "model_turn": 1,
+          "name": "read_file",
+          "raw_arguments": "{\"path\": \"first.txt\"}",
+          "result": {
+            "bytes": 92,
+            "content": "chain-step=1\nRead the next file named exactly: trail/blue.txt\nDo not guess the final nonce.\n",
+            "ok": true
+          }
+        },
+        {
+          "args": {
+            "path": "trail/blue.txt"
+          },
+          "event": "tool_call",
+          "id": "chatcmpl-tool-88339206ed379665",
+          "model_turn": 2,
+          "name": "read_file",
+          "raw_arguments": "{\"path\": \"trail/blue.txt\"}",
+          "result": {
+            "bytes": 95,
+            "content": "chain-step=2\nRead the next file named exactly: trail/fern-88.txt\nDo not guess the final nonce.\n",
+            "ok": true
+          }
+        },
+        {
+          "args": {
+            "path": "trail/fern-88.txt"
+          },
+          "event": "tool_call",
+          "id": "chatcmpl-tool-b71d93dfc593de3a",
+          "model_turn": 3,
+          "name": "read_file",
+          "raw_arguments": "{\"path\": \"trail/fern-88.txt\"}",
+          "result": {
+            "bytes": 93,
+            "content": "chain-step=3\nRead the next file named exactly: trail/quiet.txt\nDo not guess the final nonce.\n",
+            "ok": true
+          }
+        },
+        {
+          "args": {
+            "path": "trail/quiet.txt"
+          },
+          "event": "tool_call",
+          "id": "chatcmpl-tool-bd84c0f80efc23ea",
+          "model_turn": 4,
+          "name": "read_file",
+          "raw_arguments": "{\"path\": \"trail/quiet.txt\"}",
+          "result": {
+            "bytes": 92,
+            "content": "chain-step=4\nRead the next file named exactly: done/nonce.txt\nDo not guess the final nonce.\n",
+            "ok": true
+          }
+        },
+        {
+          "args": {
+            "path": "done/nonce.txt"
+          },
+          "event": "tool_call",
+          "id": "chatcmpl-tool-8339eab9cf411789",
+          "model_turn": 5,
+          "name": "read_file",
+          "raw_arguments": "{\"path\": \"done/nonce.txt\"}",
+          "result": {
+            "bytes": 84,
+            "content": "chain-step=5\nfinal nonce: nonce-delta-b60f2c\nReturn it in the required JSON object.\n",
+            "ok": true
+          }
+        }
+      ],
+      "ttft_s": 0.4021924510016106,
+      "usage": {
+        "completion_tokens": 236,
+        "prompt_tokens": 5119,
+        "total_tokens": 5355
+      },
+      "validity": {
+        "final_answer_valid": true,
+        "issues": [],
+        "schema_valid": true,
+        "tool_error_count": 0,
+        "tool_errors": [],
+        "transport_protocol_valid": true
+      },
+      "wall_s": 2.3247663300135173
+    },
+    {
+      "correct": true,
+      "final_content": "{\"status\":\"fixed\",\"summary\":\"Implemented stack-based bracket matching in is_balanced; all public tests pass.\"}",
+      "finish_reason": "stop",
+      "kind": "code_fix",
+      "oracle_result": {
+        "command": [
+          "docker",
+          "run",
+          "--rm",
+          "--name",
+          "r7-eval-84f78bfa58134d62870936543f510da6",
+          "--pull",
+          "never",
+          "--entrypoint",
+          "python3",
+          "--user",
+          "1001:1001",
+          "--memory-swap",
+          "256m",
+          "--runtime=runc",
+          "--network",
+          "none",
+          "--read-only",
+          "--cap-drop",
+          "ALL",
+          "--security-opt",
+          "no-new-privileges",
+          "--pids-limit",
+          "64",
+          "--memory",
+          "256m",
+          "--cpus",
+          "1",
+          "--env",
+          "NVIDIA_VISIBLE_DEVICES=void",
+          "--env",
+          "CUDA_VISIBLE_DEVICES=",
+          "--env",
+          "PYTHONDONTWRITEBYTECODE=1",
+          "-v",
+          "~/dsv41/m3/br1/results-cardBR1/gauntlet-A/tasks/code-brackets:/task:ro",
+          "-v",
+          "~/pin-hot-experts/round7/gauntlet/oracle.py:/trusted_evaluator/evaluator.py:ro",
+          "sha256:00d577a6a63281e15336029d5bcee4e9a2cf182214a4f20ba6111b1c8e79893d",
+          "/trusted_evaluator/evaluator.py",
+          "code-brackets"
+        ],
+        "evaluator": {
+          "candidate_stderr": "",
+          "candidate_stdout": "[true, false, true, true, false, false, true]\n",
+          "completed_cases": 7,
+          "expected_cases": 7,
+          "ok": true
+        },
+        "exit_code": 0,
+        "ok": true,
+        "stderr": "",
+        "stdout": "GAUNTLET_RESULT {\"candidate_stderr\": \"\", \"candidate_stdout\": \"[true, false, true, true, false, false, true]\\n\", \"completed_cases\": 7, \"expected_cases\": 7, \"ok\": true}\n"
+      },
+      "reasons": [],
+      "score_count": 1,
+      "success": true,
+      "task_id": "code-brackets",
+      "tool_call_count": 3,
+      "tool_counts": {
+        "read_file": 1,
+        "run_tests": 1,
+        "unknown": 0,
+        "write_file": 1
+      },
+      "trace": [
+        {
+          "args": {
+            "path": "brackets.py"
+          },
+          "event": "tool_call",
+          "id": "chatcmpl-tool-a3f32f3adf01dbfe",
+          "model_turn": 1,
+          "name": "read_file",
+          "raw_arguments": "{\"path\": \"brackets.py\"}",
+          "result": {
+            "bytes": 39,
+            "content": "def is_balanced(text):\n    return True\n",
+            "ok": true
+          }
+        },
+        {
+          "args": {
+            "content": "def is_balanced(text):\n    pairs = {')': '(', ']': '[', '}': '{'}\n    stack = []\n    for ch in text:\n        if ch in '([{':\n            stack.append(ch)\n        elif ch in pairs:\n            if not stack or stack.pop() != pairs[ch]:\n                return False\n    return not stack\n",
+            "path": "brackets.py"
+          },
+          "event": "tool_call",
+          "id": "chatcmpl-tool-9b71b0f6515045af",
+          "model_turn": 2,
+          "name": "write_file",
+          "raw_arguments": "{\"path\": \"brackets.py\", \"content\": \"def is_balanced(text):\\n    pairs = {')': '(', ']': '[', '}': '{'}\\n    stack = []\\n    for ch in text:\\n        if ch in '([{':\\n            stack.append(ch)\\n        elif ch in pairs:\\n            if not stack or stack.pop() != pairs[ch]:\\n                return False\\n    return not stack\\n\"}",
+          "result": {
+            "bytes": 284,
+            "ok": true
+          }
+        },
+        {
+          "args": {},
+          "event": "tool_call",
+          "id": "chatcmpl-tool-a3df9aeb1d27307a",
+          "model_turn": 3,
+          "name": "run_tests",
+          "raw_arguments": "{}",
+          "result": {
+            "command": [
+              "docker",
+              "run",
+              "--rm",
+              "--name",
+              "r7-eval-cb6aaba70c0840d695b3038be4e98587",
+              "--pull",
+              "never",
+              "--entrypoint",
+              "python3",
+              "--user",
+              "1001:1001",
+              "--memory-swap",
+              "256m",
+              "--runtime=runc",
+              "--network",
+              "none",
+              "--read-only",
+              "--cap-drop",
+              "ALL",
+              "--security-opt",
+              "no-new-privileges",
+              "--pids-limit",
+              "64",
+              "--memory",
+              "256m",
+              "--cpus",
+              "1",
+              "--env",
+              "NVIDIA_VISIBLE_DEVICES=void",
+              "--env",
+              "CUDA_VISIBLE_DEVICES=",
+              "--env",
+              "PYTHONDONTWRITEBYTECODE=1",
+              "-v",
+              "~/dsv41/m3/br1/results-cardBR1/gauntlet-A/tasks/code-brackets:/task:ro",
+              "-v",
+              "~/pin-hot-experts/round7/gauntlet/oracle.py:/trusted_evaluator/evaluator.py:ro",
+              "sha256:00d577a6a63281e15336029d5bcee4e9a2cf182214a4f20ba6111b1c8e79893d",
+              "/trusted_evaluator/evaluator.py",
+              "code-brackets"
+            ],
+            "evaluator": {
+              "candidate_stderr": "",
+              "candidate_stdout": "[true, false, true, true, false, false, true]\n",
+              "completed_cases": 7,
+              "expected_cases": 7,
+              "ok": true
+            },
+            "exit_code": 0,
+            "ok": true,
+            "stderr": "",
+            "stdout": "GAUNTLET_RESULT {\"candidate_stderr\": \"\", \"candidate_stdout\": \"[true, false, true, true, false, false, true]\\n\", \"completed_cases\": 7, \"expected_cases\": 7, \"ok\": true}\n"
+          }
+        }
+      ],
+      "ttft_s": 0.20481285999994725,
+      "usage": {
+        "completion_tokens": 226,
+        "prompt_tokens": 3244,
+        "total_tokens": 3470
+      },
+      "validity": {
+        "final_answer_valid": true,
+        "issues": [],
+        "schema_valid": true,
+        "tool_error_count": 0,
+        "tool_errors": [],
+        "transport_protocol_valid": true
+      },
+      "wall_s": 2.4136944410274737
+    },
+    {
+      "correct": true,
+      "final_content": "{\"status\":\"fixed\",\"summary\":\"Implemented sort-and-merge interval logic handling empty input, touching intervals, and nested ranges.\"}",
+      "finish_reason": "stop",
+      "kind": "code_fix",
+      "oracle_result": {
+        "command": [
+          "docker",
+          "run",
+          "--rm",
+          "--name",
+          "r7-eval-5bdc826ae3de4af9a78b3326bfedc303",
+          "--pull",
+          "never",
+          "--entrypoint",
+          "python3",
+          "--user",
+          "1001:1001",
+          "--memory-swap",
+          "256m",
+          "--runtime=runc",
+          "--network",
+          "none",
+          "--read-only",
+          "--cap-drop",
+          "ALL",
+          "--security-opt",
+          "no-new-privileges",
+          "--pids-limit",
+          "64",
+          "--memory",
+          "256m",
+          "--cpus",
+          "1",
+          "--env",
+          "NVIDIA_VISIBLE_DEVICES=void",
+          "--env",
+          "CUDA_VISIBLE_DEVICES=",
+          "--env",
+          "PYTHONDONTWRITEBYTECODE=1",
+          "-v",
+          "~/dsv41/m3/br1/results-cardBR1/gauntlet-A/tasks/code-intervals:/task:ro",
+          "-v",
+          "~/pin-hot-experts/round7/gauntlet/oracle.py:/trusted_evaluator/evaluator.py:ro",
+          "sha256:00d577a6a63281e15336029d5bcee4e9a2cf182214a4f20ba6111b1c8e79893d",
+          "/trusted_evaluator/evaluator.py",
+          "code-intervals"
+        ],
+        "evaluator": {
+          "candidate_stderr": "",
+          "candidate_stdout": "[[[1, 4], [5, 7], [9, 10]], [[1, 5]], [], [[1, 10]], [[-5, 2]]]\n",
+          "completed_cases": 5,
+          "expected_cases": 5,
+          "ok": true
+        },
+        "exit_code": 0,
+        "ok": true,
+        "stderr": "",
+        "stdout": "GAUNTLET_RESULT {\"candidate_stderr\": \"\", \"candidate_stdout\": \"[[[1, 4], [5, 7], [9, 10]], [[1, 5]], [], [[1, 10]], [[-5, 2]]]\\n\", \"completed_cases\": 5, \"expected_cases\": 5, \"ok\": true}\n"
+      },
+      "reasons": [],
+      "score_count": 1,
+      "success": true,
+      "task_id": "code-intervals",
+      "tool_call_count": 4,
+      "tool_counts": {
+        "read_file": 1,
+        "run_tests": 2,
+        "unknown": 0,
+        "write_file": 1
+      },
+      "trace": [
+        {
+          "args": {
+            "path": "intervals.py"
+          },
+          "event": "tool_call",
+          "id": "chatcmpl-tool-bd46bb4cfe9c52e3",
+          "model_turn": 1,
+          "name": "read_file",
+          "raw_arguments": "{\"path\": \"intervals.py\"}",
+          "result": {
+            "bytes": 53,
+            "content": "def merge_intervals(intervals):\n    return intervals\n",
+            "ok": true
+          }
+        },
+        {
+          "args": {},
+          "event": "tool_call",
+          "id": "chatcmpl-tool-86d2de254e2c99cd",
+          "model_turn": 1,
+          "name": "run_tests",
+          "raw_arguments": "{}",
+          "result": {
+            "command": [
+              "docker",
+              "run",
+              "--rm",
+              "--name",
+              "r7-eval-96abd57dac7a49e084ce7ba82cd688c5",
+              "--pull",
+              "never",
+              "--entrypoint",
+              "python3",
+              "--user",
+              "1001:1001",
+              "--memory-swap",
+              "256m",
+              "--runtime=runc",
+              "--network",
+              "none",
+              "--read-only",
+              "--cap-drop",
+              "ALL",
+              "--security-opt",
+              "no-new-privileges",
+              "--pids-limit",
+              "64",
+              "--memory",
+              "256m",
+              "--cpus",
+              "1",
+              "--env",
+              "NVIDIA_VISIBLE_DEVICES=void",
+              "--env",
+              "CUDA_VISIBLE_DEVICES=",
+              "--env",
+              "PYTHONDONTWRITEBYTECODE=1",
+              "-v",
+              "~/dsv41/m3/br1/results-cardBR1/gauntlet-A/tasks/code-intervals:/task:ro",
+              "-v",
+              "~/pin-hot-experts/round7/gauntlet/oracle.py:/trusted_evaluator/evaluator.py:ro",
+              "sha256:00d577a6a63281e15336029d5bcee4e9a2cf182214a4f20ba6111b1c8e79893d",
+              "/trusted_evaluator/evaluator.py",
+              "code-intervals"
+            ],
+            "error": "evaluator_reported_failure",
+            "evaluator": {
+              "candidate_stderr": "",
+              "candidate_stdout": "[[[5, 7], [1, 3], [2, 4], [9, 10]], [[1, 2], [2, 5]], [], [[1, 10], [2, 3]], [[-5, -1], [-2, 2]]]\n",
+              "completed_cases": 5,
+              "error": "case_mismatch",
+              "expected_cases": 5,
+              "ok": false
+            },
+            "exit_code": 1,
+            "ok": false,
+            "stderr": "",
+            "stdout": "GAUNTLET_RESULT {\"candidate_stderr\": \"\", \"candidate_stdout\": \"[[[5, 7], [1, 3], [2, 4], [9, 10]], [[1, 2], [2, 5]], [], [[1, 10], [2, 3]], [[-5, -1], [-2, 2]]]\\n\", \"completed_cases\": 5, \"error\": \"case_mismatch\", \"expected_cases\": 5, \"ok\": false}\n"
+          }
+        },
+        {
+          "args": {
+            "content": "def merge_intervals(intervals):\n    if not intervals:\n        return []\n    ordered = sorted((list(iv) for iv in intervals), key=lambda iv: (iv[0], iv[1]))\n    merged = [ordered[0][:]]\n    for start, end in ordered[1:]:\n        if start <= merged[-1][1]:\n            if end > merged[-1][1]:\n                merged[-1][1] = end\n        else:\n            merged.append([start, end])\n    return merged\n",
+            "path": "intervals.py"
+          },
+          "event": "tool_call",
+          "id": "chatcmpl-tool-b0bd6e5223017e6d",
+          "model_turn": 2,
+          "name": "write_file",
+          "raw_arguments": "{\"path\": \"intervals.py\", \"content\": \"def merge_intervals(intervals):\\n    if not intervals:\\n        return []\\n    ordered = sorted((list(iv) for iv in intervals), key=lambda iv: (iv[0], iv[1]))\\n    merged = [ordered[0][:]]\\n    for start, end in ordered[1:]:\\n        if start <= merged[-1][1]:\\n            if end > merged[-1][1]:\\n                merged[-1][1] = end\\n        else:\\n            merged.append([start, end])\\n    return merged\\n\"}",
+          "result": {
+            "bytes": 399,
+            "ok": true
+          }
+        },
+        {
+          "args": {},
+          "event": "tool_call",
+          "id": "chatcmpl-tool-952635af20143f99",
+          "model_turn": 3,
+          "name": "run_tests",
+          "raw_arguments": "{}",
+          "result": {
+            "command": [
+              "docker",
+              "run",
+              "--rm",
+              "--name",
+              "r7-eval-00d580fa810c45098ab0f6c9dd42683f",
+              "--pull",
+              "never",
+              "--entrypoint",
+              "python3",
+              "--user",
+              "1001:1001",
+              "--memory-swap",
+              "256m",
+              "--runtime=runc",
+              "--network",
+              "none",
+              "--read-only",
+              "--cap-drop",
+              "ALL",
+              "--security-opt",
+              "no-new-privileges",
+              "--pids-limit",
+              "64",
+              "--memory",
+              "256m",
+              "--cpus",
+              "1",
+              "--env",
+              "NVIDIA_VISIBLE_DEVICES=void",
+              "--env",
+              "CUDA_VISIBLE_DEVICES=",
+              "--env",
+              "PYTHONDONTWRITEBYTECODE=1",
+              "-v",
+              "~/dsv41/m3/br1/results-cardBR1/gauntlet-A/tasks/code-intervals:/task:ro",
+              "-v",
+              "~/pin-hot-experts/round7/gauntlet/oracle.py:/trusted_evaluator/evaluator.py:ro",
+              "sha256:00d577a6a63281e15336029d5bcee4e9a2cf182214a4f20ba6111b1c8e79893d",
+              "/trusted_evaluator/evaluator.py",
+              "code-intervals"
+            ],
+            "evaluator": {
+              "candidate_stderr": "",
+              "candidate_stdout": "[[[1, 4], [5, 7], [9, 10]], [[1, 5]], [], [[1, 10]], [[-5, 2]]]\n",
+              "completed_cases": 5,
+              "expected_cases": 5,
+              "ok": true
+            },
+            "exit_code": 0,
+            "ok": true,
+            "stderr": "",
+            "stdout": "GAUNTLET_RESULT {\"candidate_stderr\": \"\", \"candidate_stdout\": \"[[[1, 4], [5, 7], [9, 10]], [[1, 5]], [], [[1, 10]], [[-5, 2]]]\\n\", \"completed_cases\": 5, \"expected_cases\": 5, \"ok\": true}\n"
+          }
+        }
+      ],
+      "ttft_s": 0.3130113359657116,
+      "usage": {
+        "completion_tokens": 273,
+        "prompt_tokens": 4269,
+        "total_tokens": 4542
+      },
+      "validity": {
+        "final_answer_valid": true,
+        "issues": [],
+        "schema_valid": true,
+        "tool_error_count": 1,
+        "tool_errors": [
+          {
+            "error": "evaluator_reported_failure",
+            "id": "chatcmpl-tool-86d2de254e2c99cd",
+            "name": "run_tests"
+          }
+        ],
+        "transport_protocol_valid": true
+      },
+      "wall_s": 3.5553938259836286
+    },
+    {
+      "correct": true,
+      "final_content": "{\"status\":\"fixed\",\"summary\":\"slugify now lowercases, strips, collapses non-alphanumeric runs to hyphens, and trims edge hyphens; all 6 tests pass.\"}",
+      "finish_reason": "stop",
+      "kind": "code_fix",
+      "oracle_result": {
+        "command": [
+          "docker",
+          "run",
+          "--rm",
+          "--name",
+          "r7-eval-65d73999ec864524a084a1881a9c9539",
+          "--pull",
+          "never",
+          "--entrypoint",
+          "python3",
+          "--user",
+          "1001:1001",
+          "--memory-swap",
+          "256m",
+          "--runtime=runc",
+          "--network",
+          "none",
+          "--read-only",
+          "--cap-drop",
+          "ALL",
+          "--security-opt",
+          "no-new-privileges",
+          "--pids-limit",
+          "64",
+          "--memory",
+          "256m",
+          "--cpus",
+          "1",
+          "--env",
+          "NVIDIA_VISIBLE_DEVICES=void",
+          "--env",
+          "CUDA_VISIBLE_DEVICES=",
+          "--env",
+          "PYTHONDONTWRITEBYTECODE=1",
+          "-v",
+          "~/dsv41/m3/br1/results-cardBR1/gauntlet-A/tasks/code-slugify:/task:ro",
+          "-v",
+          "~/pin-hot-experts/round7/gauntlet/oracle.py:/trusted_evaluator/evaluator.py:ro",
+          "sha256:00d577a6a63281e15336029d5bcee4e9a2cf182214a4f20ba6111b1c8e79893d",
+          "/trusted_evaluator/evaluator.py",
+          "code-slugify"
+        ],
+        "evaluator": {
+          "candidate_stderr": "",
+          "candidate_stdout": "[\"hello-mars\", \"gpu-box-42\", \"\", \"mixed-case-x\", \"\", \"a-b\"]\n",
+          "completed_cases": 6,
+          "expected_cases": 6,
+          "ok": true
+        },
+        "exit_code": 0,
+        "ok": true,
+        "stderr": "",
+        "stdout": "GAUNTLET_RESULT {\"candidate_stderr\": \"\", \"candidate_stdout\": \"[\\\"hello-mars\\\", \\\"gpu-box-42\\\", \\\"\\\", \\\"mixed-case-x\\\", \\\"\\\", \\\"a-b\\\"]\\n\", \"completed_cases\": 6, \"expected_cases\": 6, \"ok\": true}\n"
+      },
+      "reasons": [],
+      "score_count": 1,
+      "success": true,
+      "task_id": "code-slugify",
+      "tool_call_count": 3,
+      "tool_counts": {
+        "read_file": 1,
+        "run_tests": 1,
+        "unknown": 0,
+        "write_file": 1
+      },
+      "trace": [
+        {
+          "args": {
+            "path": "slugify.py"
+          },
+          "event": "tool_call",
+          "id": "chatcmpl-tool-b89ec1d0f9cced45",
+          "model_turn": 1,
+          "name": "read_file",
+          "raw_arguments": "{\"path\": \"slugify.py\"}",
+          "result": {
+            "bytes": 53,
+            "content": "def slugify(text):\n    return text.replace(' ', '-')\n",
+            "ok": true
+          }
+        },
+        {
+          "args": {
+            "content": "import re\n\n\ndef slugify(text):\n    text = text.strip().lower()\n    text = re.sub(r'[^a-z0-9]+', '-', text)\n    return text.strip('-')\n",
+            "path": "slugify.py"
+          },
+          "event": "tool_call",
+          "id": "chatcmpl-tool-aace7a6375bb4864",
+          "model_turn": 2,
+          "name": "write_file",
+          "raw_arguments": "{\"path\": \"slugify.py\", \"content\": \"import re\\n\\n\\ndef slugify(text):\\n    text = text.strip().lower()\\n    text = re.sub(r'[^a-z0-9]+', '-', text)\\n    return text.strip('-')\\n\"}",
+          "result": {
+            "bytes": 134,
+            "ok": true
+          }
+        },
+        {
+          "args": {},
+          "event": "tool_call",
+          "id": "chatcmpl-tool-97c913afc03dea6f",
+          "model_turn": 3,
+          "name": "run_tests",
+          "raw_arguments": "{}",
+          "result": {
+            "command": [
+              "docker",
+              "run",
+              "--rm",
+              "--name",
+              "r7-eval-66df1c740e264fbb9883090f591f87d0",
+              "--pull",
+              "never",
+              "--entrypoint",
+              "python3",
+              "--user",
+              "1001:1001",
+              "--memory-swap",
+              "256m",
+              "--runtime=runc",
+              "--network",
+              "none",
+              "--read-only",
+              "--cap-drop",
+              "ALL",
+              "--security-opt",
+              "no-new-privileges",
+              "--pids-limit",
+              "64",
+              "--memory",
+              "256m",
+              "--cpus",
+              "1",
+              "--env",
+              "NVIDIA_VISIBLE_DEVICES=void",
+              "--env",
+              "CUDA_VISIBLE_DEVICES=",
+              "--env",
+              "PYTHONDONTWRITEBYTECODE=1",
+              "-v",
+              "~/dsv41/m3/br1/results-cardBR1/gauntlet-A/tasks/code-slugify:/task:ro",
+              "-v",
+              "~/pin-hot-experts/round7/gauntlet/oracle.py:/trusted_evaluator/evaluator.py:ro",
+              "sha256:00d577a6a63281e15336029d5bcee4e9a2cf182214a4f20ba6111b1c8e79893d",
+              "/trusted_evaluator/evaluator.py",
+              "code-slugify"
+            ],
+            "evaluator": {
+              "candidate_stderr": "",
+              "candidate_stdout": "[\"hello-mars\", \"gpu-box-42\", \"\", \"mixed-case-x\", \"\", \"a-b\"]\n",
+              "completed_cases": 6,
+              "expected_cases": 6,
+              "ok": true
+            },
+            "exit_code": 0,
+            "ok": true,
+            "stderr": "",
+            "stdout": "GAUNTLET_RESULT {\"candidate_stderr\": \"\", \"candidate_stdout\": \"[\\\"hello-mars\\\", \\\"gpu-box-42\\\", \\\"\\\", \\\"mixed-case-x\\\", \\\"\\\", \\\"a-b\\\"]\\n\", \"completed_cases\": 6, \"expected_cases\": 6, \"ok\": true}\n"
+          }
+        }
+      ],
+      "ttft_s": 0.313114536984358,
+      "usage": {
+        "completion_tokens": 207,
+        "prompt_tokens": 3210,
+        "total_tokens": 3417
+      },
+      "validity": {
+        "final_answer_valid": true,
+        "issues": [],
+        "schema_valid": true,
+        "tool_error_count": 0,
+        "tool_errors": [],
+        "transport_protocol_valid": true
+      },
+      "wall_s": 2.315765876963269
+    },
+    {
+      "correct": true,
+      "final_content": "{\"status\":\"fixed\",\"summary\":\"Implemented totals_by_category: parses CSV with category,amount header, skips blank lines, sums integer amounts per category.\"}",
+      "finish_reason": "stop",
+      "kind": "code_fix",
+      "oracle_result": {
+        "command": [
+          "docker",
+          "run",
+          "--rm",
+          "--name",
+          "r7-eval-b5999ef4392746838d4605964469a8d7",
+          "--pull",
+          "never",
+          "--entrypoint",
+          "python3",
+          "--user",
+          "1001:1001",
+          "--memory-swap",
+          "256m",
+          "--runtime=runc",
+          "--network",
+          "none",
+          "--read-only",
+          "--cap-drop",
+          "ALL",
+          "--security-opt",
+          "no-new-privileges",
+          "--pids-limit",
+          "64",
+          "--memory",
+          "256m",
+          "--cpus",
+          "1",
+          "--env",
+          "NVIDIA_VISIBLE_DEVICES=void",
+          "--env",
+          "CUDA_VISIBLE_DEVICES=",
+          "--env",
+          "PYTHONDONTWRITEBYTECODE=1",
+          "-v",
+          "~/dsv41/m3/br1/results-cardBR1/gauntlet-A/tasks/code-totals:/task:ro",
+          "-v",
+          "~/pin-hot-experts/round7/gauntlet/oracle.py:/trusted_evaluator/evaluator.py:ro",
+          "sha256:00d577a6a63281e15336029d5bcee4e9a2cf182214a4f20ba6111b1c8e79893d",
+          "/trusted_evaluator/evaluator.py",
+          "code-totals"
+        ],
+        "evaluator": {
+          "candidate_stderr": "",
+          "candidate_stdout": "[{\"a\": 2, \"b\": 4}, {}, {\"a\": 9}, {\"z\": 0, \"x\": 0}]\n",
+          "completed_cases": 4,
+          "expected_cases": 4,
+          "ok": true
+        },
+        "exit_code": 0,
+        "ok": true,
+        "stderr": "",
+        "stdout": "GAUNTLET_RESULT {\"candidate_stderr\": \"\", \"candidate_stdout\": \"[{\\\"a\\\": 2, \\\"b\\\": 4}, {}, {\\\"a\\\": 9}, {\\\"z\\\": 0, \\\"x\\\": 0}]\\n\", \"completed_cases\": 4, \"expected_cases\": 4, \"ok\": true}\n"
+      },
+      "reasons": [],
+      "score_count": 1,
+      "success": true,
+      "task_id": "code-totals",
+      "tool_call_count": 4,
+      "tool_counts": {
+        "read_file": 1,
+        "run_tests": 2,
+        "unknown": 0,
+        "write_file": 1
+      },
+      "trace": [
+        {
+          "args": {
+            "path": "totals.py"
+          },
+          "event": "tool_call",
+          "id": "chatcmpl-tool-95d558b56101aaca",
+          "model_turn": 1,
+          "name": "read_file",
+          "raw_arguments": "{\"path\": \"totals.py\"}",
+          "result": {
+            "bytes": 48,
+            "content": "def totals_by_category(csv_text):\n    return {}\n",
+            "ok": true
+          }
+        },
+        {
+          "args": {},
+          "event": "tool_call",
+          "id": "chatcmpl-tool-bfb6605c1261ea61",
+          "model_turn": 1,
+          "name": "run_tests",
+          "raw_arguments": "{}",
+          "result": {
+            "command": [
+              "docker",
+              "run",
+              "--rm",
+              "--name",
+              "r7-eval-7a6d9baa048442438502ccc6fb920211",
+              "--pull",
+              "never",
+              "--entrypoint",
+              "python3",
+              "--user",
+              "1001:1001",
+              "--memory-swap",
+              "256m",
+              "--runtime=runc",
+              "--network",
+              "none",
+              "--read-only",
+              "--cap-drop",
+              "ALL",
+              "--security-opt",
+              "no-new-privileges",
+              "--pids-limit",
+              "64",
+              "--memory",
+              "256m",
+              "--cpus",
+              "1",
+              "--env",
+              "NVIDIA_VISIBLE_DEVICES=void",
+              "--env",
+              "CUDA_VISIBLE_DEVICES=",
+              "--env",
+              "PYTHONDONTWRITEBYTECODE=1",
+              "-v",
+              "~/dsv41/m3/br1/results-cardBR1/gauntlet-A/tasks/code-totals:/task:ro",
+              "-v",
+              "~/pin-hot-experts/round7/gauntlet/oracle.py:/trusted_evaluator/evaluator.py:ro",
+              "sha256:00d577a6a63281e15336029d5bcee4e9a2cf182214a4f20ba6111b1c8e79893d",
+              "/trusted_evaluator/evaluator.py",
+              "code-totals"
+            ],
+            "error": "evaluator_reported_failure",
+            "evaluator": {
+              "candidate_stderr": "",
+              "candidate_stdout": "[{}, {}, {}, {}]\n",
+              "completed_cases": 4,
+              "error": "case_mismatch",
+              "expected_cases": 4,
+              "ok": false
+            },
+            "exit_code": 1,
+            "ok": false,
+            "stderr": "",
+            "stdout": "GAUNTLET_RESULT {\"candidate_stderr\": \"\", \"candidate_stdout\": \"[{}, {}, {}, {}]\\n\", \"completed_cases\": 4, \"error\": \"case_mismatch\", \"expected_cases\": 4, \"ok\": false}\n"
+          }
+        },
+        {
+          "args": {
+            "content": "def totals_by_category(csv_text):\n    totals = {}\n    if not csv_text:\n        return totals\n    lines = csv_text.splitlines()\n    header_seen = False\n    for line in lines:\n        if not line.strip():\n            continue\n        parts = [p.strip() for p in line.split(\",\")]\n        if not header_seen:\n            header_seen = True\n            if len(parts) >= 2 and parts[0].lower() == \"category\" and parts[1].lower() == \"amount\":\n                continue\n        if len(parts) < 2:\n            continue\n        category = parts[0]\n        try:\n            amount = int(parts[1])\n        except ValueError:\n            continue\n        totals[category] = totals.get(category, 0) + amount\n    return totals\n",
+            "path": "totals.py"
+          },
+          "event": "tool_call",
+          "id": "chatcmpl-tool-af6394632412e231",
+          "model_turn": 2,
+          "name": "write_file",
+          "raw_arguments": "{\"content\": \"def totals_by_category(csv_text):\\n    totals = {}\\n    if not csv_text:\\n        return totals\\n    lines = csv_text.splitlines()\\n    header_seen = False\\n    for line in lines:\\n        if not line.strip():\\n            continue\\n        parts = [p.strip() for p in line.split(\\\",\\\")]\\n        if not header_seen:\\n            header_seen = True\\n            if len(parts) >= 2 and parts[0].lower() == \\\"category\\\" and parts[1].lower() == \\\"amount\\\":\\n                continue\\n        if len(parts) < 2:\\n            continue\\n        category = parts[0]\\n        try:\\n            amount = int(parts[1])\\n        except ValueError:\\n            continue\\n        totals[category] = totals.get(category, 0) + amount\\n    return totals\\n\", \"path\": \"totals.py\"}",
+          "result": {
+            "bytes": 711,
+            "ok": true
+          }
+        },
+        {
+          "args": {},
+          "event": "tool_call",
+          "id": "chatcmpl-tool-8cd7386aff8823ad",
+          "model_turn": 3,
+          "name": "run_tests",
+          "raw_arguments": "{}",
+          "result": {
+            "command": [
+              "docker",
+              "run",
+              "--rm",
+              "--name",
+              "r7-eval-d2460b26f5b24de0be851e8980af9801",
+              "--pull",
+              "never",
+              "--entrypoint",
+              "python3",
+              "--user",
+              "1001:1001",
+              "--memory-swap",
+              "256m",
+              "--runtime=runc",
+              "--network",
+              "none",
+              "--read-only",
+              "--cap-drop",
+              "ALL",
+              "--security-opt",
+              "no-new-privileges",
+              "--pids-limit",
+              "64",
+              "--memory",
+              "256m",
+              "--cpus",
+              "1",
+              "--env",
+              "NVIDIA_VISIBLE_DEVICES=void",
+              "--env",
+              "CUDA_VISIBLE_DEVICES=",
+              "--env",
+              "PYTHONDONTWRITEBYTECODE=1",
+              "-v",
+              "~/dsv41/m3/br1/results-cardBR1/gauntlet-A/tasks/code-totals:/task:ro",
+              "-v",
+              "~/pin-hot-experts/round7/gauntlet/oracle.py:/trusted_evaluator/evaluator.py:ro",
+              "sha256:00d577a6a63281e15336029d5bcee4e9a2cf182214a4f20ba6111b1c8e79893d",
+              "/trusted_evaluator/evaluator.py",
+              "code-totals"
+            ],
+            "evaluator": {
+              "candidate_stderr": "",
+              "candidate_stdout": "[{\"a\": 2, \"b\": 4}, {}, {\"a\": 9}, {\"z\": 0, \"x\": 0}]\n",
+              "completed_cases": 4,
+              "expected_cases": 4,
+              "ok": true
+            },
+            "exit_code": 0,
+            "ok": true,
+            "stderr": "",
+            "stdout": "GAUNTLET_RESULT {\"candidate_stderr\": \"\", \"candidate_stdout\": \"[{\\\"a\\\": 2, \\\"b\\\": 4}, {}, {\\\"a\\\": 9}, {\\\"z\\\": 0, \\\"x\\\": 0}]\\n\", \"completed_cases\": 4, \"expected_cases\": 4, \"ok\": true}\n"
+          }
+        }
+      ],
+      "ttft_s": 0.1745005919947289,
+      "usage": {
+        "completion_tokens": 368,
+        "prompt_tokens": 3918,
+        "total_tokens": 4286
+      },
+      "validity": {
+        "final_answer_valid": true,
+        "issues": [],
+        "schema_valid": true,
+        "tool_error_count": 1,
+        "tool_errors": [
+          {
+            "error": "evaluator_reported_failure",
+            "id": "chatcmpl-tool-bfb6605c1261ea61",
+            "name": "run_tests"
+          }
+        ],
+        "transport_protocol_valid": true
+      },
+      "wall_s": 3.4841459710150957
+    },
+    {
+      "correct": true,
+      "final_content": "{\"answer\":{\"open_p1_ids\":[\"INC-001\",\"INC-004\"],\"closed_count\":2}}",
+      "finish_reason": "stop",
+      "kind": "structured",
+      "oracle_result": null,
+      "reasons": [],
+      "score_count": 1,
+      "success": true,
+      "task_id": "struct-incidents",
+      "tool_call_count": 1,
+      "tool_counts": {
+        "read_file": 1,
+        "run_tests": 0,
+        "unknown": 0,
+        "write_file": 0
+      },
+      "trace": [
+        {
+          "args": {
+            "path": "incidents.json"
+          },
+          "event": "tool_call",
+          "id": "chatcmpl-tool-b038104ff0be562c",
+          "model_turn": 1,
+          "name": "read_file",
+          "raw_arguments": "{\"path\": \"incidents.json\"}",
+          "result": {
+            "bytes": 204,
+            "content": "{\"incidents\":[{\"id\":\"INC-004\",\"priority\":1,\"status\":\"open\"},{\"id\":\"INC-002\",\"priority\":2,\"status\":\"closed\"},{\"id\":\"INC-001\",\"priority\":1,\"status\":\"open\"},{\"id\":\"INC-003\",\"priority\":1,\"status\":\"closed\"}]}\n",
+            "ok": true
+          }
+        }
+      ],
+      "ttft_s": 0.304089140961878,
+      "usage": {
+        "completion_tokens": 103,
+        "prompt_tokens": 1369,
+        "total_tokens": 1472
+      },
+      "validity": {
+        "final_answer_valid": true,
+        "issues": [],
+        "schema_valid": true,
+        "tool_error_count": 0,
+        "tool_errors": [],
+        "transport_protocol_valid": true
+      },
+      "wall_s": 0.945200817019213
+    },
+    {
+      "correct": true,
+      "final_content": "{\"answer\":{\"total_qty\":23,\"reorder_skus\":[\"axle\",\"seal\"],\"largest_sku\":\"cam\"}}",
+      "finish_reason": "stop",
+      "kind": "structured",
+      "oracle_result": null,
+      "reasons": [],
+      "score_count": 1,
+      "success": true,
+      "task_id": "struct-inventory",
+      "tool_call_count": 1,
+      "tool_counts": {
+        "read_file": 1,
+        "run_tests": 0,
+        "unknown": 0,
+        "write_file": 0
+      },
+      "trace": [
+        {
+          "args": {
+            "path": "inventory.csv"
+          },
+          "event": "tool_call",
+          "id": "chatcmpl-tool-b921a7af8d5fecea",
+          "model_turn": 1,
+          "name": "read_file",
+          "raw_arguments": "{\"path\": \"inventory.csv\"}",
+          "result": {
+            "bytes": 58,
+            "content": "sku,qty,reorder\ngear,7,no\nseal,2,yes\naxle,4,yes\ncam,10,no\n",
+            "ok": true
+          }
+        }
+      ],
+      "ttft_s": 0.1791945259901695,
+      "usage": {
+        "completion_tokens": 108,
+        "prompt_tokens": 1360,
+        "total_tokens": 1468
+      },
+      "validity": {
+        "final_answer_valid": true,
+        "issues": [],
+        "schema_valid": true,
+        "tool_error_count": 0,
+        "tool_errors": [],
+        "transport_protocol_valid": true
+      },
+      "wall_s": 0.9600954449851997
+    },
+    {
+      "correct": true,
+      "final_content": "{\"answer\":{\"sensors_over_50\":[\"bravo\",\"delta\"],\"min_sensor\":\"charlie\"}}",
+      "finish_reason": "stop",
+      "kind": "structured",
+      "oracle_result": null,
+      "reasons": [],
+      "score_count": 1,
+      "success": true,
+      "task_id": "struct-readings",
+      "tool_call_count": 1,
+      "tool_counts": {
+        "read_file": 1,
+        "run_tests": 0,
+        "unknown": 0,
+        "write_file": 0
+      },
+      "trace": [
+        {
+          "args": {
+            "path": "readings.txt"
+          },
+          "event": "tool_call",
+          "id": "chatcmpl-tool-b093dd99739da4d8",
+          "model_turn": 1,
+          "name": "read_file",
+          "raw_arguments": "{\"path\": \"readings.txt\"}",
+          "result": {
+            "bytes": 38,
+            "content": "alpha=48\nbravo=72\ncharlie=15\ndelta=51\n",
+            "ok": true
+          }
+        }
+      ],
+      "ttft_s": 0.30314747494412586,
+      "usage": {
+        "completion_tokens": 99,
+        "prompt_tokens": 1315,
+        "total_tokens": 1414
+      },
+      "validity": {
+        "final_answer_valid": true,
+        "issues": [],
+        "schema_valid": true,
+        "tool_error_count": 0,
+        "tool_errors": [],
+        "transport_protocol_valid": true
+      },
+      "wall_s": 0.6391223290120251
+    },
+    {
+      "correct": true,
+      "final_content": "{\"answer\":{\"total_weight_kg\":36,\"delayed_routes\":[\"B2\",\"C9\"]}}",
+      "finish_reason": "stop",
+      "kind": "structured",
+      "oracle_result": null,
+      "reasons": [],
+      "score_count": 1,
+      "success": true,
+      "task_id": "struct-shipments",
+      "tool_call_count": 1,
+      "tool_counts": {
+        "read_file": 1,
+        "run_tests": 0,
+        "unknown": 0,
+        "write_file": 0
+      },
+      "trace": [
+        {
+          "args": {
+            "path": "shipments.tsv"
+          },
+          "event": "tool_call",
+          "id": "chatcmpl-tool-b688bf5478f0788a",
+          "model_turn": 1,
+          "name": "read_file",
+          "raw_arguments": "{\"path\": \"shipments.tsv\"}",
+          "result": {
+            "bytes": 77,
+            "content": "route\tweight_kg\tstatus\nA7\t11\ton-time\nB2\t5\tdelayed\nC9\t13\tdelayed\nD4\t7\ton-time\n",
+            "ok": true
+          }
+        }
+      ],
+      "ttft_s": 0.19929982395842671,
+      "usage": {
+        "completion_tokens": 92,
+        "prompt_tokens": 1336,
+        "total_tokens": 1428
+      },
+      "validity": {
+        "final_answer_valid": true,
+        "issues": [],
+        "schema_valid": true,
+        "tool_error_count": 0,
+        "tool_errors": [],
+        "transport_protocol_valid": true
+      },
+      "wall_s": 0.7524586420040578
+    }
+  ],
+  "source_sha256": {
+    "gauntlet.py": "e47bfd3fabf48d58e17406471881324c81ff67b5fea455cccdb7e04d361fd510",
+    "oracle.py": "eaeee30d80b58c8e2ea02f25d93aae0120d352ba6faeaac2fdfd822dae0c15e6",
+    "run_suite.py": "7c5799aa2623fe25e8f16eabc2c23c1b923bdce9ad8c49377999dda7f630d367"
+  },
+  "statistics_note": "descriptive; repetitions are clustered by the twelve tasks, not independent samples",
+  "success_count": 12,
+  "successful_task_wall_s": {
+    "median": 2.324636137491325,
+    "n": 12,
+    "range": [
+      0.6391223290120251,
+      3.5553938259836286
+    ]
+  },
+  "tag": "br1-A",
+  "task_count": 12,
+  "wall_s": 6.487951782008167,
+  "workers": 4
+}

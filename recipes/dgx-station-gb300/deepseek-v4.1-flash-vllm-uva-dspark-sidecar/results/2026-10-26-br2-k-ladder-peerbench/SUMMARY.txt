@@ -1,0 +1,108 @@
+2026-10-25 19:57:24 CDT ===== CARD BR2 START (arms=A K9 A2 spec_block=[,"rejection_sample_method":"block"] K7=[[1,4,7],[5,8,3],[9,32,3]] K9=[[1,4,9],[5,8,3],[9,32,3]] temp_t=1.0 seed_t=42 mix_s=120 c1_reps=3 peer_rounds=2 peer_cell_s=1500 settle_s=90 isolate=1 mem_min=380 boot_min=40 boot_min_k=60 est_dark=~256min R=~/dsv41/m3/br1/results-cardBR2) =====
+2026-10-25 21:35:54 CDT LANE-OWNER.txt (tail): - 2026-10-25 19:33:36 CDT cardBR1 runner pid 1894948 preflight OK — about to take :30006 dark (A=dsv41-vllm-1017-BR1-A, B=dsv41-vllm-1017-BR1-B, A2=dsv41-vllm-1017-BR1-A2; ~3 h); restores dsv41-vllm-1017-v25m-kvtier pair + watchdog at END. Receipts ~/dsv41/m3/br1/results-cardBR1 - 2026-10-25 19:33:36 CDT cardBR1: lane :30006 DARK (watchdog 1870625 stopped, dsv41-vllm-1017-v25m-kvtier + dsv41-vllm-1017-v25m-kvtier-rtx stopped-and-kept) - 2026-10-25 21:35:24 CDT cardBR1 done; lane resto
+2026-10-25 21:35:59 CDT watchdog pid 2057392 (ppid 1) argv: python3 ~/dsv41/m3/sidecar_watchdog.py --server dsv41-vllm-1017-v25m-kvtier --mode enforce --interval 1 --stall 2 --status ~/dsv41/m3/logs/sidecar_watchdog.status.json --log ~/dsv41/m3/logs/sidecar_watchdog.kvtier.log  cwd=~/dsv41/m3
+2026-10-25 21:35:59 CDT fail-stop watchdog 2057392 stopped (cardBR2)
+2026-10-25 21:35:59 CDT LANE DARK begins (stopping dsv41-vllm-1017-v25m-kvtier pair, kept)
+2026-10-25 21:37:00 CDT stop-and-keep dsv41-vllm-1017-v25m-kvtier dsv41-vllm-1017-v25m-kvtier-rtx
+2026-10-25 21:37:00 CDT ISOLATE on: non-loopback TCP :30006 rejected (cardBR2-isolate; removed before restore)
+2026-10-25 21:37:07 CDT SETTLE pre-A: sleeping 90s before the next boot
+2026-10-25 21:38:37 CDT HOST pre-A: MemAvailable=464.8GiB shm_used=125M new_shm_gt1G=[] GB300 sm,mem,W,pstate=[120 MHz, 3996 MHz, 150.49 W, P0] RTX used=47MiB
+2026-10-25 21:38:37 CDT BOOT A: dsv41-vllm-1017-BR2-A EXTRA=[--kv-cache-memory 9126805504 --kv-offloading-size 48 --kv-offloading-backend native] SPEC_EXTRA=[] KSPEC=5 KSCHED=[launcher-default] BOOT_MIN=40 ROWMAP=rowmap-mixed-ar-v1.json MemAvail=464.8GiB
+2026-10-25 21:39:49 CDT SIDECAR A serving: serving
+2026-10-25 21:39:51 CDT SERVER A launched: launched dsv41-vllm-1017-BR2-A (peer v2, rowmap=rowmap-mixed-ar-v1.json seqs=32 util=0.97 maxlen=1048576 overlay=1 PEER_CHECK=0 COLD_TRT=0) log ~/dsv41/m3/logs/dsv41-vllm-1017-BR2-A.log
+2026-10-25 21:39:54 CDT BR2 watchdog armed pid 2060822 on dsv41-vllm-1017-BR2-A (enforce, stall 2 s)
+2026-10-25 21:47:26 CDT BOUND dsv41-vllm-1017-BR2-A after 452s
+2026-10-25 21:47:26 CDT boot->ready A 529s (dsv41-vllm-1017-BR2-A)
+2026-10-25 21:47:26 CDT FACTS2 A: kspec 5 in_args 5 ksched_in_args [[1, 4, 5], [5, 8, 3], [9, 32, 3]] cg_tokens 192 over128 True cg_sched 128 | autotune loaded 117 saved 117 new 0 elapsed 258.0 retune False new_dirs []
+2026-10-25 21:47:26 CDT FACTS A: kv=[4,400,013] expect=4,400,013 block_in_args=0 (want 0) block_boot_lines=0 ff_boot=0 autotune loaded=1 saved=1 starts=25 ends=25 args_eq_prod=1
+2026-10-25 21:47:26 CDT HEALTH A: models_http=200 chat_http=200 (reasoning_effort low) content=[OK] sidecar=true
+2026-10-25 21:47:26 CDT FOREIGN A bind: 0 (non-127.0.0.1 POST /v1 since 2026-10-26T02:38:37Z)
+2026-10-25 21:57:36 CDT CELL A pct1 rc=0: 
+2026-10-25 21:59:38 CDT CELL A c1-r1 rc=0: {"tag": "BR2-A-c1-r1", "concurrency": 1, "n": 65, "errors": 0, "agg_tok_s_all": 211.05, "agg_tok_s_post60": 210.03, "per_req": {"jpde": {"median_all": 198.02, "median_post60": 198.53, "n_post60": 16}, "agent": {"median_all": 238.35500000000002, "median_post60": 236.43, "n_post60": 16}}}
+2026-10-25 22:01:38 CDT CELL A c1-r2 rc=0: {"tag": "BR2-A-c1-r2", "concurrency": 1, "n": 64, "errors": 0, "agg_tok_s_all": 212.15, "agg_tok_s_post60": 212.72, "per_req": {"jpde": {"median_all": 196.535, "median_post60": 196.32, "n_post60": 15}, "agent": {"median_all": 236.79000000000002, "median_post60": 236.01, "n_post60": 16}}}
+2026-10-25 22:03:40 CDT CELL A c1-r3 rc=0: {"tag": "BR2-A-c1-r3", "concurrency": 1, "n": 65, "errors": 0, "agg_tok_s_all": 213.83, "agg_tok_s_post60": 215.43, "per_req": {"jpde": {"median_all": 197.46, "median_post60": 196.385, "n_post60": 16}, "agent": {"median_all": 238.72, "median_post60": 233.57999999999998, "n_post60": 16}}}
+2026-10-25 22:08:15 CDT CELL A peerbench rc=0: {"peerbench": "~/dsv41/m3/br1/results-cardBR2/A/peerbench-BR2-A.json", "cells": 12, "ok": 12, "skipped": 0, "bad": []}
+2026-10-25 22:08:31 CDT GAUNTLET A: 12 / 12
+2026-10-25 22:08:54 CDT CELL A turns rc=0: [BR2-A] pass 1: tool-turn emitted 8/12, text-turn emitted 6/12
+2026-10-25 22:08:54 CDT TURNS A: moved turns-BR2-A.json into ~/dsv41/m3/br1/results-cardBR2/A
+2026-10-25 22:08:54 CDT ERRCOUNT A 0 (since 2026-10-26T02:47:26Z)
+2026-10-25 22:08:54 CDT ERRCOUNT A-rtx 0 (since 2026-10-26T02:47:26Z)
+2026-10-25 22:08:54 CDT FOREIGN A cells: 0 (non-127.0.0.1 POST /v1 since 2026-10-26T02:47:26Z)
+2026-10-25 22:08:54 CDT WATCHDOG A: alive True timeouts 0 trips 0
+2026-10-25 22:08:54 CDT ARM A cells took 1288s
+2026-10-25 22:08:54 CDT BR2 watchdog 2060822 stopped
+2026-10-25 22:08:56 CDT stop-and-keep dsv41-vllm-1017-BR2-A
+2026-10-25 22:09:01 CDT stop-and-keep dsv41-vllm-1017-BR2-A-rtx
+2026-10-25 22:09:38 CDT SETTLE pre-K9: sleeping 90s before the next boot
+2026-10-25 22:11:08 CDT HOST pre-K9: MemAvailable=462.9GiB shm_used=125M new_shm_gt1G=[] GB300 sm,mem,W,pstate=[120 MHz, 3996 MHz, 150.76 W, P0] RTX used=47MiB
+2026-10-25 22:11:09 CDT BOOT K9: dsv41-vllm-1017-BR2-K9 EXTRA=[--kv-cache-memory 9126805504 --kv-offloading-size 48 --kv-offloading-backend native] SPEC_EXTRA=[,"rejection_sample_method":"block"] KSPEC=9 KSCHED=[[[1,4,9],[5,8,3],[9,32,3]]] BOOT_MIN=60 ROWMAP=rowmap-mixed-ar-v1.json MemAvail=462.8GiB
+2026-10-25 22:12:21 CDT SIDECAR K9 serving: serving
+2026-10-25 22:12:23 CDT SERVER K9 launched: launched dsv41-vllm-1017-BR2-K9 (peer v2, rowmap=rowmap-mixed-ar-v1.json seqs=32 util=0.97 maxlen=1048576 overlay=1 PEER_CHECK=0 COLD_TRT=0) log ~/dsv41/m3/logs/dsv41-vllm-1017-BR2-K9.log
+2026-10-25 22:12:26 CDT BR2 watchdog armed pid 2106346 on dsv41-vllm-1017-BR2-K9 (enforce, stall 2 s)
+2026-10-25 22:19:57 CDT BOUND dsv41-vllm-1017-BR2-K9 after 451s
+2026-10-25 22:19:57 CDT boot->ready K9 528s (dsv41-vllm-1017-BR2-K9)
+2026-10-25 22:19:58 CDT FACTS2 K9: kspec 9 in_args 9 ksched_in_args [[1, 4, 9], [5, 8, 3], [9, 32, 3]] cg_tokens 320 over128 True cg_sched 128 | autotune loaded 117 saved 117 new 0 elapsed 259.0 retune False new_dirs []
+2026-10-25 22:19:58 CDT FACTS K9: kv=[4,400,013] expect=4,400,013 block_in_args=1 (want 1) block_boot_lines=1 ff_boot=0 autotune loaded=1 saved=1 starts=25 ends=25 args_eq_prod=0
+2026-10-25 22:19:58 CDT HEALTH K9: models_http=200 chat_http=200 (reasoning_effort low) content=[OK] sidecar=true
+2026-10-25 22:19:58 CDT FOREIGN K9 bind: 0 (non-127.0.0.1 POST /v1 since 2026-10-26T03:11:09Z)
+2026-10-25 22:31:28 CDT CELL K9 pct1 rc=0: 
+2026-10-25 22:33:29 CDT CELL K9 c1-r1 rc=0: {"tag": "BR2-K9-c1-r1", "concurrency": 1, "n": 51, "errors": 0, "agg_tok_s_all": 167.15, "agg_tok_s_post60": 174.79, "per_req": {"jpde": {"median_all": 153.875, "median_post60": 155.48, "n_post60": 13}, "agent": {"median_all": 188.4, "median_post60": 191.83, "n_post60": 13}}}
+2026-10-25 22:35:29 CDT CELL K9 c1-r2 rc=0: {"tag": "BR2-K9-c1-r2", "concurrency": 1, "n": 51, "errors": 0, "agg_tok_s_all": 168.99, "agg_tok_s_post60": 172.16, "per_req": {"jpde": {"median_all": 155.835, "median_post60": 156.84, "n_post60": 13}, "agent": {"median_all": 186.9, "median_post60": 186.10500000000002, "n_post60": 12}}}
+2026-10-25 22:37:31 CDT CELL K9 c1-r3 rc=0: {"tag": "BR2-K9-c1-r3", "concurrency": 1, "n": 52, "errors": 0, "agg_tok_s_all": 169.1, "agg_tok_s_post60": 171.7, "per_req": {"jpde": {"median_all": 157.03, "median_post60": 156.16, "n_post60": 13}, "agent": {"median_all": 189.575, "median_post60": 190.61, "n_post60": 13}}}
+2026-10-25 22:42:14 CDT CELL K9 peerbench rc=0: {"peerbench": "~/dsv41/m3/br1/results-cardBR2/K9/peerbench-BR2-K9.json", "cells": 12, "ok": 12, "skipped": 0, "bad": []}
+2026-10-25 22:42:31 CDT GAUNTLET K9: 12 / 12
+2026-10-25 22:42:55 CDT CELL K9 turns rc=0: [BR2-K9] pass 1: tool-turn emitted 5/12, text-turn emitted 4/12
+2026-10-25 22:42:55 CDT TURNS K9: moved turns-BR2-K9.json into ~/dsv41/m3/br1/results-cardBR2/K9
+2026-10-25 22:42:55 CDT ERRCOUNT K9 0 (since 2026-10-26T03:19:58Z)
+2026-10-25 22:42:55 CDT ERRCOUNT K9-rtx 0 (since 2026-10-26T03:19:58Z)
+2026-10-25 22:42:55 CDT FOREIGN K9 cells: 0 (non-127.0.0.1 POST /v1 since 2026-10-26T03:19:58Z)
+2026-10-25 22:42:55 CDT WATCHDOG K9: alive True timeouts 0 trips 0
+2026-10-25 22:42:55 CDT ARM K9 cells took 1377s
+2026-10-25 22:42:55 CDT BR2 watchdog 2106346 stopped
+2026-10-25 22:42:57 CDT stop-and-keep dsv41-vllm-1017-BR2-K9
+2026-10-25 22:43:02 CDT stop-and-keep dsv41-vllm-1017-BR2-K9-rtx
+2026-10-25 22:43:40 CDT SETTLE pre-A2: sleeping 90s before the next boot
+2026-10-25 22:45:10 CDT HOST pre-A2: MemAvailable=463.3GiB shm_used=125M new_shm_gt1G=[] GB300 sm,mem,W,pstate=[120 MHz, 3996 MHz, 148.84 W, P0] RTX used=47MiB
+2026-10-25 22:45:10 CDT BOOT A2: dsv41-vllm-1017-BR2-A2 EXTRA=[--kv-cache-memory 9126805504 --kv-offloading-size 48 --kv-offloading-backend native] SPEC_EXTRA=[] KSPEC=5 KSCHED=[launcher-default] BOOT_MIN=40 ROWMAP=rowmap-mixed-ar-v1.json MemAvail=463.3GiB
+2026-10-25 22:46:22 CDT SIDECAR A2 serving: serving
+2026-10-25 22:46:24 CDT SERVER A2 launched: launched dsv41-vllm-1017-BR2-A2 (peer v2, rowmap=rowmap-mixed-ar-v1.json seqs=32 util=0.97 maxlen=1048576 overlay=1 PEER_CHECK=0 COLD_TRT=0) log ~/dsv41/m3/logs/dsv41-vllm-1017-BR2-A2.log
+2026-10-25 22:46:27 CDT BR2 watchdog armed pid 2154250 on dsv41-vllm-1017-BR2-A2 (enforce, stall 2 s)
+2026-10-25 22:53:59 CDT BOUND dsv41-vllm-1017-BR2-A2 after 452s
+2026-10-25 22:53:59 CDT boot->ready A2 529s (dsv41-vllm-1017-BR2-A2)
+2026-10-25 22:53:59 CDT FACTS2 A2: kspec 5 in_args 5 ksched_in_args [[1, 4, 5], [5, 8, 3], [9, 32, 3]] cg_tokens 192 over128 True cg_sched 128 | autotune loaded 117 saved 117 new 0 elapsed 255.0 retune False new_dirs []
+2026-10-25 22:53:59 CDT FACTS A2: kv=[4,400,013] expect=4,400,013 block_in_args=0 (want 0) block_boot_lines=0 ff_boot=0 autotune loaded=1 saved=1 starts=25 ends=25 args_eq_prod=1
+2026-10-25 22:53:59 CDT HEALTH A2: models_http=200 chat_http=200 (reasoning_effort low) content=[OK] sidecar=true
+2026-10-25 22:53:59 CDT FOREIGN A2 bind: 0 (non-127.0.0.1 POST /v1 since 2026-10-26T03:45:10Z)
+2026-10-25 23:04:04 CDT CELL A2 pct1 rc=0: 
+2026-10-25 23:06:06 CDT CELL A2 c1-r1 rc=0: {"tag": "BR2-A2-c1-r1", "concurrency": 1, "n": 65, "errors": 0, "agg_tok_s_all": 211.13, "agg_tok_s_post60": 214.41, "per_req": {"jpde": {"median_all": 194.72, "median_post60": 194.82999999999998, "n_post60": 16}, "agent": {"median_all": 241.47, "median_post60": 241.47, "n_post60": 16}}}
+2026-10-25 23:08:07 CDT CELL A2 c1-r2 rc=0: {"tag": "BR2-A2-c1-r2", "concurrency": 1, "n": 65, "errors": 0, "agg_tok_s_all": 212.92, "agg_tok_s_post60": 215.12, "per_req": {"jpde": {"median_all": 200.34, "median_post60": 201.155, "n_post60": 16}, "agent": {"median_all": 238.725, "median_post60": 238.1, "n_post60": 16}}}
+2026-10-25 23:10:08 CDT CELL A2 c1-r3 rc=0: {"tag": "BR2-A2-c1-r3", "concurrency": 1, "n": 66, "errors": 0, "agg_tok_s_all": 213.5, "agg_tok_s_post60": 215.16, "per_req": {"jpde": {"median_all": 196.86, "median_post60": 196.28, "n_post60": 16}, "agent": {"median_all": 241.97, "median_post60": 239.54, "n_post60": 17}}}
+2026-10-25 23:14:48 CDT CELL A2 peerbench rc=0: {"peerbench": "~/dsv41/m3/br1/results-cardBR2/A2/peerbench-BR2-A2.json", "cells": 12, "ok": 12, "skipped": 0, "bad": []}
+2026-10-25 23:15:04 CDT GAUNTLET A2: 12 / 12
+2026-10-25 23:15:27 CDT CELL A2 turns rc=0: [BR2-A2] pass 1: tool-turn emitted 8/12, text-turn emitted 5/12
+2026-10-25 23:15:27 CDT TURNS A2: moved turns-BR2-A2.json into ~/dsv41/m3/br1/results-cardBR2/A2
+2026-10-25 23:15:27 CDT ERRCOUNT A2 0 (since 2026-10-26T03:53:59Z)
+2026-10-25 23:15:27 CDT ERRCOUNT A2-rtx 0 (since 2026-10-26T03:53:59Z)
+2026-10-25 23:15:27 CDT FOREIGN A2 cells: 0 (non-127.0.0.1 POST /v1 since 2026-10-26T03:53:59Z)
+2026-10-25 23:15:27 CDT WATCHDOG A2: alive True timeouts 0 trips 0
+2026-10-25 23:15:27 CDT ARM A2 cells took 1288s
+2026-10-25 23:15:27 CDT BR2 watchdog 2154250 stopped
+2026-10-25 23:15:29 CDT stop-and-keep dsv41-vllm-1017-BR2-A2
+2026-10-25 23:15:34 CDT stop-and-keep dsv41-vllm-1017-BR2-A2-rtx
+2026-10-25 23:16:08 CDT ISOLATE off (cardBR2-isolate removed)
+2026-10-25 23:16:09 CDT RESTORE start: RTX used=47MiB /dev/shm/vllm_peer_tier2=[-rw-r--r-- 1 root root 127541248 Oct 25 22:50 /dev/shm/vllm_peer_tier2] (reused, same layout; never deleted)
+2026-10-25 23:17:11 CDT RESTORE sidecar dsv41-vllm-1017-v25m-kvtier-rtx running=true after 63s: prepared 40 layers in 43s; 68.4 GB allocated
+2026-10-25 23:24:05 CDT BOUND dsv41-vllm-1017-v25m-kvtier after 414s
+2026-10-25 23:24:05 CDT LANE DARK ends (dsv41-vllm-1017-v25m-kvtier bound after 477s)
+2026-10-25 23:24:05 CDT RESTORE FACTS rowmap40=1 peer2=2 kvline=[GPU KV cache size: 4,400,013 tokens] kvdecl=1 kvtier=1 block=0 args_same=1 env_same=1 autotune=[Saved 117 configs (0 new]
+2026-10-25 23:24:05 CDT HEALTH restore: models_http=200 chat_http=200 (reasoning_effort low) content=[OK] sidecar=true
+2026-10-25 23:24:05 CDT re-arm watchdog: (cd ~/dsv41/m3) python3 ~/dsv41/m3/sidecar_watchdog.py --server dsv41-vllm-1017-v25m-kvtier --mode enforce --interval 1 --stall 2 --status ~/dsv41/m3/logs/sidecar_watchdog.status.json --log ~/dsv41/m3/logs/sidecar_watchdog.kvtier.log
+2026-10-25 23:24:09 CDT fail-stop watchdog armed pid 2202485 (ppid 1) on dsv41-vllm-1017-v25m-kvtier: python3 ~/dsv41/m3/sidecar_watchdog.py --server dsv41-vllm-1017-v25m-kvtier --mode enforce --interval 1 --stall 2 --status ~/dsv41/m3/logs/sidecar_watchdog.status.json --log ~/dsv41/m3/logs/sidecar_watchdog.kvtier.log  | log tail: 2026-10-25 23:24:05 CDT start v2 mode=enforce server=dsv41-vllm-1017-v25m-kvtier sidecar=dsv41-vllm-1017-v25m-kvtier-rtx rollback=None stall=2.0s interval=1.0s
+2026-10-25 23:24:09 CDT watchdog PPID 1 OK (reparented to init; survives this runner's EXIT trap)
+2026-10-25 23:24:10 CDT VERDICT rc=3 INVALID-CONTROL-A-A2 | BR2-INVALID-CONTROL-A-A2 | {"G0_binding": "FAIL", "G0b_foreign": "PASS", "G1_controls": "PASS", "G2_cells": "PASS", "G7_watchdog": "PASS"}
+2026-10-25 23:24:10 CDT kept dsv41-vllm-1017-BR2-A-BR2-INVALID-CONTROL-A-A2 (stopped)
+2026-10-25 23:24:11 CDT kept dsv41-vllm-1017-BR2-A-rtx-BR2-INVALID-CONTROL-A-A2 (stopped)
+2026-10-25 23:24:11 CDT kept dsv41-vllm-1017-BR2-K9-BR2-INVALID-CONTROL-A-A2 (stopped)
+2026-10-25 23:24:12 CDT kept dsv41-vllm-1017-BR2-K9-rtx-BR2-INVALID-CONTROL-A-A2 (stopped)
+2026-10-25 23:24:12 CDT kept dsv41-vllm-1017-BR2-A2-BR2-INVALID-CONTROL-A-A2 (stopped)
+2026-10-25 23:24:13 CDT kept dsv41-vllm-1017-BR2-A2-rtx-BR2-INVALID-CONTROL-A-A2 (stopped)

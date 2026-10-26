@@ -1,0 +1,565 @@
+#!/usr/bin/env python3
+"""br1_verdict.py — Card BR1 verdict (DSpark block verification vs sequential rejection sampling, A -> B -> A2). Pure stdlib.
+
+Usage:  br1_verdict.py <R> [--out verdict.json]   -> <R>/verdict.json + human table on stdout.
+        rc 0 PASS, 1 FAIL, 3 INVALID (control or B polluted / control missing), 2 no input.
+
+Shape (KV3 / recipe-factory adapter): {"result", "suffix", "gates": {name: [PASS|FAIL, text]}, ...}. A gate whose status is
+INVALID (a control cell missing or polluted) is emitted as ["FAIL", "INVALID-CONTROL(<arms>): ..."] in "gates" so the adapter
+shape stays PASS|FAIL; the true tri-state lives in "gate_status" {name: PASS|FAIL|INVALID} and "invalid_arms".
+UNMEASURED semantics (KV3): a missing cell on B = FAIL; a missing cell on a control = that gate INVALID.
+
+Why temperature 1.0 is primary: at af7f9488 block verification runs only for non-greedy rows (rejection_sampler_utils.py
+`USE_BLOCK_VERIFICATION and not is_greedy`); greedy rows accept iff draft == target argmax, so a temp-0 B is A by construction.
+
+Inputs (<R> = ~/dsv41/m3/br1/results-cardBR1, written by cardBR1_runner.sh):
+  <X>/facts.json, args.json, env.json, rtx-args.json, boot-autotune.log, boot-block.log    boot facts (X in A B A2)
+  args-before-<V25>.json, env-before-<V25>.json, args-before-<V25>-rtx.json                production ground truth
+  <X>/perclass-t1/perclass-table-BR1-<X>-t1.json (+ raw perclass-BR1-<X>-t1-r{1,2}-{c1,c8}.json)   temp 1.0 (G1, G2)
+  <X>/perclass-t0/perclass-table-BR1-<X>-t0.json                                         stock temp-0 window (G1, G2b)
+  <X>/mixed-BR1-<X>-c1-r<k>.json      ar_mixed_t.py C1 120 s at temp 1.0 (G3)
+  tf-compare-BR1-A-vs-BR1-B.json, tf-compare-BR1-A2-vs-BR1-B.json, tf-compare-BR1-A-vs-BR1-A2.json; <X>/tf-BR1-<X>.jsonl (G4)
+  flipsm-B-vs-A.txt, flipsm-B-vs-A2.txt, flipsm-A2-vs-A.txt   flips_margin_p2.py output, last line GATE ... (G4 margin)
+  gauntlet-<X>/summary.json (G5) ; <X>/turns-BR1-<X>.json (G6) ; <X>/wd.json, errcount-<X>[-rtx].txt (G7)
+  <X>/foreign-*.txt (G0b) ; <X>/metrics/<cell>-{start,end}.txt (annotation) ; mem.tsv ; restore-watchdog.json (annotation)
+"""
+from __future__ import annotations
+
+import argparse
+import datetime as dt
+import glob
+import json
+import os
+import re
+import statistics
+import sys
+from pathlib import Path
+
+ARMS = ("A", "B", "A2")
+CTRL = ("A", "A2")
+CLASSES = ("prose", "structured", "code", "shell_ops", "tool_json")
+MODES = ("c1", "c8")
+KV_EXPECT = "4,400,013"
+V25 = "dsv41-vllm-1017-v25m-kvtier"
+SPEC_B = ',"rejection_sample_method":"block"'
+CTRL_TOL = 0.06          # G1: |A - A2| / mean(A, A2) per class at C1 (both windows); C8 reported only (bimodal class)
+FLOOR = 0.02             # G2/G2b/G3 bar = max(2 %, 1.5 x |A - A2| spread)
+SPREAD_K = 1.5
+TF_ABS = 0.03            # G4 raw top-1 flips <= 3 %
+TF_FLOOR_K = 1.5         # ... and <= 1.5 x the A-vs-A2 floor
+GAUNTLET_N = 12
+SHORT = {"G0_binding": "G0", "G0b_foreign": "G0b", "G1_controls": "G1", "G2_perclass_t1": "G2", "G2b_t0_noop": "G2b",
+         "G3_mixed_c1_t1": "G3", "G4_tf": "G4", "G5_gauntlet": "G5", "G6_turns": "G6", "G7_watchdog": "G7"}
+
+
+def jl(p):
+    try:
+        return json.loads(Path(p).read_text())
+    except Exception:  # noqa: BLE001
+        return None
+
+
+def rint(p):
+    try:
+        return int(Path(p).read_text().strip().split()[0])
+    except Exception:  # noqa: BLE001
+        return None
+
+
+def pct(x, nd=2):
+    return "n/a" if x is None else f"{x * 100:+.{nd}f}%"
+
+
+def mean(xs):
+    xs = [x for x in xs if x is not None]
+    return statistics.mean(xs) if xs else None
+
+
+def spec_of(args):
+    if not isinstance(args, list) or "--speculative-config" not in args:
+        return None
+    i = args.index("--speculative-config")
+    return args[i + 1] if i + 1 < len(args) else None
+
+
+def metrics_file(p):
+    """sum vllm:spec_decode_* counters by name (all label sets)"""
+    out = {}
+    try:
+        for ln in Path(p).read_text().splitlines():
+            if not ln.startswith("vllm:spec_decode_"):
+                continue
+            name = ln.split("{", 1)[0].split(" ", 1)[0]
+            try:
+                out[name] = out.get(name, 0.0) + float(ln.split()[-1])
+            except ValueError:
+                pass
+    except Exception:  # noqa: BLE001
+        return None
+    return out
+
+
+def mdelta(A, cell):
+    s, e = metrics_file(A / "metrics" / f"{cell}-start.txt"), metrics_file(A / "metrics" / f"{cell}-end.txt")
+    if s is None or e is None:
+        return None
+    g = lambda d, k: d.get(f"vllm:spec_decode_{k}_total", d.get(f"vllm:spec_decode_{k}", 0.0))
+    dr, dt_, ac = g(e, "num_drafts") - g(s, "num_drafts"), g(e, "num_draft_tokens") - g(s, "num_draft_tokens"), \
+        g(e, "num_accepted_tokens") - g(s, "num_accepted_tokens")
+    return {"drafts": dr, "draft_tokens": dt_, "accepted": ac,
+            "acc_per_draft": (ac / dr) if dr else None, "tokens_per_verify_step": (1 + ac / dr) if dr else None,
+            "accept_rate": (ac / dt_) if dt_ else None}
+
+
+TS = re.compile(r"(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}),(\d{3})")
+
+
+def autotune(p):
+    d = {"loaded": None, "saved": None, "loaded_dir": None, "saved_dir": None, "elapsed_s": None, "pairs": 0}
+    try:
+        L = Path(p).read_text().splitlines()
+    except Exception:  # noqa: BLE001
+        return d
+    ts_s, ts_e = [], []
+    for ln in L:
+        m = re.search(r"Loaded (\d+) configs from (\S+)", ln)
+        if m:
+            d["loaded"], d["loaded_dir"] = int(m.group(1)), m.group(2)
+        m = re.search(r"Saved (\d+) configs to (\S+)", ln)
+        if m:
+            d["saved"], d["saved_dir"] = int(m.group(1)), m.group(2)
+        t = TS.search(ln)
+        if t and "Autotuning process starts" in ln:
+            ts_s.append(dt.datetime.strptime(t.group(1), "%Y-%m-%d %H:%M:%S"))
+        if t and "Autotuning process ends" in ln:
+            ts_e.append(dt.datetime.strptime(t.group(1), "%Y-%m-%d %H:%M:%S"))
+    d["pairs"] = min(len(ts_s), len(ts_e))
+    if ts_s and ts_e:
+        d["elapsed_s"] = (max(ts_e) - min(ts_s)).total_seconds()
+    d["hash_hit_shape"] = (d["loaded"] is not None and d["loaded"] == d["saved"] and d["loaded_dir"] == d["saved_dir"])
+    return d
+
+
+def load_perclass(A, arm, win):
+    tag = f"BR1-{arm}-{win}"
+    t = jl(A / f"perclass-{win}" / f"perclass-table-{tag}.json")
+    out = {"table": t is not None, "cells": {}, "x3": {}, "hygiene": (t or {}).get("hygiene"), "acc": {}}
+    S = (t or {}).get("summary") or {}
+    for c in CLASSES:
+        for m in MODES:
+            out["cells"][(c, m)] = ((S.get(c) or {}).get(m) or {}).get("mean")
+        out["x3"][c] = ((S.get(c) or {}).get("x3") or {}).get("accept")
+        for m in MODES:   # pooled acc/step from the raw files (/metrics deltas recorded by perclass_decode*.py)
+            acc = steps = 0.0; ok = False
+            for r in ("r1", "r2"):
+                raw = jl(A / f"perclass-{win}" / f"perclass-{tag}-{r}-{m}.json")
+                x = ((raw or {}).get("res") or {}).get(c) or {}
+                if x.get("draft_steps"):
+                    acc += x.get("accepted") or 0; steps += x["draft_steps"]; ok = True
+            out["acc"][(c, m)] = (acc / steps) if (ok and steps) else None
+    return out
+
+
+def load_arm(R, arm):
+    A = R / arm
+    c = {"present": A.is_dir(), "facts": jl(A / "facts.json"), "args": jl(A / "args.json"), "env": jl(A / "env.json"),
+         "rtx_args": jl(A / "rtx-args.json"), "autotune": autotune(A / "boot-autotune.log")}
+    try:
+        c["block_boot_sample"] = Path(A / "boot-block.log").read_text().splitlines()[:3]
+    except Exception:  # noqa: BLE001
+        c["block_boot_sample"] = []
+    c["pc"] = {w: load_perclass(A, arm, w) for w in ("t1", "t0")}
+    reps = []
+    for f in sorted(glob.glob(str(A / f"mixed-BR1-{arm}-c1-r*.json")), key=lambda s: int(s.rsplit("-r", 1)[1].split(".")[0])):
+        d = jl(f)
+        if d and d.get("agg_tok_s_all") is not None:
+            reps.append({"rep": int(f.rsplit("-r", 1)[1].split(".")[0]), "agg_tok_s_all": d["agg_tok_s_all"],
+                         "errors": d.get("errors", 0), "n": d.get("n"), "temperature": (d.get("sampling") or {}).get("temperature")})
+    c["mixed"] = reps
+    c["mixed_mean"] = mean([r["agg_tok_s_all"] for r in reps])
+    c["tf_capture"] = (A / f"tf-BR1-{arm}.jsonl").exists() and (A / f"tf-BR1-{arm}.jsonl").stat().st_size > 0
+    c["gauntlet"] = jl(R / f"gauntlet-{arm}" / "summary.json")
+    t = jl(A / f"turns-BR1-{arm}.json")
+    if t and t.get("passes"):
+        c["turns"] = [{"tool_emitted": sum(1 for r in p if r.get("has_tool") and r.get("emitted")),
+                       "tool_turns": sum(1 for r in p if r.get("has_tool")),
+                       "text_emitted": sum(1 for r in p if not r.get("has_tool") and r.get("emitted")),
+                       "errors": sum(1 for r in p if r.get("error"))} for p in t["passes"]]
+    else:
+        c["turns"] = None
+    c["wd"] = jl(A / "wd.json")
+    c["err_server"] = rint(R / f"errcount-{arm}.txt")
+    c["err_sidecar"] = rint(R / f"errcount-{arm}-rtx.txt")
+    fr = {}
+    for f in glob.glob(str(A / "foreign-*.txt")):
+        fr[Path(f).stem.split("-", 1)[1]] = rint(f)
+    c["foreign"] = fr
+    c["m_pct1"] = mdelta(A, "pct1")
+    mx = [mdelta(A, f"c1-r{k}") for k in (1, 2, 3)]
+    mx = [m for m in mx if m]
+    if mx:
+        ac, dr = sum(m["accepted"] for m in mx), sum(m["drafts"] for m in mx)
+        c["m_mixed"] = {"accepted": ac, "drafts": dr, "tokens_per_verify_step": (1 + ac / dr) if dr else None}
+    else:
+        c["m_mixed"] = None
+    return c
+
+
+def load_mem(R):
+    out = {}
+    p = R / "mem.tsv"
+    if p.exists():
+        for ln in p.read_text().splitlines():
+            parts = ln.split()
+            if len(parts) == 3:
+                try:
+                    out.setdefault(parts[1], []).append(float(parts[2]))
+                except ValueError:
+                    pass
+    return {k: min(v) for k, v in out.items()}
+
+
+class G:
+    """gate accumulator: status PASS/FAIL/INVALID + arms that make it INVALID"""
+
+    def __init__(self):
+        self.fail, self.inv, self.txt = False, set(), []
+
+    def status(self):
+        return "INVALID" if self.inv else ("FAIL" if self.fail else "PASS")
+
+
+def verdict(R):
+    cells = {a: load_arm(R, a) for a in ARMS}
+    prod_args = jl(R / f"args-before-{V25}.json")
+    prod_env = jl(R / f"env-before-{V25}.json")
+    prod_rtx = jl(R / f"args-before-{V25}-rtx.json")
+    gs = {}
+    calc = {}
+
+    # ---- G0 binding + wiring: every arm bound, kv tokens, block_in_args 1/0/0, args/env identical to production but the spec
+    g = G()
+    for a in ARMS:
+        f = cells[a]["facts"]
+        if not f or not f.get("bound_at"):
+            (g.inv.add(a) if a in CTRL else setattr(g, "fail", True)); g.txt.append(f"{a}: NOT BOUND"); continue
+        want = 1 if a == "B" else 0
+        bits = [f"kv={f.get('kv_tokens') or 'MISSING'}", f"block_in_args={f.get('block_in_args')}(want {want})"]
+        if f.get("kv_tokens") != KV_EXPECT:
+            g.fail = True; bits.append("KV!")
+        if f.get("block_in_args") != want:
+            g.fail = True; bits.append("BLOCK!")
+        args = cells[a]["args"]
+        if prod_args is None or args is None:
+            g.fail = True; bits.append("args UNMEASURED")
+        elif a in CTRL:
+            ok = args == prod_args
+            bits.append(f"args==prod {ok}")
+            g.fail |= not ok
+        else:
+            ps, bs = spec_of(prod_args), spec_of(args)
+            rest_ok = len(args) == len(prod_args) and all(x == y for x, y in zip(args, prod_args) if x != bs or y != ps)
+            spec_ok = ps is not None and bs == ps[:-1] + SPEC_B + "}"
+            try:
+                spec_ok = spec_ok and json.loads(bs) == dict(json.loads(ps), rejection_sample_method="block")
+            except Exception:  # noqa: BLE001
+                spec_ok = False
+            bits.append(f"args==prod-except-spec {rest_ok} spec==prod+block {spec_ok}")
+            g.fail |= not (rest_ok and spec_ok)
+        env, rtx = cells[a]["env"], cells[a]["rtx_args"]
+        eok = (env is not None and prod_env is not None and env == prod_env)
+        rok = (rtx is not None and prod_rtx is not None and rtx == prod_rtx)
+        bits += [f"env==prod {eok}", f"rtx_args==prod {rok}"]
+        g.fail |= not (eok and rok)
+        g.txt.append(f"{a}: " + " ".join(bits))
+    at = {a: cells[a]["autotune"] for a in ARMS}
+    bs = {a: (cells[a]["facts"] or {}).get("boot_s") for a in ARMS}
+    cb = mean([bs[a] for a in CTRL])
+    hh = " | hash-hit shape (info): " + "; ".join(
+        f"{a} loaded={at[a]['loaded']} saved={at[a]['saved']} same_dir={at[a]['loaded_dir'] == at[a]['saved_dir'] and at[a]['loaded_dir'] is not None} "
+        f"autotune_span={at[a]['elapsed_s']}s boot={bs[a]}s" for a in ARMS)
+    dirs = {at[a]["loaded_dir"] for a in ARMS if at[a]["loaded_dir"]}
+    hh += f"; one autotune key across arms: {len(dirs) == 1}"
+    if bs["B"] and cb:
+        hh += f"; B boot / controls = {bs['B'] / cb:.2f} (<= 1.5 expected)"
+    gs["G0_binding"] = (g, "; ".join(g.txt) + hh)
+
+    # ---- G0b foreign POSTs (non-loopback) per arm
+    g = G(); b_foreign = False
+    for a in ARMS:
+        fr = cells[a]["foreign"]
+        n = sum(v or 0 for v in fr.values()) if fr else None
+        g.txt.append(f"{a}={'UNMEASURED' if n is None else n} {fr or ''}")
+        if n is None:
+            if a in CTRL and cells[a]["facts"]:
+                g.inv.add(a)
+            elif a == "B" and cells[a]["facts"]:
+                g.fail = True
+        elif n > 0:
+            if a in CTRL:
+                g.inv.add(a)
+            else:
+                b_foreign = True; g.fail = True
+    gs["G0b_foreign"] = (g, "non-127.0.0.1 POST /v1 per arm: " + "; ".join(g.txt) + (" -> B INVALID" if b_foreign else ""))
+
+    # ---- G1 control agreement: per class C1, both windows, |A-A2|/mean <= 6 %; C8 reported only
+    g = G(); c8 = []
+    for w in ("t1", "t0"):
+        for c in CLASSES:
+            va, va2, vb = (cells[x]["pc"][w]["cells"][(c, "c1")] for x in ("A", "A2", "B"))
+            if va is None or va2 is None:
+                for x, v in (("A", va), ("A2", va2)):
+                    if v is None:
+                        g.inv.add(x)
+                g.txt.append(f"{w}/{c}/c1 UNMEASURED"); continue
+            d = abs(va - va2) / ((va + va2) / 2)
+            if d > CTRL_TOL:
+                # B is a neutral referee only in the temp-0 window (greedy rows: B == A by construction). At temp 1.0 B is
+                # expected to differ, so a t1 disagreement cannot name the odd control -> both.
+                odd = ("A" if abs(vb - va) > abs(vb - va2) else "A2") if (vb is not None and w == "t0") else None
+                g.inv.update([odd] if odd else ["A", "A2"])
+                g.txt.append(f"{w}/{c}/c1 A={va:.1f} A2={va2:.1f} d={d * 100:.1f}% > 6% (odd={odd or 'A,A2'})")
+            else:
+                g.txt.append(f"{w}/{c}/c1 d={d * 100:.1f}%")
+            ca, ca2 = cells["A"]["pc"][w]["cells"][(c, "c8")], cells["A2"]["pc"][w]["cells"][(c, "c8")]
+            if ca and ca2:
+                c8.append(f"{w}/{c}/c8 d={abs(ca - ca2) / ((ca + ca2) / 2) * 100:.1f}%")
+    gs["G1_controls"] = (g, "C1 per class: " + "; ".join(g.txt) + " | C8 (info, bimodal class): " + "; ".join(c8))
+
+    # ---- G2 PRIMARY per-class decode at temp 1.0, C1 and C8: B >= ctrl x (1 - max(2%, 1.5 x |A-A2| spread)) vs BOTH controls
+    g = G(); rows = []
+    for c in CLASSES:
+        for m in MODES:
+            va, va2, vb = (cells[x]["pc"]["t1"]["cells"][(c, m)] for x in ("A", "A2", "B"))
+            if vb is None:
+                g.fail = True; g.txt.append(f"{c}/{m} B UNMEASURED"); continue
+            if va is None or va2 is None:
+                g.inv.update([x for x, v in (("A", va), ("A2", va2)) if v is None]); g.txt.append(f"{c}/{m} control UNMEASURED"); continue
+            cm = (va + va2) / 2; sp = abs(va - va2) / cm; bar = max(FLOOR, SPREAD_K * sp)
+            ok = vb >= va * (1 - bar) and vb >= va2 * (1 - bar)
+            g.fail |= not ok
+            rows.append({"class": c, "mode": m, "A": va, "A2": va2, "B": vb, "ratio": vb / cm, "spread": sp, "bar": bar, "pass": ok})
+            g.txt.append(f"{c}/{m} B/ctrl={vb / cm:.3f} (A {va:.1f} A2 {va2:.1f} B {vb:.1f}; bar -{bar * 100:.1f}%){'' if ok else ' FAIL'}")
+    calc["G2_rows"] = rows
+    gs["G2_perclass_t1"] = (g, "temp 1.0 forced-length decode tok/s: " + "; ".join(g.txt))
+
+    # ---- G2b temp-0 no-op sanity: B within control noise at C1 per class (two-sided); C8 info
+    g = G(); info = []
+    for c in CLASSES:
+        for m in MODES:
+            va, va2, vb = (cells[x]["pc"]["t0"]["cells"][(c, m)] for x in ("A", "A2", "B"))
+            if m == "c8":
+                if None not in (va, va2, vb):
+                    info.append(f"{c}/c8 B/ctrl={vb / ((va + va2) / 2):.3f}")
+                continue
+            if vb is None:
+                g.fail = True; g.txt.append(f"{c} B UNMEASURED"); continue
+            if va is None or va2 is None:
+                g.inv.update([x for x, v in (("A", va), ("A2", va2)) if v is None]); g.txt.append(f"{c} control UNMEASURED"); continue
+            cm = (va + va2) / 2; bar = max(FLOOR, SPREAD_K * abs(va - va2) / cm); r = vb / cm - 1
+            ok = abs(r) <= bar
+            g.fail |= not ok
+            g.txt.append(f"{c}/c1 B {pct(r, 1)} (|.| bar {bar * 100:.1f}%){'' if ok else ' OUTSIDE NOISE'}")
+    gs["G2b_t0_noop"] = (g, "stock temp-0 window (greedy rows never use block verification; B must equal A within noise): "
+                         + "; ".join(g.txt) + " | C8 info: " + "; ".join(info))
+
+    # ---- G3 mixed C1 at temp 1.0
+    g = G()
+    mb, ma, ma2 = cells["B"]["mixed_mean"], cells["A"]["mixed_mean"], cells["A2"]["mixed_mean"]
+    nb = len(cells["B"]["mixed"])
+    if mb is None or nb < 2:
+        g.fail = True; g.txt.append(f"B UNMEASURED (reps={nb}, need >= 2)")
+    elif ma is None or ma2 is None or len(cells["A"]["mixed"]) < 2 or len(cells["A2"]["mixed"]) < 2:
+        g.inv.update([x for x in CTRL if cells[x]["mixed_mean"] is None or len(cells[x]["mixed"]) < 2])
+        g.txt.append("control UNMEASURED (need >= 2 reps each)")
+    else:
+        cm = (ma + ma2) / 2; sp = abs(ma - ma2) / cm; bar = max(FLOOR, SPREAD_K * sp); r = mb / cm - 1
+        g.fail = r < -bar
+        calc["G3"] = {"B": mb, "A": ma, "A2": ma2, "ctrl_mean": cm, "spread": sp, "bar": bar, "rel": r}
+        g.txt.append(f"B mean {mb:.2f} vs ctrl {cm:.2f} ({pct(r)}; A {ma:.2f} A2 {ma2:.2f}; bar -{bar * 100:.2f}%) "
+                     f"reps B={[round(x['agg_tok_s_all'], 1) for x in cells['B']['mixed']]} errors B={sum(x['errors'] or 0 for x in cells['B']['mixed'])}")
+    gs["G3_mixed_c1_t1"] = (g, "ar_mixed_t C1 agg_tok_s_all at temp 1.0: " + "; ".join(g.txt))
+
+    # ---- G4 TF (teacher-forced; temperature-independent)
+    g = G()
+    if not cells["B"]["tf_capture"]:
+        g.fail = True; g.txt.append("B capture MISSING")
+    else:
+        miss = [a for a in CTRL if not cells[a]["tf_capture"]]
+        fl = jl(R / "tf-compare-BR1-A-vs-BR1-A2.json")
+        cmp = {a: jl(R / f"tf-compare-BR1-{a}-vs-BR1-B.json") for a in CTRL}
+        if miss:
+            g.inv.update(miss); g.txt.append(f"control capture MISSING {miss}")
+        elif fl is None or any(v is None for v in cmp.values()):
+            g.fail = True; g.txt.append("compare file(s) MISSING with captures present (runner fault)")
+        else:
+            floor = fl.get("top1_flip_rate")
+            for a in CTRL:
+                rate = cmp[a].get("top1_flip_rate")
+                ok = rate is not None and rate <= TF_ABS and rate <= TF_FLOOR_K * floor
+                g.fail |= not ok
+                g.txt.append(f"B-vs-{a} flips {rate * 100:.3f}% (bar <=3% and <= {TF_FLOOR_K} x floor {floor * 100:.3f}% = {TF_FLOOR_K * floor * 100:.3f}%; "
+                             f"token-mismatch docs {cmp[a].get('docs_token_mismatch')}){'' if ok else ' FAIL'}")
+            mg = []
+            for a in CTRL:
+                p = R / f"flipsm-B-vs-{a}.txt"
+                last = (p.read_text().strip().splitlines() or [""])[-1] if p.exists() else ""
+                m = re.search(r"hi_agent_tool=(\d+)", last)
+                sk = re.search(r"skipped_docs=(\d+)", last)
+                mg.append((a, int(m.group(1)) if m else None, sk.group(1) if sk else "?"))
+            if all(x[1] is not None for x in mg):
+                bad = [x for x in mg if x[1] != 0]
+                g.fail |= bool(bad)
+                g.txt.append("margin flips at ref p>=0.9 on agent/tool docs: " + ", ".join(f"vs {a}={n} (skipped_docs {s})" for a, n, s in mg)
+                             + ("" if not bad else " FAIL"))
+            else:
+                g.txt.append("margin flips UNMEASURED (flips_margin_p2 output missing/unparsable; not failing)")
+    gs["G4_tf"] = (g, "; ".join(g.txt))
+
+    # ---- G5 gauntlet 12/12 on B (controls reported)
+    g = G()
+    gb = cells["B"]["gauntlet"]
+    gc = {a: (cells[a]["gauntlet"] or {}) for a in CTRL}
+    if not gb:
+        g.fail = True; g.txt.append("B UNMEASURED")
+    else:
+        s, t = gb.get("success_count"), gb.get("task_count")
+        g.fail = not (s == GAUNTLET_N and t == GAUNTLET_N); g.txt.append(f"B {s}/{t}")
+    g.txt.append("controls " + ", ".join(f"{a} {gc[a].get('success_count')}/{gc[a].get('task_count')}" for a in CTRL) + " (temp 0: run_suite.py)")
+    gs["G5_gauntlet"] = (g, "; ".join(g.txt))
+
+    # ---- G6 replay_turns tool-call emission per pass within [min, max] of A and A2 passes
+    g = G()
+    tb = cells["B"]["turns"]
+    tc = [p["tool_emitted"] for a in CTRL for p in (cells[a]["turns"] or [])]
+    if not tb:
+        g.fail = True; g.txt.append("B UNMEASURED")
+    elif any(cells[a]["turns"] is None for a in CTRL):
+        g.inv.update([a for a in CTRL if cells[a]["turns"] is None]); g.txt.append("control UNMEASURED")
+    else:
+        lo, hi = min(tc), max(tc)
+        be = [p["tool_emitted"] for p in tb]; berr = sum(p["errors"] for p in tb)
+        ok = all(lo <= x <= hi for x in be) and berr == 0
+        g.fail = not ok
+        g.txt.append(f"B per pass {be}/{tb[0]['tool_turns']} vs control range [{lo},{hi}] (A {[p['tool_emitted'] for p in cells['A']['turns']]}, "
+                     f"A2 {[p['tool_emitted'] for p in cells['A2']['turns']]}); B errors {berr}; text-turn emissions B "
+                     f"{[p['text_emitted'] for p in tb]} (temp 0: replay_turns.py)")
+    gs["G6_turns"] = (g, "; ".join(g.txt))
+
+    # ---- G7 watchdog + FF errors (sidecar FF reported)
+    g = G()
+    for a in ARMS:
+        w, e = cells[a]["wd"], cells[a]["err_server"]
+        if not cells[a]["facts"] and a in CTRL:
+            g.inv.add(a); g.txt.append(f"{a}: not bound"); continue
+        if not w or w.get("timeouts") is None or w.get("trips") is None or e is None:
+            (g.inv.add(a) if a in CTRL else setattr(g, "fail", True)); g.txt.append(f"{a}: UNMEASURED (wd={bool(w)} err={e})"); continue
+        bad = w["timeouts"] != 0 or w["trips"] != 0 or not w.get("alive_at_collect") or e != 0
+        if bad:
+            (g.inv.add(a) if a in CTRL else setattr(g, "fail", True))
+        g.txt.append(f"{a}: timeouts={w['timeouts']} trips={w['trips']} alive={w.get('alive_at_collect')} ff={e} (sidecar ff={cells[a]['err_sidecar']}){' BAD' if bad else ''}")
+    gs["G7_watchdog"] = (g, "; ".join(g.txt))
+
+    # ---- result
+    status = {k: v[0].status() for k, v in gs.items()}
+    inv = sorted({a for v in gs.values() for a in v[0].inv}, key=ARMS.index)
+    failed = [k for k, s in status.items() if s == "FAIL"]
+    if inv:
+        res = "INVALID-CONTROL-" + "-".join(inv); suffix = "BR1-" + res
+    elif b_foreign:
+        res = "INVALID-B"; suffix = "BR1-INVALID-B"
+    elif failed:
+        res = "FAIL"; suffix = "BR1FAIL-" + "-".join(SHORT[k] for k in failed)
+    else:
+        res = "PASS"; suffix = "BR1PASS"
+    gates = {}
+    for k, (g, txt) in gs.items():
+        s = status[k]
+        gates[k] = ["PASS", txt] if s == "PASS" else ["FAIL", (f"INVALID-CONTROL({','.join(sorted(g.inv, key=ARMS.index))}): " if s == "INVALID" else "") + txt]
+
+    # ---- annotations (NOT gates): acceptance is not comparable across verification methods
+    ann = {}
+    tps = {a: (cells[a]["m_pct1"] or {}).get("tokens_per_verify_step") for a in ARMS}
+    tpm = {a: (cells[a]["m_mixed"] or {}).get("tokens_per_verify_step") for a in ARMS}
+    ctps, ctpm = mean([tps[a] for a in CTRL]), mean([tpm[a] for a in CTRL])
+    ann["tokens_per_verify_step_t1"] = {"pct1_window": tps, "mixed_c1": tpm,
+                                        "B_over_ctrl_pct1": (tps["B"] / ctps) if (tps["B"] and ctps) else None,
+                                        "B_over_ctrl_mixed": (tpm["B"] / ctpm) if (tpm["B"] and ctpm) else None}
+    pcs = {}
+    for c in CLASSES:
+        for m in MODES:
+            v = {a: cells[a]["pc"]["t1"]["acc"][(c, m)] for a in ARMS}
+            cm = mean([v[a] for a in CTRL])
+            pcs[f"{c}/{m}"] = {"B": None if v["B"] is None else 1 + v["B"], "ctrl": None if cm is None else 1 + cm}
+    ann["tokens_per_verify_step_t1_per_class"] = pcs
+    ann["x3_accept_canary"] = {w: {c: {a: cells[a]["pc"][w]["x3"][c] for a in ARMS} for c in CLASSES} for w in ("t1", "t0")}
+    ann["perclass_hygiene"] = {f"{a}/{w}": cells[a]["pc"][w]["hygiene"] for a in ARMS for w in ("t1", "t0")}
+    ann["boot_block_lines"] = {a: cells[a]["block_boot_sample"] for a in ARMS}
+    ann["mem_min_by_phase"] = load_mem(R)
+    ann["restore_watchdog"] = jl(R / "restore-watchdog.json")
+    calc["G2_ratio_by_cell"] = {f"{r['class']}/{r['mode']}": round(r["ratio"], 4) for r in rows}
+    slim = {a: {"facts": cells[a]["facts"], "autotune": cells[a]["autotune"], "mixed": cells[a]["mixed"],
+                "perclass_t1": {f"{c}/{m}": cells[a]["pc"]["t1"]["cells"][(c, m)] for c in CLASSES for m in MODES},
+                "perclass_t0": {f"{c}/{m}": cells[a]["pc"]["t0"]["cells"][(c, m)] for c in CLASSES for m in MODES},
+                "turns": cells[a]["turns"], "wd": {k: (cells[a]["wd"] or {}).get(k) for k in ("timeouts", "trips", "alive_at_collect")},
+                "errcount_server": cells[a]["err_server"], "errcount_sidecar": cells[a]["err_sidecar"], "foreign": cells[a]["foreign"],
+                "metrics_pct1": cells[a]["m_pct1"], "metrics_mixed": cells[a]["m_mixed"]} for a in ARMS}
+    return {"card": "BR1 block verification", "result": res, "suffix": suffix, "gates": gates, "gate_status": status,
+            "invalid_arms": inv, "valid": not inv and not b_foreign, "annotations": ann, "calc": calc, "cells": slim, "R": str(R)}
+
+
+def f2(x, nd=1):
+    return "-" if x is None else (f"{x:.{nd}f}" if isinstance(x, (int, float)) else str(x))
+
+
+def table(v):
+    L = [f"Card BR1 verdict: {v['result']}   suffix {v['suffix']}", "",
+         "| gate | status | detail |", "|---|---|---|"]
+    for k, (r, t) in v["gates"].items():
+        L.append(f"| {k} | {v['gate_status'][k]} | {t} |")
+    c = v["cells"]
+    L += ["", "| arm | KV tokens | block_in_args | boot s | mixed C1 t1 mean | t1 prose C1 | t1 tool_json C1 | t0 prose C1 | wd t/trips | ff | foreign |",
+          "|---|---|---|---|---|---|---|---|---|---|---|"]
+    for a in ARMS:
+        x = c[a]; f = x["facts"] or {}
+        L.append(f"| {a} | {f.get('kv_tokens', '-')} | {f.get('block_in_args', '-')} | {f.get('boot_s', '-')} | "
+                 f"{f2(mean([r['agg_tok_s_all'] for r in x['mixed']]), 2)} | {f2(x['perclass_t1']['prose/c1'])} | "
+                 f"{f2(x['perclass_t1']['tool_json/c1'])} | {f2(x['perclass_t0']['prose/c1'])} | {x['wd'].get('timeouts')}/{x['wd'].get('trips')} | "
+                 f"{x['errcount_server']} | {sum(vv or 0 for vv in x['foreign'].values()) if x['foreign'] else '-'} |")
+    t = v["annotations"]["tokens_per_verify_step_t1"]
+    L += ["", "ANNOTATION (not a gate) — accepted tokens per verify step at temp 1.0 (1 + accepted/drafts from /metrics):",
+          "  pct1 window: " + ", ".join(f"{a}={f2(t['pct1_window'][a], 3)}" for a in ARMS)
+          + f"  B/ctrl={f2(t['B_over_ctrl_pct1'], 3)};  mixed C1: " + ", ".join(f"{a}={f2(t['mixed_c1'][a], 3)}" for a in ARMS)
+          + f"  B/ctrl={f2(t['B_over_ctrl_mixed'], 3)}",
+          "  per class (B vs ctrl mean): " + "; ".join(f"{k} {f2(x['B'], 2)}/{f2(x['ctrl'], 2)}"
+                                                       for k, x in v["annotations"]["tokens_per_verify_step_t1_per_class"].items()),
+          "ANNOTATION — x3 acceptance canary (agent_fixture_x3, temp 0, inside each window): " + "; ".join(
+              f"{w}/{cl} " + "/".join(f2(v['annotations']['x3_accept_canary'][w][cl][a], 3) for a in ARMS)
+              for w in ("t1",) for cl in CLASSES) + " (A/B/A2)",
+          f"ANNOTATION — G2 B/mean(A,A2) by cell: {v['calc'].get('G2_ratio_by_cell')}",
+          f"ANNOTATION — production watchdog after restore: {v['annotations']['restore_watchdog']}"]
+    return "\n".join(L)
+
+
+def main():
+    ap = argparse.ArgumentParser()
+    ap.add_argument("R")
+    ap.add_argument("--out")
+    a = ap.parse_args()
+    R = Path(a.R)
+    if not R.is_dir():
+        print(f"no results dir {R}", file=sys.stderr)
+        return 2
+    v = verdict(R)
+    out = Path(a.out) if a.out else R / "verdict.json"
+    tmp = str(out) + ".tmp"
+    with open(tmp, "w") as f:
+        json.dump(v, f, indent=1, default=str)
+        f.write("\n")
+    os.replace(tmp, out)
+    print(table(v))
+    return 0 if v["result"] == "PASS" else (1 if v["result"] == "FAIL" else 3)
+
+
+if __name__ == "__main__":
+    sys.exit(main())

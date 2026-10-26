@@ -1,0 +1,98 @@
+2026-10-25 21:47:26 CDT START perclass_run ARM=BR2-A-t1 OUTDIR=~/dsv41/m3/br1/results-cardBR2/A/perclass-t1 PROMPTS=~/dsv41/bench/perclass_prompts.jsonl sha1=618898aac432 FL_MAP={"prose":256,"structured":256,"code":256,"shell_ops":256,"tool_json":256} TEMP=1.0 SEED=42 TOP_P=1.0 DEC=~/dsv41/m3/br1/br2_perclass_decode_t.py sha1=0830fbe43702
+2026-10-25 21:47:27 CDT serving: dsv41-vllm-1017-BR2-A 3af6a45b060d Up 7 minutes|dsv41-vllm-1017-BR2-A-rtx 3af6a45b060d Up 8 minutes|
+2026-10-25 21:47:27 CDT lane idle check: running=0
+2026-10-25 21:47:27 CDT RUN --tag BR2-A-t1-nat --mode c1 --natural --fl 384
+[BR2-A-t1-nat c1-nat] prose      n=40 tok=  7417 decode=284.24 tok/s (stream median 284.16) TPOT=3.519ms accept=0.3986 acc/step=1.993 foreign_tok=0.0 maxrun=1.0/1 err=0 exact=None
+[BR2-A-t1-nat c1-nat] structured n=40 tok=  8663 decode=285.91 tok/s (stream median 296.495) TPOT=3.373ms accept=0.4026 acc/step=2.013 foreign_tok=0.0 maxrun=1.0/1 err=0 exact=None
+[BR2-A-t1-nat c1-nat] code       n=40 tok=  5732 decode=374.09 tok/s (stream median 454.395) TPOT=2.202ms accept=0.6066 acc/step=3.033 foreign_tok=0.0 maxrun=1.0/1 err=0 exact=None
+[BR2-A-t1-nat c1-nat] shell_ops  n=40 tok=  5736 decode=423.28 tok/s (stream median 465.435) TPOT=2.149ms accept=0.7153 acc/step=3.577 foreign_tok=0.0 maxrun=1.0/1 err=0 exact=None
+[BR2-A-t1-nat c1-nat] tool_json  n=40 tok=  4504 decode=378.56 tok/s (stream median 409.89) TPOT=2.439ms accept=0.6147 acc/step=3.073 foreign_tok=0.0 maxrun=1.0/1 err=0 exact=None
+### perclass BR2-A-t1-nat c1-nat (2026-10-25T21:47:27-0500)
+
+| class | n | tokens | decode tok/s (pooled) | stream median tok/s | TPOT ms | TTFT s | accept | acc/step | foreign tok | max running |
+|---|---|---|---|---|---|---|---|---|---|---|
+| prose | 40 | 7417 | 284.24 | 284.16 | 3.519 | 0.149 | 0.3986 | 1.993 | 0.0 | 1/1 |
+| structured | 40 | 8663 | 285.91 | 296.495 | 3.373 | 0.152 | 0.4026 | 2.013 | 0.0 | 1/1 |
+| code | 40 | 5732 | 374.09 | 454.395 | 2.202 | 0.154 | 0.6066 | 3.033 | 0.0 | 1/1 |
+| shell_ops | 40 | 5736 | 423.28 | 465.435 | 2.149 | 0.163 | 0.7153 | 3.577 | 0.0 | 1/1 |
+| tool_json | 40 | 4504 | 378.56 | 409.89 | 2.439 | 0.152 | 0.6147 | 3.073 | 0.0 | 1/1 |
+2026-10-25 21:49:29 CDT RUN --tag BR2-A-t1-r1 --mode c1 --fl-map {"prose":256,"structured":256,"code":256,"shell_ops":256,"tool_json":256}
+[BR2-A-t1-r1 c1] prose      n=40 tok= 10240 decode=277.65 tok/s (stream median 268.115) TPOT=3.73ms accept=0.3841 acc/step=1.921 foreign_tok=0.0 maxrun=1.0/1 err=0 exact=True
+[BR2-A-t1-r1 c1] structured n=40 tok= 10240 decode=282.56 tok/s (stream median 276.55) TPOT=3.624ms accept=0.3989 acc/step=1.994 foreign_tok=0.0 maxrun=1.0/1 err=0 exact=True
+[BR2-A-t1-r1 c1] code       n=40 tok= 10240 decode=358.8 tok/s (stream median 399.535) TPOT=2.503ms accept=0.5735 acc/step=2.868 foreign_tok=0.0 maxrun=1.0/1 err=0 exact=True
+[BR2-A-t1-r1 c1] shell_ops  n=40 tok= 10240 decode=373.76 tok/s (stream median 405.995) TPOT=2.463ms accept=0.6021 acc/step=3.011 foreign_tok=0.0 maxrun=1.0/1 err=0 exact=True
+[BR2-A-t1-r1 c1] tool_json  n=40 tok= 10240 decode=338.28 tok/s (stream median 380.255) TPOT=2.63ms accept=0.5241 acc/step=2.62 foreign_tok=0.0 maxrun=1.0/1 err=0 exact=True
+### perclass BR2-A-t1-r1 c1 (2026-10-25T21:49:29-0500)
+
+| class | n | tokens | decode tok/s (pooled) | stream median tok/s | TPOT ms | TTFT s | accept | acc/step | foreign tok | max running |
+|---|---|---|---|---|---|---|---|---|---|---|
+| prose | 40 | 10240 | 277.65 | 268.115 | 3.73 | 0.14 | 0.3841 | 1.921 | 0.0 | 1/1 |
+| structured | 40 | 10240 | 282.56 | 276.55 | 3.624 | 0.143 | 0.3989 | 1.994 | 0.0 | 1/1 |
+| code | 40 | 10240 | 358.8 | 399.535 | 2.503 | 0.153 | 0.5735 | 2.868 | 0.0 | 1/1 |
+| shell_ops | 40 | 10240 | 373.76 | 405.995 | 2.463 | 0.154 | 0.6021 | 3.011 | 0.0 | 1/1 |
+| tool_json | 40 | 10240 | 338.28 | 380.255 | 2.63 | 0.147 | 0.5241 | 2.62 | 0.0 | 1/1 |
+2026-10-25 21:52:31 CDT RUN --tag BR2-A-t1-r1 --mode c8 --conc 8 --fl-map {"prose":256,"structured":256,"code":256,"shell_ops":256,"tool_json":256}
+[BR2-A-t1-r1 c8] prose      n=40 tok= 10240 decode=984.66 tok/s (stream median 143.26) TPOT=6.981ms accept=0.5157 acc/step=1.599 foreign_tok=3.0 maxrun=8.0/8 err=0 exact=True
+[BR2-A-t1-r1 c8] structured n=40 tok= 10240 decode=1051.64 tok/s (stream median 155.27) TPOT=6.441ms accept=0.5696 acc/step=1.777 foreign_tok=0.0 maxrun=8.0/8 err=0 exact=True
+[BR2-A-t1-r1 c8] code       n=40 tok= 10240 decode=1129.79 tok/s (stream median 179.99) TPOT=5.556ms accept=0.6631 acc/step=2.094 foreign_tok=0.0 maxrun=8.0/8 err=0 exact=True
+[BR2-A-t1-r1 c8] shell_ops  n=40 tok= 10240 decode=1130.95 tok/s (stream median 185.435) TPOT=5.393ms accept=0.6746 acc/step=2.122 foreign_tok=0.0 maxrun=8.0/8 err=0 exact=True
+[BR2-A-t1-r1 c8] tool_json  n=40 tok= 10240 decode=1128.42 tok/s (stream median 176.545) TPOT=5.665ms accept=0.634 acc/step=1.99 foreign_tok=0.0 maxrun=8.0/8 err=0 exact=True
+### perclass BR2-A-t1-r1 c8 (2026-10-25T21:52:31-0500)
+
+| class | n | tokens | agg decode tok/s | stream median tok/s | TPOT ms | TTFT s | accept | acc/step | foreign tok | max running |
+|---|---|---|---|---|---|---|---|---|---|---|
+| prose | 40 | 10240 | 984.66 | 143.26 | 6.981 | 0.312 | 0.5157 | 1.599 | 3.0 | 8/8 |
+| structured | 40 | 10240 | 1051.64 | 155.27 | 6.441 | 0.317 | 0.5696 | 1.777 | 0.0 | 8/8 |
+| code | 40 | 10240 | 1129.79 | 179.99 | 5.556 | 0.328 | 0.6631 | 2.094 | 0.0 | 8/8 |
+| shell_ops | 40 | 10240 | 1130.95 | 185.435 | 5.393 | 0.34 | 0.6746 | 2.122 | 0.0 | 8/8 |
+| tool_json | 40 | 10240 | 1128.42 | 176.545 | 5.665 | 0.314 | 0.634 | 1.99 | 0.0 | 8/8 |
+2026-10-25 21:53:24 CDT RUN --tag BR2-A-t1-r2 --mode c1 --fl-map {"prose":256,"structured":256,"code":256,"shell_ops":256,"tool_json":256}
+[BR2-A-t1-r2 c1] prose      n=40 tok= 10240 decode=264.62 tok/s (stream median 255.535) TPOT=3.913ms accept=0.3574 acc/step=1.787 foreign_tok=0.0 maxrun=1.0/1 err=0 exact=True
+[BR2-A-t1-r2 c1] structured n=40 tok= 10240 decode=290.44 tok/s (stream median 289.25) TPOT=3.458ms accept=0.4143 acc/step=2.072 foreign_tok=0.0 maxrun=1.0/1 err=0 exact=True
+[BR2-A-t1-r2 c1] code       n=40 tok= 10240 decode=353.22 tok/s (stream median 382.46) TPOT=2.617ms accept=0.5579 acc/step=2.789 foreign_tok=0.0 maxrun=1.0/1 err=0 exact=True
+[BR2-A-t1-r2 c1] shell_ops  n=40 tok= 10240 decode=369.11 tok/s (stream median 400.32) TPOT=2.498ms accept=0.5914 acc/step=2.957 foreign_tok=0.0 maxrun=1.0/1 err=0 exact=True
+[BR2-A-t1-r2 c1] tool_json  n=40 tok= 10240 decode=340.97 tok/s (stream median 376.14) TPOT=2.661ms accept=0.5284 acc/step=2.642 foreign_tok=0.0 maxrun=1.0/1 err=0 exact=True
+### perclass BR2-A-t1-r2 c1 (2026-10-25T21:53:24-0500)
+
+| class | n | tokens | decode tok/s (pooled) | stream median tok/s | TPOT ms | TTFT s | accept | acc/step | foreign tok | max running |
+|---|---|---|---|---|---|---|---|---|---|---|
+| prose | 40 | 10240 | 264.62 | 255.535 | 3.913 | 0.145 | 0.3574 | 1.787 | 0.0 | 1/1 |
+| structured | 40 | 10240 | 290.44 | 289.25 | 3.458 | 0.147 | 0.4143 | 2.072 | 0.0 | 1/1 |
+| code | 40 | 10240 | 353.22 | 382.46 | 2.617 | 0.157 | 0.5579 | 2.789 | 0.0 | 1/1 |
+| shell_ops | 40 | 10240 | 369.11 | 400.32 | 2.498 | 0.162 | 0.5914 | 2.957 | 0.0 | 1/1 |
+| tool_json | 40 | 10240 | 340.97 | 376.14 | 2.661 | 0.151 | 0.5284 | 2.642 | 0.0 | 1/1 |
+2026-10-25 21:56:28 CDT RUN --tag BR2-A-t1-r2 --mode c8 --conc 8 --fl-map {"prose":256,"structured":256,"code":256,"shell_ops":256,"tool_json":256}
+[BR2-A-t1-r2 c8] prose      n=40 tok= 10240 decode=965.74 tok/s (stream median 136.535) TPOT=7.325ms accept=0.5034 acc/step=1.564 foreign_tok=0.0 maxrun=8.0/8 err=0 exact=True
+[BR2-A-t1-r2 c8] structured n=40 tok= 10240 decode=1032.16 tok/s (stream median 146.39) TPOT=6.832ms accept=0.5445 acc/step=1.695 foreign_tok=0.0 maxrun=8.0/8 err=0 exact=True
+[BR2-A-t1-r2 c8] code       n=40 tok= 10240 decode=1180.9 tok/s (stream median 183.065) TPOT=5.463ms accept=0.687 acc/step=2.168 foreign_tok=0.0 maxrun=8.0/8 err=0 exact=True
+[BR2-A-t1-r2 c8] shell_ops  n=40 tok= 10240 decode=1188.64 tok/s (stream median 185.555) TPOT=5.389ms accept=0.6959 acc/step=2.158 foreign_tok=0.0 maxrun=8.0/8 err=0 exact=True
+[BR2-A-t1-r2 c8] tool_json  n=40 tok= 10240 decode=1198.65 tok/s (stream median 174.79) TPOT=5.723ms accept=0.6407 acc/step=1.97 foreign_tok=0.0 maxrun=8.0/8 err=0 exact=True
+### perclass BR2-A-t1-r2 c8 (2026-10-25T21:56:28-0500)
+
+| class | n | tokens | agg decode tok/s | stream median tok/s | TPOT ms | TTFT s | accept | acc/step | foreign tok | max running |
+|---|---|---|---|---|---|---|---|---|---|---|
+| prose | 40 | 10240 | 965.74 | 136.535 | 7.325 | 0.313 | 0.5034 | 1.564 | 0.0 | 8/8 |
+| structured | 40 | 10240 | 1032.16 | 146.39 | 6.832 | 0.314 | 0.5445 | 1.695 | 0.0 | 8/8 |
+| code | 40 | 10240 | 1180.9 | 183.065 | 5.463 | 0.328 | 0.687 | 2.168 | 0.0 | 8/8 |
+| shell_ops | 40 | 10240 | 1188.64 | 185.555 | 5.389 | 0.346 | 0.6959 | 2.158 | 0.0 | 8/8 |
+| tool_json | 40 | 10240 | 1198.65 | 174.79 | 5.723 | 0.312 | 0.6407 | 1.97 | 0.0 | 8/8 |
+2026-10-25 21:57:21 CDT RUN agent_fixture_x3.py
+[BR2-A-t1-x3] prose       accept=0.2378 (per-prompt mean 0.2383 sd 0.0279) tok/s=211.3 tokens=1204
+[BR2-A-t1-x3] structured  accept=0.4754 (per-prompt mean 0.5344 sd 0.2106) tok/s=313.7 tokens=1339
+[BR2-A-t1-x3] code        accept=0.7844 (per-prompt mean 0.82 sd 0.1023) tok/s=410.2 tokens=760
+[BR2-A-t1-x3] shell_ops   accept=0.7067 (per-prompt mean 0.7412 sd 0.1534) tok/s=364.6 tokens=477
+[BR2-A-t1-x3] tool_json   accept=0.8627 (per-prompt mean 0.8742 sd 0.1023) tok/s=259.0 tokens=539
+## per-class decode wall-clock — BR2-A-t1
+
+FL (forced tokens/prompt): {'prose': 256, 'structured': 256, 'code': 256, 'shell_ops': 256, 'tool_json': 256}
+
+| class | n C1/C8 | C1 tok/s r1 | r2 | mean | spread | C8 agg tok/s r1 | r2 | mean | spread | accept C1 r1/r2 | accept C8 r1/r2 | accept x3 fixture | tokens C1/C8 per run | natural len median |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| prose | 40/40 | 277.6 | 264.6 | 271.1 | 4.8% | 984.7 | 965.7 | 975.2 | 1.9% | 0.384/0.357 | 0.516/0.503 | 0.238 | 10240/10240 | 154 |
+| structured | 40/40 | 282.6 | 290.4 | 286.5 | 2.8% | 1051.6 | 1032.2 | 1041.9 | 1.9% | 0.399/0.414 | 0.570/0.544 | 0.475 | 10240/10240 | 224 |
+| code | 40/40 | 358.8 | 353.2 | 356.0 | 1.6% | 1129.8 | 1180.9 | 1155.3 | 4.4% | 0.574/0.558 | 0.663/0.687 | 0.784 | 10240/10240 | 122 |
+| shell_ops | 40/40 | 373.8 | 369.1 | 371.4 | 1.2% | 1131.0 | 1188.6 | 1159.8 | 5.0% | 0.602/0.591 | 0.675/0.696 | 0.707 | 10240/10240 | 120 |
+| tool_json | 40/40 | 338.3 | 341.0 | 339.6 | 0.8% | 1128.4 | 1198.7 | 1163.5 | 6.0% | 0.524/0.528 | 0.634/0.641 | 0.863 | 10240/10240 | 98 |
+
+Hygiene: prose c8 foreign tokens [3.0, 0.0]
+2026-10-25 21:57:36 CDT DONE perclass_run ARM=BR2-A-t1

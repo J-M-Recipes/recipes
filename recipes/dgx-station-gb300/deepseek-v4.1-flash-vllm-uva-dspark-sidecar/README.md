@@ -32,13 +32,167 @@ sibling is the one that needs nothing but the GB300.
 > the 295/89 map, the agreement gate run on real prompts, the ack-before-bookkeeping sidecar fix, the
 > fail-closed watchdog and the bracketed measurement discipline. See [Credits](#credits).
 
-> **Status, 2026-10-24 (recipe stays experimental).** The adaptive-residency campaign has ended. James cancelled
-> the v25m 48 h soak on 2026-10-24, and lane `:30006` on the reference box now serves the v26 "Seeded Adaptive"
-> config from the GB300-only sibling. This recipe documents the sidecar lane and its variants, including the new
-> kv-host-tier variant below. **Cross-links:** the GB300-only recipe's new v26 run is in
+> **Status, 2026-10-26 04:08 CDT (recipe stays experimental): PROMOTED v27 = block verification.** Lane `:30006`
+> on the reference box now serves `dsv41-vllm-1017-v27-block-BOUND-REF` + `-rtx` with the fail-stop watchdog in
+> enforce mode: the v25m-kvtier launch below plus `"rejection_sample_method":"block"` (Card BR1). Hash-hit boot
+> 528 s, KV 4,400,013 tokens, smoke (`reasoning_effort: low`, tool call) and consumer checks (Hermes one-shot with
+> tool calls, Forge guest gateway `deepseek-v4.1-flash`) passed; rollback pair `dsv41-vllm-1017-v25m-kvtier-RETIRED-REF`
+> (+`-rtx`) stopped-and-kept; launcher `launch_br1.sh` (= `launch_sidecar.sh` + `SPEC_EXTRA`). From 2026-10-24 23:16
+> to 2026-10-26 03:58 CDT the lane served `dsv41-vllm-1017-v25m-kvtier` + `-rtx` (the same launch without the key),
+> i.e. the v25m variant (`ROWMAP=rowmap-mixed-ar-v1.json`) with the kv-host-tier flags
+> (`EXTRA="--kv-cache-memory 9126805504 --kv-offloading-size 48 --kv-offloading-backend native"`), the production
+> spec config `{"method":"dspark","num_speculative_tokens":5,"num_speculative_tokens_per_batch_size":[[1,4,5],[5,8,3],[9,32,3]],"draft_sample_method":"probabilistic"}`,
+> image nightly-af7f9488 (`sha256:3af6a45b…`) and a KV pool of 4,400,013 tokens. *(Corrected 2026-10-26: an earlier
+> banner said the lane served the GB300-only sibling's v26 config. That was true only from 2026-10-24 ~21:30 to
+> 23:16 CDT.)* The adaptive-residency campaign has ended, and the v25m 48 h soak was cancelled on 2026-10-24.
+> Block verification (Card BR1, below) passed and was **promoted on 2026-10-26 04:08 CDT (v27)**.
+> **Cross-links:** GB300-only sibling
 > [`../deepseek-v4.1-flash-vllm-uva-dspark`](../deepseek-v4.1-flash-vllm-uva-dspark/README.md). Blogs:
+> [GB300 + sidecar vs 4× RTX PRO 6000 (BRRR)](https://al-engr.com/gb300-vs-4x-rtx6000-dsv41-flash-brrr.html),
 > [Adaptive Residency Part 3, the seed map](https://al-engr.com/gb300-adaptive-residency-seed-map.html) and
-> [Part 1, with its convergence correction](https://al-engr.com/gb300-adaptive-expert-residency.html).
+> [Part 1, with its convergence correction](https://al-engr.com/gb300-adaptive-expert-residency.html). Peer recipe:
+> [fraserprice/DeepSeek-4.1-Flash-1017-BRRR](https://huggingface.co/fraserprice/DeepSeek-4.1-Flash-1017-BRRR).
+
+## 2026-10-26: block verification (Card BR1) — PASS, PROMOTED as v27; k ladder (Card BR2) — k=9 loses; peer harness side-by-side
+
+### Card BR1 — block verification, one key
+
+```bash
+# production spec config + one key (rejection_sample_method), everything else unchanged
+SPEC='{"method":"dspark","num_speculative_tokens":5,"num_speculative_tokens_per_batch_size":[[1,4,5],[5,8,3],[9,32,3]],"draft_sample_method":"probabilistic","rejection_sample_method":"block"}'
+```
+
+Block verification ([Sun et al.](https://arxiv.org/abs/2403.10444)) verifies the drafted block jointly instead of
+token by token. The output distribution is the same. **Result: PASS (re-scored); promoted to `:30006` as v27 on
+2026-10-26 04:08 CDT** (James's call; promotion log `results/2026-10-26-br1-block-verification/raw/promote-v27.log`).
+
+Bracketed A (control) → B (block) → A2 (control) on the production lane config, 2026-10-25 19:33–21:35 CDT.
+All three boots were autotune hash hits (528–529 s; `rejection_sample_method` is not a compute-hash factor). Every
+arm had KV 4,400,013, and the block key appeared in the args on B only (0/1/0, read from `docker inspect`). Every
+arm read 0 foreign clients (the lane was firewalled to loopback while dark), 0 sidecar timeouts, 0 watchdog trips
+and 0 FF errors. vLLM af7f9488 applies block verification **only on non-greedy rows** (`USE_BLOCK_VERIFICATION and not
+is_greedy`). The primary window was therefore temperature 1.0 / top_p 1.0, seeded, with 40 real transcripts per
+class and 256 forced tokens, r1/r2. The stock temperature-0 window was kept as a parity gate. Receipts:
+[`results/2026-10-26-br1-block-verification/`](results/2026-10-26-br1-block-verification/). Card:
+[`card-br1.png`](card-br1.png).
+
+| temp 1.0 decode tok/s | C1 A / A2 / **B** | B ÷ ctrl | C8 A / A2 / **B** | B ÷ ctrl |
+|---|---|--:|---|--:|
+| prose | 266.7 / 270.2 / **278.3** | 1.037 | 972.4 / 978.7 / **983.0** | 1.008 |
+| structured | 302.2 / 300.8 / **305.3** | 1.013 | 1,059.8 / 1,024.8 / **1,068.2** | 1.025 |
+| code | 352.8 / 353.0 / **357.3** | 1.013 | 1,173.9 / 1,159.6 / **1,221.1** | 1.047 |
+| shell_ops | 374.0 / 385.5 / **378.1** | 0.996 | 1,194.2 / 1,245.8 / **1,320.3** | 1.082 |
+| tool_json | 333.4 / 326.4 / **347.6** | 1.054 | 1,184.1 / 1,156.0 / **1,202.5** | 1.028 |
+
+- **Controls:** A and A2 agree at C1 within 0.1–3.0% per class.
+- **Acceptance:** tokens per verify step (1 + accepted/drafts, `/metrics` deltas over the temp-1.0 window) A 3.204,
+  **B 3.262**, A2 3.189 (B/ctrl 1.020). Mixed C1: 2.092 / 2.105 / 2.088.
+- **Mixed traffic:** `ar_mixed_t`, C1, natural length, ~65 prompts per 120 s rep, temp 1.0. A 212.05, **B 212.77**,
+  A2 212.65 (+0.20%).
+- **Temp-0 window:** B is within noise on every class (prose −0.9%, structured −0.2%, code −2.2%, shell +1.1%,
+  tool_json +0.7%), against bars of 2.6–4.1% that include the controls' own r1/r2 spread.
+- **Fidelity:** teacher-forced top-1 flips B-vs-A 2.166% and B-vs-A2 2.176%, against an A2-vs-A floor of 2.172%
+  (79,544 positions, 39 docs, 0 token-mismatch docs). Margin-weighted flips: hi_agent_tool = 0 on all three
+  compares, W 2.839 / 2.751 against a floor of 2.773. Gauntlet 12/12 on A, B and A2. replay_turns tool-turn emission
+  B [7, 7]/12 vs A [6, 8] and A2 [7, 6]. The x3 acceptance canary (temp 0) is within noise. The production watchdog
+  was re-armed after restore with PPID 1.
+
+### Card BR2 — k ladder (A → K9 → A2) + the peer harness on every arm
+
+K9 = block verification + `num_speculative_tokens 9` + `[[1,4,9],[5,8,3],[9,32,3]]`. The controls A and A2 are the
+production config, **without** block verification, so the K9 ratios measure block + k=9 against production.
+Run 2026-10-25 21:36–23:24 CDT; receipts:
+[`results/2026-10-26-br2-k-ladder-peerbench/`](results/2026-10-26-br2-k-ladder-peerbench/).
+
+**K9 booted as a hash hit (529 s, Loaded 117 / Saved 117, 0 new)**: `num_speculative_tokens` is not in the autotune
+hash on af7f9488. The checkpoint's `dspark_block_size` is 5. The DSpark speculator emits N =
+`num_speculative_tokens` query positions (the anchor plus N−1 noise positions) in one pass, and the engine does
+not cap N. CUDA-graph tokens 32×(k+1) come to 320 on K9 and 192 on A, both above the 128-entry capture list.
+Production is already above 128, but the batch schedule caps k at 3 above batch 4, so the largest real decode batch
+is 128 on every arm. KV was 4,400,013 on all arms.
+
+| K9 ÷ mean(A, A2), temp 1.0 | prose | structured | code | shell_ops | tool_json | mixed |
+|---|--:|--:|--:|--:|--:|--:|
+| C1 | 0.813 | 0.860 | 0.868 | 0.918 | 0.853 | 0.793 (168.4 vs 212.3 / 212.5) |
+| C8 | 0.896 | 0.891 | 0.925 | 0.930 | 0.882 | — |
+| tokens/step C1 · A (k5) | 2.85 | 3.03 | 3.83 | 3.98 | 3.63 | 2.08 |
+| tokens/step C1 · K9 (k9) | 2.60 | 2.94 | 3.66 | 4.04 | 3.45 | 1.82 |
+| tokens/step C1 · A2 (k5) | 2.91 | 3.15 | 3.80 | 3.97 | 3.66 | 2.09 |
+
+Per-position acceptance at C1, temp 1.0: curve[p] = accepted-at-p / drafts, marginal = curve[p] / curve[p−1].
+
+| class · arm | p1 | p2 | p3 | p4 | p5 | p6 | p7 | p8 | p9 |
+|---|--:|--:|--:|--:|--:|--:|--:|--:|--:|
+| prose · A k5 | .717 | .476 | .310 | .205 | .145 | | | | |
+| prose · K9 | .612 | .379 | .235 | .147 | .097 | .063 | .036 | .020 | .011 |
+| prose · K9 marginal | .61 | .62 | .62 | .62 | .66 | .65 | .57 | .57 | .54 |
+| structured · K9 marginal | .66 | .69 | .67 | .67 | .71 | .65 | .55 | .53 | .55 |
+| code · A k5 | .823 | .653 | .536 | .445 | .371 | | | | |
+| code · K9 | .719 | .548 | .428 | .322 | .255 | .179 | .108 | .064 | .037 |
+| code · K9 marginal | .72 | .76 | .78 | .75 | .79 | .70 | .60 | .60 | .57 |
+| shell_ops · K9 marginal | .76 | .81 | .80 | .78 | .82 | .72 | .63 | .53 | .51 |
+| tool_json · K9 marginal | .70 | .73 | .75 | .76 | .78 | .68 | .62 | .56 | .67 |
+
+**Reading:** marginal acceptance holds at 0.61–0.82 through position 5 and drops to 0.51–0.67 from position 7.
+The drafter is extrapolating past its trained block there. Position-1 acceptance also falls under the longer
+block (prose .72 → .61, code .82 → .72). **k=5 stays.** All curves, the C8 rows and A2's are in
+[`raw/per-position-curves.json`](results/2026-10-26-br2-k-ladder-peerbench/raw/per-position-curves.json). The
+per-position histogram (`vllm:spec_decode_num_accepted_tokens_per_pos`) is now a standing instrument.
+
+### Peer harness side-by-side
+
+[`scripts/peerbench.py`](results/2026-10-26-br2-k-ladder-peerbench/scripts/peerbench.py) is a stdlib port of
+[fraserprice's BRRR](https://huggingface.co/fraserprice/DeepSeek-4.1-Flash-1017-BRRR) `bench.py` (Apache-2.0, credit
+header kept). It mirrors their method: a coding prompt padded to 2K/16K/64K through `/tokenize` with a nonce per
+stream. Each round makes two passes: `max_tokens 1` for TTFT/PP, then the same prompts from cache so all streams
+decode together. TG counts only while every stream decodes, with natural EOS ≤ 2048, thinking off, and temperature
+1.0 / top_p 1.0 as their bench sends. Ours ran **2 rounds (theirs 5)** with no cool-down wait (the hottest GPU is
+logged). Our server omits `prompt_tokens_details`, so the cache-bust check reads the `/metrics` prefix-cache counter.
+
+| prompt · conc | TG p50 | PP p50 tok/s | TTFT p50 | TG total | accept |
+|---|---|---|---|---|---|
+| | **theirs / ours** | **theirs / ours** | **theirs / ours** | **theirs / ours** | **theirs / ours** |
+| 2K · C1 | 703 / 466 | 12,452 / 14,279 | 172 / 152 ms | 706 / 467 | 5.94 (71%) / 5.13 (83%) |
+| 2K · C4 | 329 / 321 | 4,470 / 8,137 | 489 / 264 ms | 1,320 / 1,287 | 5.94 / 5.15 |
+| 2K · C8 | 231 / 213 | 2,589 / 5,259 | 829 / 408 ms | 1,847 / 1,697 | 5.97 / 3.76 |
+| 2K · C16 | 166 / 169 | 1,610 / 3,357 | 1,333 / 643 ms | 2,648 / 2,719 | 5.96 / 3.70 |
+| 16K · C1 | 684 / 471 | 16,953 / 47,297 | 972 / 349 ms | 691 / 470 | 5.99 / 5.21 |
+| 16K · C4 | 321 / 319 | 7,199 / 16,356 | 2,362 / 1,025 ms | 1,281 / 1,277 | 5.95 / 5.05 |
+| 16K · C8 | 226 / 208 | 4,072 / 10,271 | 4,089 / 1,617 ms | 1,806 / 1,665 | 5.99 / 3.76 |
+| 16K · C16 | 158 / 170 | 2,167 / 5,944 | 7,624 / 2,781 ms | 2,522 / 2,715 | 5.98 / 3.70 |
+| 64K · C1 | 675 / 453 | 17,852 / 46,246 | 3,677 / 1,419 ms | 669 / 454 | 5.97 / 5.05 |
+| 64K · C4 | 312 / 316 | 7,435 / 18,847 | 9,165 / 3,597 ms | 1,243 / 1,266 | 6.02 / 5.13 |
+| 64K · C8 | 210 / 209 | 4,051 / 10,860 | 16,396 / 6,098 ms | 1,686 / 1,675 | 5.95 / 3.81 |
+| 64K · C16 | 131 / 165 | 2,131 / 6,045 | 30,893 / 10,890 ms | 2,096 / 2,653 | 5.98 / 3.72 |
+
+**Theirs** is the "Thinking off" table published on the BRRR model card, copied and not re-run by us: 4× RTX PRO
+6000 Blackwell Max-Q at 325 W, Threadripper 9960X, 64 GB RAM, Samsung 990 PRO, adaptive verification off, DSpark 7
+draft tokens, 5 rounds. **Ours** is Card BR2 arm A: one GB300 plus one RTX PRO 6000 Max-Q sidecar, this lane's
+production config, DSpark k=5 at C1–C4 and k=3 above batch 4 (hence our lower C8/C16 accept), 2 rounds.
+[`raw/A/peerbench-BR2-A.md`](results/2026-10-26-br2-k-ladder-peerbench/raw/A/peerbench-BR2-A.md). Arm A2 agrees
+with A within 0–2.5% on TG in all 12 cells. Their box wins single-stream decode by 1.45–1.51×. Ours wins prefill
+2.3–2.8× at 16K/64K, TTFT at every cell, and TG at 64K/C16. At C4–C16 the two are mostly level.
+
+**Decomposition, 2K/C1.** Theirs: 703 = 5.94 tok/step × 118 steps/s (8.45 ms per step). Ours: 466 = 5.13 × 91 (11.0
+ms). The 1.51× gap = 1.16× tokens per step × 1.30× steps per second. Tokens per step favour them because k=7 on a
+friendly codegen prompt beats our k=5. Step time is the bigger factor. Two hypotheses, not tested in this card: our
+sidecar hop grows with the expert union under high acceptance, and their persistent fused `decoder.cu` removes
+per-step small-kernel churn. The `(71%)` in their accept column is accepted ÷ draft tokens = 4.94 / 7, not an
+independent per-position rate. On the same harness **K9** ties A at 2K/C1 (468, 5.70 tok/step), wins 64K/C1 (489 vs
+453, 6.05 tok/step), reads 316 vs 319 at 16K/C4 (5.95), and loses 4–7% at every C8/C16 cell. Its step time at 2K/C1
+is 12.2 ms. So k=9 pays only on padded single-stream codegen, and it loses on real traffic. Write-up:
+[GB300 + sidecar vs 4× RTX PRO 6000](https://al-engr.com/gb300-vs-4x-rtx6000-dsv41-flash-brrr.html).
+
+### Instrumentation note — both verdicts kept
+
+Both cards' pre-registered verdicts failed on instrument defects, not on measurements. **BR1: FAIL
+`BR1FAIL-G0-G2b`.** BR2: INVALID-CONTROL-A-A2. G0 compared the container env as an ordered list; Docker returns the
+same 44 variables in varying order, and the sets were identical on every arm. In BR1, G2b's temperature-0 no-op bar
+was tighter than the class's own r1/r2 spread (code/C1 read −2.2% against a ±2% bar, with a 2.1% control r1/r2
+spread). The re-scores (`br1_verdict_rescore.py`, `br2_verdict_rescore.py`) compare env as sets and widen the G2b
+bar to honour the controls' r1/r2 spread. They read **PASS `BR1PASS`** and **PASS `BR2PASS`**; no speed, fidelity or
+watchdog gate moved. Each bundle keeps `verdict.json` / `VERDICT.txt` as pre-registered and `verdict-rescore.json` /
+`VERDICT-rescore.txt` as re-scored.
 
 ## 2026-10-24: kv-host-tier variant, a 48 GiB Grace prefix-KV tier (Card KV3)
 
@@ -82,7 +236,7 @@ with the fail-closed watchdog armed, on 2026-10-24 between 21:22 and 22:35 CDT. 
 - **Limits:** the base was the v25m map, not the static map. Fidelity evidence on the tier arm is identical short
   outputs on the probes plus gauntlet, needle and zero errors. No teacher-forced, GSM8K or BFCL run was done on the tier arm.
   Hit rates under real multi-user eviction pressure, and C>1 with the tier, were not measured. The tier also costs
-  about 48 GiB of host MemAvailable. Card: [`card-kv.yaml`](card-kv.yaml) (not yet rendered).
+  about 48 GiB of host MemAvailable. Card: [`card-kv.png`](card-kv.png) ([`card-kv.yaml`](card-kv.yaml)).
 
 ## 2026-10-23 — experimental variant v25m: a mixed-traffic map (no code change)
 
@@ -238,6 +392,23 @@ timeout is treated as a correctness bug rather than a slow request.
 
 ## Results
 
+### Card BR2: k ladder + peer harness (2026-10-25 21:36–23:24 CDT, `results/2026-10-26-br2-k-ladder-peerbench/`)
+
+Bundle: [`results/2026-10-26-br2-k-ladder-peerbench/`](results/2026-10-26-br2-k-ladder-peerbench/). It holds
+`throughput.csv` (per-class, mixed, tokens/step and every peerbench TG/PP cell per arm), `raw/per-position-curves.json`,
+`raw/<arm>/peerbench-BR2-<arm>.md/.json`, both verdicts and the scripts, including `peerbench.py`. K9 (block + k=9)
+reads 0.79–0.92× production at C1 and 0.88–0.93× at C8; k=5 stays. On the BRRR peer harness this lane reads 2K/C1 466
+tok/s TG p50 at 5.13 tok/step and 64K prefill 46,246 tok/s. The full 12-row side-by-side is in the 2026-10-26
+section above.
+
+### Card BR1: block verification (2026-10-25 19:33–21:35 CDT, `results/2026-10-26-br1-block-verification/`)
+
+Bundle: [`results/2026-10-26-br1-block-verification/`](results/2026-10-26-br1-block-verification/). It holds
+`throughput.csv` (per-class temp-1.0 and temp-0 cells, mixed reps, tokens/step, TF flip rates), both verdicts,
+`raw/<arm>/` and the scripts. At temperature 1.0, B ÷ controls is 0.996–1.054 at C1 and 1.008–1.082 at C8, with
+tokens/step +2.0% and TF flips at the control floor. Per-request rows are withheld because the prompts are private
+transcripts.
+
 ### KV pool declared at 8.5 GiB (2026-10-22 evening, `results/2026-10-22-kv85/`)
 
 The lane as first promoted let `--gpu-memory-utilization 0.97` size the KV pool: 4.9 GiB after weights
@@ -315,6 +486,23 @@ in prefill (2,062 incumbent); RTX p99 ≤ 194 W against its 300 W cap. Full tabl
 
 ## Known limits
 
+* **Block verification (Card BR1) only acts at temperature > 0.** vLLM af7f9488 skips it on greedy rows
+  (`USE_BLOCK_VERIFICATION and not is_greedy`), so a temperature-0 bench cannot measure it. It reads as a no-op
+  there, and that is what Card BR1's temp-0 window showed. The −0.4…+5.4% C1 (per class) and +2.0% tokens/step were measured at
+  temperature 1.0 / top_p 1.0 with 40 private transcript prompts per class. Clients that send temperature 0 get
+  nothing from it. **Promoted as v27 on 2026-10-26** (one key on the v25m-kvtier launch; rollback = the
+  `-RETIRED-REF` pair).
+* **k > 5 is a loss on real traffic with this drafter (Card BR2).** k=9 (with block verification) reads 0.81–0.92×
+  at C1 per class and 0.79× on mixed traffic. The per-position curves show why: marginal acceptance drops from
+  0.61–0.82 (positions 1–5) to 0.51–0.67 from position 7, and position-1 acceptance itself falls (prose .72 → .61).
+  The checkpoint's `dspark_block_size` is 5. k=9 only paid on padded single-stream codegen (peer harness 64K/C1).
+  BR2 did not isolate k from block verification, because its controls ran sequential verification.
+* **A k change does not force an autotune retune on this image.** `num_speculative_tokens` is not in the autotune
+  hash on af7f9488, and K9 booted as a hash hit in 529 s. The card's brief had expected a 25–35 min retune. The
+  README and limits carried no retune claim to strike.
+* **Peer-harness numbers are 2 rounds** (the peer's published table is 5), with no cool-down wait, on our sampling
+  path. Their column is copied from their model card, not re-run. A2 agrees with A within 2.5% on TG. PP/TTFT at
+  2K/C1 moved 8–9% between A and A2.
 * **kv-host-tier variant (Card KV3):** the card's launcher ran with `VLLM_SERVER_DEV_MODE=1` (smoke only, for
   `/reset_prefix_cache`), and production drops it, so that exact boot was not measured on its own. It was measured on the v25m map. ~31M
   prefix tokens = 48 GiB / 1,656 B per hit token on this lane only. Speed-neutral on the gated C1/TTFT/warm
@@ -336,7 +524,9 @@ in prefill (2,062 incumbent); RTX p99 ≤ 194 W against its 300 W cap. Full tabl
 * **One runaway is possible at temp 0** (GSM8K item 1304 hit the 131,072 cap once; a 32K cap probe read 0/32
   and pinned efforts 0/8). Attributed to the image's effort-75 tail, not the sidecar; a client `max_tokens` is
   the only real guard.
-* **Per-class acceptance is not measured** in this round (blended 2.96 tokens/step only).
+* ~~**Per-class acceptance is not measured** in this round (blended 2.96 tokens/step only).~~ **CORRECTED
+  2026-10-26:** measured at temperature 1.0 in Card BR2 (C1 tokens/step: prose 2.85, structured 3.03, code 3.83,
+  shell 3.98, tool-JSON 3.63; window blend 3.18–3.22), with per-position curves.
 * **Live FlashInfer autotune**, no pinned tune file: a few percent of C1 varies boot to boot, and the autotuner
   reports some `mxfp8_gemm` shapes falling back to `tactic=-1`.
 * **Replay ON vs OFF is one rep**: agent replay r2 612.1 OFF vs 480.3 ON, but TTFT is better ON (0.19 vs 0.29 s).
@@ -401,6 +591,13 @@ This recipe is a productionised descendant of someone else's recipe, and the ord
   replays out of its 560 captured graphs.
 * **vLLM** — [#58132](https://github.com/vllm-project/vllm/pull/58132) bounded decoder replay, the
   `deep_gemm_mega_moe` backend, and the UVA offloader the sibling recipe uses.
+* **[Fraser Price](https://huggingface.co/fraserprice/DeepSeek-4.1-Flash-1017-BRRR)** — the BRRR recipe for
+  DeepSeek-V4.1-Flash-1017 on 4× RTX PRO 6000 (fused decode kernels, `decoder.cu`), its published results table, and
+  `bench.py`, which our `peerbench.py` ports with his credit header (Apache-2.0). His table is the "theirs" column in
+  the 2026-10-26 side-by-side.
+* **Sun, Mendlovic, Leviathan, Aharoni, Ro, Beirami, Suresh** —
+  [Block Verification Accelerates Speculative Decoding](https://arxiv.org/abs/2403.10444) (ICLR 2025), the algorithm
+  behind vLLM's `rejection_sample_method: block`, which Card BR1 measured.
 
 **Our delta, precisely** (so nobody re-credits us with the idea): the uniform 295/89 map choice and the
 measurement that 285/99 fails its pre-registered cosine bar; running the agreement gate on real prompts and

@@ -2,7 +2,7 @@
 # Every number here traces to recipe.yaml metrics or results/2026-10-22-v25-sidecar/. Unmeasured = pending.
 title: "DeepSeek-V4.1-Flash · 1× DGX Station GB300 + RTX PRO 6000 sidecar"
 subtitle: "The 89 cold experts per layer don't live in Grace — they live on the second GPU in the chassis, and they are computed there. Full 1M context, 3× the C16 decode of Grace offload."
-version: "v25 sidecar + KV 8.5 GiB · 48 h soak cut 10-23 at ~25 h · :30006 now runs the v25m variant (card-v25m)"
+version: "v27 = v25m-kvtier + block verification · promoted 10-26 04:08 CDT · live on :30006"
 run_id: 2026-10-22-v25-sidecar
 handles: "github.com/J-M-Recipes/recipes · al-engr.com · sidecar recipe + kbench harness: RonanLabsAI (dgx-station-frontier) · hook: original-el8 — credited in the README"
 
@@ -25,7 +25,8 @@ guesser:
   name: DSpark
   source: "in-checkpoint MTP (mtp.0–2), 1017 revision"
   schedule: "k = 5 at 1–4 seqs, 3 at 5–8 and 9–32 (batch-size schedule)"
-  notes: "acceptance measured only blended: 2.96 tokens/verify step on the real-text C1 cell (incumbent 2.955). Per-class acceptance is pending on this image."
+  notes: "blended 2.96 tokens/verify step on the real-text C1 cell (incumbent 2.955). Per-class, temp 1.0, C1 (Card BR2, v25m-kvtier lane): prose 2.85 · structured 3.03 · code 3.83 · shell 3.98 · tool-JSON 3.63; blended 3.20; +2.0% with block verification (Card BR1). k=9 measured: −8…−21% (per-position acceptance falls past position 6)."
+  accept: { "real-text C1": "2.96", "temp-1.0 C1 per class": "prose 2.85 · structured 3.03 · code 3.83 · shell 3.98 · tool-JSON 3.63 (blend 3.20)", "block verif.": "+2.0%", "k=9": "−8…−21% speed" }
 
 secondary:
   - label: "Guard — a missed sidecar deadline is wrong output, not a slow one"
@@ -47,6 +48,7 @@ fidelity:
   - { status: pass, text: "Speculation is target-verified (DSpark drafts are accepted by the full model at T=0)" }
   - { status: pass, text: "Teacher-forced margin-weighted flips vs the same-map control inside the control floor (W=3.014 vs floor 1.866); BFCL dev +0.34 pt, held-out −0.23 pt" }
   - { status: pass, text: "GSM8K-1319 96.97% identical to the incumbent (1,279/1,319); 500/500 exact needle; gauntlet 12/12; image request reads the picture" }
+  - { status: pass, text: "One public bench we ran: fraserprice's BRRR codegen harness ported stdlib — 2K/C1 466 tok/s at 5.13 tok/step vs their 4× RTX PRO 6000 703; 64K prefill 46,246 vs 17,852 tok/s" }
   - { status: measured, text: "One temp-0 GSM8K item ran to the token cap on this image (0/32 at a 32K cap on repeat) — attributed to the image's effort-75 tail, not the sidecar" }
 
 harness:

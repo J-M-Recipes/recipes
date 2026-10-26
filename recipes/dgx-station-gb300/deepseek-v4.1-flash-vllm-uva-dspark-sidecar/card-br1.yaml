@@ -1,0 +1,51 @@
+# card-br1.yaml — variant card (EXPERIMENTAL) for the sidecar recipe: DSpark block verification (Card BR1).
+#   scripts/render_card.py recipes/dgx-station-gb300/deepseek-v4.1-flash-vllm-uva-dspark-sidecar --card br1
+# Numbers trace to results/2026-10-26-br1-block-verification/ (VERDICT-rescore.txt, verdict-rescore.json, throughput.csv, raw/).
+title: "DeepSeek-V4.1-Flash · 1× DGX Station GB300 + RTX PRO 6000 · block verification (Card BR1)"
+subtitle: "The live sidecar lane (v25m map + Grace prefix-KV tier) with one key added to the speculative config: rejection_sample_method block. The drafted block is verified jointly instead of token by token, with the same output distribution. It only acts when temperature > 0."
+version: "block-verification = v25m-kvtier + 1 spec key · Card BR1 10-25 · PASS re-scored · PROMOTED as v27 10-26 04:08 CDT"
+status: experimental
+run_id: 2026-10-26-br1-block-verification
+handles: "github.com/J-M-Recipes/recipes · al-engr.com · block verification: Sun et al. (arXiv 2403.10444) · sidecar recipe: RonanLabsAI · hook: original-el8"
+
+model:
+  type: MoE
+  type_detail: "384 routed experts + Engram; 295 hot in HBM, 89 computed on the RTX 6000 (v25m mixed map)"
+  total_params: 552B
+  active_params: "8B prefill / 16B decode"
+  checkpoint_gb: 510.3
+  weights_short: "as shipped · MXFP4 experts / FP8 attn+Engram · nothing re-quantized"
+  engine_extra: "nightly-af7f9488 (sha256:3af6a45b) on BOTH GPUs · el8 hook @87af662 · b12x @2cc7f66a · vllm#58132 bounded replay · --speculative-config + \"rejection_sample_method\":\"block\""
+  memory: "GPU KV declared 8.5 GiB = 4,400,013 tok on every arm + 48 GiB Grace prefix tier · autotune hash hit (boot 528 s vs controls 529 s)"
+
+hero:
+  c1:      { value: 278.3, unit: tok/s, class: "prose, temp 1.0, 256 forced", label: "Decode · C1, block verification", note: "controls A 266.7 / A2 270.2 → 1.037× · per class C1: structured 305.3 (1.013×) · code 357.3 (1.013×) · shell 378.1 (0.996×) · tool-JSON 347.6 (1.054×) · 40 private transcript prompts per class, mean of r1/r2, seeded" }
+  c16:     { value: 1320.3, unit: tok/s, label: "Decode · C8 aggregate, shell_ops, temp 1.0", note: "controls 1,194.2 / 1,245.8 → 1.082× · C8 per class 1.008–1.082× · the 32-seat lane's batch schedule runs k=3 above 4 sequences" }
+  prefill: { value: 3.262, unit: tok/step, label: "Accepted tokens per verify step · temp-1.0 window", note: "controls 3.204 / 3.189 → +2.0% · mixed-traffic C1 2.105 vs 2.092 / 2.088 · mixed C1 decode 212.77 vs 212.05 / 212.65 tok/s (+0.20%)" }
+
+guesser:
+  name: DSpark
+  source: "in-checkpoint MTP (mtp.0–2), 1017 revision"
+  schedule: "k = 5 at 1–4 seqs, 3 at 5–8 and 9–32 (unchanged) · rejection_sample_method block"
+  accept: { "temp-1.0 C1, block / ctrl": "prose 2.95/2.83 · structured 3.25/3.20 · code 3.85/3.79 · shell 4.07/4.08 · tool-JSON 3.74/3.53", "temp 0": "no-op (greedy rows skip block verification)" }
+
+secondary:
+  - label: "What changed and what it does not cover"
+    items:
+      "change": "one key in --speculative-config; not a compute-hash factor → hash-hit boot, same autotune store"
+      "temperature 0": "vLLM applies it only when not is_greedy → a temp-0 bench reads B = A (prose −0.9%, code −2.2%, shell +1.1%; bars 2.6–4.1%)"
+      "verdicts": "pre-registered FAIL BR1FAIL-G0-G2b (order-sensitive env compare; temp-0 bar tighter than the controls' r1/r2 spread) · re-scored PASS BR1PASS · both kept"
+      "status": "promotion candidate, NOT promoted (James decides)"
+  - label: "Guard — same as the sidecar lane"
+    items:
+      "watchdog": "fail-closed, enforce mode on A, B and A2 · 0 timeouts · 0 trips · FF errors 0"
+      "isolation": "lane firewalled to loopback while dark · 0 foreign clients on every arm"
+      "KV / args": "4,400,013 tokens on all arms · block key in args 0/1/0 (docker inspect)"
+
+fidelity:
+  - { status: pass, text: "Weights unchanged: 1017 checkpoint as shipped; block verification is a verification rule and keeps the target distribution (Sun et al.)" }
+  - { status: pass, text: "Teacher-forced top-1 flips B-vs-A 2.166%, B-vs-A2 2.176% vs control floor A2-vs-A 2.172% (79,544 positions, 39 docs, 0 token-mismatch docs)" }
+  - { status: pass, text: "Margin-weighted flips: hi_agent_tool = 0 on all three compares; W 2.839 / 2.751 vs floor 2.773" }
+  - { status: pass, text: "Gauntlet 12/12 on A, B and A2 · replay_turns tool-turn emission B [7, 7]/12 vs controls [6, 8] and [7, 6] · x3 acceptance canary (temp 0) within noise" }
+  - { status: measured, text: "Speed gain measured at temperature 1.0 / top_p 1.0 only (C1 0.996–1.054× per class); clients sending temperature 0 get nothing from it" }
+  - { status: pending, text: "GSM8K-1319, BFCL and a soak not run with block verification on" }

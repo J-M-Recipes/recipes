@@ -1,0 +1,15 @@
+2,3c2,6
+< # launch_br1.sh — Card BR1 variant of launch_sidecar.sh (2026-10-25, Milo desk): identical except SPEC_EXTRA, spliced into the
+< # --speculative-config JSON before its closing brace. Empty = byte-identical production args; arm B: SPEC_EXTRA=',"rejection_sample_method":"block"'.
+---
+> # launch_br2.sh — Card BR2 variant of launch_sidecar.sh (2026-10-25, Milo desk) = launch_br1.sh + KSPEC: identical to
+> # launch_sidecar.sh except SPEC_EXTRA (spliced into the --speculative-config JSON before its closing brace) and KSPEC (spliced
+> # where the JSON had "num_speculative_tokens":5). SPEC_EXTRA empty + KSPEC 5 (+ KSCHED default) = byte-identical production args.
+> # BR2 arms: K7 KSPEC=7 KSCHED='[[1,4,7],[5,8,3],[9,32,3]]', K9 KSPEC=9 KSCHED='[[1,4,9],[5,8,3],[9,32,3]]', both with
+> # SPEC_EXTRA=',"rejection_sample_method":"block"'. KSPEC is NOT validated here (the runner's arm table is the only caller).
+34a38
+> KSPEC=${KSPEC:-5}
+108c112
+<   --speculative-config "{\"method\":\"dspark\",\"num_speculative_tokens\":5,\"num_speculative_tokens_per_batch_size\":$KSCHED,\"draft_sample_method\":\"probabilistic\"$SPEC_EXTRA}" \
+---
+>   --speculative-config "{\"method\":\"dspark\",\"num_speculative_tokens\":$KSPEC,\"num_speculative_tokens_per_batch_size\":$KSCHED,\"draft_sample_method\":\"probabilistic\"$SPEC_EXTRA}" \

@@ -1,0 +1,32 @@
+sha1 bc466cde2154 cardBR2_runner.sh
+sha1 1b0e88797ec3 ~/dsv41/m3/br1/launch_br2.sh
+sha1 1796f1d9cad5 ~/dsv41/m3/launch_sidecar.sh
+sha1 6a87c0a286ba ~/dsv41/m3/br1/br2_verdict.py
+sha1 3dfeb6e85ea1 ~/dsv41/m3/br1/perclass_run_t.sh
+sha1 0830fbe43702 ~/dsv41/m3/br1/br2_perclass_decode_t.py
+sha1 b12c5a666191 ~/dsv41/m3/br1/ar_mixed_t.py
+sha1 6e6d3ff8323a ~/dsv41/bench/perclass_table.py
+sha1 9d10d2e39d74 ~/dsv41/1017/agent_fixture_x3.py
+sha1 618898aac432 ~/dsv41/bench/perclass_prompts.jsonl
+sha1 ce5231c16a96 ~/dsv41/ar/ar_mixed_v2.py
+sha1 b17d9103d58b ~/dsv41/m3/sidecar_watchdog.py
+sha1 5f7934a9b097 ~/dsv41/m3/replay_turns.py
+sha1 e3f1aea493bd ~/dsv41/transcript_fixture.json
+sha1 e5f575dcd4a9 ~/pin-hot-experts/round7/gauntlet/run_suite.py
+sha1 1c054c757802 ~/dsv41/m3/br1/peerbench.py
+sha1 52e2861c7ecc ~/dsv41/m3/el8/deepseek-v4.1-flash/m3/hook/rowmap-mixed-ar-v1.json
+sha1 efe0bb6ab2af ~/dsv41/m3/el8/deepseek-v4.1-flash/m3/hook/sitecustomize.py
+sha1 15d110221da2 ~/dsv41/m3/local/peer_server2_local.py
+image vllm/vllm-openai@sha256:3af6a45b060d681aa6254200f87859d1bb3c1f962afb3d15540b4b31d4a41063
+gauntlet image sha256:00d577a6a63281e15336029d5bcee4e9a2cf182214a4f20ba6111b1c8e79893d
+all arms EXTRA=[--kv-cache-memory 9126805504 --kv-offloading-size 48 --kv-offloading-backend native]
+arms: A K9 A2
+arm table A: container=dsv41-vllm-1017-BR2-A SPEC_EXTRA=[] KSPEC=5 KSCHED=[launcher-default] BOOT_MIN=40
+arm table K9: container=dsv41-vllm-1017-BR2-K9 SPEC_EXTRA=[,"rejection_sample_method":"block"] KSPEC=9 KSCHED=[[[1,4,9],[5,8,3],[9,32,3]]] BOOT_MIN=60
+arm table A2: container=dsv41-vllm-1017-BR2-A2 SPEC_EXTRA=[] KSPEC=5 KSCHED=[launcher-default] BOOT_MIN=40
+sampling for pct1/mixed: temperature=1.0 seed=42 (+row/prompt index) top_p=1.0
+peerbench: rounds=2 sizes 2048 16384 65536 conc 1 4 8 16 cell budget 1500s outer 5400s; sampling = the peer bench's defaults (temperature 1.0, top_p 1.0 sent; no seed; thinking off; max_tokens 1 then 2048, natural EOS)
+iptables :30006 rules before: 
+arm A boot env: NAME=dsv41-vllm-1017-BR2-A ROWMAP=rowmap-mixed-ar-v1.json EXTRA=[--kv-cache-memory 9126805504 --kv-offloading-size 48 --kv-offloading-backend native] SPEC_EXTRA=[] KSPEC=5 KSCHED=[launcher-default] BOOT_MIN=40
+arm K9 boot env: NAME=dsv41-vllm-1017-BR2-K9 ROWMAP=rowmap-mixed-ar-v1.json EXTRA=[--kv-cache-memory 9126805504 --kv-offloading-size 48 --kv-offloading-backend native] SPEC_EXTRA=[,"rejection_sample_method":"block"] KSPEC=9 KSCHED=[[[1,4,9],[5,8,3],[9,32,3]]] BOOT_MIN=60
+arm A2 boot env: NAME=dsv41-vllm-1017-BR2-A2 ROWMAP=rowmap-mixed-ar-v1.json EXTRA=[--kv-cache-memory 9126805504 --kv-offloading-size 48 --kv-offloading-backend native] SPEC_EXTRA=[] KSPEC=5 KSCHED=[launcher-default] BOOT_MIN=40

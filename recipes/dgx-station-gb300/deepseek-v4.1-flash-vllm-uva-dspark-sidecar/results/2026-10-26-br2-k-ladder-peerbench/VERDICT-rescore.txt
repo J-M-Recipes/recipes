@@ -1,0 +1,120 @@
+Card BR2 verdict: PASS   suffix BR2PASS   arms A K9 A2   arm_valid {'A': True, 'K9': True, 'A2': True}
+
+| gate | status | detail |
+|---|---|---|
+| G0_binding | PASS | A: kv=4,400,013 kspec_in_args=5(want 5) ksched=[[1,4,5],[5,8,3],[9,32,3]] block=- spec==table True args-rest==prod True env==prod True rtx_args==prod True; K9: kv=4,400,013 (KV-SAME; reported, not gated) kspec_in_args=9(want 9) ksched=[[1,4,9],[5,8,3],[9,32,3]] block=block spec==table True args-rest==prod True env==prod True rtx_args==prod True; A2: kv=4,400,013 kspec_in_args=5(want 5) ksched=[[1,4,5],[5,8,3],[9,32,3]] block=- spec==table True args-rest==prod True env==prod True rtx_args==prod True |
+| G0b_foreign | PASS | non-127.0.0.1 POST /v1 per arm: A=0 {'bind': 0, 'cells': 0}; K9=0 {'bind': 0, 'cells': 0}; A2=0 {'bind': 0, 'cells': 0} |
+| G1_controls | PASS | C1 per class (temp 1.0): t1/prose/c1 d=1.8%; t1/structured/c1 d=3.7%; t1/code/c1 d=0.5%; t1/shell_ops/c1 d=0.0%; t1/tool_json/c1 d=1.2% | C8 (advisory): prose/c8 d=2.9%; structured/c8 d=0.6%; code/c8 d=1.7%; shell_ops/c8 d=5.4%; tool_json/c8 d=0.9% |
+| G2_cells | PASS | A: complete (peerbench 12/12 OK, info); K9: complete (peerbench 12/12 OK, info); A2: complete (peerbench 12/12 OK, info) |
+| G7_watchdog | PASS | A: timeouts=0 trips=0 alive=True ff=0 (sidecar ff=0); K9: timeouts=0 trips=0 alive=True ff=0 (sidecar ff=0); A2: timeouts=0 trips=0 alive=True ff=0 (sidecar ff=0) |
+
+ANNOTATION (not gated) — boot / autotune shape:
+| arm | kspec | ksched | KV tokens | kv flag | boot s | autotune loaded/saved/new | autotune span s | retune | cg_tokens (>128) | cg_sched |
+|---|---|---|---|---|---|---|---|---|---|---|
+| A | 5 | launcher-default | 4,400,013 | - | 529 | 117/117/0 | 258 | False | 192 (True) | 128 |
+| K9 | 9 | [[1,4,9],[5,8,3],[9,32,3]] | 4,400,013 | KV-SAME | 529 | 117/117/0 | 259 | False | 320 (True) | 128 |
+| A2 | 5 | launcher-default | 4,400,013 | - | 529 | 117/117/0 | 255 | False | 192 (True) | 128 |
+
+ANNOTATION — temp 1.0 decode tok/s per class (ratio vs mean(A, A2)); mixed = ar_mixed_t C1 agg tok/s:
+| arm | prose C1 | structured C1 | code C1 | shell_ops C1 | tool_json C1 | prose C8 | structured C8 | code C8 | shell_ops C8 | tool_json C8 | mixed C1 |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| A | 271.1 (0.991) | 286.5 (0.981) | 356.0 (1.002) | 371.4 (1.000) | 339.6 (0.994) | 975.2 (0.985) | 1041.9 (0.997) | 1155.3 (0.992) | 1159.8 (0.973) | 1163.5 (1.004) | 212.3 (1.000) |
+| K9 | 222.4 (0.813) | 250.9 (0.860) | 308.4 (0.868) | 340.9 (0.918) | 291.6 (0.853) | 886.5 (0.896) | 931.0 (0.891) | 1078.1 (0.925) | 1108.3 (0.930) | 1021.9 (0.882) | 168.4 (0.793) |
+| A2 | 275.9 (1.009) | 297.4 (1.019) | 354.3 (0.998) | 371.3 (1.000) | 343.8 (1.006) | 1004.0 (1.015) | 1048.3 (1.003) | 1174.8 (1.008) | 1223.7 (1.027) | 1153.7 (0.996) | 212.5 (1.000) |
+
+ANNOTATION — tokens per verify step at temp 1.0 (1 + accepted/drafts, per class from the decoder's /metrics deltas; eff k = draft_tokens/drafts):
+| arm | prose C1 | structured C1 | code C1 | shell_ops C1 | tool_json C1 | prose C8 | structured C8 | code C8 | shell_ops C8 | tool_json C8 | pct1 window | mixed C1 | peerbench |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| A | 2.85 (k 5.0) | 3.03 (k 5.0) | 3.83 (k 5.0) | 3.98 (k 5.0) | 3.63 (k 5.0) | 2.58 (k 3.1) | 2.74 (k 3.1) | 3.13 (k 3.2) | 3.14 (k 3.1) | 2.98 (k 3.1) | 3.18 | 2.08 | 3.91 |
+| K9 | 2.60 (k 9.0) | 2.94 (k 9.0) | 3.66 (k 9.0) | 4.04 (k 9.0) | 3.45 (k 9.0) | 2.34 (k 3.2) | 2.50 (k 3.3) | 2.94 (k 3.4) | 2.99 (k 3.3) | 2.73 (k 3.3) | 3.00 | 1.82 | 3.88 |
+| A2 | 2.91 (k 5.0) | 3.15 (k 5.0) | 3.80 (k 5.0) | 3.97 (k 5.0) | 3.66 (k 5.0) | 2.66 (k 3.1) | 2.81 (k 3.1) | 3.14 (k 3.1) | 3.17 (k 3.1) | 2.95 (k 3.1) | 3.22 | 2.09 | 3.91 |
+
+ANNOTATION — per-position acceptance at temp 1.0, C1 (curve[p] = accepted-at-p / drafts; marginal = curve[p]/curve[p-1]; k* candidate = first p with marginal < 0.5):
+  arm A (kspec 5):
+    prose      curve  p1=0.717 p2=0.476 p3=0.310 p4=0.205 p5=0.145
+               marg   p1=0.717 p2=0.664 p3=0.651 p4=0.662 p5=0.707   k* candidate >5   (1+sum curve 2.85)
+    structured curve  p1=0.747 p2=0.514 p3=0.352 p4=0.245 p5=0.175
+               marg   p1=0.747 p2=0.688 p3=0.684 p4=0.697 p5=0.715   k* candidate >5   (1+sum curve 3.03)
+    code       curve  p1=0.823 p2=0.653 p3=0.536 p4=0.445 p5=0.371
+               marg   p1=0.823 p2=0.794 p3=0.822 p4=0.829 p5=0.835   k* candidate >5   (1+sum curve 3.83)
+    shell_ops  curve  p1=0.833 p2=0.687 p3=0.573 p4=0.482 p5=0.408
+               marg   p1=0.833 p2=0.825 p3=0.833 p4=0.842 p5=0.847   k* candidate >5   (1+sum curve 3.98)
+    tool_json  curve  p1=0.801 p2=0.619 p3=0.479 p4=0.396 p5=0.336
+               marg   p1=0.801 p2=0.772 p3=0.774 p4=0.826 p5=0.849   k* candidate >5   (1+sum curve 3.63)
+    mixed C1   curve  p1=0.588 p2=0.294 p3=0.129 p4=0.052 p5=0.021   k* 2
+  arm K9 (kspec 9):
+    prose      curve  p1=0.612 p2=0.379 p3=0.235 p4=0.147 p5=0.097 p6=0.063 p7=0.036 p8=0.020 p9=0.011
+               marg   p1=0.612 p2=0.620 p3=0.621 p4=0.624 p5=0.660 p6=0.646 p7=0.568 p8=0.566 p9=0.541   k* candidate >9   (1+sum curve 2.60)
+    structured curve  p1=0.655 p2=0.449 p3=0.303 p4=0.204 p5=0.145 p6=0.094 p7=0.052 p8=0.027 p9=0.015
+               marg   p1=0.655 p2=0.686 p3=0.673 p4=0.673 p5=0.710 p6=0.647 p7=0.551 p8=0.532 p9=0.550   k* candidate >9   (1+sum curve 2.94)
+    code       curve  p1=0.719 p2=0.548 p3=0.428 p4=0.322 p5=0.255 p6=0.179 p7=0.108 p8=0.064 p9=0.037
+               marg   p1=0.719 p2=0.762 p3=0.780 p4=0.753 p5=0.792 p6=0.704 p7=0.601 p8=0.595 p9=0.572   k* candidate >9   (1+sum curve 3.66)
+    shell_ops  curve  p1=0.759 p2=0.613 p3=0.490 p4=0.382 p5=0.315 p6=0.225 p7=0.142 p8=0.075 p9=0.039
+               marg   p1=0.759 p2=0.808 p3=0.799 p4=0.780 p5=0.823 p6=0.717 p7=0.629 p8=0.530 p9=0.514   k* candidate >9   (1+sum curve 4.04)
+    tool_json  curve  p1=0.696 p2=0.511 p3=0.385 p4=0.294 p5=0.228 p6=0.155 p7=0.096 p8=0.054 p9=0.036
+               marg   p1=0.696 p2=0.734 p3=0.753 p4=0.764 p5=0.776 p6=0.679 p7=0.623 p8=0.559 p9=0.667   k* candidate >9   (1+sum curve 3.45)
+    mixed C1   curve  p1=0.466 p2=0.210 p3=0.089 p4=0.034 p5=0.013 p6=0.005 p7=0.001 p8=0.000 p9=0.000   k* 1
+  arm A2 (kspec 5):
+    prose      curve  p1=0.724 p2=0.489 p3=0.322 p4=0.217 p5=0.157
+               marg   p1=0.724 p2=0.674 p3=0.659 p4=0.676 p5=0.723   k* candidate >5   (1+sum curve 2.91)
+    structured curve  p1=0.755 p2=0.534 p3=0.377 p4=0.276 p5=0.206
+               marg   p1=0.755 p2=0.707 p3=0.706 p4=0.733 p5=0.744   k* candidate >5   (1+sum curve 3.15)
+    code       curve  p1=0.819 p2=0.652 p3=0.529 p4=0.434 p5=0.363
+               marg   p1=0.819 p2=0.796 p3=0.812 p4=0.820 p5=0.836   k* candidate >5   (1+sum curve 3.80)
+    shell_ops  curve  p1=0.835 p2=0.690 p3=0.569 p4=0.478 p5=0.402
+               marg   p1=0.835 p2=0.825 p3=0.825 p4=0.841 p5=0.840   k* candidate >5   (1+sum curve 3.97)
+    tool_json  curve  p1=0.800 p2=0.621 p3=0.489 p4=0.405 p5=0.346
+               marg   p1=0.800 p2=0.776 p3=0.789 p4=0.828 p5=0.852   k* candidate >5   (1+sum curve 3.66)
+    mixed C1   curve  p1=0.593 p2=0.292 p3=0.129 p4=0.053 p5=0.021   k* 2
+
+ANNOTATION — per-position at C8 (KSCHED caps k at 3 for batch 5-8, so positions > 3 read 0 by construction):
+  A: prose 0.74/0.50/0.34/0.01; structured 0.77/0.56/0.40/0.01; code 0.84/0.69/0.58/0.01; shell_ops 0.83/0.70/0.59/0.01; tool_json 0.82/0.64/0.51/0.01
+  K9: prose 0.64/0.42/0.27/0.00; structured 0.68/0.48/0.33/0.01; code 0.77/0.63/0.52/0.01; shell_ops 0.78/0.65/0.54/0.01; tool_json 0.73/0.56/0.43/0.01
+  A2: prose 0.76/0.52/0.36/0.01; structured 0.79/0.58/0.43/0.01; code 0.84/0.69/0.58/0.01; shell_ops 0.85/0.71/0.59/0.01; tool_json 0.81/0.63/0.49/0.01
+ANNOTATION — k* candidate (C1) per class: A: prose=>5, structured=>5, code=>5, shell_ops=>5, tool_json=>5; K9: prose=>9, structured=>9, code=>9, shell_ops=>9, tool_json=>9; A2: prose=>5, structured=>5, code=>5, shell_ops=>5, tool_json=>5
+ANNOTATION — gauntlet (temp 0): A 12/12, K9 12/12, A2 12/12 | replay_turns tool_emitted per pass: A [8, 8], K9 [8, 5], A2 [9, 8]
+
+ANNOTATION — peerbench (port of the BRRR peer's bench.py, their sampling: temperature 1.0, top_p 1.0, thinking off; same column layout as their README table):
+  arm A: complete=True status={'2048/C1': 'OK', '2048/C4': 'OK', '2048/C8': 'OK', '2048/C16': 'OK', '16384/C1': 'OK', '16384/C4': 'OK', '16384/C8': 'OK', '16384/C16': 'OK', '65536/C1': 'OK', '65536/C4': 'OK', '65536/C8': 'OK', '65536/C16': 'OK'}
+         prompt       conc   TTFT p50      PP p1     PP p50     PP p99   PP total      TG p1     TG p50     TG p99   TG total  TG window     accept
+          2,148          1     152 ms     15,906     14,279     12,651     14,087        473        466        459        467      1,516 5.13 (83%)
+          2,147          4     264 ms      8,259      8,137      8,006     32,286        329        321        313      1,287      1,362 5.15 (83%)
+          2,148          8     408 ms      7,878      5,259      4,612     39,319        215        213        206      1,697      1,401 3.76 (89%)
+          2,148         16     643 ms      7,818      3,357      2,850     47,045        174        169        167      2,719      1,356 3.70 (89%)
+         16,484          1     349 ms     47,369     47,297     47,224     47,297        472        471        469        470      1,418 5.21 (84%)
+         16,483          4   1,025 ms     27,428     16,356     12,771     51,283        325        319        313      1,277      1,436 5.05 (81%)
+         16,483          8   1,617 ms     27,250     10,271      6,740     53,937        212        208        204      1,665      1,370 3.76 (88%)
+         16,484         16   2,781 ms     27,008      5,944      3,461     55,383        174        170        165      2,715      1,080 3.70 (90%)
+         65,636          1   1,419 ms     46,632     46,246     45,861     46,243        455        453        451        454      1,256 5.05 (81%)
+         65,635          4   3,597 ms     34,547     18,847     13,191     52,916        329        316        305      1,266      1,346 5.13 (83%)
+         65,636          8   6,098 ms     34,322     10,860      6,715     53,808        214        209        207      1,675        989 3.81 (89%)
+         65,636         16  10,890 ms     34,262      6,045      3,392     54,294        172        165        160      2,653      1,041 3.72 (90%)
+  arm K9: complete=True status={'2048/C1': 'OK', '2048/C4': 'OK', '2048/C8': 'OK', '2048/C16': 'OK', '16384/C1': 'OK', '16384/C4': 'OK', '16384/C8': 'OK', '16384/C16': 'OK', '65536/C1': 'OK', '65536/C4': 'OK', '65536/C8': 'OK', '65536/C16': 'OK'}
+         prompt       conc   TTFT p50      PP p1     PP p50     PP p99   PP total      TG p1     TG p50     TG p99   TG total  TG window     accept
+          2,148          1     134 ms     16,127     15,983     15,839     15,982        469        468        467        468      1,532 5.70 (52%)
+          2,148          4     272 ms      8,023      7,893      7,763     31,313        333        321        302      1,272      1,292 5.77 (53%)
+          2,147          8     416 ms      7,755      5,163      5,056     40,897        207        202        197      1,615      1,144 3.65 (82%)
+          2,148         16     625 ms      7,748      3,476      2,826     46,798        167        162        157      2,592      1,354 3.60 (85%)
+         16,486          1     375 ms     46,990     44,183     41,376     43,997        471        469        466        469      1,336 5.72 (52%)
+         16,484          4   1,027 ms     27,399     16,333     12,743     51,011        345        316        304      1,277      1,386 5.95 (55%)
+         16,484          8   1,618 ms     27,234     10,265      6,716     53,766        206        199        192      1,588      1,250 3.65 (82%)
+         16,484         16   2,782 ms     26,816      5,940      3,451     55,231        164        159        154      2,552      1,182 3.62 (85%)
+         65,635          1   1,430 ms     46,268     45,917     45,566     45,914        496        489        482        490      1,737 6.05 (56%)
+         65,635          4   3,600 ms     34,380     18,822     13,181     52,854        326        306        295      1,235      1,410 5.81 (53%)
+         65,635          8   6,086 ms     34,373     10,888      6,731     53,850        207        200        194      1,600      1,328 3.70 (83%)
+         65,636         16  10,877 ms     34,358      6,052      3,388     54,239        162        158        150      2,521      1,122 3.60 (85%)
+  arm A2: complete=True status={'2048/C1': 'OK', '2048/C4': 'OK', '2048/C8': 'OK', '2048/C16': 'OK', '16384/C1': 'OK', '16384/C4': 'OK', '16384/C8': 'OK', '16384/C16': 'OK', '65536/C1': 'OK', '65536/C4': 'OK', '65536/C8': 'OK', '65536/C16': 'OK'}
+         prompt       conc   TTFT p50      PP p1     PP p50     PP p99   PP total      TG p1     TG p50     TG p99   TG total  TG window     accept
+          2,148          1     139 ms     15,707     15,498     15,289     15,495        475        467        459        468      1,748 5.16 (83%)
+          2,147          4     276 ms      7,976      7,785      7,597     30,885        325        313        309      1,257      1,316 5.09 (82%)
+          2,148          8     416 ms      7,585      5,165      4,499     38,490        214        211        207      1,688      1,430 3.77 (89%)
+          2,148         16     650 ms      7,561      3,318      2,833     46,620        175        169        164      2,708      1,226 3.70 (89%)
+         16,484          1     350 ms     47,139     47,069     46,999     47,069        474        465        456        463      1,682 5.14 (83%)
+         16,483          4   1,026 ms     27,374     16,338     12,780     51,179        325        318        314      1,275      1,300 5.17 (83%)
+         16,483          8   1,620 ms     27,289     10,256      6,667     53,448        213        210        208      1,680      1,388 3.73 (89%)
+         16,484         16   2,788 ms     26,560      5,928      3,438     55,014        171        169        164      2,692      1,260 3.73 (90%)
+         65,634          1   1,429 ms     46,325     45,918     45,511     45,914        466        457        449        458      1,604 5.11 (82%)
+         65,636          4   3,610 ms     34,387     18,788     13,151     52,638        317        312        294      1,237      1,236 5.07 (81%)
+         65,635          8   6,100 ms     34,518     10,851      6,705     53,766        211        208        201      1,655      1,248 3.76 (88%)
+         65,635         16  10,890 ms     34,269      6,044      3,391     54,280        169        166        162      2,650      1,226 3.73 (90%)
+ANNOTATION — production watchdog after restore: {'pid': 2202485, 'ppid': '1', 'ppid_is_1': True}
