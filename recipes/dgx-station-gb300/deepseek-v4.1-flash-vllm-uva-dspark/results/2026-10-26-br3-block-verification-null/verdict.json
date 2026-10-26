@@ -1,0 +1,786 @@
+{
+ "card": "BR3 block verification (GB300-only v26seed)",
+ "result": "FAIL",
+ "suffix": "BR3FAIL-G2",
+ "gates": {
+  "G0_binding": [
+   "PASS",
+   "A: kv=2,495,694 block_in_args=0(want 0) args==v26seed True env==v26seed(sorted) True binds==v26seed(except /ar) True image0909 True hook rehome 40/40 done=1 abort=0 failed=0 missing=[] host_avail@L9=196.35GiB GO+unfreeze 1/1 ctrl={\"freeze\": false, \"baseline\": true}; B: kv=2,495,694 block_in_args=1(want 1) args==v26seed-except-spec True spec==v26seed+block True env==v26seed(sorted) True binds==v26seed(except /ar) True image0909 True hook rehome 40/40 done=1 abort=0 failed=0 missing=[] host_avail@L9=197.13GiB GO+unfreeze 1/1 ctrl={\"freeze\": false, \"baseline\": true}; A2: kv=2,495,694 block_in_args=0(want 0) args==v26seed True env==v26seed(sorted) True binds==v26seed(except /ar) True image0909 True hook rehome 40/40 done=1 abort=0 failed=0 missing=[] host_avail@L9=197.42GiB GO+unfreeze 1/1 ctrl={\"freeze\": false, \"baseline\": true}; KV A=2,495,694 B=2,495,694 A2=2,495,694 (v26seed boot log 2,495,694, info) | hash-hit shape (info): A loaded=189 saved=189 same_dir=True autotune_span=5.0s boot=474s; B loaded=189 saved=189 same_dir=True autotune_span=5.0s boot=484s; A2 loaded=189 saved=189 same_dir=True autotune_span=5.0s boot=484s; one autotune key across arms: True; 0909 hash-hit shape (Loaded N == Saved N, same dir, span <= 60 s): A=True, B=True, A2=True; B boot / controls = 1.01 (<= 1.5 expected)"
+  ],
+  "G0b_foreign": [
+   "PASS",
+   "non-127.0.0.1 POST /v1 per arm: A=0 {'bind': 0, 'cells': 0}; B=0 {'bind': 0, 'cells': 0}; A2=0 {'bind': 0, 'cells': 0}"
+  ],
+  "G1_controls": [
+   "PASS",
+   "C1 per class: t1/prose/c1 d=0.7%; t1/structured/c1 d=1.4%; t1/code/c1 d=2.0%; t1/shell_ops/c1 d=0.6%; t1/tool_json/c1 d=0.8%; t0/prose/c1 d=1.7%; t0/structured/c1 d=2.2%; t0/code/c1 d=3.8%; t0/shell_ops/c1 d=0.2%; t0/tool_json/c1 d=4.2% | C8 (info, bimodal class): t1/prose/c8 d=5.0%; t1/structured/c8 d=0.7%; t1/code/c8 d=4.2%; t1/shell_ops/c8 d=1.7%; t1/tool_json/c8 d=9.1%; t0/prose/c8 d=7.2%; t0/structured/c8 d=0.7%; t0/code/c8 d=0.2%; t0/shell_ops/c8 d=1.4%; t0/tool_json/c8 d=1.8%"
+  ],
+  "G2_perclass_t1": [
+   "FAIL",
+   "temp 1.0 forced-length decode tok/s: prose/c1 B/ctrl=1.000 (A 200.7 A2 202.1 B 201.4; bar -2.0%); prose/c8 B/ctrl=0.989 (A 446.7 A2 469.4 B 453.0; bar -7.4%); structured/c1 B/ctrl=0.973 (A 214.7 A2 217.8 B 210.3; bar -2.1%) FAIL; structured/c8 B/ctrl=0.970 (A 543.2 A2 539.6 B 525.2; bar -2.0%) FAIL; code/c1 B/ctrl=0.984 (A 255.1 A2 260.2 B 253.5; bar -2.9%); code/c8 B/ctrl=1.088 (A 522.4 A2 545.0 B 580.7; bar -6.3%); shell_ops/c1 B/ctrl=0.995 (A 287.1 A2 285.5 B 285.0; bar -2.0%); shell_ops/c8 B/ctrl=1.044 (A 640.2 A2 650.9 B 674.2; bar -2.5%); tool_json/c1 B/ctrl=1.015 (A 255.5 A2 253.4 B 258.2; bar -2.0%); tool_json/c8 B/ctrl=1.086 (A 641.0 A2 701.8 B 729.3; bar -13.6%)"
+  ],
+  "G2b_t0_noop": [
+   "PASS",
+   "stock temp-0 window (greedy rows never use block verification; B must equal A within noise): prose/c1 B -3.5% (|.| bar 9.7%, ctrl r1/r2 spread 6.5%); structured/c1 B -0.4% (|.| bar 4.2%, ctrl r1/r2 spread 2.8%); code/c1 B -0.4% (|.| bar 8.3%, ctrl r1/r2 spread 5.5%); shell_ops/c1 B -0.9% (|.| bar 7.9%, ctrl r1/r2 spread 5.3%); tool_json/c1 B -0.0% (|.| bar 6.9%, ctrl r1/r2 spread 4.6%) | C8 info: prose/c8 B/ctrl=0.989; structured/c8 B/ctrl=1.028; code/c8 B/ctrl=0.976; shell_ops/c8 B/ctrl=0.998; tool_json/c8 B/ctrl=0.998"
+  ],
+  "G3_mixed_c1_t1": [
+   "PASS",
+   "ar_mixed_t C1 agg_tok_s_all at temp 1.0: B mean 179.54 vs ctrl 179.97 (-0.24%; A 180.07 A2 179.87; bar -2.00%) reps B=[174.7, 181.9, 182.0] errors B=0"
+  ],
+  "G4_tf": [
+   "PASS",
+   "B-vs-A flips 1.086% (bar <=3% and <= 1.5 x floor 1.092% = 1.639%; token-mismatch docs 0); B-vs-A2 flips 1.128% (bar <=3% and <= 1.5 x floor 1.092% = 1.639%; token-mismatch docs 0); margin flips at ref p>=0.9 on agent/tool docs: vs A=0 (skipped_docs 0), vs A2=0 (skipped_docs 0)"
+  ],
+  "G5_gauntlet": [
+   "PASS",
+   "B 12/12; controls A 12/12, A2 12/12 (temp 0: run_suite.py)"
+  ],
+  "G6_turns": [
+   "PASS",
+   "B per pass [8, 7]/12 vs control range [6,8] (A [8, 7], A2 [6, 8]); B errors 0; text-turn emissions B [4, 6] (temp 0: replay_turns.py)"
+  ],
+  "G7_errors": [
+   "PASS",
+   "A: ff=0 foreign=0; B: ff=0 foreign=0; A2: ff=0 foreign=0"
+  ]
+ },
+ "gate_status": {
+  "G0_binding": "PASS",
+  "G0b_foreign": "PASS",
+  "G1_controls": "PASS",
+  "G2_perclass_t1": "FAIL",
+  "G2b_t0_noop": "PASS",
+  "G3_mixed_c1_t1": "PASS",
+  "G4_tf": "PASS",
+  "G5_gauntlet": "PASS",
+  "G6_turns": "PASS",
+  "G7_errors": "PASS"
+ },
+ "invalid_arms": [],
+ "valid": true,
+ "annotations": {
+  "tokens_per_verify_step_t1": {
+   "pct1_window": {
+    "A": 3.1108640081799592,
+    "B": 3.116222389526204,
+    "A2": 3.1253041519150306
+   },
+   "mixed_c1": {
+    "A": 2.087282274590164,
+    "B": 2.093066752660432,
+    "A2": 2.087282274590164
+   },
+   "B_over_ctrl_pct1": 0.9994029376779144,
+   "B_over_ctrl_mixed": 1.002771296503921
+  },
+  "tokens_per_verify_step_t1_per_class": {
+   "prose/c1": {
+    "B": 2.6170998980632008,
+    "ctrl": 2.617254230498703
+   },
+   "prose/c8": {
+    "B": 2.5993922512028362,
+    "ctrl": 2.590616106545812
+   },
+   "structured/c1": {
+    "B": 2.668963723833052,
+    "ctrl": 2.7301544496835026
+   },
+   "structured/c8": {
+    "B": 2.7023605433205855,
+    "ctrl": 2.7516679555768175
+   },
+   "code/c1": {
+    "B": 3.4689503881201484,
+    "ctrl": 3.557564781392868
+   },
+   "code/c8": {
+    "B": 3.567210837096214,
+    "ctrl": 3.4268196929541563
+   },
+   "shell_ops/c1": {
+    "B": 3.646735273243435,
+    "ctrl": 3.687043478809638
+   },
+   "shell_ops/c8": {
+    "B": 3.6805306561491573,
+    "ctrl": 3.6949028804979713
+   },
+   "tool_json/c1": {
+    "B": 3.312913106561341,
+    "ctrl": 3.210744644733521
+   },
+   "tool_json/c8": {
+    "B": 3.403715375684193,
+    "ctrl": 3.275784063673532
+   }
+  },
+  "x3_accept_canary": {
+   "t1": {
+    "prose": {
+     "A": 0.2468,
+     "B": 0.2468,
+     "A2": 0.2468
+    },
+    "structured": {
+     "A": 0.468,
+     "B": 0.468,
+     "A2": 0.468
+    },
+    "code": {
+     "A": 0.7837,
+     "B": 0.7837,
+     "A2": 0.7837
+    },
+    "shell_ops": {
+     "A": 0.7703,
+     "B": 0.7703,
+     "A2": 0.7703
+    },
+    "tool_json": {
+     "A": 0.8311,
+     "B": 0.8311,
+     "A2": 0.8311
+    }
+   },
+   "t0": {
+    "prose": {
+     "A": 0.2468,
+     "B": 0.2468,
+     "A2": 0.2468
+    },
+    "structured": {
+     "A": 0.468,
+     "B": 0.468,
+     "A2": 0.468
+    },
+    "code": {
+     "A": 0.7837,
+     "B": 0.7837,
+     "A2": 0.7837
+    },
+    "shell_ops": {
+     "A": 0.7703,
+     "B": 0.7703,
+     "A2": 0.7703
+    },
+    "tool_json": {
+     "A": 0.8311,
+     "B": 0.8311,
+     "A2": 0.8311
+    }
+   }
+  },
+  "perclass_hygiene": {
+   "A/t1": [],
+   "A/t0": [],
+   "B/t1": [],
+   "B/t0": [],
+   "A2/t1": [],
+   "A2/t0": []
+  },
+  "boot_block_lines": {
+   "A": [
+    "(EngineCore pid=364) INFO 10-26 09:35:49 [spec_decode_rejection_warmup.py:64] Warming up spec-decode rejection sampler kernels (vocab=129280, num_spec=5, dtype_pairs=[('torch.bfloat16', 'torch.float32'), ('torch.float32', 'torch.float32'), ('torch.bfloat16', 'torch.bfloat16'), ('torch.float32', 'tor"
+   ],
+   "B": [
+    "(APIServer pid=1) INFO 10-26 10:13:49 [api_utils.py:286] non-default args: {'model_tag': '/model', 'enable_auto_tool_choice': True, 'tool_call_parser': 'deepseek_v41', 'host': '0.0.0.0', 'port': 30006, 'model': '/model', 'trust_remote_code': True, 'max_model_len': 1048576, 'served_model_name': ['dsv",
+    "(EngineCore pid=364) INFO 10-26 10:20:29 [spec_decode_rejection_warmup.py:64] Warming up spec-decode rejection sampler kernels (vocab=129280, num_spec=5, dtype_pairs=[('torch.float32', 'torch.float32'), ('torch.bfloat16', 'torch.bfloat16'), ('torch.float32', 'torch.bfloat16'), ('torch.bfloat16', 'to"
+   ],
+   "A2": [
+    "(EngineCore pid=364) INFO 10-26 11:05:22 [spec_decode_rejection_warmup.py:64] Warming up spec-decode rejection sampler kernels (vocab=129280, num_spec=5, dtype_pairs=[('torch.float32', 'torch.float32'), ('torch.bfloat16', 'torch.float32'), ('torch.float32', 'torch.bfloat16'), ('torch.bfloat16', 'tor"
+   ]
+  },
+  "mem_min_by_phase": {
+   "pre": 129.6,
+   "A:preboot": 451.1,
+   "A:boot": 157.0,
+   "A:go": 192.2,
+   "A:adapt-settle": 192.2,
+   "A:cells": 191.1,
+   "A:post": 447.7,
+   "B:preboot": 449.0,
+   "B:boot": 154.6,
+   "B:go": 193.4,
+   "B:adapt-settle": 193.4,
+   "B:cells": 192.6,
+   "B:post": 448.7,
+   "A2:preboot": 450.2,
+   "A2:boot": 154.7,
+   "A2:go": 193.8,
+   "A2:adapt-settle": 193.7,
+   "A2:cells": 192.0,
+   "A2:post": 194.1,
+   "restore": 133.1
+  },
+  "restore_watchdog": {
+   "pid": 2616605,
+   "ppid": "1",
+   "ppid_is_1": true
+  },
+  "kv_v26seed_boot_log": "2,495,694",
+  "adaptive_ar_lines_cells_delta": {
+   "A": {
+    "swaps": 86282,
+    "telemetry": 1990,
+    "steps_bytes": 4235872
+   },
+   "B": {
+    "swaps": 87151,
+    "telemetry": 2007,
+    "steps_bytes": 4271104
+   },
+   "A2": {
+    "swaps": 86330,
+    "telemetry": 1993,
+    "steps_bytes": 4240960
+   }
+  },
+  "go": {
+   "A": {
+    "go_seen_log": 1,
+    "unfreeze_log": 1,
+    "baseline_go_tel": 1,
+    "unfreeze_tel": 1,
+    "ctrl": {
+     "freeze": false,
+     "baseline": true
+    },
+    "settle_s": 90
+   },
+   "B": {
+    "go_seen_log": 1,
+    "unfreeze_log": 1,
+    "baseline_go_tel": 1,
+    "unfreeze_tel": 1,
+    "ctrl": {
+     "freeze": false,
+     "baseline": true
+    },
+    "settle_s": 90
+   },
+   "A2": {
+    "go_seen_log": 1,
+    "unfreeze_log": 1,
+    "baseline_go_tel": 1,
+    "unfreeze_tel": 1,
+    "ctrl": {
+     "freeze": false,
+     "baseline": true
+    },
+    "settle_s": 90
+   }
+  },
+  "host_avail_l9_gib": {
+   "A": "196.35",
+   "B": "197.13",
+   "A2": "197.42"
+  },
+  "rtx_used_after_bind_mib": {
+   "A": 47,
+   "B": 47,
+   "A2": 47
+  }
+ },
+ "calc": {
+  "G2_rows": [
+   {
+    "class": "prose",
+    "mode": "c1",
+    "A": 200.72,
+    "A2": 202.11,
+    "B": 201.44,
+    "ratio": 1.0001241218379961,
+    "spread": 0.006901174192587517,
+    "bar": 0.02,
+    "pass": true
+   },
+   {
+    "class": "prose",
+    "mode": "c8",
+    "A": 446.72,
+    "A2": 469.45,
+    "B": 453.04,
+    "ratio": 0.9889867600991082,
+    "spread": 0.049619612080727286,
+    "bar": 0.07442941812109093,
+    "pass": true
+   },
+   {
+    "class": "structured",
+    "mode": "c1",
+    "A": 214.72,
+    "A2": 217.8,
+    "B": 210.33,
+    "ratio": 0.9725793026912052,
+    "spread": 0.014242115971515826,
+    "bar": 0.02136317395727374,
+    "pass": false
+   },
+   {
+    "class": "structured",
+    "mode": "c8",
+    "A": 543.22,
+    "A2": 539.62,
+    "B": 525.25,
+    "ratio": 0.9701340918325883,
+    "spread": 0.0066491817812419605,
+    "bar": 0.02,
+    "pass": false
+   },
+   {
+    "class": "code",
+    "mode": "c1",
+    "A": 255.1,
+    "A2": 260.16,
+    "B": 253.47,
+    "ratio": 0.9838528121724954,
+    "spread": 0.019640569809416725,
+    "bar": 0.029460854714125087,
+    "pass": true
+   },
+   {
+    "class": "code",
+    "mode": "c8",
+    "A": 522.36,
+    "A2": 544.95,
+    "B": 580.72,
+    "ratio": 1.0881936831848293,
+    "spread": 0.04233071928493134,
+    "bar": 0.063496078927397,
+    "pass": true
+   },
+   {
+    "class": "shell_ops",
+    "mode": "c1",
+    "A": 287.09,
+    "A2": 285.51,
+    "B": 285.0,
+    "ratio": 0.9954593084177438,
+    "spread": 0.005518686692280769,
+    "bar": 0.02,
+    "pass": true
+   },
+   {
+    "class": "shell_ops",
+    "mode": "c8",
+    "A": 640.18,
+    "A2": 650.9,
+    "B": 674.2,
+    "ratio": 1.044396938996809,
+    "spread": 0.016606252129999735,
+    "bar": 0.024909378194999603,
+    "pass": true
+   },
+   {
+    "class": "tool_json",
+    "mode": "c1",
+    "A": 255.53,
+    "A2": 253.43,
+    "B": 258.2,
+    "ratio": 1.0146180446400501,
+    "spread": 0.00825212197422192,
+    "bar": 0.02,
+    "pass": true
+   },
+   {
+    "class": "tool_json",
+    "mode": "c8",
+    "A": 640.98,
+    "A2": 701.84,
+    "B": 729.28,
+    "ratio": 1.086191745729137,
+    "spread": 0.09064506039528754,
+    "bar": 0.13596759059293131,
+    "pass": true
+   }
+  ],
+  "G3": {
+   "B": 179.54333333333332,
+   "A": 180.07333333333332,
+   "A2": 179.87333333333333,
+   "ctrl_mean": 179.97333333333333,
+   "spread": 0.0011112757445546858,
+   "bar": 0.02,
+   "rel": -0.002389242850792783
+  },
+  "G2_ratio_by_cell": {
+   "prose/c1": 1.0001,
+   "prose/c8": 0.989,
+   "structured/c1": 0.9726,
+   "structured/c8": 0.9701,
+   "code/c1": 0.9839,
+   "code/c8": 1.0882,
+   "shell_ops/c1": 0.9955,
+   "shell_ops/c8": 1.0444,
+   "tool_json/c1": 1.0146,
+   "tool_json/c8": 1.0862
+  }
+ },
+ "cells": {
+  "A": {
+   "facts": {
+    "arm": "A",
+    "name": "dsv41-vllm-1017-BR3-A",
+    "kv_tokens": "2,495,694",
+    "kv_ref": "2,495,694",
+    "block_in_args": 0,
+    "block_boot_lines": 1,
+    "ff_boot": 0,
+    "loaded_lines": 1,
+    "saved_lines": 1,
+    "autotune_starts": 1,
+    "autotune_ends": 1,
+    "rehome_layers": 40,
+    "rehome_done": 1,
+    "host_avail_l9_gib": "196.35",
+    "pin_abort": 0,
+    "hook_failed": 0,
+    "hook_keys_missing": "",
+    "args_eq_ref": 1,
+    "env_eq_ref_sorted": 1,
+    "binds_eq_ref_except_ar": 1,
+    "image": "sha256:00d577a6a63281e15336029d5bcee4e9a2cf182214a4f20ba6111b1c8e79893d",
+    "rtx_used_after_bind_mib": 47,
+    "boot_s": 474,
+    "bound_at": 1793007396
+   },
+   "autotune": {
+    "loaded": 189,
+    "saved": 189,
+    "loaded_dir": "/root/.cache/vllm/flashinfer_autotune_cache/0.6.18/103a/62426808ae2b0ddbdfbf2278702ac4e367078b9884817c169ddee40495c4e6a6/autotune_configs.json",
+    "saved_dir": "/root/.cache/vllm/flashinfer_autotune_cache/0.6.18/103a/62426808ae2b0ddbdfbf2278702ac4e367078b9884817c169ddee40495c4e6a6/autotune_configs.json",
+    "elapsed_s": 5.0,
+    "pairs": 1,
+    "hash_hit_shape": true
+   },
+   "mixed": [
+    {
+     "rep": 1,
+     "agg_tok_s_all": 175.32,
+     "errors": 0,
+     "n": 53,
+     "temperature": 1.0
+    },
+    {
+     "rep": 2,
+     "agg_tok_s_all": 182.36,
+     "errors": 0,
+     "n": 55,
+     "temperature": 1.0
+    },
+    {
+     "rep": 3,
+     "agg_tok_s_all": 182.54,
+     "errors": 0,
+     "n": 55,
+     "temperature": 1.0
+    }
+   ],
+   "perclass_t1": {
+    "prose/c1": 200.72,
+    "prose/c8": 446.72,
+    "structured/c1": 214.72,
+    "structured/c8": 543.22,
+    "code/c1": 255.1,
+    "code/c8": 522.36,
+    "shell_ops/c1": 287.09,
+    "shell_ops/c8": 640.18,
+    "tool_json/c1": 255.53,
+    "tool_json/c8": 640.98
+   },
+   "perclass_t0": {
+    "prose/c1": 237.55,
+    "prose/c8": 503.26,
+    "structured/c1": 254.43,
+    "structured/c8": 568.42,
+    "code/c1": 323.49,
+    "code/c8": 729.84,
+    "shell_ops/c1": 343.18,
+    "shell_ops/c8": 794.11,
+    "tool_json/c1": 308.97,
+    "tool_json/c8": 816.1
+   },
+   "turns": [
+    {
+     "tool_emitted": 8,
+     "tool_turns": 12,
+     "text_emitted": 4,
+     "errors": 0
+    },
+    {
+     "tool_emitted": 7,
+     "tool_turns": 12,
+     "text_emitted": 5,
+     "errors": 0
+    }
+   ],
+   "ar_cells_delta": {
+    "swaps": 86282,
+    "telemetry": 1990,
+    "steps_bytes": 4235872
+   },
+   "errcount_server": 0,
+   "foreign": {
+    "bind": 0,
+    "cells": 0
+   },
+   "metrics_pct1": {
+    "drafts": 78240.0,
+    "draft_tokens": 391200.0,
+    "accepted": 165154.0,
+    "acc_per_draft": 2.1108640081799592,
+    "tokens_per_verify_step": 3.1108640081799592,
+    "accept_rate": 0.4221728016359918
+   },
+   "metrics_mixed": {
+    "accepted": 33958.0,
+    "drafts": 31232.0,
+    "tokens_per_verify_step": 2.087282274590164
+   }
+  },
+  "B": {
+   "facts": {
+    "arm": "B",
+    "name": "dsv41-vllm-1017-BR3-B",
+    "kv_tokens": "2,495,694",
+    "kv_ref": "2,495,694",
+    "block_in_args": 1,
+    "block_boot_lines": 2,
+    "ff_boot": 0,
+    "loaded_lines": 1,
+    "saved_lines": 1,
+    "autotune_starts": 1,
+    "autotune_ends": 1,
+    "rehome_layers": 40,
+    "rehome_done": 1,
+    "host_avail_l9_gib": "197.13",
+    "pin_abort": 0,
+    "hook_failed": 0,
+    "hook_keys_missing": "",
+    "args_eq_ref": 0,
+    "env_eq_ref_sorted": 1,
+    "binds_eq_ref_except_ar": 1,
+    "image": "sha256:00d577a6a63281e15336029d5bcee4e9a2cf182214a4f20ba6111b1c8e79893d",
+    "rtx_used_after_bind_mib": 47,
+    "boot_s": 484,
+    "bound_at": 1793010082
+   },
+   "autotune": {
+    "loaded": 189,
+    "saved": 189,
+    "loaded_dir": "/root/.cache/vllm/flashinfer_autotune_cache/0.6.18/103a/62426808ae2b0ddbdfbf2278702ac4e367078b9884817c169ddee40495c4e6a6/autotune_configs.json",
+    "saved_dir": "/root/.cache/vllm/flashinfer_autotune_cache/0.6.18/103a/62426808ae2b0ddbdfbf2278702ac4e367078b9884817c169ddee40495c4e6a6/autotune_configs.json",
+    "elapsed_s": 5.0,
+    "pairs": 1,
+    "hash_hit_shape": true
+   },
+   "mixed": [
+    {
+     "rep": 1,
+     "agg_tok_s_all": 174.7,
+     "errors": 0,
+     "n": 53,
+     "temperature": 1.0
+    },
+    {
+     "rep": 2,
+     "agg_tok_s_all": 181.9,
+     "errors": 0,
+     "n": 55,
+     "temperature": 1.0
+    },
+    {
+     "rep": 3,
+     "agg_tok_s_all": 182.03,
+     "errors": 0,
+     "n": 55,
+     "temperature": 1.0
+    }
+   ],
+   "perclass_t1": {
+    "prose/c1": 201.44,
+    "prose/c8": 453.04,
+    "structured/c1": 210.33,
+    "structured/c8": 525.25,
+    "code/c1": 253.47,
+    "code/c8": 580.72,
+    "shell_ops/c1": 285.0,
+    "shell_ops/c8": 674.2,
+    "tool_json/c1": 258.2,
+    "tool_json/c8": 729.28
+   },
+   "perclass_t0": {
+    "prose/c1": 231.16,
+    "prose/c8": 516.56,
+    "structured/c1": 250.74,
+    "structured/c8": 582.36,
+    "code/c1": 316.18,
+    "code/c8": 712.75,
+    "shell_ops/c1": 339.64,
+    "shell_ops/c8": 798.18,
+    "tool_json/c1": 302.44,
+    "tool_json/c8": 821.36
+   },
+   "turns": [
+    {
+     "tool_emitted": 8,
+     "tool_turns": 12,
+     "text_emitted": 4,
+     "errors": 0
+    },
+    {
+     "tool_emitted": 7,
+     "tool_turns": 12,
+     "text_emitted": 6,
+     "errors": 0
+    }
+   ],
+   "ar_cells_delta": {
+    "swaps": 87151,
+    "telemetry": 2007,
+    "steps_bytes": 4271104
+   },
+   "errcount_server": 0,
+   "foreign": {
+    "bind": 0,
+    "cells": 0
+   },
+   "metrics_pct1": {
+    "drafts": 78367.0,
+    "draft_tokens": 391835.0,
+    "accepted": 165842.0,
+    "acc_per_draft": 2.116222389526204,
+    "tokens_per_verify_step": 3.116222389526204,
+    "accept_rate": 0.4232444779052407
+   },
+   "metrics_mixed": {
+    "accepted": 33896.0,
+    "drafts": 31010.0,
+    "tokens_per_verify_step": 2.093066752660432
+   }
+  },
+  "A2": {
+   "facts": {
+    "arm": "A2",
+    "name": "dsv41-vllm-1017-BR3-A2",
+    "kv_tokens": "2,495,694",
+    "kv_ref": "2,495,694",
+    "block_in_args": 0,
+    "block_boot_lines": 1,
+    "ff_boot": 0,
+    "loaded_lines": 1,
+    "saved_lines": 1,
+    "autotune_starts": 1,
+    "autotune_ends": 1,
+    "rehome_layers": 40,
+    "rehome_done": 1,
+    "host_avail_l9_gib": "197.42",
+    "pin_abort": 0,
+    "hook_failed": 0,
+    "hook_keys_missing": "",
+    "args_eq_ref": 1,
+    "env_eq_ref_sorted": 1,
+    "binds_eq_ref_except_ar": 1,
+    "image": "sha256:00d577a6a63281e15336029d5bcee4e9a2cf182214a4f20ba6111b1c8e79893d",
+    "rtx_used_after_bind_mib": 47,
+    "boot_s": 484,
+    "bound_at": 1793012775
+   },
+   "autotune": {
+    "loaded": 189,
+    "saved": 189,
+    "loaded_dir": "/root/.cache/vllm/flashinfer_autotune_cache/0.6.18/103a/62426808ae2b0ddbdfbf2278702ac4e367078b9884817c169ddee40495c4e6a6/autotune_configs.json",
+    "saved_dir": "/root/.cache/vllm/flashinfer_autotune_cache/0.6.18/103a/62426808ae2b0ddbdfbf2278702ac4e367078b9884817c169ddee40495c4e6a6/autotune_configs.json",
+    "elapsed_s": 5.0,
+    "pairs": 1,
+    "hash_hit_shape": true
+   },
+   "mixed": [
+    {
+     "rep": 1,
+     "agg_tok_s_all": 175.2,
+     "errors": 0,
+     "n": 53,
+     "temperature": 1.0
+    },
+    {
+     "rep": 2,
+     "agg_tok_s_all": 182.13,
+     "errors": 0,
+     "n": 55,
+     "temperature": 1.0
+    },
+    {
+     "rep": 3,
+     "agg_tok_s_all": 182.29,
+     "errors": 0,
+     "n": 55,
+     "temperature": 1.0
+    }
+   ],
+   "perclass_t1": {
+    "prose/c1": 202.11,
+    "prose/c8": 469.45,
+    "structured/c1": 217.8,
+    "structured/c8": 539.62,
+    "code/c1": 260.16,
+    "code/c8": 544.95,
+    "shell_ops/c1": 285.51,
+    "shell_ops/c8": 650.9,
+    "tool_json/c1": 253.43,
+    "tool_json/c8": 701.84
+   },
+   "perclass_t0": {
+    "prose/c1": 241.6,
+    "prose/c8": 541.06,
+    "structured/c1": 248.84,
+    "structured/c8": 564.19,
+    "code/c1": 311.45,
+    "code/c8": 731.25,
+    "shell_ops/c1": 342.43,
+    "shell_ops/c8": 805.28,
+    "tool_json/c1": 296.17,
+    "tool_json/c8": 830.73
+   },
+   "turns": [
+    {
+     "tool_emitted": 6,
+     "tool_turns": 12,
+     "text_emitted": 4,
+     "errors": 0
+    },
+    {
+     "tool_emitted": 8,
+     "tool_turns": 12,
+     "text_emitted": 4,
+     "errors": 0
+    }
+   ],
+   "ar_cells_delta": {
+    "swaps": 86330,
+    "telemetry": 1993,
+    "steps_bytes": 4240960
+   },
+   "errcount_server": 0,
+   "foreign": {
+    "bind": 0,
+    "cells": 0
+   },
+   "metrics_pct1": {
+    "drafts": 77675.0,
+    "draft_tokens": 388375.0,
+    "accepted": 165083.0,
+    "acc_per_draft": 2.1253041519150306,
+    "tokens_per_verify_step": 3.1253041519150306,
+    "accept_rate": 0.4250608303830061
+   },
+   "metrics_mixed": {
+    "accepted": 33958.0,
+    "drafts": 31232.0,
+    "tokens_per_verify_step": 2.087282274590164
+   }
+  }
+ },
+ "R": "~/dsv41/m3/br3/results-cardBR3"
+}

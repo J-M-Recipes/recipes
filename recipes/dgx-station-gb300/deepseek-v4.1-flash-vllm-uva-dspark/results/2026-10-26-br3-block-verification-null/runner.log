@@ -1,0 +1,121 @@
+2026-10-26 04:25:59 CDT ===== CARD BR3 START (arms=A B A2 spec_B=[,"rejection_sample_method":"block"] temp_t=1.0 seed_t=42 mix_s=120 c1_reps=3 settle_s=90 adapt_settle_s=90 isolate=1 mem_min=380 boot_min=40 R=~/dsv41/m3/br3/results-cardBR3) =====
+2026-10-26 04:25:59 CDT LANE-OWNER.txt (tail): - 2026-10-26 03:27:49 CDT Milo: Card BR2 ended 23:24 (K9 = loss everywhere, hash hit); rescored PASS. Lane = v25m-kvtier pair + watchdog; Station RELEASED. - 2026-10-26 03:58:31 CDT CLAIM promote v27 (block verification): stopping watchdog 2202485 + dsv41-vllm-1017-v25m-kvtier pair (kept as dsv41-vllm-1017-v25m-kvtier-RETIRED-REF), launching dsv41-vllm-1017-v27-block-BOUND-REF via launch_br1.sh SPEC_EXTRA=block. ~10 min dark. - 2026-10-26 04:08:25 CDT PROMOTED v27 = dsv41-vllm-1017-v27-block-BOU
+2026-10-26 04:26:04 CDT spec render OK: A/A2 == v26seed [{"method":"dspark","num_speculative_tokens":5,"num_speculative_tokens_per_batch_size":[[1,8,5],[9,24,1]]}]; B == v26seed + block
+2026-10-26 04:26:04 CDT watchdog pid 2561111 (ppid 1) argv: python3 ~/dsv41/m3/sidecar_watchdog.py --server dsv41-vllm-1017-v27-block-BOUND-REF --mode enforce --interval 1 --stall 2 --status ~/dsv41/m3/logs/sidecar_watchdog.status.json --log ~/dsv41/m3/logs/sidecar_watchdog.v27.log  cwd=~/dsv41/m3
+2026-10-26 04:26:04 CDT preflight OK: MemAvailable=129.6GiB RTX=66213MiB (production -rtx up by design; checked again after the pair stops) kv_ref=[2,495,694] oom_lines=0
+2026-10-26 04:26:04 CDT lane before: dsv41-vllm-1017-v27-block-BOUND-REF dsv41-vllm-1017-v27-block-BOUND-REF-rtx 
+2026-10-26 04:26:04 CDT fail-stop watchdog 2561111 stopped (cardBR3)
+2026-10-26 04:26:04 CDT LANE DARK begins (stopping dsv41-vllm-1017-v27-block-BOUND-REF pair, kept)
+2026-10-26 04:27:05 CDT stop-and-keep dsv41-vllm-1017-v27-block-BOUND-REF dsv41-vllm-1017-v27-block-BOUND-REF-rtx
+2026-10-26 04:27:05 CDT ISOLATE on: non-loopback TCP :30006 rejected (cardBR3-isolate; removed before restore)
+2026-10-26 04:27:05 CDT RTX idle after pair stop: 47 MiB
+2026-10-26 04:27:11 CDT strays: 3810 0.6GiB /usr/bin/containerd |4306 0.2GiB /usr/bin/dockerd -H|4348 0.1GiB /usr/bin/gnome-shell |4177 0.1GiB /usr/lib/xorg/Xorg vt1| MemAvailable=464.8GiB
+2026-10-26 04:27:11 CDT SETTLE pre-A: sleeping 90s before the next boot
+2026-10-26 04:28:42 CDT HOST pre-A: MemAvailable=464.7GiB shm_used=125M new_shm_gt1G=[] GB300 sm,mem,W,pstate=[120 MHz, 3996 MHz, 148.37 W, P0] RTX used=47MiB
+2026-10-26 04:28:42 CDT BOOT A: dsv41-vllm-1017-BR3-A HOOK=~/pin-hot-experts/v26ar2/hook ROWMAP=rowmap-mixed-ar-v1.json RUN=~/dsv41/m3/br3/results-cardBR3/A/ar SPEC_EXTRA=[] MemAvail=464.7GiB RTX=47MiB GB300=22MiB
+2026-10-26 04:28:44 CDT SERVER A launched: launched dsv41-vllm-1017-BR3-A (run dir ~/dsv41/m3/br3/results-cardBR3/A/ar, rowmap rowmap-mixed-ar-v1.json, step_ring 65536, cuda_events 1)
+2026-10-26 04:28:44 CDT   dsv41-vllm-1017-BR3-A waiting 0 min: MemAvail=464.6GiB last=[]
+2026-10-26 04:33:45 CDT   dsv41-vllm-1017-BR3-A waiting 5 min: MemAvail=195.2GiB last=[(EngineCore pid=364) /usr/local/lib/python3.12/dist-packages/nvidia_cutlass_dsl/dsl_packages/cutlass/base_dsl/dsl.py:2309: UserWarning: Argument aux_data (posit]
+2026-10-26 04:36:36 CDT BOUND dsv41-vllm-1017-BR3-A after 472s
+2026-10-26 04:36:36 CDT boot->ready A 474s (dsv41-vllm-1017-BR3-A)
+2026-10-26 04:36:36 CDT FACTS A: kv=[2,495,694] (v26seed log: 2,495,694) block_in_args=0 (want 0) block_boot_lines=1 ff_boot=0 autotune loaded=1 saved=1 starts=1 ends=1 | rehome layers=40 done40=1 host_avail@L9=196.35GiB pin_abort=0 hook_failed=0 keys_missing=[] | args_eq_v26seed=1 env_eq_v26seed(sorted)=1 binds_eq_v26seed(except /ar)=1 image=sha256:00d577a6a632 rtx_after_bind=47MiB
+2026-10-26 04:36:37 CDT HEALTH A: models_http=200 chat_http=200 (reasoning_effort low) content=[OK]
+2026-10-26 04:36:39 CDT CTRL A unfreeze {"freeze": false, "baseline": true}
+2026-10-26 04:36:43 CDT GO A: log 'GO seen'=1 'ctrl freeze=0'=1 | telemetry 'baseline GO'=1 'ctrl freeze=0'=1 | ctrl.json={"freeze": false, "baseline": true}
+2026-10-26 04:36:43 CDT ADAPT SETTLE A: 90s (unfrozen, no traffic)
+2026-10-26 04:38:13 CDT FOREIGN A bind: 0 (non-127.0.0.1 POST /v1 since 2026-10-26T09:28:42Z)
+2026-10-26 04:52:47 CDT CELL A pct1 rc=0: 
+2026-10-26 05:04:38 CDT CELL A pct0 rc=0: 
+2026-10-26 05:06:39 CDT CELL A c1-r1 rc=0: {"tag": "BR3-A-c1-r1", "concurrency": 1, "n": 53, "errors": 0, "agg_tok_s_all": 175.32, "agg_tok_s_post60": 183.84, "per_req": {"jpde": {"median_all": 172.25, "median_post60": 175.235, "n_post60": 14}, "agent": {"median_all": 195.96, "median_post60": 201.29, "n_post60": 13}}}
+2026-10-26 05:08:40 CDT CELL A c1-r2 rc=0: {"tag": "BR3-A-c1-r2", "concurrency": 1, "n": 55, "errors": 0, "agg_tok_s_all": 182.36, "agg_tok_s_post60": 184.69, "per_req": {"jpde": {"median_all": 174.13, "median_post60": 174.13, "n_post60": 14}, "agent": {"median_all": 199.2, "median_post60": 204.98, "n_post60": 13}}}
+2026-10-26 05:10:41 CDT CELL A c1-r3 rc=0: {"tag": "BR3-A-c1-r3", "concurrency": 1, "n": 55, "errors": 0, "agg_tok_s_all": 182.54, "agg_tok_s_post60": 185.06, "per_req": {"jpde": {"median_all": 175.49, "median_post60": 175.525, "n_post60": 14}, "agent": {"median_all": 199.02, "median_post60": 201.69, "n_post60": 13}}}
+2026-10-26 05:10:48 CDT CELL A tf rc=0: [BR3-A] wrote tf-BR3-A.jsonl: docs=39 errors=0 positions=79544 wall=8s
+2026-10-26 05:11:07 CDT GAUNTLET A: 12 / 12
+2026-10-26 05:11:35 CDT CELL A turns rc=0: [BR3-A] pass 1: tool-turn emitted 7/12, text-turn emitted 5/12
+2026-10-26 05:11:35 CDT TURNS A: moved turns-BR3-A.json into ~/dsv41/m3/br3/results-cardBR3/A
+2026-10-26 05:11:35 CDT ERRCOUNT A 0 (since 2026-10-26T09:38:13Z)
+2026-10-26 05:11:35 CDT FOREIGN A cells: 0 (non-127.0.0.1 POST /v1 since 2026-10-26T09:38:13Z)
+2026-10-26 05:11:35 CDT ARM A cells took 2002s; /ar lines: 1793009495 turns-end swaps=86283 telemetry=1993 steps_bytes=4239488
+2026-10-26 05:11:35 CDT stop-and-keep dsv41-vllm-1017-BR3-A
+2026-10-26 05:11:47 CDT strays: 3810 0.6GiB /usr/bin/containerd |4306 0.2GiB /usr/bin/dockerd -H|4348 0.1GiB /usr/bin/gnome-shell |4177 0.1GiB /usr/lib/xorg/Xorg vt1| MemAvailable=462.8GiB
+2026-10-26 05:11:47 CDT SETTLE pre-B: sleeping 90s before the next boot
+2026-10-26 05:13:17 CDT HOST pre-B: MemAvailable=462.8GiB shm_used=125M new_shm_gt1G=[] GB300 sm,mem,W,pstate=[120 MHz, 3996 MHz, 148.88 W, P0] RTX used=47MiB
+2026-10-26 05:13:18 CDT BOOT B: dsv41-vllm-1017-BR3-B HOOK=~/pin-hot-experts/v26ar2/hook ROWMAP=rowmap-mixed-ar-v1.json RUN=~/dsv41/m3/br3/results-cardBR3/B/ar SPEC_EXTRA=[,"rejection_sample_method":"block"] MemAvail=462.7GiB RTX=47MiB GB300=22MiB
+2026-10-26 05:13:20 CDT SERVER B launched: launched dsv41-vllm-1017-BR3-B (run dir ~/dsv41/m3/br3/results-cardBR3/B/ar, rowmap rowmap-mixed-ar-v1.json, step_ring 65536, cuda_events 1)
+2026-10-26 05:13:20 CDT   dsv41-vllm-1017-BR3-B waiting 0 min: MemAvail=462.6GiB last=[]
+2026-10-26 05:18:21 CDT   dsv41-vllm-1017-BR3-B waiting 5 min: MemAvail=196.1GiB last=[(EngineCore pid=364) /usr/local/lib/python3.12/dist-packages/nvidia_cutlass_dsl/dsl_packages/cutlass/base_dsl/dsl.py:2309: UserWarning: Argument aux_data (posit]
+2026-10-26 05:21:22 CDT BOUND dsv41-vllm-1017-BR3-B after 482s
+2026-10-26 05:21:22 CDT boot->ready B 484s (dsv41-vllm-1017-BR3-B)
+2026-10-26 05:21:22 CDT FACTS B: kv=[2,495,694] (v26seed log: 2,495,694) block_in_args=1 (want 1) block_boot_lines=2 ff_boot=0 autotune loaded=1 saved=1 starts=1 ends=1 | rehome layers=40 done40=1 host_avail@L9=197.13GiB pin_abort=0 hook_failed=0 keys_missing=[] | args_eq_v26seed=0 env_eq_v26seed(sorted)=1 binds_eq_v26seed(except /ar)=1 image=sha256:00d577a6a632 rtx_after_bind=47MiB
+2026-10-26 05:21:23 CDT HEALTH B: models_http=200 chat_http=200 (reasoning_effort low) content=[OK]
+2026-10-26 05:21:25 CDT CTRL B unfreeze {"freeze": false, "baseline": true}
+2026-10-26 05:21:28 CDT GO B: log 'GO seen'=1 'ctrl freeze=0'=1 | telemetry 'baseline GO'=1 'ctrl freeze=0'=1 | ctrl.json={"freeze": false, "baseline": true}
+2026-10-26 05:21:28 CDT ADAPT SETTLE B: 90s (unfrozen, no traffic)
+2026-10-26 05:22:58 CDT FOREIGN B bind: 0 (non-127.0.0.1 POST /v1 since 2026-10-26T10:13:18Z)
+2026-10-26 05:37:32 CDT CELL B pct1 rc=0: 
+2026-10-26 05:49:30 CDT CELL B pct0 rc=0: 
+2026-10-26 05:51:31 CDT CELL B c1-r1 rc=0: {"tag": "BR3-B-c1-r1", "concurrency": 1, "n": 53, "errors": 0, "agg_tok_s_all": 174.7, "agg_tok_s_post60": 183.19, "per_req": {"jpde": {"median_all": 167.87, "median_post60": 171.60500000000002, "n_post60": 14}, "agent": {"median_all": 198.965, "median_post60": 202.71, "n_post60": 13}}}
+2026-10-26 05:53:31 CDT CELL B c1-r2 rc=0: {"tag": "BR3-B-c1-r2", "concurrency": 1, "n": 55, "errors": 0, "agg_tok_s_all": 181.9, "agg_tok_s_post60": 184.36, "per_req": {"jpde": {"median_all": 170.13, "median_post60": 172.075, "n_post60": 14}, "agent": {"median_all": 200.17, "median_post60": 201.8, "n_post60": 13}}}
+2026-10-26 05:55:31 CDT CELL B c1-r3 rc=0: {"tag": "BR3-B-c1-r3", "concurrency": 1, "n": 55, "errors": 0, "agg_tok_s_all": 182.03, "agg_tok_s_post60": 184.63, "per_req": {"jpde": {"median_all": 170.275, "median_post60": 172.13, "n_post60": 14}, "agent": {"median_all": 199.97, "median_post60": 201.6, "n_post60": 13}}}
+2026-10-26 05:55:39 CDT CELL B tf rc=0: [BR3-B] wrote tf-BR3-B.jsonl: docs=39 errors=0 positions=79544 wall=8s
+2026-10-26 05:55:58 CDT GAUNTLET B: 12 / 12
+2026-10-26 05:56:28 CDT CELL B turns rc=0: [BR3-B] pass 1: tool-turn emitted 7/12, text-turn emitted 6/12
+2026-10-26 05:56:28 CDT TURNS B: moved turns-BR3-B.json into ~/dsv41/m3/br3/results-cardBR3/B
+2026-10-26 05:56:28 CDT ERRCOUNT B 0 (since 2026-10-26T10:22:58Z)
+2026-10-26 05:56:28 CDT FOREIGN B cells: 0 (non-127.0.0.1 POST /v1 since 2026-10-26T10:22:58Z)
+2026-10-26 05:56:28 CDT ARM B cells took 2010s; /ar lines: 1793012188 turns-end swaps=87152 telemetry=2010 steps_bytes=4274720
+2026-10-26 05:56:28 CDT stop-and-keep dsv41-vllm-1017-BR3-B
+2026-10-26 05:56:40 CDT strays: 3810 0.6GiB /usr/bin/containerd |4306 0.2GiB /usr/bin/dockerd -H|4348 0.1GiB /usr/bin/gnome-shell |4177 0.1GiB /usr/lib/xorg/Xorg vt1| MemAvailable=463.3GiB
+2026-10-26 05:56:40 CDT SETTLE pre-A2: sleeping 90s before the next boot
+2026-10-26 05:58:10 CDT HOST pre-A2: MemAvailable=463.3GiB shm_used=125M new_shm_gt1G=[] GB300 sm,mem,W,pstate=[120 MHz, 3996 MHz, 149.39 W, P0] RTX used=47MiB
+2026-10-26 05:58:11 CDT BOOT A2: dsv41-vllm-1017-BR3-A2 HOOK=~/pin-hot-experts/v26ar2/hook ROWMAP=rowmap-mixed-ar-v1.json RUN=~/dsv41/m3/br3/results-cardBR3/A2/ar SPEC_EXTRA=[] MemAvail=463.3GiB RTX=47MiB GB300=22MiB
+2026-10-26 05:58:13 CDT SERVER A2 launched: launched dsv41-vllm-1017-BR3-A2 (run dir ~/dsv41/m3/br3/results-cardBR3/A2/ar, rowmap rowmap-mixed-ar-v1.json, step_ring 65536, cuda_events 1)
+2026-10-26 05:58:13 CDT   dsv41-vllm-1017-BR3-A2 waiting 0 min: MemAvail=463.2GiB last=[]
+2026-10-26 06:03:14 CDT   dsv41-vllm-1017-BR3-A2 waiting 5 min: MemAvail=196.6GiB last=[(EngineCore pid=364) /usr/local/lib/python3.12/dist-packages/nvidia_cutlass_dsl/dsl_packages/cutlass/base_dsl/dsl.py:2309: UserWarning: Argument aux_data (posit]
+2026-10-26 06:06:14 CDT BOUND dsv41-vllm-1017-BR3-A2 after 481s
+2026-10-26 06:06:14 CDT boot->ready A2 483s (dsv41-vllm-1017-BR3-A2)
+2026-10-26 06:06:15 CDT FACTS A2: kv=[2,495,694] (v26seed log: 2,495,694) block_in_args=0 (want 0) block_boot_lines=1 ff_boot=0 autotune loaded=1 saved=1 starts=1 ends=1 | rehome layers=40 done40=1 host_avail@L9=197.42GiB pin_abort=0 hook_failed=0 keys_missing=[] | args_eq_v26seed=1 env_eq_v26seed(sorted)=1 binds_eq_v26seed(except /ar)=1 image=sha256:00d577a6a632 rtx_after_bind=47MiB
+2026-10-26 06:06:16 CDT HEALTH A2: models_http=200 chat_http=200 (reasoning_effort low) content=[OK]
+2026-10-26 06:06:18 CDT CTRL A2 unfreeze {"freeze": false, "baseline": true}
+2026-10-26 06:06:21 CDT GO A2: log 'GO seen'=1 'ctrl freeze=0'=1 | telemetry 'baseline GO'=1 'ctrl freeze=0'=1 | ctrl.json={"freeze": false, "baseline": true}
+2026-10-26 06:06:21 CDT ADAPT SETTLE A2: 90s (unfrozen, no traffic)
+2026-10-26 06:07:51 CDT FOREIGN A2 bind: 0 (non-127.0.0.1 POST /v1 since 2026-10-26T10:58:11Z)
+2026-10-26 06:22:16 CDT CELL A2 pct1 rc=0: 
+2026-10-26 06:34:13 CDT CELL A2 pct0 rc=0: 
+2026-10-26 06:36:14 CDT CELL A2 c1-r1 rc=0: {"tag": "BR3-A2-c1-r1", "concurrency": 1, "n": 53, "errors": 0, "agg_tok_s_all": 175.2, "agg_tok_s_post60": 190.15, "per_req": {"jpde": {"median_all": 173.16, "median_post60": 175.29500000000002, "n_post60": 14}, "agent": {"median_all": 194.635, "median_post60": 204.005, "n_post60": 14}}}
+2026-10-26 06:38:15 CDT CELL A2 c1-r2 rc=0: {"tag": "BR3-A2-c1-r2", "concurrency": 1, "n": 55, "errors": 0, "agg_tok_s_all": 182.13, "agg_tok_s_post60": 184.24, "per_req": {"jpde": {"median_all": 175.535, "median_post60": 175.535, "n_post60": 14}, "agent": {"median_all": 197.34, "median_post60": 204.43, "n_post60": 13}}}
+2026-10-26 06:40:15 CDT CELL A2 c1-r3 rc=0: {"tag": "BR3-A2-c1-r3", "concurrency": 1, "n": 55, "errors": 0, "agg_tok_s_all": 182.29, "agg_tok_s_post60": 184.55, "per_req": {"jpde": {"median_all": 175.28, "median_post60": 175.28, "n_post60": 14}, "agent": {"median_all": 197.6, "median_post60": 203.94, "n_post60": 13}}}
+2026-10-26 06:40:23 CDT CELL A2 tf rc=0: [BR3-A2] wrote tf-BR3-A2.jsonl: docs=39 errors=0 positions=79544 wall=8s
+2026-10-26 06:40:41 CDT GAUNTLET A2: 12 / 12
+2026-10-26 06:41:12 CDT CELL A2 turns rc=0: [BR3-A2] pass 1: tool-turn emitted 8/12, text-turn emitted 4/12
+2026-10-26 06:41:12 CDT TURNS A2: moved turns-BR3-A2.json into ~/dsv41/m3/br3/results-cardBR3/A2
+2026-10-26 06:41:13 CDT ERRCOUNT A2 0 (since 2026-10-26T11:07:51Z)
+2026-10-26 06:41:13 CDT FOREIGN A2 cells: 0 (non-127.0.0.1 POST /v1 since 2026-10-26T11:07:51Z)
+2026-10-26 06:41:13 CDT ARM A2 cells took 2002s; /ar lines: 1793014872 turns-end swaps=86331 telemetry=1996 steps_bytes=4244576
+2026-10-26 06:41:13 CDT stop-and-keep dsv41-vllm-1017-BR3-A2
+2026-10-26 06:41:20 CDT strays: 3810 0.6GiB /usr/bin/containerd |4306 0.2GiB /usr/bin/dockerd -H|4348 0.1GiB /usr/bin/gnome-shell |4177 0.1GiB /usr/lib/xorg/Xorg vt1| MemAvailable=462.6GiB
+2026-10-26 06:41:20 CDT ISOLATE off (cardBR3-isolate removed)
+2026-10-26 06:41:20 CDT RESTORE start: RTX used=47MiB GB300 used=22MiB /dev/shm/vllm_peer_tier2=[-rw-r--r-- 1 root root 127541248 Oct 26 04:04 /dev/shm/vllm_peer_tier2] (reused, same layout; never deleted)
+2026-10-26 06:42:22 CDT RESTORE sidecar dsv41-vllm-1017-v27-block-BOUND-REF-rtx running=true after 62s: prepared 40 layers in 43s; 68.4 GB allocated
+2026-10-26 06:42:23 CDT   dsv41-vllm-1017-v27-block-BOUND-REF waiting 0 min: MemAvail=449.6GiB last=[]
+2026-10-26 06:47:24 CDT   dsv41-vllm-1017-v27-block-BOUND-REF waiting 5 min: MemAvail=134.4GiB last=[2026-10-26 11:46:15,962 - INFO - autotuner.py:1046 - flashinfer.jit: [Autotuner]: Autotuning process starts ...]
+2026-10-26 06:49:25 CDT BOUND dsv41-vllm-1017-v27-block-BOUND-REF after 422s
+2026-10-26 06:49:25 CDT LANE DARK ends (dsv41-vllm-1017-v27-block-BOUND-REF bound after 485s)
+2026-10-26 06:49:25 CDT RESTORE FACTS rowmap40=1 peer2=2 kvline=[GPU KV cache size: 4,400,013 tokens] kvdecl=1 kvtier=1 block=1(want 1) args_same=1 env_same_sorted=1
+2026-10-26 06:49:25 CDT HEALTH restore: models_http=200 chat_http=200 (reasoning_effort low) content=[OK] sidecar=true
+2026-10-26 06:49:25 CDT re-arm watchdog: (cd ~/dsv41/m3) python3 ~/dsv41/m3/sidecar_watchdog.py --server dsv41-vllm-1017-v27-block-BOUND-REF --mode enforce --interval 1 --stall 2 --status ~/dsv41/m3/logs/sidecar_watchdog.status.json --log ~/dsv41/m3/logs/sidecar_watchdog.v27.log
+2026-10-26 06:49:29 CDT fail-stop watchdog armed pid 2616605 (ppid 1) on dsv41-vllm-1017-v27-block-BOUND-REF: python3 ~/dsv41/m3/sidecar_watchdog.py --server dsv41-vllm-1017-v27-block-BOUND-REF --mode enforce --interval 1 --stall 2 --status ~/dsv41/m3/logs/sidecar_watchdog.status.json --log ~/dsv41/m3/logs/sidecar_watchdog.v27.log  | log tail: 2026-10-26 06:49:25 CDT start v2 mode=enforce server=dsv41-vllm-1017-v27-block-BOUND-REF sidecar=dsv41-vllm-1017-v27-block-BOUND-REF-rtx rollback=None stall=2.0
+2026-10-26 06:49:29 CDT watchdog PPID 1 OK (reparented to init; survives this runner's EXIT trap)
+2026-10-26 06:49:31 CDT TFCMP B vs A: TF Δlogprob BR3-A → BR3-B: positions=79544 docs=39 (token-mismatch docs=0) mean|Δ|=0.02868 p50=0.00001 p99=0.6226 max=3.491 top-1 flips=864 (1.086%) ppl 1.5182 → 1.5172; wrote tf-compare-BR3-A-vs-BR3-B.json
+2026-10-26 06:49:32 CDT TFCMP B vs A2: TF Δlogprob BR3-A2 → BR3-B: positions=79544 docs=39 (token-mismatch docs=0) mean|Δ|=0.02825 p50=0.00001 p99=0.6159 max=3.672 top-1 flips=897 (1.128%) ppl 1.5180 → 1.5172; wrote tf-compare-BR3-A2-vs-BR3-B.json
+2026-10-26 06:49:33 CDT TFCMP A2 vs A: TF Δlogprob BR3-A → BR3-A2: positions=79544 docs=39 (token-mismatch docs=0) mean|Δ|=0.02835 p50=0.00001 p99=0.6172 max=4.859 top-1 flips=869 (1.092%) ppl 1.5182 → 1.5180; wrote tf-compare-BR3-A-vs-BR3-A2.json
+2026-10-26 06:49:33 CDT FLIPSM B vs A: GATE PASS hi_agent_tool=0 hi_prose_pct=0.005 W=1.425 W_calib=1.483 skipped_docs=0
+2026-10-26 06:49:33 CDT FLIPSM B vs A2: GATE PASS hi_agent_tool=0 hi_prose_pct=0.003 W=1.623 W_calib=1.654 skipped_docs=0
+2026-10-26 06:49:33 CDT FLIPSM A2 vs A: GATE PASS hi_agent_tool=0 hi_prose_pct=0.003 W=1.483 W_calib=3.077 skipped_docs=0
+2026-10-26 06:49:33 CDT VERDICT rc=1 FAIL | BR3FAIL-G2 | {"G0_binding": "PASS", "G0b_foreign": "PASS", "G1_controls": "PASS", "G2_perclass_t1": "FAIL", "G2b_t0_noop": "PASS", "G3_mixed_c1_t1": "PASS", "G4_tf": "PASS", "G5_gauntlet": "PASS", "G6_turns": "PASS", "G7_errors": "PASS"}
+2026-10-26 06:49:34 CDT kept dsv41-vllm-1017-BR3-A-BR3FAIL-G2 (stopped)
+2026-10-26 06:49:35 CDT kept dsv41-vllm-1017-BR3-B-BR3FAIL-G2 (stopped)
+2026-10-26 06:49:35 CDT kept dsv41-vllm-1017-BR3-A2-BR3FAIL-G2 (stopped)
+2026-10-26 06:49:35 CDT FINAL dsv41 running=[dsv41-vllm-1017-v27-block-BOUND-REF dsv41-vllm-1017-v27-block-BOUND-REF-rtx ] bound=1 watchdog=2616605 ppid=1 isolate_rule=0
+2026-10-26 06:49:35 CDT ===== CARD BR3 END (lane = dsv41-vllm-1017-v27-block-BOUND-REF) =====
+2026-10-26 06:49:35 CDT ISOLATE off (cardBR3-isolate removed)
