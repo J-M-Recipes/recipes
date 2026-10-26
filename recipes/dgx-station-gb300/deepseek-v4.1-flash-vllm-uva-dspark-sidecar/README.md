@@ -615,33 +615,50 @@ in prefill (2,062 incumbent); RTX p99 ≤ 194 W against its 300 W cap. Full tabl
 
 ## Rollback
 
+Rollback is a script: [`scripts/rollback-v27.sh`](scripts/rollback-v27.sh). Run it on the Station.
+
 ```bash
-# 1. stop the guard first (it would otherwise see a dead server and trip)
-pkill -f sidecar_watchdog.py
-# 2. server, then sidecar
-bash scripts/launch-sidecar.sh stop
-# 3. bring the previous lane back (kept, stopped, same box): v25m-kvtier = v27 without the block key
-docker start dsv41-vllm-1017-v25m-kvtier-RETIRED-REF-rtx   # sidecar first; wait for 'serving' in its log
-docker start dsv41-vllm-1017-v25m-kvtier-RETIRED-REF
+bash scripts/rollback-v27.sh --dry-run   # print every command and wait; touches nothing, needs no docker
+bash scripts/rollback-v27.sh             # v27 -> v25m-kvtier (the defaults below)
+bash scripts/rollback-v27.sh --from <server-container> --to <server-container>   # any other kept pair
 ```
 
-*(Corrected 2026-10-26: step 3 named `dsv41-vllm-1017-v23-pinexact-RETIRED-REF`, the Grace-offload v23 lane. Since
-the v27 promotion the previous lane is the v25m-kvtier pair above. v23 stays kept as the older fallback:
-`docker start dsv41-vllm-1017-v23-pinexact-RETIRED-REF` binds in ~260 s.)* On a fresh box, undo only block
-verification by relaunching the server step with `SPEC_EXTRA` empty.
+Defaults: **FROM** `dsv41-vllm-1017-v27-block-BOUND-REF` + `-rtx` (v27, serving) → **TO**
+`dsv41-vllm-1017-v25m-kvtier-RETIRED-REF` + `-rtx` (v25m-kvtier = v27 without the block key, stopped and kept since
+the promotion). It is the promotion in `results/2026-10-26-br1-block-verification/raw/promote-v27.log`, reversed:
 
-To undo only the KV change, start the kept util-0.97 pair instead (sidecar first, then server):
-`docker start dsv41-vllm-1017-v25-sidecar-kv4.9-KEPT-rtx && docker start dsv41-vllm-1017-v25-sidecar-kv4.9-KEPT`
-(it bound in ~7 min on the reference box).
+1. Refuses (exit 3, lane untouched) while a card runner is live (`pgrep -f runner.sh`) or if the TO pair is missing.
+2. Kills the fail-stop watchdog (pid file `~/dsv41/m3/logs/sidecar_watchdog.pid`, fallback `pgrep sidecar_watchdog.py`)
+   and confirms it is gone — left running, it would see the server stop and trip.
+3. `docker stop -t 60` the FROM server, then `-t 30` its sidecar; renames both to `FROM-ROLLED-BACK-<ts>` (kept).
+4. `docker start` TO-rtx and waits ≤ 3 min for `serving` / `prepared 40 layers` in the log of *this* start.
+5. `docker start` TO and waits ≤ 45 min for `/v1/models` to list `dsv41-flash-uva` (~8 min on an autotune hash hit).
+6. Prints the KV line (expects `GPU KV cache size: 4,400,013 tokens`), runs one chat smoke (`reasoning_effort` low) and
+   one tool-call smoke.
+7. Re-arms the watchdog from the argv captured at promotion (`~/dsv41/m3/logs/promote-v27-wd-argv.txt`) with
+   `--server` → TO and `--log` → `sidecar_watchdog.rollback.log`, double-forked via `setsid nohup`; checks PPID 1.
+   This step runs even if a step-6 check failed, so a bound lane is never left without its guard.
+8. Appends a `LANE-OWNER.txt` line and a ledger line.
 
-To drop only the kv-host-tier variant, relaunch the server step without the two tier flags
-(`EXTRA="--kv-cache-memory 9126805504"`). `docker start` of a tier container keeps its flags. The mmap is unlinked
-at boot, so stopping the container frees the 51.54 GB.
+It is idempotent (a re-run skips what is already done) and exits 4 with `NEEDS HANDS` on any failure; the log is
+`~/dsv41/m3/logs/rollback-v27-<ts>.log`.
 
-With no previous lane on the box, the fallback is the GB300-only sibling recipe
-([`../deepseek-v4.1-flash-vllm-uva-dspark`](../deepseek-v4.1-flash-vllm-uva-dspark)): same checkpoint, Grace
-offload, no RTX card. The watchdog's fail-stop policy means a trip leaves this lane down on purpose — bring the
-incumbent back by hand after reading `sidecar_watchdog.log`.
+**Manual fallback** (if the script cannot run):
+
+* `kill $(cat ~/dsv41/m3/logs/sidecar_watchdog.pid)` — guard first.
+* `docker stop -t 60 dsv41-vllm-1017-v27-block-BOUND-REF && docker stop -t 30 dsv41-vllm-1017-v27-block-BOUND-REF-rtx`
+* `docker start dsv41-vllm-1017-v25m-kvtier-RETIRED-REF-rtx`, wait for `serving`, then
+  `docker start dsv41-vllm-1017-v25m-kvtier-RETIRED-REF`; wait for `/v1/models`.
+* Re-arm `sidecar_watchdog.py --server dsv41-vllm-1017-v25m-kvtier-RETIRED-REF --mode enforce …` with `setsid nohup`.
+* Older lanes, same shape (sidecar first): `dsv41-vllm-1017-v25-sidecar-kv4.9-KEPT` undoes the KV change (~7 min);
+  `dsv41-vllm-1017-v23-pinexact-RETIRED-REF` is the Grace-offload v23 lane (~260 s); with no previous lane, the
+  GB300-only sibling ([`../deepseek-v4.1-flash-vllm-uva-dspark`](../deepseek-v4.1-flash-vllm-uva-dspark)).
+* On a fresh box: undo only block verification by relaunching the server step with `SPEC_EXTRA` empty; drop only the
+  kv-host-tier by relaunching without the two tier flags (`EXTRA="--kv-cache-memory 9126805504"`) — `docker start`
+  of a tier container keeps its flags.
+
+The watchdog's fail-stop policy means a trip leaves this lane down on purpose — read `sidecar_watchdog.log` before
+running the rollback by hand; nothing auto-starts the incumbent behind a wrong-token trip.
 
 ## Credits
 
@@ -681,3 +698,17 @@ fail-stop serving policy; the bracketed control→candidate→control discipline
 quality gates (teacher-forced flips, BFCL, per-class decode) applied to a sidecar lane at all. Measurements,
 gate design and the write-up: **J&M Recipes** (James Meadlock, Milo). Session note: the numbers were produced
 with a Claude Opus 5.5 orchestrator on the research side; the recipe was written from the receipts.
+
+## Finalisation checklist (2026-10-26)
+
+What stands between v27 and `status: verified` (the recipe stays `experimental` until every row is done):
+
+| item | state |
+|---|---|
+| T2 quality (needle + GSM8K-200, paired) | pending — run in progress on the live lane |
+| T3 promotion bench | not run |
+| 48 h soak | clock started 2026-10-26 16:36 CDT (last restore); ends 2026-10-28 16:36 CDT if no cards take the lane |
+| cosine R2 re-judge (`results/2026-10-26-gs-cosine-r2/`) | running |
+| held-out sibling (BFCL live_simple + live_multiple, run once at promotion) | pending |
+| rollback script | done — [`scripts/rollback-v27.sh`](scripts/rollback-v27.sh) (this PR; dry-run tested, not yet exercised on the box) |
+| gate stamps | schema / digest / health done for v27; quality / performance pending (T2 / T1) |
