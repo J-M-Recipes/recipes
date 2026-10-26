@@ -44,7 +44,7 @@
   <div class="top">
     <div>
       <h1>DeepSeek-V4.1-Flash · 1× DGX Station GB300 + RTX PRO 6000 · block verification (Card BR1)</h1>
-      <div class="sub">The live sidecar lane (v25m map + Grace prefix-KV tier) with one key added to the speculative config: rejection_sample_method block. The drafted block is verified jointly instead of token by token, with the same output distribution. It only acts when temperature &gt; 0.</div>
+      <div class="sub">The then-live sidecar lane (v25m map + Grace prefix-KV tier) with one key added to the speculative config: rejection_sample_method block. The drafted block is verified jointly instead of token by token, with the same output distribution. It only acts when temperature &gt; 0.</div>
     </div>
     <div class="brand"><b>J-M-RECIPES</b><br>block-verification = v25m-kvtier + 1 spec key · Card BR1 10-25 · PASS re-scored · PROMOTED as v27 10-26 04:08 CDT · 2026-10-26<br>status: experimental</div>
   </div>
@@ -63,7 +63,7 @@
   </div>
   <div class="row2">
 <div class="box"><div class="lbl">Guesser</div><div class="kv"><b>DSpark</b> · in-checkpoint MTP (mtp.0–2), 1017 revision<br>k = 5 at 1–4 seqs, 3 at 5–8 and 9–32 (unchanged) · rejection_sample_method block<br><span class="acc">accept: <span>temp-1.0 C1, block / ctrl <b>prose 2.95/2.83 · structured 3.25/3.20 · code 3.85/3.79 · shell 4.07/4.08 · tool-JSON 3.74/3.53</b></span> <span>temp 0 <b>no-op (greedy rows skip block verification)</b></span></span></div></div>
-<div class="box"><div class="lbl">What changed and what it does not cover</div><div class="kv">change: <b>one key in --speculative-config; not a compute-hash factor → hash-hit boot, same autotune store</b><br>temperature 0: <b>vLLM applies it only when not is_greedy → a temp-0 bench reads B = A (prose −0.9%, code −2.2%, shell +1.1%; bars 2.6–4.1%)</b><br>verdicts: <b>pre-registered FAIL BR1FAIL-G0-G2b (order-sensitive env compare; temp-0 bar tighter than the controls&#x27; r1/r2 spread) · re-scored PASS BR1PASS · both kept</b><br>status: <b>promotion candidate, NOT promoted (James decides)</b></div></div>
+<div class="box"><div class="lbl">What changed and what it does not cover</div><div class="kv">change: <b>one key in --speculative-config; not a compute-hash factor → hash-hit boot, same autotune store</b><br>temperature 0: <b>vLLM applies it only when not is_greedy → a temp-0 bench reads B = A (prose −0.9%, code −2.2%, shell +1.1%; bars 2.6–4.1%)</b><br>verdicts: <b>pre-registered FAIL BR1FAIL-G0-G2b (order-sensitive env compare; temp-0 bar tighter than the controls&#x27; r1/r2 spread) · re-scored PASS BR1PASS · both kept</b><br>status: <b>PROMOTED as v27 · :30006 since 10-26 04:08 CDT (James&#x27;s call); rollback v25m-kvtier-RETIRED-REF</b></div></div>
 <div class="box"><div class="lbl">Guard — same as the sidecar lane</div><div class="kv">watchdog: <b>fail-closed, enforce mode on A, B and A2 · 0 timeouts · 0 trips · FF errors 0</b><br>isolation: <b>lane firewalled to loopback while dark · 0 foreign clients on every arm</b><br>KV / args: <b>4,400,013 tokens on all arms · block key in args 0/1/0 (docker inspect)</b></div></div>
   </div>
   <div class="fid"><div class="lbl">Output fidelity — does the recipe change what the model says?</div>

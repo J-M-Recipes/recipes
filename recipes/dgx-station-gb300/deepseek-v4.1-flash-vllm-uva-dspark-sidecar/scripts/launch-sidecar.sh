@@ -23,7 +23,9 @@
 #   M3_DIR (default $HOME/dsv41/m3), B12X_DIR ($HOME/dsv41/b12x), MODEL_DIR, IMAGE (digest), CACHE_DIR,
 #   NAME (default dsv41-vllm-sidecar), SEQS (32), KSCHED, CG_SIZES, ROWMAP (rowmap-static-v1.json),
 #   GPU_UTIL (0.97), MAXLEN (1048576), PORT (30006), PEER_SPINS (2000000000), REPLAY_OVERLAY (1),
-#   MEGA_PEER_CHECK (0), MEGA_COLD_TRT (0), MEGA_FI_TUNE_FILE (empty), EXTRA (extra serve flags)
+#   MEGA_PEER_CHECK (0), MEGA_COLD_TRT (0), MEGA_FI_TUNE_FILE (empty), EXTRA (extra serve flags),
+#   SPEC_EXTRA (empty; spliced into the --speculative-config JSON before its closing brace — the v27 serving
+#   release sets SPEC_EXTRA=',"rejection_sample_method":"block"', as Card BR1's launch_br1.sh did)
 set -euo pipefail
 STEP=${1:?usage: launch-sidecar.sh sidecar|server|stop}
 NAME=${NAME:-dsv41-vllm-sidecar}
@@ -44,6 +46,7 @@ GPU_UTIL=${GPU_UTIL:-0.97}
 MAXLEN=${MAXLEN:-1048576}
 PORT=${PORT:-30006}
 EXTRA=${EXTRA:-}
+SPEC_EXTRA=${SPEC_EXTRA:-}
 LOGDIR=$W/logs
 mkdir -p "$CACHE"/{vllm,tilelang,triton,nv,dj,fi,b12x} "$W/prof" "$LOGDIR" "$W/local"
 
@@ -127,7 +130,7 @@ docker run -d --name "$NAME" --gpus "device=$GB300" \
   --gpu-memory-utilization "$GPU_UTIL" --kv-cache-dtype fp8_ds_mla \
   --tool-call-parser deepseek_v41 --reasoning-parser deepseek_v41 --enable-auto-tool-choice \
   --long-prefill-token-threshold 6144 --enable-prefix-caching \
-  --speculative-config "{\"method\":\"dspark\",\"num_speculative_tokens\":5,\"num_speculative_tokens_per_batch_size\":$KSCHED,\"draft_sample_method\":\"probabilistic\"}" \
+  --speculative-config "{\"method\":\"dspark\",\"num_speculative_tokens\":5,\"num_speculative_tokens_per_batch_size\":$KSCHED,\"draft_sample_method\":\"probabilistic\"$SPEC_EXTRA}" \
   --cudagraph-capture-sizes $CG_SIZES \
   $EXTRA --host 0.0.0.0 --port "$PORT" >/dev/null
 nohup docker logs -f "$NAME" > "$LOGDIR/$NAME.log" 2>&1 &

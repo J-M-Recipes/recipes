@@ -1,8 +1,8 @@
-# card-br1.yaml — variant card (EXPERIMENTAL) for the sidecar recipe: DSpark block verification (Card BR1).
+# card-br1.yaml — variant card for the sidecar recipe (PROMOTED as v27 2026-10-26 04:08 CDT; recipe stays experimental): DSpark block verification (Card BR1).
 #   scripts/render_card.py recipes/dgx-station-gb300/deepseek-v4.1-flash-vllm-uva-dspark-sidecar --card br1
 # Numbers trace to results/2026-10-26-br1-block-verification/ (VERDICT-rescore.txt, verdict-rescore.json, throughput.csv, raw/).
 title: "DeepSeek-V4.1-Flash · 1× DGX Station GB300 + RTX PRO 6000 · block verification (Card BR1)"
-subtitle: "The live sidecar lane (v25m map + Grace prefix-KV tier) with one key added to the speculative config: rejection_sample_method block. The drafted block is verified jointly instead of token by token, with the same output distribution. It only acts when temperature > 0."
+subtitle: "The then-live sidecar lane (v25m map + Grace prefix-KV tier) with one key added to the speculative config: rejection_sample_method block. The drafted block is verified jointly instead of token by token, with the same output distribution. It only acts when temperature > 0."
 version: "block-verification = v25m-kvtier + 1 spec key · Card BR1 10-25 · PASS re-scored · PROMOTED as v27 10-26 04:08 CDT"
 status: experimental
 run_id: 2026-10-26-br1-block-verification
@@ -35,7 +35,7 @@ secondary:
       "change": "one key in --speculative-config; not a compute-hash factor → hash-hit boot, same autotune store"
       "temperature 0": "vLLM applies it only when not is_greedy → a temp-0 bench reads B = A (prose −0.9%, code −2.2%, shell +1.1%; bars 2.6–4.1%)"
       "verdicts": "pre-registered FAIL BR1FAIL-G0-G2b (order-sensitive env compare; temp-0 bar tighter than the controls' r1/r2 spread) · re-scored PASS BR1PASS · both kept"
-      "status": "promotion candidate, NOT promoted (James decides)"
+      "status": "PROMOTED as v27 · :30006 since 10-26 04:08 CDT (James's call); rollback v25m-kvtier-RETIRED-REF"
   - label: "Guard — same as the sidecar lane"
     items:
       "watchdog": "fail-closed, enforce mode on A, B and A2 · 0 timeouts · 0 trips · FF errors 0"

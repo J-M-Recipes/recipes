@@ -1,7 +1,7 @@
 # 2026-10-25 — Card BR1: DSpark block verification on the sidecar lane
 
 One key added to the production speculative config: `"rejection_sample_method":"block"` (block verification,
-Sun et al.). Everything else is the production lane as it serves on `:30006`: the v25m map
+Sun et al.). Everything else is the production lane as it served on `:30006` until the v27 promotion (2026-10-26 04:08 CDT): the v25m map
 (`ROWMAP=rowmap-mixed-ar-v1.json`), the kv-host-tier flags
 (`EXTRA="--kv-cache-memory 9126805504 --kv-offloading-size 48 --kv-offloading-backend native"`), image
 `vllm/vllm-openai@sha256:3af6a45b…` (nightly af7f9488), 32 seats, 1M context, DSpark k=5/3/3 by batch size,
@@ -68,7 +68,8 @@ Temperature-1.0 per-class decode tok/s (mean of r1/r2), B ÷ mean(A, A2):
 
 **Read:** block verification is a small, real gain at temperature > 0. The best C1 cells are +3.7% prose and
 +5.4% tool-JSON, with +2.0% tokens per step, and the teacher-forced flips sit at the control floor. It is a
-**promotion candidate, NOT promoted**; that decision is James's. It does nothing at temperature 0.
+~~**promotion candidate, NOT promoted**; that decision is James's.~~ *(Corrected 2026-10-26: James promoted it;
+`:30006` serves it as v27 since 2026-10-26 04:08 CDT, log `raw/promote-v27.log`.)* It does nothing at temperature 0.
 
 ## Files
 
