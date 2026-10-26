@@ -59,6 +59,53 @@ sibling is the one that needs nothing but the GB300.
 > [Part 1, with its convergence correction](https://al-engr.com/gb300-adaptive-expert-residency.html). Peer recipe:
 > [fraserprice/DeepSeek-4.1-Flash-1017-BRRR](https://huggingface.co/fraserprice/DeepSeek-4.1-Flash-1017-BRRR).
 
+## 2026-10-26 (evening): T2, held-out and cosine R2 on v27
+
+Two receipts landed after the status banner above was written. Both **PASS**, and the quality and performance gates
+are now stamped for v27. The recipe **stays `experimental`**: the 48 h soak runs to 2026-10-28 16:36 CDT, T3 has not
+run, and no temperature > 0 quality instrument has run on v27 (see the [checklist](#finalisation-checklist-2026-10-26)).
+
+**T0 + T2 + T1 + held-out BFCL on the live lane**, 2026-10-26 17:08–17:21 CDT
+([`results/2026-10-26-v27-t2-heldout/`](results/2026-10-26-v27-t2-heldout/README.md)). The pinned
+llm-inference-bench v0.7.7 ran from the M4 against `:30006` while the lane kept serving guests. Every check ran at
+temperature 0, with **concurrency capped at 4** to protect guests.
+
+| check | v27 | baseline / bar | verdict |
+|---|---|---|---|
+| T0 (models id, exact-word `PINEAPPLE`, parsed tool call) | 3/3 | — | PASS |
+| needle-checksum, 500 identical greedy requests | **EXACT 500/500** | EXACT N/N | PASS |
+| GSM8K-200, paired on item ids | **192/200 = 96.0%** | v25m Card GV 192/200 on the same ids; 0 vs 0 one-way flips, McNemar exact p = 1.0; completion tokens 238.6 vs 256.9 | PASS |
+| BFCL held-out sibling (live_simple 258 + live_multiple 1,053), run once | **1013/1311 = 77.27%** (78.29 / 77.02), 0 errors | v25m Card GV 1018/1311 = 77.65% → −0.38 pt, 17 lost / 12 gained, McNemar p = 0.458; bar −1.0 pt | PASS |
+| tool-eval, hardmode, all 92 scenarios | 89/100 (163/184); fails TC-43, 51, 68, 74, 89, 92 | no bar in the doc; v21 GB300-only bundle 92/100 — TC-43 and TC-51 are new | informational |
+| T1 C1, ctx 0 / 32K / 128K (synthetic filler) | **262.1 / 254.1 / 249.7** tok/s | v21 band 203–214 / 174–196 / 184–190 | above band |
+| T1 C4, ctx 0 / 32K / 128K | **661.1 / 642.5 / 636.7** tok/s | v21 band 345–359 / 368–410 / 374–376 | above band |
+
+C8 was skipped for guests. **All these checks are at temperature 0, and block verification acts only at
+temperature > 0.** They cover the target path that v27 shares with v25m-kvtier, not the block key itself. The T1 band
+is the v21 GB300-only lane, the only lib T1 on record, so "above band" means no regression only. It is not a
+measured speedup over a sidecar baseline.
+
+**Cosine gate R2 re-judge**, 2026-10-26 17:06 CDT, on the Station's CPU
+([`results/2026-10-26-gs-cosine-r2/`](results/2026-10-26-gs-cosine-r2/README.md), registered 2026-10-24 before any
+re-judging). It ran the unmodified `judge_r2.py` (sha1 `b2b9d66fbbe0`, the registered one) over the archived
+check-mode logs. e is the sidecar's error as a fraction of the whole layer output; bar B = 1.5 × the reference's max e.
+
+| boot | max e | p99 e | R2 | R1 min cos (reported) |
+|---|--:|--:|---|--:|
+| v25 static SC0 (reference) | 0.03098 | 0.01076 | PASS | 0.99906 |
+| **v25m GV (the map v27 serves)** | **0.01487** | 0.01158 | **PASS** (B = 0.04646) | 0.99811 (FAIL, 1 of 1,439) |
+| 285/99 h285 SC3b | 0.01740 | 0.01079 | PASS | 0.99885 (FAIL) |
+| mix-v1 SC3 | 0.01506 | 0.00873 | PASS | 0.99911 |
+| v25m2 GV2 | 0.01538 | 0.01167 | PASS | 0.99831 (FAIL) |
+
+All boots covered 40/40 layers with 0 timeouts. Caveats, as the re-judge states them:
+
+- **The reference set is incomplete.** The registered references were SC0 + Card GS K1/K2, but K1/K2 never ran
+  (Card GS was cancelled 2026-10-24), so B rests on 1 of 3 references. Adding them can only raise B, and v25m's max e
+  is already below SC0's own, so the verdict cannot flip.
+- **B rests on one check.** SC0's max e is a single outlier check; the next highest is 0.01502.
+- **R2 is a numerics gate only.** It does not clear the cancelled 48 h soak.
+
 ## 2026-10-26 (pm): what happened on the GB300-only sibling, and why it does not change this recipe
 
 The GB300-only sibling ([`../deepseek-v4.1-flash-vllm-uva-dspark`](../deepseek-v4.1-flash-vllm-uva-dspark/README.md)) tried the same key on its own lane: no sidecar, Grace
@@ -450,7 +497,11 @@ timeout is treated as a correctness bug rather than a slow request.
 
 v27's measured delta over v25m-kvtier is Card BR1 (below). The promoted container got smoke, consumer and
 restore checks, not a new speed bracket. The headline table at the top was measured on the v25 base launch on
-2026-10-22.
+2026-10-22. On 2026-10-26 evening the live v27 container passed T0, T2 and T1 (C1/C4), plus the held-out BFCL
+sibling, all at T=0 and C4: needle 500/500, GSM8K-200 192/200 paired p = 1.0, BFCL held-out 77.27% (−0.38 pt),
+tool-eval 89/100, and T1 C1 262.1 / C4 661.1 tok/s at ctx 0. See the
+[evening section](#2026-10-26-evening-t2-held-out-and-cosine-r2-on-v27) and
+[`results/2026-10-26-v27-t2-heldout/`](results/2026-10-26-v27-t2-heldout/README.md).
 
 ### Card BR2: k ladder + peer harness (2026-10-25 21:36–23:24 CDT, `results/2026-10-26-br2-k-ladder-peerbench/`)
 
@@ -558,8 +609,16 @@ in prefill (2,062 incumbent); RTX p99 ≤ 194 W against its 300 W cap. Full tabl
   another lane without its own bracket.
 * **v27 serves on the v25m map, which missed the bring-up cosine gate** (Card GV: min cos 0.99811 vs the 0.999
   bar, 1 of 1,439 gated checks, at layer 39). It passed the other 9 gates, and it was put on `:30006` as
-  v25m-kvtier and then v27 with that miss open. The pre-registered R2 re-judge
-  (`results/2026-10-26-gs-cosine-r2/`) has not run. The 0.99906 pass in Verify is the v25 static map.
+  v25m-kvtier and then v27 with that miss open. *(Updated 2026-10-26 evening: the pre-registered R2 re-judge
+  (`results/2026-10-26-gs-cosine-r2/`) ran on the archived logs and **passes**: max e 0.01487 vs bar 0.04646, 40/40
+  layers, 0 timeouts. R1 still fails on 1 of 1,439 checks and is reported. The bar comes from 1 of the 3 registered
+  reference boots, because K1/K2 never ran; it can only rise when they are added. R2 is numerics only, and the judged
+  checks are from v25m's Card GV check boot, not a v27 boot.)* The 0.99906 pass in Verify is the v25 static map.
+* **The v27 T2 and held-out checks are temperature 0, so they do not exercise block verification**
+  ([`results/2026-10-26-v27-t2-heldout/`](results/2026-10-26-v27-t2-heldout/README.md)). Needle 500/500, GSM8K-200
+  192/200 (p = 1.0) and BFCL held-out 77.27% (−0.38 pt) measure the target path v27 shares with v25m-kvtier. A
+  temperature > 0 quality instrument has not yet run for v27. That could be full-vocabulary KLD over forced tokens,
+  as the BRRR card does, or seeded GSM8K at T=1, B vs A.
 * **k > 5 is a loss on real traffic with this drafter (Card BR2).** k=9 (with block verification) reads 0.81–0.92×
   at C1 per class and 0.79× on mixed traffic. The per-position curves show why: marginal acceptance drops from
   0.61–0.82 (positions 1–5) to 0.51–0.67 from position 7, and position-1 acceptance itself falls (prose .72 → .61).
@@ -701,14 +760,17 @@ with a Claude Opus 5.5 orchestrator on the research side; the recipe was written
 
 ## Finalisation checklist (2026-10-26)
 
-What stands between v27 and `status: verified` (the recipe stays `experimental` until every row is done):
+What stands between v27 and `status: verified` (the recipe stays `experimental` until every row is done).
+Updated 2026-10-26 evening.
 
 | item | state |
 |---|---|
-| T2 quality (needle + GSM8K-200, paired) | pending — run in progress on the live lane |
-| T3 promotion bench | not run |
-| 48 h soak | clock started 2026-10-26 16:36 CDT (last restore); ends 2026-10-28 16:36 CDT if no cards take the lane |
-| cosine R2 re-judge (`results/2026-10-26-gs-cosine-r2/`) | running |
-| held-out sibling (BFCL live_simple + live_multiple, run once at promotion) | pending |
-| rollback script | done — [`scripts/rollback-v27.sh`](scripts/rollback-v27.sh) (this PR; dry-run tested, not yet exercised on the box) |
-| gate stamps | schema / digest / health done for v27; quality / performance pending (T2 / T1) |
+| T2 quality (needle + GSM8K-200, paired) | **DONE 2026-10-26** — needle 500/500, GSM8K-200 192/200 = baseline (p = 1.0), T=0, C4 ([`results/2026-10-26-v27-t2-heldout/`](results/2026-10-26-v27-t2-heldout/README.md)) |
+| T1 perf (C1/C4 × 0/32K/128K) | **DONE 2026-10-26** — all 6 cells above the v21 band; C8 skipped for guests |
+| held-out sibling (BFCL live_simple + live_multiple, run once at promotion) | **DONE 2026-10-26** — 1013/1311 = 77.27%, −0.38 pt vs v25m, p = 0.458, inside the −1 pt bar |
+| cosine R2 re-judge (`results/2026-10-26-gs-cosine-r2/`) | **DONE 2026-10-26** — R2 PASS (max e 0.01487 vs 0.04646); R1 still FAIL (reported); B from 1 of 3 references |
+| rollback script | **DONE 2026-10-26** — [`scripts/rollback-v27.sh`](scripts/rollback-v27.sh) (#97; dry-run tested, not yet exercised on the box) |
+| gate stamps | **DONE 2026-10-26** — all five stamped for v27: schema / digest / health (#97), quality (22:10:52Z) and performance (22:16:44Z), run `2026-10-26-v27-t2-heldout` |
+| **remaining:** 48 h soak | clock started 2026-10-26 16:36 CDT (last restore); ends **2026-10-28 16:36 CDT** if no cards take the lane |
+| **remaining:** T3 promotion bench | not run. Optional for this status change, but `docs/benchmarking.md` asks for T3 "before a new default route" — v27 already serves `:30006`, so it is owed |
+| **remaining:** temperature > 0 quality | not run — every T2/held-out check is T=0, where block verification is inactive. Candidates: full-vocabulary KLD over forced tokens (as the BRRR card does) or seeded GSM8K at T=1, B vs A |

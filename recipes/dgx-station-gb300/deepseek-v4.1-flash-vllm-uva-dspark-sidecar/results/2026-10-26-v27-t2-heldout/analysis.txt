@@ -1,0 +1,14 @@
+BFCL heldout paired n=1311 v25m(GV-V)=1018 v27=1013 base_only=17 cand_only=12 mcnemar_p=0.4583
+tool-eval scenarios 0 0
+tool-eval v21->v27 changed: []
+v27 fails/partials: []
+T1 result keys ['concurrency', 'context_tokens', 'benchmark_mode', 'request_count_target', 'warmup_request_count', 'measurement_seconds', 'measurement_wall_seconds', 'client_output_tokens', 'server_output_tokens', 'aggregate_source', 'aggregate_tps', 'failure_reason', 'per_request_avg_tps', 'ttft_avg', 'ttft_p50', 'ttft_p90', 'ttft_p99', 'time_to_second_token_avg', 'time_to_second_token_p50', 'time_to_second_token_p90', 'time_to_second_token_p99', 'request_latency_avg', 'request_latency_p50', 'request_latency_p90', 'request_latency_p99', 'inter_token_latency_avg', 'inter_token_latency_p50', 'inter_token_latency_p90', 'inter_token_latency_p99', 'output_tps_per_user_avg', 'output_tps_per_user_p50', 'output_tps_per_user_p90', 'output_tps_per_user_p99', 'e2e_output_tps_per_user_avg', 'e2e_output_tps_per_user_p50', 'e2e_output_tps_per_user_p90', 'e2e_output_tps_per_user_p99', 'chunk_inter_token_latency_avg', 'chunk_inter_token_latency_p50', 'chunk_inter_token_latency_p90']
+ctx conc | v27 | v21 run1 (10-05 T1) | v21 run2 (10-06 T3) | band | v27 vs band
+(0, 1) 262.1 203.5 214.3 [203.5,214.3] ABOVE
+(0, 4) 661.1 344.5 359.3 [344.5,359.3] ABOVE
+(32768, 1) 254.1 173.7 196.0 [173.7,196.0] ABOVE
+(32768, 4) 642.5 367.7 410.4 [367.7,410.4] ABOVE
+(131072, 1) 249.7 190.2 183.8 [183.8,190.2] ABOVE
+(131072, 4) 636.7 376.3 374.0 [374.0,376.3] ABOVE
+loop flags [(0, 1, False, ''), (32768, 1, False, ''), (131072, 1, False, ''), (0, 4, False, ''), (32768, 4, False, ''), (131072, 4, False, '')]
+prefill {'8192': {'ttft_seconds': 0.176, 'prefill_seconds': 0.176, 'tok_per_sec': 46460.0, 'client_ttft_seconds': 0.176, 'client_tok_per_sec': 46460.0, 'prompt_tokens': 8189, 'samples': 1, 'method': 'scout_only', 'server_validation': {'method': '', 'tok_per_sec': 0.0, 'prefill_seconds': 0.0, 'prompt_tokens': 0, 'request_prompt_tokens': 0, 'cached_tokens': 0, 'token_source': '', 'samples': 0, 'invalid_reas

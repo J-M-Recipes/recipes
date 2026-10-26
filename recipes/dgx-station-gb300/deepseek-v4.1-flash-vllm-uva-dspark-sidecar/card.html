@@ -64,7 +64,7 @@
   <div class="row2">
 <div class="box"><div class="lbl">Guesser</div><div class="kv"><b>DSpark</b> · in-checkpoint MTP (mtp.0–2), 1017 revision<br>k = 5 at 1–4 seqs, 3 at 5–8 and 9–32 (batch-size schedule) · probabilistic drafting · v27: block verification<br><span class="acc">accept: <span>real-text C1 <b>2.96</b></span> <span>temp-1.0 C1 per class <b>prose 2.85 · structured 3.03 · code 3.83 · shell 3.98 · tool-JSON 3.63 (blend 3.20)</b></span> <span>block verif. (v27) <b>+2.0% tok/step</b></span> <span>k=9 <b>−8…−21% speed</b></span></span></div></div>
 <div class="box"><div class="lbl">Guard — a missed sidecar deadline is wrong output, not a slow one</div><div class="kv">bring-up cosine gate: <b>min 0.99906 · 40/40 layers · ≥32 cold rows · 0 timeouts</b><br>spin limit: <b>VLLM_EXP_PEER_SPINS=2e9 → a dead sidecar hangs instead of dropping the cold add</b><br>watchdog: <b>fail-closed, trips in ~3 s on timeout / stall / dead sidecar; fault-tested (rollback bound 260 s)</b><br>live counters (3 h): <b>4.26M sidecar calls · 0 timeouts · 0.0048 ms wait per call · 0 trips</b></div></div>
-<div class="box"><div class="lbl">Quality and cost of the win</div><div class="kv">SC2 gates: <b>12/12 PASS · per-class decode 20/20 cells within −3%</b><br>BFCL: <b>dev 92.67 vs 92.33 · held-out 77.65 vs 77.88 (our grader)</b><br>GSM8K-1319 / needle / gauntlet: <b>96.97 = incumbent · 500/500 exact · 12/12</b><br>power: <b>module p99 1,353 W in 64K prefill, sw_power_cap 89.5% of samples (incumbent 65%) — measured under that throttling</b></div></div>
+<div class="box"><div class="lbl">Quality and cost of the win</div><div class="kv">SC2 gates: <b>12/12 PASS · per-class decode 20/20 cells within −3%</b><br>BFCL: <b>dev 92.67 vs 92.33 · held-out 77.65 vs 77.88 (our grader)</b><br>GSM8K-1319 / needle / gauntlet: <b>96.97 = incumbent · 500/500 exact · 12/12</b><br>v27 T1, synthetic filler (10-26): <b>C1 262 / 254 / 250 tok/s at 0 / 32K / 128K · C4 661 / 643 / 637 — above the v21 GB300-only band (no regression only) · C8 skipped</b><br>power: <b>module p99 1,353 W in 64K prefill, sw_power_cap 89.5% of samples (incumbent 65%) — measured under that throttling</b></div></div>
   </div>
   <div class="fid"><div class="lbl">Output fidelity — does the recipe change what the model says?</div>
     <ul>
@@ -73,7 +73,9 @@
 <li class="ok">Speculation is target-verified (DSpark drafts are accepted by the full model at T=0)</li>
 <li class="ok">Teacher-forced margin-weighted flips vs the same-map control inside the control floor (W=3.014 vs floor 1.866); BFCL dev +0.34 pt, held-out −0.23 pt</li>
 <li class="ok">GSM8K-1319 96.97% identical to the incumbent (1,279/1,319); 500/500 exact needle; gauntlet 12/12; image request reads the picture</li>
-<li class="fail">v27 runs the v25m map, which missed that bar: min cos 0.99811 vs 0.999 (1 of 1,439 checks, layer 39; Card GV, 9 of 10 other gates pass); the pre-registered R2 re-judge has not run</li>
+<li class="meas">v27 runs the v25m map: cosine R2 PASS (max e 0.0149 vs 0.0465) · R1 min cos 0.99811 reported (1 of 1,439 checks, layer 39, below 0.999); R2 bar from 1 of 3 registered reference boots</li>
+<li class="ok">v27 T2 on the live lane, 10-26 (T=0, C4): needle-checksum 500/500 exact · GSM8K-200 192/200 = baseline (0 vs 0 flips, p 1.0) · BFCL held-out 77.27% (−0.38 pt vs v25m, p 0.46, bar −1 pt)</li>
+<li class="meas">All v27 T2/held-out checks are temperature 0, where block verification is inactive: they cover the target path, not the block key; a temp&gt;0 quality instrument is not yet run · tool-eval 89/100 (v21 92; TC-43, TC-51 new fails)</li>
 <li class="ok">v27 block verification (Card BR1): TF top-1 flips 2.166% / 2.176% vs control floor 2.172%, gauntlet 12/12; re-verified after each of the 5 restores on 10-26 (KV 4,400,013, block in args, watchdog PPID 1)</li>
 <li class="meas">Block verification is lane-specific: a null on the GB300-only sibling with a greedy drafter (BR3, 0.999× tok/step); on top of probabilistic drafting it tripped a parity gate in BR4, BR5 and BR6 there and was retired. This drafter was already probabilistic</li>
 <li class="ok">One public bench we ran: fraserprice&#x27;s BRRR codegen harness ported stdlib — 2K/C1 466 tok/s at 5.13 tok/step vs their 4× RTX PRO 6000 703; 64K prefill 46,246 vs 17,852 tok/s</li>
@@ -84,7 +86,7 @@
     <ul>
 <li class="ok">protocol <span class="mono">harness/protocol.yaml</span> sha256 <span class="mono">61c2d22b6351</span> · T=0, no thinking, tool_choice auto, 1 retry, C8 BFCL / C16 fund tools, 4-turn fund conversations (same protocol file as the GB300-only sibling; BFCL suite checksums live there)</li>
 <li class="ok">dev suite (decides candidacy): <b>BFCL dev (simple_python 400 + multiple 200)</b> 556/600 solved (92.67%) · sidecar arm C, 2026-10-22; incumbent 92.33%. Decides candidacy only</li>
-<li class="ok">held-out sibling (decides promotion): <b>BFCL live sibling (live_simple 258 + live_multiple 1,053)</b> 1018/1311 solved (77.65%)</li>
+<li class="ok">held-out sibling (decides promotion): <b>BFCL live sibling (live_simple 258 + live_multiple 1,053)</b> 1013/1311 solved (77.27%)</li>
 <li class="pend">Pass@1 · $ / solved pair: pending (needs held-out run + priced cost)</li>
     </ul>
   </div>

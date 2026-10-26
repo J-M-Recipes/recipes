@@ -70,6 +70,7 @@
     <ul>
 <li class="ok">Weights unchanged: 1017 checkpoint as shipped; only which GPU computes each expert changed</li>
 <li class="fail">FAILED the pre-registered bring-up cosine gate: min cos 0.99811 vs bar 0.999 — 1 of 1,439 gated checks (layer 39, T=128, cold experts 7.9% of the output norm); p1 0.99968 vs v25 static 0.99970, v25 static min 0.99906. The same gate rejected the 285/99 map (0.99885)</li>
+<li class="meas">Pre-registered cosine R2 re-judge (10-26, archived GV logs): PASS — max e 0.0149 vs bar 0.0465 (error as a fraction of layer output), 40/40 layers, 0 timeouts; bar from 1 of 3 registered reference boots; R1 above stays failed</li>
 <li class="meas">Layer 39 on v25&#x27;s exact static split still misses (0.99831; worst check at ~0 cold share = noise). That does not clear v25m, whose failing check had cold share 7.9%. The pre-registered R2 re-judge has not run (Card GS was cancelled with the soak)</li>
 <li class="ok">Teacher-forced margin-weighted flips GATE PASS vs the v23 reference (W 2.84, bar 3.08) and vs v25 static (W 2.55, bar 2.90)</li>
 <li class="ok">GSM8K-1319 96.82% vs v25 96.97% (−0.15 pt, McNemar p 0.73) · needle 500/500 exact · gauntlet 12/12 · reasoning_effort codes identical · image request reads the picture</li>
