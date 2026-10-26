@@ -1,0 +1,924 @@
+{
+ "card": "BR5 block verification re-bracketed alone vs v28-prob (GB300-only)",
+ "result": "FAIL",
+ "suffix": "BR5FAIL-G6",
+ "gates": {
+  "G0_binding": [
+   "PASS",
+   "ground truth dsv41-vllm-1017-v28-prob-BOUND-REF spec carries probabilistic drafting and no block: True; A: kv=2,481,694 prob_in_args=1(want 1) block_in_args=0(want 0) args==v28prob True env==v28prob(sorted) True binds==v28prob(except /ar) True image0909 True hook rehome 40/40 done=1 abort=0 failed=0 missing=[] host_avail@L9=196.88GiB GO+unfreeze 1/1 ctrl={\"freeze\": false, \"baseline\": true}; B: kv=2,481,694 prob_in_args=1(want 1) block_in_args=1(want 1) args==v28prob-except-spec True spec==v28prob+block True env==v28prob(sorted) True binds==v28prob(except /ar) True image0909 True hook rehome 40/40 done=1 abort=0 failed=0 missing=[] host_avail@L9=198.20GiB GO+unfreeze 1/1 ctrl={\"freeze\": false, \"baseline\": true}; A2: kv=2,481,694 prob_in_args=1(want 1) block_in_args=0(want 0) args==v28prob True env==v28prob(sorted) True binds==v28prob(except /ar) True image0909 True hook rehome 40/40 done=1 abort=0 failed=0 missing=[] host_avail@L9=197.36GiB GO+unfreeze 1/1 ctrl={\"freeze\": false, \"baseline\": true}; KV A=2,481,694 B=2,481,694 A2=2,481,694 (v28-prob boot log 2,481,694, info; rule: B and A2 equal A \u2014 block allocates nothing) | hash-hit shape (info): A loaded=189 saved=189 same_dir=True autotune_span=5.0s boot=474s; B loaded=189 saved=189 same_dir=True autotune_span=5.0s boot=474s; A2 loaded=189 saved=189 same_dir=True autotune_span=6.0s boot=475s; one autotune key across arms: True; 0909 hash-hit shape (Loaded N == Saved N, same dir, span <= 60 s): A=True, B=True, A2=True; B boot / controls = 1.00 (<= 1.5 expected)"
+  ],
+  "G0b_foreign": [
+   "PASS",
+   "non-127.0.0.1 POST /v1 per arm: A=0 {'bind': 0, 'cells': 0}; B=0 {'bind': 0, 'cells': 0}; A2=0 {'bind': 0, 'cells': 0}"
+  ],
+  "G1_controls": [
+   "PASS",
+   "C1 per class: t1/prose/c1 d=0.6%; t1/structured/c1 d=2.0%; t1/code/c1 d=0.6%; t1/shell_ops/c1 d=1.2%; t1/tool_json/c1 d=3.5%; t0/prose/c1 d=0.6%; t0/structured/c1 d=0.8%; t0/code/c1 d=1.3%; t0/shell_ops/c1 d=1.2%; t0/tool_json/c1 d=2.8% | C8 (info, bimodal class): t1/prose/c8 d=0.4%; t1/structured/c8 d=2.5%; t1/code/c8 d=5.6%; t1/shell_ops/c8 d=0.2%; t1/tool_json/c8 d=0.8%; t0/prose/c8 d=1.6%; t0/structured/c8 d=1.7%; t0/code/c8 d=1.0%; t0/shell_ops/c8 d=0.7%; t0/tool_json/c8 d=9.7%"
+  ],
+  "G2_perclass_t1": [
+   "PASS",
+   "temp 1.0 forced-length decode tok/s: prose/c1 B/ctrl=1.013 (A 218.7 A2 220.0 B 222.1; bar -2.0%); prose/c8 B/ctrl=1.041 (A 494.7 A2 492.6 B 513.9; bar -2.0%); structured/c1 B/ctrl=1.025 (A 239.4 A2 244.1 B 247.8; bar -2.9%); structured/c8 B/ctrl=1.030 (A 604.9 A2 590.1 B 615.2; bar -3.7%); code/c1 B/ctrl=1.054 (A 271.4 A2 273.1 B 286.8; bar -2.0%); code/c8 B/ctrl=1.050 (A 621.2 A2 656.9 B 670.7; bar -8.4%); shell_ops/c1 B/ctrl=1.039 (A 321.2 A2 325.2 B 335.7; bar -2.0%); shell_ops/c8 B/ctrl=0.985 (A 724.2 A2 726.0 B 714.4; bar -2.0%); tool_json/c1 B/ctrl=1.017 (A 282.6 A2 292.7 B 292.4; bar -5.3%); tool_json/c8 B/ctrl=1.008 (A 768.2 A2 762.4 B 771.2; bar -2.0%)"
+  ],
+  "G2b_t0_parity": [
+   "PASS",
+   "stock temp-0 window (PARITY: greedy rows never use block verification; B must equal A within noise): prose/c1 B -1.5% (|.| bar 12.8%, ctrl r1/r2 spread 8.5%); structured/c1 B -1.2% (|.| bar 3.7%, ctrl r1/r2 spread 2.5%); code/c1 B +0.7% (|.| bar 2.7%, ctrl r1/r2 spread 1.8%); shell_ops/c1 B +2.4% (|.| bar 10.3%, ctrl r1/r2 spread 6.9%); tool_json/c1 B -1.8% (|.| bar 8.1%, ctrl r1/r2 spread 5.4%) | C8 info: prose/c8 B/ctrl=0.997; structured/c8 B/ctrl=1.010; code/c8 B/ctrl=1.007; shell_ops/c8 B/ctrl=1.053; tool_json/c8 B/ctrl=0.955"
+  ],
+  "G3_mixed_c1_t1": [
+   "PASS",
+   "ar_mixed_t C1 agg_tok_s_all at temp 1.0: B mean 182.54 vs ctrl 180.96 (+0.87%; A 180.95 A2 180.98; bar -2.00%) reps B=[177.7, 184.9, 185.0] errors B=0"
+  ],
+  "G4_tf": [
+   "PASS",
+   "B-vs-A flips 1.072% (bar <=3% and <= 1.5 x floor 1.075% = 1.612%; token-mismatch docs 0); B-vs-A2 flips 1.064% (bar <=3% and <= 1.5 x floor 1.075% = 1.612%; token-mismatch docs 0); margin flips at ref p>=0.9 on agent/tool docs: vs A=0 (skipped_docs 0), vs A2=0 (skipped_docs 0)"
+  ],
+  "G5_gauntlet": [
+   "PASS",
+   "B 12/12; controls A 12/12, A2 12/12 (temp 0: run_suite.py)"
+  ],
+  "G6_turns": [
+   "FAIL",
+   "B per pass [6, 7]/12 vs control range [8,9] (A [9, 8], A2 [8, 8]); B errors 0; text-turn emissions B [6, 4] (temp 0: replay_turns.py)"
+  ],
+  "G7_errors": [
+   "PASS",
+   "A: ff=0 foreign=0; B: ff=0 foreign=0; A2: ff=0 foreign=0"
+  ]
+ },
+ "gate_status": {
+  "G0_binding": "PASS",
+  "G0b_foreign": "PASS",
+  "G1_controls": "PASS",
+  "G2_perclass_t1": "PASS",
+  "G2b_t0_parity": "PASS",
+  "G3_mixed_c1_t1": "PASS",
+  "G4_tf": "PASS",
+  "G5_gauntlet": "PASS",
+  "G6_turns": "FAIL",
+  "G7_errors": "PASS"
+ },
+ "invalid_arms": [],
+ "valid": true,
+ "annotations": {
+  "tokens_per_verify_step_t1": {
+   "pct1_window": {
+    "A": 3.4170783741298,
+    "B": 3.5130034223332514,
+    "A2": 3.4365073762970284
+   },
+   "mixed_c1": {
+    "A": 2.099692760673366,
+    "B": 2.124015239571226,
+    "A2": 2.099692760673366
+   },
+   "B_over_ctrl_pct1": 1.0251577933826737,
+   "B_over_ctrl_mixed": 1.0115838275739255
+  },
+  "tokens_per_verify_step_t1_per_class": {
+   "prose/c1": {
+    "B": 2.9246223995440297,
+    "ctrl": 2.8226488632894067
+   },
+   "prose/c8": {
+    "B": 2.934124035438697,
+    "ctrl": 2.8132621071488684
+   },
+   "structured/c1": {
+    "B": 3.1374675423858256,
+    "ctrl": 3.0438664168338754
+   },
+   "structured/c8": {
+    "B": 3.119647737625266,
+    "ctrl": 3.0364045732719145
+   },
+   "code/c1": {
+    "B": 3.9086757990867578,
+    "ctrl": 3.765548949152178
+   },
+   "code/c8": {
+    "B": 3.978690430065866,
+    "ctrl": 3.923715173003493
+   },
+   "shell_ops/c1": {
+    "B": 4.2788761706555665,
+    "ctrl": 4.1229323032987955
+   },
+   "shell_ops/c8": {
+    "B": 4.008576998050682,
+    "ctrl": 4.06646934225413
+   },
+   "tool_json/c1": {
+    "B": 3.6837100825260136,
+    "ctrl": 3.6611407963107974
+   },
+   "tool_json/c8": {
+    "B": 3.7313487021237974,
+    "ctrl": 3.596828343325395
+   }
+  },
+  "x3_accept_canary": {
+   "t1": {
+    "prose": {
+     "A": 0.2468,
+     "B": 0.2468,
+     "A2": 0.2468
+    },
+    "structured": {
+     "A": 0.468,
+     "B": 0.468,
+     "A2": 0.468
+    },
+    "code": {
+     "A": 0.7837,
+     "B": 0.7837,
+     "A2": 0.7837
+    },
+    "shell_ops": {
+     "A": 0.7703,
+     "B": 0.7703,
+     "A2": 0.7703
+    },
+    "tool_json": {
+     "A": 0.8311,
+     "B": 0.8311,
+     "A2": 0.8311
+    }
+   },
+   "t0": {
+    "prose": {
+     "A": 0.2468,
+     "B": 0.2468,
+     "A2": 0.2468
+    },
+    "structured": {
+     "A": 0.468,
+     "B": 0.468,
+     "A2": 0.468
+    },
+    "code": {
+     "A": 0.7837,
+     "B": 0.7837,
+     "A2": 0.7837
+    },
+    "shell_ops": {
+     "A": 0.7703,
+     "B": 0.7703,
+     "A2": 0.7703
+    },
+    "tool_json": {
+     "A": 0.8311,
+     "B": 0.8311,
+     "A2": 0.8311
+    }
+   }
+  },
+  "perclass_hygiene": {
+   "A/t1": [],
+   "A/t0": [],
+   "B/t1": [],
+   "B/t0": [],
+   "A2/t1": [],
+   "A2/t0": []
+  },
+  "boot_block_lines": {
+   "A": [
+    "(EngineCore pid=364) INFO 10-26 16:42:59 [spec_decode_rejection_warmup.py:64] Warming up spec-decode rejection sampler kernels (vocab=129280, num_spec=5, dtype_pairs=[('torch.bfloat16', 'torch.bfloat16'), ('torch.float32', 'torch.bfloat16'), ('torch.bfloat16', 'torch.float32'), ('torch.float32', 'to"
+   ],
+   "B": [
+    "(APIServer pid=1) INFO 10-26 17:19:45 [api_utils.py:286] non-default args: {'model_tag': '/model', 'enable_auto_tool_choice': True, 'tool_call_parser': 'deepseek_v41', 'host': '0.0.0.0', 'port': 30006, 'model': '/model', 'trust_remote_code': True, 'max_model_len': 1048576, 'served_model_name': ['dsv",
+    "(EngineCore pid=364) INFO 10-26 17:26:22 [spec_decode_rejection_warmup.py:64] Warming up spec-decode rejection sampler kernels (vocab=129280, num_spec=5, dtype_pairs=[('torch.bfloat16', 'torch.float32'), ('torch.float32', 'torch.float32'), ('torch.bfloat16', 'torch.bfloat16'), ('torch.float32', 'tor"
+   ],
+   "A2": [
+    "(EngineCore pid=364) INFO 10-26 18:09:26 [spec_decode_rejection_warmup.py:64] Warming up spec-decode rejection sampler kernels (vocab=129280, num_spec=5, dtype_pairs=[('torch.float32', 'torch.bfloat16'), ('torch.bfloat16', 'torch.float32'), ('torch.float32', 'torch.float32'), ('torch.bfloat16', 'tor"
+   ]
+  },
+  "boot_prob_lines": {
+   "A": [
+    "(APIServer pid=1) INFO 10-26 16:36:20 [api_utils.py:286] non-default args: {'model_tag': '/model', 'enable_auto_tool_choice': True, 'tool_call_parser': 'deepseek_v41', 'host': '0.0.0.0', 'port': 30006, 'model': '/model', 'trust_remote_code': True, 'max_model_len': 1048576, 'served_model_name': ['dsv"
+   ],
+   "B": [
+    "(APIServer pid=1) INFO 10-26 17:19:45 [api_utils.py:286] non-default args: {'model_tag': '/model', 'enable_auto_tool_choice': True, 'tool_call_parser': 'deepseek_v41', 'host': '0.0.0.0', 'port': 30006, 'model': '/model', 'trust_remote_code': True, 'max_model_len': 1048576, 'served_model_name': ['dsv"
+   ],
+   "A2": [
+    "(APIServer pid=1) INFO 10-26 18:02:47 [api_utils.py:286] non-default args: {'model_tag': '/model', 'enable_auto_tool_choice': True, 'tool_call_parser': 'deepseek_v41', 'host': '0.0.0.0', 'port': 30006, 'model': '/model', 'trust_remote_code': True, 'max_model_len': 1048576, 'served_model_name': ['dsv"
+   ]
+  },
+  "accept_per_position_pct1": {
+   "A": [
+    0.7813,
+    0.5841,
+    0.4388,
+    0.3408,
+    0.2722
+   ],
+   "B": [
+    0.7871,
+    0.6019,
+    0.4621,
+    0.3654,
+    0.2965
+   ],
+   "A2": [
+    0.7833,
+    0.5856,
+    0.4432,
+    0.3468,
+    0.2776
+   ]
+  },
+  "br4_parity_recheck": {
+   "cells": [
+    {
+     "cell": "G2b shell_ops t0 C1",
+     "word": "NOT-REPRODUCED",
+     "line": "G2b shell_ops t0 C1: NOT-REPRODUCED. BR4 PB +3.6% vs bar 2.6% (ctrl spread 1.7%); BR5 B +2.4% vs mean(A,A2) (|.| bar 10.3%, ctrl r1/r2 spread 6.9%; A 342.1 A2 337.9 B 348.3)"
+    },
+    {
+     "cell": "G6 replay_turns tool emissions",
+     "word": "NOT-REPRODUCED",
+     "line": "G6 replay_turns: NOT-REPRODUCED. BR4 PB per pass [8, 9]/12 vs control range [6, 8]; BR5 B per pass [6, 7]/12 vs control range [8,9] (B errors 0) \u2014 opposite-direction trip"
+    }
+   ],
+   "summary": "neither BR4 parity trip reproduced (gate status this card: G2b PASS, G6 FAIL)"
+  },
+  "mem_min_by_phase": {
+   "pre": 131.1,
+   "A:preboot": 450.5,
+   "A:boot": 152.7,
+   "A:go": 193.6,
+   "A:adapt-settle": 193.6,
+   "A:cells": 192.1,
+   "A:post": 447.8,
+   "B:preboot": 449.6,
+   "B:boot": 154.8,
+   "B:go": 194.0,
+   "B:adapt-settle": 193.9,
+   "B:cells": 192.5,
+   "B:post": 195.2,
+   "A2:preboot": 449.8,
+   "A2:boot": 157.2,
+   "A2:go": 193.9,
+   "A2:adapt-settle": 193.8,
+   "A2:cells": 192.9,
+   "A2:post": 195.8,
+   "restore": 131.6
+  },
+  "restore_watchdog": {
+   "pid": 2801642,
+   "ppid": "1",
+   "ppid_is_1": true
+  },
+  "kv_v28prob_boot_log": "2,481,694",
+  "adaptive_ar_lines_cells_delta": {
+   "A": {
+    "swaps": 82809,
+    "telemetry": 1920,
+    "steps_bytes": 4084672
+   },
+   "B": {
+    "swaps": 82354,
+    "telemetry": 1902,
+    "steps_bytes": 4044320
+   },
+   "A2": {
+    "swaps": 82303,
+    "telemetry": 1916,
+    "steps_bytes": 4075456
+   }
+  },
+  "go": {
+   "A": {
+    "go_seen_log": 1,
+    "unfreeze_log": 1,
+    "baseline_go_tel": 1,
+    "unfreeze_tel": 1,
+    "ctrl": {
+     "freeze": false,
+     "baseline": true
+    },
+    "settle_s": 90
+   },
+   "B": {
+    "go_seen_log": 1,
+    "unfreeze_log": 1,
+    "baseline_go_tel": 1,
+    "unfreeze_tel": 1,
+    "ctrl": {
+     "freeze": false,
+     "baseline": true
+    },
+    "settle_s": 90
+   },
+   "A2": {
+    "go_seen_log": 1,
+    "unfreeze_log": 1,
+    "baseline_go_tel": 1,
+    "unfreeze_tel": 1,
+    "ctrl": {
+     "freeze": false,
+     "baseline": true
+    },
+    "settle_s": 90
+   }
+  },
+  "host_avail_l9_gib": {
+   "A": "196.88",
+   "B": "198.20",
+   "A2": "197.36"
+  },
+  "rtx_used_after_bind_mib": {
+   "A": 47,
+   "B": 47,
+   "A2": 47
+  }
+ },
+ "calc": {
+  "G2_rows": [
+   {
+    "class": "prose",
+    "mode": "c1",
+    "A": 218.66,
+    "A2": 219.98,
+    "B": 222.12,
+    "ratio": 1.0127667335400328,
+    "spread": 0.0060186029545868745,
+    "bar": 0.02,
+    "pass": true
+   },
+   {
+    "class": "prose",
+    "mode": "c8",
+    "A": 494.66,
+    "A2": 492.62,
+    "B": 513.87,
+    "ratio": 1.0409812819058424,
+    "spread": 0.004132566242605989,
+    "bar": 0.02,
+    "pass": true
+   },
+   {
+    "class": "structured",
+    "mode": "c1",
+    "A": 239.36,
+    "A2": 244.08,
+    "B": 247.76,
+    "ratio": 1.0249875889458877,
+    "spread": 0.019526725136521587,
+    "bar": 0.02929008770478238,
+    "pass": true
+   },
+   {
+    "class": "structured",
+    "mode": "c8",
+    "A": 604.88,
+    "A2": 590.07,
+    "B": 615.24,
+    "ratio": 1.0297334616511151,
+    "spread": 0.024787648018745462,
+    "bar": 0.037181472028118195,
+    "pass": true
+   },
+   {
+    "class": "code",
+    "mode": "c1",
+    "A": 271.35,
+    "A2": 273.1,
+    "B": 286.84,
+    "ratio": 1.053687207273395,
+    "spread": 0.0064285058315731464,
+    "bar": 0.02,
+    "pass": true
+   },
+   {
+    "class": "code",
+    "mode": "c8",
+    "A": 621.2,
+    "A2": 656.9,
+    "B": 670.7,
+    "ratio": 1.0495266411078947,
+    "spread": 0.055864173382364345,
+    "bar": 0.08379626007354651,
+    "pass": true
+   },
+   {
+    "class": "shell_ops",
+    "mode": "c1",
+    "A": 321.25,
+    "A2": 325.2,
+    "B": 335.74,
+    "ratio": 1.0387191584809343,
+    "spread": 0.01222058937272794,
+    "bar": 0.02,
+    "pass": true
+   },
+   {
+    "class": "shell_ops",
+    "mode": "c8",
+    "A": 724.19,
+    "A2": 725.96,
+    "B": 714.42,
+    "ratio": 0.9853049684515394,
+    "spread": 0.002441126779988252,
+    "bar": 0.02,
+    "pass": true
+   },
+   {
+    "class": "tool_json",
+    "mode": "c1",
+    "A": 282.63,
+    "A2": 292.73,
+    "B": 292.44,
+    "ratio": 1.0165461624026697,
+    "spread": 0.035108453837597406,
+    "bar": 0.05266268075639611,
+    "pass": true
+   },
+   {
+    "class": "tool_json",
+    "mode": "c8",
+    "A": 768.18,
+    "A2": 762.44,
+    "B": 771.24,
+    "ratio": 1.0077484940742967,
+    "spread": 0.007500228665507959,
+    "bar": 0.02,
+    "pass": true
+   }
+  ],
+  "G2b_rows": {
+   "prose": {
+    "A": 237.62,
+    "A2": 236.19,
+    "B": 233.31,
+    "rel": -0.015174859120744566,
+    "bar": 0.12795,
+    "ctrl_r1r2_spread": 0.0853,
+    "pass": true
+   },
+   "structured": {
+    "A": 258.25,
+    "A2": 260.32,
+    "B": 256.22,
+    "rel": -0.011820969203771736,
+    "bar": 0.036750000000000005,
+    "ctrl_r1r2_spread": 0.0245,
+    "pass": true
+   },
+   "code": {
+    "A": 325.71,
+    "A2": 321.37,
+    "B": 325.76,
+    "rel": 0.0068615936205724815,
+    "bar": 0.02715,
+    "ctrl_r1r2_spread": 0.0181,
+    "pass": true
+   },
+   "shell_ops": {
+    "A": 342.07,
+    "A2": 337.95,
+    "B": 348.33,
+    "rel": 0.024469868533278483,
+    "bar": 0.10289999999999999,
+    "ctrl_r1r2_spread": 0.0686,
+    "pass": true
+   },
+   "tool_json": {
+    "A": 319.56,
+    "A2": 310.63,
+    "B": 309.43,
+    "rel": -0.01797870483504982,
+    "bar": 0.08115,
+    "ctrl_r1r2_spread": 0.0541,
+    "pass": true
+   }
+  },
+  "G3": {
+   "B": 182.54333333333332,
+   "A": 180.95,
+   "A2": 180.97666666666666,
+   "ctrl_mean": 180.9633333333333,
+   "spread": 0.00014735950192490654,
+   "bar": 0.02,
+   "rel": 0.00873105048904943
+  },
+  "G6": {
+   "B": [
+    6,
+    7
+   ],
+   "range": [
+    8,
+    9
+   ],
+   "B_errors": 0,
+   "pass": false
+  },
+  "G2_ratio_by_cell": {
+   "prose/c1": 1.0128,
+   "prose/c8": 1.041,
+   "structured/c1": 1.025,
+   "structured/c8": 1.0297,
+   "code/c1": 1.0537,
+   "code/c8": 1.0495,
+   "shell_ops/c1": 1.0387,
+   "shell_ops/c8": 0.9853,
+   "tool_json/c1": 1.0165,
+   "tool_json/c8": 1.0077
+  }
+ },
+ "cells": {
+  "A": {
+   "facts": {
+    "arm": "A",
+    "name": "dsv41-vllm-1017-BR5-A",
+    "kv_tokens": "2,481,694",
+    "kv_ref": "2,481,694",
+    "block_in_args": 0,
+    "prob_in_args": 1,
+    "block_boot_lines": 1,
+    "prob_boot_lines": 1,
+    "spec_extra": ",\"draft_sample_method\":\"probabilistic\"",
+    "ff_boot": 0,
+    "loaded_lines": 1,
+    "saved_lines": 1,
+    "autotune_starts": 1,
+    "autotune_ends": 1,
+    "rehome_layers": 40,
+    "rehome_done": 1,
+    "host_avail_l9_gib": "196.88",
+    "pin_abort": 0,
+    "hook_failed": 0,
+    "hook_keys_missing": "",
+    "args_eq_ref": 1,
+    "env_eq_ref_sorted": 1,
+    "binds_eq_ref_except_ar": 1,
+    "image": "sha256:00d577a6a63281e15336029d5bcee4e9a2cf182214a4f20ba6111b1c8e79893d",
+    "rtx_used_after_bind_mib": 47,
+    "boot_s": 474,
+    "bound_at": 1793033023
+   },
+   "autotune": {
+    "loaded": 189,
+    "saved": 189,
+    "loaded_dir": "/root/.cache/vllm/flashinfer_autotune_cache/0.6.18/103a/62426808ae2b0ddbdfbf2278702ac4e367078b9884817c169ddee40495c4e6a6/autotune_configs.json",
+    "saved_dir": "/root/.cache/vllm/flashinfer_autotune_cache/0.6.18/103a/62426808ae2b0ddbdfbf2278702ac4e367078b9884817c169ddee40495c4e6a6/autotune_configs.json",
+    "elapsed_s": 5.0,
+    "pairs": 1,
+    "hash_hit_shape": true
+   },
+   "mixed": [
+    {
+     "rep": 1,
+     "agg_tok_s_all": 176.28,
+     "errors": 0,
+     "n": 54,
+     "temperature": 1.0
+    },
+    {
+     "rep": 2,
+     "agg_tok_s_all": 183.25,
+     "errors": 0,
+     "n": 56,
+     "temperature": 1.0
+    },
+    {
+     "rep": 3,
+     "agg_tok_s_all": 183.32,
+     "errors": 0,
+     "n": 56,
+     "temperature": 1.0
+    }
+   ],
+   "perclass_t1": {
+    "prose/c1": 218.66,
+    "prose/c8": 494.66,
+    "structured/c1": 239.36,
+    "structured/c8": 604.88,
+    "code/c1": 271.35,
+    "code/c8": 621.2,
+    "shell_ops/c1": 321.25,
+    "shell_ops/c8": 724.19,
+    "tool_json/c1": 282.63,
+    "tool_json/c8": 768.18
+   },
+   "perclass_t0": {
+    "prose/c1": 237.62,
+    "prose/c8": 523.15,
+    "structured/c1": 258.25,
+    "structured/c8": 573.33,
+    "code/c1": 325.71,
+    "code/c8": 740.25,
+    "shell_ops/c1": 342.07,
+    "shell_ops/c8": 796.55,
+    "tool_json/c1": 319.56,
+    "tool_json/c8": 820.9
+   },
+   "turns": [
+    {
+     "tool_emitted": 9,
+     "tool_turns": 12,
+     "text_emitted": 4,
+     "errors": 0
+    },
+    {
+     "tool_emitted": 8,
+     "tool_turns": 12,
+     "text_emitted": 3,
+     "errors": 0
+    }
+   ],
+   "ar_cells_delta": {
+    "swaps": 82809,
+    "telemetry": 1920,
+    "steps_bytes": 4084672
+   },
+   "errcount_server": 0,
+   "foreign": {
+    "bind": 0,
+    "cells": 0
+   },
+   "metrics_pct1": {
+    "drafts": 71248.0,
+    "draft_tokens": 356240.0,
+    "accepted": 172212.0,
+    "acc_per_draft": 2.4170783741298,
+    "tokens_per_verify_step": 3.4170783741298,
+    "accept_rate": 0.48341567482596004,
+    "accept_per_pos": [
+     0.7813,
+     0.5841,
+     0.4388,
+     0.3408,
+     0.2722
+    ]
+   },
+   "metrics_mixed": {
+    "accepted": 34361.0,
+    "drafts": 31246.0,
+    "tokens_per_verify_step": 2.099692760673366
+   }
+  },
+  "B": {
+   "facts": {
+    "arm": "B",
+    "name": "dsv41-vllm-1017-BR5-B",
+    "kv_tokens": "2,481,694",
+    "kv_ref": "2,481,694",
+    "block_in_args": 1,
+    "prob_in_args": 1,
+    "block_boot_lines": 2,
+    "prob_boot_lines": 1,
+    "spec_extra": ",\"draft_sample_method\":\"probabilistic\",\"rejection_sample_method\":\"block\"",
+    "ff_boot": 0,
+    "loaded_lines": 1,
+    "saved_lines": 1,
+    "autotune_starts": 1,
+    "autotune_ends": 1,
+    "rehome_layers": 40,
+    "rehome_done": 1,
+    "host_avail_l9_gib": "198.20",
+    "pin_abort": 0,
+    "hook_failed": 0,
+    "hook_keys_missing": "",
+    "args_eq_ref": 0,
+    "env_eq_ref_sorted": 1,
+    "binds_eq_ref_except_ar": 1,
+    "image": "sha256:00d577a6a63281e15336029d5bcee4e9a2cf182214a4f20ba6111b1c8e79893d",
+    "rtx_used_after_bind_mib": 47,
+    "boot_s": 474,
+    "bound_at": 1793035627
+   },
+   "autotune": {
+    "loaded": 189,
+    "saved": 189,
+    "loaded_dir": "/root/.cache/vllm/flashinfer_autotune_cache/0.6.18/103a/62426808ae2b0ddbdfbf2278702ac4e367078b9884817c169ddee40495c4e6a6/autotune_configs.json",
+    "saved_dir": "/root/.cache/vllm/flashinfer_autotune_cache/0.6.18/103a/62426808ae2b0ddbdfbf2278702ac4e367078b9884817c169ddee40495c4e6a6/autotune_configs.json",
+    "elapsed_s": 5.0,
+    "pairs": 1,
+    "hash_hit_shape": true
+   },
+   "mixed": [
+    {
+     "rep": 1,
+     "agg_tok_s_all": 177.71,
+     "errors": 0,
+     "n": 54,
+     "temperature": 1.0
+    },
+    {
+     "rep": 2,
+     "agg_tok_s_all": 184.95,
+     "errors": 0,
+     "n": 56,
+     "temperature": 1.0
+    },
+    {
+     "rep": 3,
+     "agg_tok_s_all": 184.97,
+     "errors": 0,
+     "n": 56,
+     "temperature": 1.0
+    }
+   ],
+   "perclass_t1": {
+    "prose/c1": 222.12,
+    "prose/c8": 513.87,
+    "structured/c1": 247.76,
+    "structured/c8": 615.24,
+    "code/c1": 286.84,
+    "code/c8": 670.7,
+    "shell_ops/c1": 335.74,
+    "shell_ops/c8": 714.42,
+    "tool_json/c1": 292.44,
+    "tool_json/c8": 771.24
+   },
+   "perclass_t0": {
+    "prose/c1": 233.31,
+    "prose/c8": 525.52,
+    "structured/c1": 256.22,
+    "structured/c8": 574.14,
+    "code/c1": 325.76,
+    "code/c8": 741.67,
+    "shell_ops/c1": 348.33,
+    "shell_ops/c8": 836.14,
+    "tool_json/c1": 309.43,
+    "tool_json/c8": 824.1
+   },
+   "turns": [
+    {
+     "tool_emitted": 6,
+     "tool_turns": 12,
+     "text_emitted": 6,
+     "errors": 0
+    },
+    {
+     "tool_emitted": 7,
+     "tool_turns": 12,
+     "text_emitted": 4,
+     "errors": 0
+    }
+   ],
+   "ar_cells_delta": {
+    "swaps": 82354,
+    "telemetry": 1902,
+    "steps_bytes": 4044320
+   },
+   "errcount_server": 0,
+   "foreign": {
+    "bind": 0,
+    "cells": 0
+   },
+   "metrics_pct1": {
+    "drafts": 69251.0,
+    "draft_tokens": 346255.0,
+    "accepted": 174028.0,
+    "acc_per_draft": 2.5130034223332514,
+    "tokens_per_verify_step": 3.5130034223332514,
+    "accept_rate": 0.5026006844666503,
+    "accept_per_pos": [
+     0.7871,
+     0.6019,
+     0.4621,
+     0.3654,
+     0.2965
+    ]
+   },
+   "metrics_mixed": {
+    "accepted": 34813.0,
+    "drafts": 30972.0,
+    "tokens_per_verify_step": 2.124015239571226
+   }
+  },
+  "A2": {
+   "facts": {
+    "arm": "A2",
+    "name": "dsv41-vllm-1017-BR5-A2",
+    "kv_tokens": "2,481,694",
+    "kv_ref": "2,481,694",
+    "block_in_args": 0,
+    "prob_in_args": 1,
+    "block_boot_lines": 1,
+    "prob_boot_lines": 1,
+    "spec_extra": ",\"draft_sample_method\":\"probabilistic\"",
+    "ff_boot": 0,
+    "loaded_lines": 1,
+    "saved_lines": 1,
+    "autotune_starts": 1,
+    "autotune_ends": 1,
+    "rehome_layers": 40,
+    "rehome_done": 1,
+    "host_avail_l9_gib": "197.36",
+    "pin_abort": 0,
+    "hook_failed": 0,
+    "hook_keys_missing": "",
+    "args_eq_ref": 1,
+    "env_eq_ref_sorted": 1,
+    "binds_eq_ref_except_ar": 1,
+    "image": "sha256:00d577a6a63281e15336029d5bcee4e9a2cf182214a4f20ba6111b1c8e79893d",
+    "rtx_used_after_bind_mib": 47,
+    "boot_s": 475,
+    "bound_at": 1793038210
+   },
+   "autotune": {
+    "loaded": 189,
+    "saved": 189,
+    "loaded_dir": "/root/.cache/vllm/flashinfer_autotune_cache/0.6.18/103a/62426808ae2b0ddbdfbf2278702ac4e367078b9884817c169ddee40495c4e6a6/autotune_configs.json",
+    "saved_dir": "/root/.cache/vllm/flashinfer_autotune_cache/0.6.18/103a/62426808ae2b0ddbdfbf2278702ac4e367078b9884817c169ddee40495c4e6a6/autotune_configs.json",
+    "elapsed_s": 6.0,
+    "pairs": 1,
+    "hash_hit_shape": true
+   },
+   "mixed": [
+    {
+     "rep": 1,
+     "agg_tok_s_all": 176.08,
+     "errors": 0,
+     "n": 54,
+     "temperature": 1.0
+    },
+    {
+     "rep": 2,
+     "agg_tok_s_all": 183.4,
+     "errors": 0,
+     "n": 56,
+     "temperature": 1.0
+    },
+    {
+     "rep": 3,
+     "agg_tok_s_all": 183.45,
+     "errors": 0,
+     "n": 56,
+     "temperature": 1.0
+    }
+   ],
+   "perclass_t1": {
+    "prose/c1": 219.98,
+    "prose/c8": 492.62,
+    "structured/c1": 244.08,
+    "structured/c8": 590.07,
+    "code/c1": 273.1,
+    "code/c8": 656.9,
+    "shell_ops/c1": 325.2,
+    "shell_ops/c8": 725.96,
+    "tool_json/c1": 292.73,
+    "tool_json/c8": 762.44
+   },
+   "perclass_t0": {
+    "prose/c1": 236.19,
+    "prose/c8": 531.54,
+    "structured/c1": 260.32,
+    "structured/c8": 563.64,
+    "code/c1": 321.37,
+    "code/c8": 733.03,
+    "shell_ops/c1": 337.95,
+    "shell_ops/c8": 791.17,
+    "tool_json/c1": 310.63,
+    "tool_json/c8": 904.5
+   },
+   "turns": [
+    {
+     "tool_emitted": 8,
+     "tool_turns": 12,
+     "text_emitted": 5,
+     "errors": 0
+    },
+    {
+     "tool_emitted": 8,
+     "tool_turns": 12,
+     "text_emitted": 4,
+     "errors": 0
+    }
+   ],
+   "ar_cells_delta": {
+    "swaps": 82303,
+    "telemetry": 1916,
+    "steps_bytes": 4075456
+   },
+   "errcount_server": 0,
+   "foreign": {
+    "bind": 0,
+    "cells": 0
+   },
+   "metrics_pct1": {
+    "drafts": 70835.0,
+    "draft_tokens": 354175.0,
+    "accepted": 172590.0,
+    "acc_per_draft": 2.4365073762970284,
+    "tokens_per_verify_step": 3.4365073762970284,
+    "accept_rate": 0.48730147525940565,
+    "accept_per_pos": [
+     0.7833,
+     0.5856,
+     0.4432,
+     0.3468,
+     0.2776
+    ]
+   },
+   "metrics_mixed": {
+    "accepted": 34361.0,
+    "drafts": 31246.0,
+    "tokens_per_verify_step": 2.099692760673366
+   }
+  }
+ },
+ "R": "~/dsv41/m3/br5/results-cardBR5"
+}

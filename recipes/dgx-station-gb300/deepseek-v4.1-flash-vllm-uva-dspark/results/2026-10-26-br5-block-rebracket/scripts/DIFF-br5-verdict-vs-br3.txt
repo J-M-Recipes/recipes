@@ -1,0 +1,274 @@
+2,4c2,5
+< """br3_verdict.py — Card BR3 verdict (DSpark block verification vs sequential rejection sampling, A -> B -> A2) on the GB300-ONLY
+< v26seed "Seeded Adaptive" recipe (Grace UVA offload, no RTX sidecar). Pure stdlib. Clone of br1_verdict_rescore.py (the fixed
+< BR1 verdict: env compared order-insensitively, G2b no-op bar honours the controls' r1/r2 spread) with BR3 paths/names.
+---
+> """br5_verdict.py — Card BR5 verdict: DSpark BLOCK verification re-bracketed ALONE against the new GB300-only reference v28-prob
+> (= v26seed "Seeded Adaptive" + "draft_sample_method":"probabilistic", Card BR4 P PASS), A -> B -> A2, Grace UVA offload, no RTX
+> sidecar. Pure stdlib. Clone of br3_verdict.py @da59e401 (DIFF-br5-verdict-vs-br3.txt shows every change); per-position acceptance
+> parsing taken from br4_verdict.py.
+6c7
+< Usage:  br3_verdict.py <R> [--out verdict.json]   -> <R>/verdict.json + human table on stdout.
+---
+> Usage:  br5_verdict.py <R> [--out verdict.json]   -> <R>/verdict.json + human table on stdout.
+14,25c15,32
+< Differences vs BR1: ground truth = the stopped v26seed container (args-ref-<REF>.json, env-ref-, binds-ref-), not production;
+< G0 KV rule = B and A2 equal A (no fixed constant; v26seed's own boot-log value is an annotation); G0 also checks the v26ar2 hook
+< wiring/guard lines, the Binds (equal except the per-arm /ar source) and that GO + unfreeze were acknowledged (production regime);
+< no sidecar / card watchdog => G7 = server FF errors 0 + foreign POSTs 0 per arm. Bars G1..G6 unchanged.
+< 
+< Inputs (<R> = ~/dsv41/m3/br3/results-cardBR3, written by cardBR3_runner.sh):
+<   <X>/facts.json, args.json, env.json, binds.json, go.json, boot-autotune.log, boot-block.log, ar-lines.tsv   (X in A B A2)
+<   args-ref-<REF>.json, env-ref-<REF>.json, binds-ref-<REF>.json, kv-ref.txt                     control ground truth
+<   <X>/perclass-t1/perclass-table-BR3-<X>-t1.json (+ raw perclass-BR3-<X>-t1-r{1,2}-{c1,c8}.json)   temp 1.0 (G1, G2)
+<   <X>/perclass-t0/perclass-table-BR3-<X>-t0.json                                         stock temp-0 window (G1, G2b)
+<   <X>/mixed-BR3-<X>-c1-r<k>.json      ar_mixed_t.py C1 120 s at temp 1.0 (G3)
+<   tf-compare-BR3-A-vs-BR3-B.json, tf-compare-BR3-A2-vs-BR3-B.json, tf-compare-BR3-A-vs-BR3-A2.json; <X>/tf-BR3-<X>.jsonl (G4)
+---
+> Differences vs BR3 (gates and bars UNCHANGED — pre-registered, not loosened):
+>   * ground truth = the stopped v28-prob container (args-ref-<REF>.json, env-ref-, binds-ref-, kv-ref.txt from its boot log).
+>   * G0: prob_in_args want 1/1/1, block_in_args want 0/1/0; A/A2 Args == v28-prob byte for byte; B Args == v28-prob except the spec
+>     element, which must equal v28-prob's spec + ',"rejection_sample_method":"block"' (string AND json level); the ground-truth spec
+>     itself must carry draft_sample_method=probabilistic and no rejection_sample_method. KV rule unchanged (B and A2 equal A exactly:
+>     block allocates nothing); the v28-prob boot-log value (2,481,694) is an annotation.
+>   * G2b key renamed G2b_t0_noop -> G2b_t0_parity (BR4's name; same two-sided bar max(2 %, 1.5 x |A-A2|/mean, 1.5 x ctrl r1/r2 spread)).
+>   * annotations: tokens/verify-step B/ctrl (pct1, mixed C1), per-position acceptance (vllm:spec_decode_num_accepted_tokens_per_pos),
+>     and a "BR4 parity re-check" block naming the two cells PB tripped in BR4 (G2b shell_ops t0 C1 +3.6 % vs 2.6 % bar; G6 one pass
+>     9/12 vs control range [6,8]) with REPRODUCED / NOT-REPRODUCED each. Annotation only — the gates decide.
+> 
+> Inputs (<R> = ~/dsv41/m3/br5/results-cardBR5, written by cardBR5_runner.sh):
+>   <X>/facts.json, args.json, env.json, binds.json, go.json, boot-autotune.log, boot-block.log, boot-prob.log, ar-lines.tsv  (X in A B A2)
+>   args-ref-<REF>.json, env-ref-<REF>.json, binds-ref-<REF>.json, kv-ref.txt                     control ground truth (v28-prob)
+>   <X>/perclass-t1/perclass-table-BR5-<X>-t1.json (+ raw perclass-BR5-<X>-t1-r{1,2}-{c1,c8}.json)   temp 1.0 (G1, G2)
+>   <X>/perclass-t0/perclass-table-BR5-<X>-t0.json                                         stock temp-0 window (G1, G2b)
+>   <X>/mixed-BR5-<X>-c1-r<k>.json      ar_mixed_t.py C1 120 s at temp 1.0 (G3)
+>   tf-compare-BR5-A-vs-BR5-B.json, tf-compare-BR5-A2-vs-BR5-B.json, tf-compare-BR5-A-vs-BR5-A2.json; <X>/tf-BR5-<X>.jsonl (G4)
+27c34
+<   gauntlet-<X>/summary.json (G5) ; <X>/turns-BR3-<X>.json (G6) ; errcount-<X>.txt (G7)
+---
+>   gauntlet-<X>/summary.json (G5) ; <X>/turns-BR5-<X>.json (G6) ; errcount-<X>.txt (G7)
+46c53
+< REF = "dsv41-vllm-1017-v26seed-BOUND-REF"
+---
+> REF = "dsv41-vllm-1017-v28-prob-BOUND-REF"
+49c56,61
+< SPEC_B = ',"rejection_sample_method":"block"'
+---
+> SPEC_A = ',"draft_sample_method":"probabilistic"'      # carried by the reference and every arm
+> SPEC_BLOCK = ',"rejection_sample_method":"block"'      # the one axis (B)
+> WANT = {"A": (1, 0), "B": (1, 1), "A2": (1, 0)}          # (prob_in_args, block_in_args)
+> # BR4 receipts (results-cardBR4/VERDICT.txt, 2026-10-26): the two PB parity trips this card re-checks (annotation only)
+> BR4_G2B_SHELL = {"delta": 0.036, "bar": 0.026, "ctrl_spread": 0.017}
+> BR4_G6 = {"passes": [8, 9], "ctrl_range": [6, 8]}
+56c68
+< SHORT = {"G0_binding": "G0", "G0b_foreign": "G0b", "G1_controls": "G1", "G2_perclass_t1": "G2", "G2b_t0_noop": "G2b",
+---
+> SHORT = {"G0_binding": "G0", "G0b_foreign": "G0b", "G1_controls": "G1", "G2_perclass_t1": "G2", "G2b_t0_parity": "G2b",
+106a119,137
+> POS = re.compile(r'^vllm:spec_decode_num_accepted_tokens_per_pos_total\{[^}]*position="(\d+)"[^}]*\}\s+(\S+)')
+> 
+> 
+> def metrics_pos(p):
+>     """per-position accepted counters {pos: value} (summed over other labels) — from br4_verdict.py"""
+>     out = {}
+>     try:
+>         for ln in Path(p).read_text().splitlines():
+>             m = POS.match(ln)
+>             if m:
+>                 try:
+>                     out[int(m.group(1))] = out.get(int(m.group(1)), 0.0) + float(m.group(2))
+>                 except ValueError:
+>                     pass
+>     except Exception:  # noqa: BLE001
+>         return None
+>     return out
+> 
+> 
+113a145,146
+>     ps, pe = metrics_pos(A / "metrics" / f"{cell}-start.txt") or {}, metrics_pos(A / "metrics" / f"{cell}-end.txt") or {}
+>     per_pos = [round((pe.get(k, 0.0) - ps.get(k, 0.0)) / dr, 4) if dr else None for k in sorted(pe)] if pe else None
+116c149
+<             "accept_rate": (ac / dt_) if dt_ else None}
+---
+>             "accept_rate": (ac / dt_) if dt_ else None, "accept_per_pos": per_pos}
+178c211
+<     tag = f"BR3-{arm}-{win}"
+---
+>     tag = f"BR5-{arm}-{win}"
+205a239,242
+>     try:
+>         c["prob_boot_sample"] = Path(A / "boot-prob.log").read_text().splitlines()[:3]
+>     except Exception:  # noqa: BLE001
+>         c["prob_boot_sample"] = []
+208c245
+<     for f in sorted(glob.glob(str(A / f"mixed-BR3-{arm}-c1-r*.json")), key=lambda s: int(s.rsplit("-r", 1)[1].split(".")[0])):
+---
+>     for f in sorted(glob.glob(str(A / f"mixed-BR5-{arm}-c1-r*.json")), key=lambda s: int(s.rsplit("-r", 1)[1].split(".")[0])):
+215c252
+<     c["tf_capture"] = (A / f"tf-BR3-{arm}.jsonl").exists() and (A / f"tf-BR3-{arm}.jsonl").stat().st_size > 0
+---
+>     c["tf_capture"] = (A / f"tf-BR5-{arm}.jsonl").exists() and (A / f"tf-BR5-{arm}.jsonl").stat().st_size > 0
+217c254
+<     t = jl(A / f"turns-BR3-{arm}.json")
+---
+>     t = jl(A / f"turns-BR5-{arm}.json")
+267c304
+<     prod_args = jl(R / f"args-ref-{REF}.json")      # "prod" = the v26seed control ground truth in this card
+---
+>     prod_args = jl(R / f"args-ref-{REF}.json")      # "prod" = the v28-prob control ground truth in this card
+277,278c314,316
+<     # ---- G0 binding + wiring: every arm bound; KV: B and A2 equal A; block_in_args 0/1/0; A/A2 Args == v26seed; B Args ==
+<     # v26seed except the spec (== v26seed + the key); Env == v26seed (order-insensitive); Binds == v26seed except the /ar source;
+---
+>     # ---- G0 binding + wiring: every arm bound; KV: B and A2 equal A; prob_in_args 1/1/1, block_in_args 0/1/0; A/A2 Args ==
+>     # v28-prob; B Args == v28-prob except the spec (== v28-prob + the block key); Env == v28-prob (order-insensitive); Binds ==
+>     # v28-prob except the /ar source; the ground-truth spec itself carries probabilistic drafting and no block;
+282a321,329
+>     ref_ok = False
+>     try:
+>         rs = json.loads(spec_of(prod_args))
+>         ref_ok = rs.get("draft_sample_method") == "probabilistic" and "rejection_sample_method" not in rs and spec_of(prod_args).endswith(SPEC_A + "}")
+>     except Exception:  # noqa: BLE001
+>         pass
+>     if not ref_ok:
+>         g.fail = True
+>     g.txt.append(f"ground truth {REF} spec carries probabilistic drafting and no block: {ref_ok}")
+287c334
+<         want = 1 if a == "B" else 0
+---
+>         wantp, want = WANT[a]
+289c336,338
+<         bits = [f"kv={kvs[a] or 'MISSING'}", f"block_in_args={f.get('block_in_args')}(want {want})"]
+---
+>         bits = [f"kv={kvs[a] or 'MISSING'}", f"prob_in_args={f.get('prob_in_args')}(want {wantp})", f"block_in_args={f.get('block_in_args')}(want {want})"]
+>         if f.get("prob_in_args") != wantp:
+>             g.fail = True; bits.append("PROB!")
+297c346
+<             bits.append(f"args==v26seed {ok}")
+---
+>             bits.append(f"args==v28prob {ok}")
+302c351
+<             spec_ok = ps is not None and bs == ps[:-1] + SPEC_B + "}"
+---
+>             spec_ok = ps is not None and bs == ps[:-1] + SPEC_BLOCK + "}"
+307c356
+<             bits.append(f"args==v26seed-except-spec {rest_ok} spec==v26seed+block {spec_ok}")
+---
+>             bits.append(f"args==v28prob-except-spec {rest_ok} spec==v28prob+block {spec_ok}")
+313c362
+<         bits += [f"env==v26seed(sorted) {eok}", f"binds==v26seed(except /ar) {bok}", f"image0909 {iok}"]
+---
+>         bits += [f"env==v28prob(sorted) {eok}", f"binds==v28prob(except /ar) {bok}", f"image0909 {iok}"]
+329c378
+<     kvtxt = f"KV A={kvs['A']} B={kvs['B']} A2={kvs['A2']} (v26seed boot log {kv_ref}, info)"
+---
+>     kvtxt = f"KV A={kvs['A']} B={kvs['B']} A2={kvs['A2']} (v28-prob boot log {kv_ref}, info; rule: B and A2 equal A — block allocates nothing)"
+418c467
+<     g = G(); info = []
+---
+>     g = G(); info = []; g2b_rows = {}
+442a492
+>             g2b_rows[c] = {"A": va, "A2": va2, "B": vb, "rel": r, "bar": bar, "ctrl_r1r2_spread": wspread, "pass": ok}
+444c494,495
+<     gs["G2b_t0_noop"] = (g, "stock temp-0 window (greedy rows never use block verification; B must equal A within noise): "
+---
+>     calc["G2b_rows"] = g2b_rows
+>     gs["G2b_t0_parity"] = (g, "stock temp-0 window (PARITY: greedy rows never use block verification; B must equal A within noise): "
+470,471c521,522
+<         fl = jl(R / "tf-compare-BR3-A-vs-BR3-A2.json")
+<         cmp = {a: jl(R / f"tf-compare-BR3-{a}-vs-BR3-B.json") for a in CTRL}
+---
+>         fl = jl(R / "tf-compare-BR5-A-vs-BR5-A2.json")
+>         cmp = {a: jl(R / f"tf-compare-BR5-{a}-vs-BR5-B.json") for a in CTRL}
+524a576
+>         calc["G6"] = {"B": be, "range": [lo, hi], "B_errors": berr, "pass": ok}
+550c602
+<         res = "INVALID-CONTROL-" + "-".join(inv); suffix = "BR3-" + res
+---
+>         res = "INVALID-CONTROL-" + "-".join(inv); suffix = "BR5-" + res
+552c604
+<         res = "INVALID-B"; suffix = "BR3-INVALID-B"
+---
+>         res = "INVALID-B"; suffix = "BR5-INVALID-B"
+554c606
+<         res = "FAIL"; suffix = "BR3FAIL-" + "-".join(SHORT[k] for k in failed)
+---
+>         res = "FAIL"; suffix = "BR5FAIL-" + "-".join(SHORT[k] for k in failed)
+556c608
+<         res = "PASS"; suffix = "BR3PASS"
+---
+>         res = "PASS"; suffix = "BR5PASS"
+579a632,634
+>     ann["boot_prob_lines"] = {a: cells[a]["prob_boot_sample"] for a in ARMS}
+>     ann["accept_per_position_pct1"] = {a: (cells[a]["m_pct1"] or {}).get("accept_per_pos") for a in ARMS}
+>     ann["br4_parity_recheck"] = br4_recheck(calc, status, sorted({a for x in gs.values() for a in x[0].inv}, key=ARMS.index))
+582c637
+<     ann["kv_v26seed_boot_log"] = kv_ref
+---
+>     ann["kv_v28prob_boot_log"] = kv_ref
+594c649
+<     return {"card": "BR3 block verification (GB300-only v26seed)", "result": res, "suffix": suffix, "gates": gates, "gate_status": status,
+---
+>     return {"card": "BR5 block verification re-bracketed alone vs v28-prob (GB300-only)", "result": res, "suffix": suffix, "gates": gates, "gate_status": status,
+597a653,691
+> def br4_recheck(calc, status, inv=()):
+>     """BR4 PB tripped (a) G2b shell_ops t0 C1 +3.6 % vs a 2.6 % bar and (b) G6 one replay pass 9/12 vs control range [6,8].
+>     REPRODUCED = the same cell trips again in the SAME direction (shell_ops: B above the controls by more than its bar; turns: a B
+>     pass above the control max). A trip in the opposite direction is reported as NOT-REPRODUCED (opposite-direction trip) — the
+>     gate still FAILs on it. UNMEASURED when the cell is missing; when the card is INVALID-CONTROL the words are printed but flagged
+>     as not interpretable (a polluted control moves the bar and the range)."""
+>     out = []
+>     r = (calc.get("G2b_rows") or {}).get("shell_ops")
+>     b4 = BR4_G2B_SHELL
+>     if not r:
+>         w, extra = "UNMEASURED", ""
+>     else:
+>         trip = abs(r["rel"]) > r["bar"]
+>         w = "REPRODUCED" if (trip and r["rel"] > 0) else "NOT-REPRODUCED"
+>         extra = (f"BR5 B {r['rel'] * 100:+.1f}% vs mean(A,A2) (|.| bar {r['bar'] * 100:.1f}%, ctrl r1/r2 spread {r['ctrl_r1r2_spread'] * 100:.1f}%; "
+>                  f"A {r['A']:.1f} A2 {r['A2']:.1f} B {r['B']:.1f})" + (" — opposite-direction trip" if (trip and r["rel"] < 0) else ""))
+>     out.append({"cell": "G2b shell_ops t0 C1", "word": w,
+>                 "line": f"G2b shell_ops t0 C1: {w}. BR4 PB {b4['delta'] * 100:+.1f}% vs bar {b4['bar'] * 100:.1f}% (ctrl spread {b4['ctrl_spread'] * 100:.1f}%); {extra}"})
+>     t = calc.get("G6")
+>     if not t:
+>         w, extra = "UNMEASURED", ""
+>     else:
+>         lo, hi = t["range"]
+>         above = [x for x in t["B"] if x > hi]; below = [x for x in t["B"] if x < lo]
+>         w = "REPRODUCED" if above else "NOT-REPRODUCED"
+>         extra = (f"BR5 B per pass {t['B']}/12 vs control range [{lo},{hi}] (B errors {t['B_errors']})"
+>                  + (" — opposite-direction trip" if (below and not above) else ""))
+>     out.append({"cell": "G6 replay_turns tool emissions", "word": w,
+>                 "line": f"G6 replay_turns: {w}. BR4 PB per pass {BR4_G6['passes']}/12 vs control range {BR4_G6['ctrl_range']}; {extra}"})
+>     words = [x["word"] for x in out]
+>     summ = ("both BR4 parity trips REPRODUCED" if words == ["REPRODUCED"] * 2 else
+>             "neither BR4 parity trip reproduced" if words == ["NOT-REPRODUCED"] * 2 else
+>             f"mixed: G2b shell_ops {words[0]}, G6 {words[1]}")
+>     summ += f" (gate status this card: G2b {status.get('G2b_t0_parity')}, G6 {status.get('G6_turns')})"
+>     if inv:
+>         summ += f" — card INVALID-CONTROL({','.join(inv)}): re-check words NOT interpretable"
+>     return {"cells": out, "summary": summ}
+> 
+> 
+603c697
+<     L = [f"Card BR3 verdict: {v['result']}   suffix {v['suffix']}", "",
+---
+>     L = [f"Card BR5 verdict: {v['result']}   suffix {v['suffix']}", "",
+608,609c702,703
+<     L += ["", "| arm | KV tokens | block_in_args | boot s | mixed C1 t1 mean | t1 prose C1 | t1 tool_json C1 | t0 prose C1 | swaps during cells | ff | foreign |",
+<           "|---|---|---|---|---|---|---|---|---|---|---|"]
+---
+>     L += ["", "| arm | KV tokens | prob_in_args | block_in_args | boot s | mixed C1 t1 mean | t1 prose C1 | t1 tool_json C1 | t0 prose C1 | swaps during cells | ff | foreign |",
+>           "|---|---|---|---|---|---|---|---|---|---|---|---|"]
+612c706
+<         L.append(f"| {a} | {f.get('kv_tokens', '-')} | {f.get('block_in_args', '-')} | {f.get('boot_s', '-')} | "
+---
+>         L.append(f"| {a} | {f.get('kv_tokens', '-')} | {f.get('prob_in_args', '-')} | {f.get('block_in_args', '-')} | {f.get('boot_s', '-')} | "
+627c721,722
+<           f"ANNOTATION — KV tokens in the v26seed boot log: {v['annotations']['kv_v26seed_boot_log']}; host_avail at rehome layer 9 (GiB): {v['annotations']['host_avail_l9_gib']}",
+---
+>           f"ANNOTATION — per-position acceptance (pct1 window, accepted_pos/drafts): {v['annotations']['accept_per_position_pct1']}",
+>           f"ANNOTATION — KV tokens in the v28-prob boot log: {v['annotations']['kv_v28prob_boot_log']}; host_avail at rehome layer 9 (GiB): {v['annotations']['host_avail_l9_gib']}",
+629a725,726
+>     rc = v["annotations"]["br4_parity_recheck"]
+>     L += ["", "BR4 PARITY RE-CHECK (annotation, not a gate — the gates above decide):"] + ["  " + x["line"] for x in rc["cells"]] + ["  " + rc["summary"]]
