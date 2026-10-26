@@ -1,0 +1,13 @@
+1a2,3
+> # perclass_run_t.sh — Card BR1 copy of perclass_run.sh (2026-10-25, Milo desk): calls perclass_decode_t.py (DEC) with
+> #   --temperature $TEMP --seed $SEED --top-p $TOP_P (defaults 1.0 / 42 / 1.0: block verification is a no-op on greedy rows).
+16a19
+> TEMP=${TEMP:-1.0}; SEED=${SEED:-42}; TOP_P=${TOP_P:-1.0}; DEC=${DEC:-~/dsv41/m3/br1/perclass_decode_t.py}
+20c23
+< log "START perclass_run ARM=$ARM OUTDIR=$OUTDIR PROMPTS=$PROMPTS sha1=$(sha1sum "$PROMPTS" | cut -c1-12) FL_MAP=$FL_MAP"
+---
+> log "START perclass_run ARM=$ARM OUTDIR=$OUTDIR PROMPTS=$PROMPTS sha1=$(sha1sum "$PROMPTS" | cut -c1-12) FL_MAP=$FL_MAP TEMP=$TEMP SEED=$SEED TOP_P=$TOP_P DEC=$DEC sha1=$(sha1sum "$DEC" | cut -c1-12)"
+27c30
+< run(){ log "RUN $*"; python3 perclass_decode.py --prompts "$PROMPTS" --outdir "$OUTDIR" "$@" || log "FAIL rc=$? $*"; }
+---
+> run(){ log "RUN $*"; python3 "$DEC" --prompts "$PROMPTS" --outdir "$OUTDIR" --temperature "$TEMP" --seed "$SEED" --top-p "$TOP_P" "$@" || log "FAIL rc=$? $*"; }

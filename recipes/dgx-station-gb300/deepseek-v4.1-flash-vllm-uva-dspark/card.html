@@ -44,38 +44,40 @@
   <div class="top">
     <div>
       <h1>DeepSeek-V4.1-Flash · 1× DGX Station GB300</h1>
-      <div class="sub">Full 1,048,576-token context from a single GB300 — routed experts split HBM / Grace over NVLink-C2C, the 295 HBM experts per layer follow live traffic from a counter-seeded boot map, in-checkpoint DSpark drafter</div>
+      <div class="sub">Full 1,048,576-token context from a single GB300 — routed experts split HBM / Grace over NVLink-C2C, the 295 HBM experts per layer follow live traffic from a counter-seeded boot map, in-checkpoint DSpark drafter that now samples its drafts</div>
     </div>
-    <div class="brand"><b>J-M-RECIPES</b><br>v26 “Seeded Adaptive” · 2026-10-24 · block verif. null (BR3) · v23 = rollback · 2026-10-26<br>status: verified</div>
+    <div class="brand"><b>J-M-RECIPES</b><br>v28-prob · 2026-10-26 · v26 + probabilistic drafting (BR4) · v26 = rollback · 2026-10-26<br>status: verified</div>
   </div>
   <div class="pills">
 <span class="pill type"><b>MoE</b> · 384 routed experts + Engram; 295 hot per layer in HBM (re-chosen live), 89 cold in Grace</span>
 <span class="pill"><b>552B</b> total · <b>8B prefill / 16B decode</b> active</span>
 <span class="pill">checkpoint <b>510.3 GB</b> · rev <span class="mono">1bae0e10</span></span>
 <span class="pill">weights <b>as shipped · MXFP4 experts / FP8 attn+Engram · nothing re-quantized</b></span>
-<span class="pill">engine <b>vLLM <span class="mono">179dd0fa9</span> · day-0 image deepseekv41-flash-0909 (sha256 00d577a6) · FlashInfer 0.6.18 · autotune hash 62426808 (189 configs, hash hit) · hook v26ar.2 (python-side, sha1 69bf0777)</b></span>
-<span class="pill">memory <b>206.6 GiB hot experts in HBM + 62.3 GiB cold in pinned Grace · pinned host ~252.8 GiB (v23 alloc env) · KV 2,495,694 tok (2.38× at 1M)</b></span>
+<span class="pill">engine <b>vLLM <span class="mono">179dd0fa9</span> · day-0 image deepseekv41-flash-0909 (sha256 00d577a6) · FlashInfer 0.6.18 · autotune hash 62426808 (189 configs, hash hit) · hook v26ar.2 (python-side, sha1 69bf0777) · spec + draft_sample_method probabilistic</b></span>
+<span class="pill">memory <b>206.6 GiB hot experts in HBM + 62.3 GiB cold in pinned Grace · pinned host ~252.8 GiB (v23 alloc env) · KV 2,481,694 tok (2.37× at 1M; −0.56% for the draft-logits cache)</b></span>
   </div>
   <div class="grid">
-<div class="box"><div class="lbl">Decode · C1 (agent-English prose, adaptive steady state)</div><div class="hero">218.9<small>tok/s</small></div><div class="note">seed boot, shipped policy, final 60 s of each phase, 3 reps · JP/DE essays 189.6 · static-map boot converges to the same 219.1 / 189.9 · different instrument from v23&#x27;s 188.2 kbench real-text C1 (not re-run on v26)</div></div>
-<div class="box"><div class="lbl">Held-out mixed · C1 aggregate, maps frozen</div><div class="hero">183.7<small>tok/s</small></div><div class="note">seed map vs September static map ×1.445 (127.1), same window, held-out prompts · agent −0.7% · first prose request after boot 177.9 vs 85.0 (2.1×) · C8/C16 not re-run on v26</div></div>
-<div class="box"><div class="lbl">TTFT · 8.2K-token prompt</div><div class="hero">0.645<small>s</small></div><div class="note">unchanged from the v23 base (0.643 / 0.647 s, RT C1 median); the hook neither counts nor touches prefill · not re-measured on v26 · 972K prompt in 85 s (v11)</div></div>
+<div class="box"><div class="lbl">Decode · C1, probabilistic drafting (tool-JSON, temp 1.0, 256 forced)</div><div class="hero">294.0<small>tok/s</small></div><div class="note">v26 controls 254.6 / 251.4 → 1.162× · C1 per class: prose 217.2 (1.101×) · structured 241.9 (1.109×) · code 269.9 (1.045×) · shell 319.8 (1.113×) · 40 private transcript prompts per class, mean of r1/r2, seeded · temp 0 unchanged</div></div>
+<div class="box"><div class="lbl">Decode · C8 aggregate, tool-JSON, temp 1.0</div><div class="hero">791.8<small>tok/s</small></div><div class="note">controls 671.9 / 661.9 → 1.187× · C8 per class 1.082–1.187× · 24-seat lane, k=5 to 8 sequences · C16 not re-run on v28</div></div>
+<div class="box"><div class="lbl">Accepted tokens per verify step · temp-1.0 window</div><div class="hero">3.438<small>tok/step</small></div><div class="note">v26 controls 3.122 / 3.115 → +10.3% · acceptance at draft positions 1–5 .785/.587/.443/.346/.278 vs .699/.501/.378/.299/.245 · TTFT 8.2K 0.645 s unchanged (v23 base)</div></div>
   </div>
   <div class="row2">
-<div class="box"><div class="lbl">Guesser</div><div class="kv"><b>DSpark</b> · in-checkpoint MTP (mtp.0–2), 1017 revision<br>k = 5 at 1–8 seqs, 1 at 9–24 (batch-size schedule, v22; unchanged in v26)<br><span class="acc">accept: <span>prose <b>42%</b></span> <span>structured <b>46%</b></span> <span>code <b>67%</b></span> <span>shell <b>68%</b></span> <span>tool-JSON <b>60%</b></span></span></div></div>
-<div class="box"><div class="lbl">Seed map + adaptive residency — Card AR6, 2026-10-24</div><div class="kv">peak cold share after a domain shift: <b>25.4% → 5.7% (Sept map → seed map)</b><br>cold-share T90, agent → JP/DE / back: <b>8.7 s / 14.0 s · converged 0.3–0.5%</b><br>2× / 4× faster swap queue (H2): <b>no gain — T90 ×1.00–1.15 · closed</b><br>swap-bearing step cost: <b>×1.9 p95 · 1.3–2.4 ms per swap (row copy 0.26 ms)</b><br>whole boot: <b>2.53% swap steps · p99 host step 22.2 ms (19.5 swap-free)</b></div></div>
-<div class="box"><div class="lbl">Host memory and long context (v23 base, unchanged by the hook)</div><div class="kv">pinned host, v22 → v23: <b>327.96 → 252.79 GiB</b><br>hook boot guard at layer 9 (floor 10 GiB): <b>197.2–197.3 GiB on both AR6 boots</b><br>decode flat to (tokens in ctx): <b>425K</b><br>128K / 1M request on v26: <b>not run (soak waived)</b></div></div>
+<div class="box"><div class="lbl">Guesser</div><div class="kv"><b>DSpark</b> · in-checkpoint MTP (mtp.0–2), 1017 revision<br>k = 5 at 1–8 seqs, 1 at 9–24 (v22 schedule, unchanged) · draft_sample_method probabilistic (v28)<br><span class="acc">accept: <span>temp-1.0 C1 tok/step, v28 / v26 <b>prose 2.81/2.56 · structured 3.05/2.77 · code 3.73/3.56 · shell 4.10/3.69 · tool-JSON 3.71/3.23</b></span> <span>temp 0 <b>unchanged (a sampled draft at temp 0 is the argmax)</b></span></span></div></div>
+<div class="box"><div class="lbl">Probabilistic drafting — Card BR4, A → P → PB → A2, 2026-10-26</div><div class="kv">change: <b>one key in --speculative-config · hash-hit boot 485 s · same autotune store</b><br>mixed traffic C1, temp 1.0: <b>181.1 vs 179.9 tok/s (+0.7%)</b><br>+ block verification (PB): <b>+1.5% tok/step over P · failed 2 temp-0 parity gates → candidate</b><br>block verification on greedy drafts (BR3): <b>0.999× tok/step — a null</b><br>serving: <b>:30006 = sidecar sibling&#x27;s v27 pair · v28 parked as reference</b></div></div>
+<div class="box"><div class="lbl">v26 base, unchanged in v28 (Card AR6, 2026-10-24)</div><div class="kv">held-out mixed C1, maps frozen: <b>183.7 vs 127.1 tok/s (×1.445, seed map vs Sept map)</b><br>peak cold share after a domain shift: <b>25.4% → 5.7% · T90 8.7 s / 14.0 s</b><br>pinned host / hook guard at layer 9: <b>252.8 GiB / 196.9 GiB</b><br>128K / 1M request on v26 or v28: <b>not run</b></div></div>
   </div>
   <div class="fid"><div class="lbl">Output fidelity — does the recipe change what the model says?</div>
     <ul>
 <li class="ok">Weights unchanged: 1017 checkpoint as shipped, 0 re-quantized bits · swaps move whole MXFP4 rows between the HBM and Grace banks, no re-encoding</li>
-<li class="ok">Speculation is target-verified: every emitted token accepted by the full model (lossless at T=0)</li>
+<li class="ok">Speculation is target-verified: every emitted token accepted by the full model; probabilistic drafting keeps the target distribution (full p/q ratio test)</li>
+<li class="ok">Teacher-forced top-1 flips v28 vs controls 1.129% / 1.098% vs control floor 1.136% (79,544 positions, 39 docs, 0 token-mismatch) · margin-weighted flips 0 (Card BR4)</li>
+<li class="ok">Card BR4: gauntlet 12/12 on all four arms · replay tool turns [6, 8]/12 in control range 6–8 · temp-0 parity on every class · 0 errors, 0 foreign requests</li>
 <li class="ok">Greedy parity 49/50, September static map vs seed map, cross-boot (Card AR6) — the one miss, agent-tool-1, is the documented noise prompt that also flips within one map</li>
 <li class="ok">Restore round trip: static map → 15,382 swaps → restore_map → parity back at the fixed-map 49/50; unit test T6 restore_map PASS (v26ar.1, 2026-10-23)</li>
 <li class="ok">Agentic gauntlet 12/12 on the fixed seed map and 12/12 live under adaptation on the promoted lane (2026-10-24) · 0 stale swaps, 0 server errors</li>
 <li class="meas">Convergence after a domain shift: cold-share T90 8.7–14.0 s on the seed boot (AR6); cold share &lt; 1% in 9–16 s on the static-boot re-analysis — corrects the earlier 60–90 s, a windowing artifact</li>
-<li class="meas">Teacher-forced Δlogprob vs no-hook reference (2026-09-20, df42c109 weights, prefill-only, v18-hook lineage): mean |Δ| 0.030, top-1 flips 1.06% corpus-wide, 0.56% on agent/tool text — not re-run on v26</li>
-<li class="pend">Not re-run on v26: BFCL dev/held-out (v23: 92.3% / 77.65%), GSM8K-200 (v23: 97.0%), and the 48 h soak (waived by James at promotion)</li>
+<li class="meas">Teacher-forced Δlogprob vs no-hook reference (2026-09-20, df42c109 weights, prefill-only, v18-hook lineage): mean |Δ| 0.030, top-1 flips 1.06% corpus-wide, 0.56% on agent/tool text — not re-run since</li>
+<li class="pend">Not re-run on v26 or v28: BFCL dev/held-out (v23: 92.3% / 77.65%), GSM8K-200 (v23: 97.0%), long context, and the 48 h soak (waived by James at v26 promotion)</li>
     </ul>
   </div>
   <div class="fid"><div class="lbl">Agent claim card — fixed protocol, held-out sibling, cost per solved task</div>
@@ -87,8 +89,8 @@
     </ul>
   </div>
   <div class="foot">
-    <span>recipe <span class="mono">recipes/dgx-station-gb300/deepseek-v4.1-flash-vllm-uva-dspark</span> · run <span class="mono">2026-10-24-v26-seeded-adaptive (v26, Card AR6 v2) · 2026-10-23-ar-adaptive-residency (hook v26ar.1, restore round trip) · 2026-10-18-v23-pinexact-host (v23 base, prefill)</span></span>
-    <span>github.com/J-M-Recipes/recipes · al-engr.com/gb300-adaptive-residency-seed-map.html · @jmeadlock</span>
+    <span>recipe <span class="mono">recipes/dgx-station-gb300/deepseek-v4.1-flash-vllm-uva-dspark</span> · run <span class="mono">2026-10-26-br4-probabilistic-drafting (v28-prob, Card BR4) · 2026-10-24-v26-seeded-adaptive (v26 base, Card AR6 v2) · 2026-10-23-ar-adaptive-residency (hook v26ar.1, restore round trip) · 2026-10-18-v23-pinexact-host (v23 base, prefill)</span></span>
+    <span>github.com/J-M-Recipes/recipes · al-engr.com/gb300-vs-4x-rtx6000-dsv41-flash-brrr.html · config idea: fraserprice BRRR · @jmeadlock</span>
   </div>
 </div>
 </body></html>

@@ -1,0 +1,53 @@
+# card-br4.yaml — round card for the GB300-only recipe: Card BR4, probabilistic drafting (P, promoted as v28-prob)
+# and probabilistic + block verification (PB, candidate).
+#   scripts/render_card.py recipes/dgx-station-gb300/deepseek-v4.1-flash-vllm-uva-dspark --card br4
+# Numbers trace to results/2026-10-26-br4-probabilistic-drafting/ (VERDICT.txt, verdict.json, throughput.csv, raw/).
+title: "DeepSeek-V4.1-Flash · 1× DGX Station GB300 · probabilistic drafting (Card BR4)"
+subtitle: "The v26 Seeded Adaptive lane with the DSpark drafter sampling its drafts instead of taking the argmax: one key in the speculative config. At temperature > 0 more drafts survive verification; at temperature 0 nothing changes. Block verification on top is +1.5% more but is held as a candidate."
+version: "BR4 · 2026-10-26 · P PASS → v28-prob · PB (+block) = candidate"
+status: experimental
+run_id: 2026-10-26-br4-probabilistic-drafting
+handles: "github.com/J-M-Recipes/recipes · al-engr.com · block verification: Sun et al. · both keys: fraserprice/DeepSeek-4.1-Flash-1017-BRRR"
+
+model:
+  type: MoE
+  type_detail: "384 routed experts + Engram; 295 hot per layer in HBM (re-chosen live), 89 cold in Grace"
+  total_params: 552B
+  active_params: "8B prefill / 16B decode"
+  checkpoint_gb: 510.3
+  weights_short: "as shipped · MXFP4 experts / FP8 attn+Engram · nothing re-quantized"
+  engine_extra: "day-0 image deepseekv41-flash-0909 · hook v26ar.2 · launch_br3.sh SPEC_EXTRA · P = +draft_sample_method probabilistic · PB = P + rejection_sample_method block"
+  memory: "KV 2,495,694 tok on controls, 2,481,694 on P and PB (−0.56%: bf16 draft-logits cache ~31 MB allocated before KV profiling) · autotune hash hit on all four arms"
+
+hero:
+  c1:      { value: 294.0, unit: tok/s, class: "tool-JSON, temp 1.0, 256 forced", label: "Decode · C1, P (probabilistic drafting)", note: "controls A 254.6 / A2 251.4 → 1.162× · PB 292.0 (1.154×) · P per class C1 1.045–1.162× · PB 1.078–1.154× · 40 private transcript prompts per class, mean of r1/r2, seeded" }
+  c16:     { value: 739.1, unit: tok/s, label: "Decode · C8 aggregate, shell_ops, PB candidate", note: "controls 642.2 / 635.8 → 1.157× · P 723.3 (1.132×) · C8 per class P 1.082–1.187×, PB 1.122–1.170×" }
+  prefill: { value: 3.491, unit: tok/step, label: "Accepted tokens per verify step · PB, temp-1.0 window", note: "P 3.438 (+10.3%) · controls 3.122 / 3.115 · PB ÷ P 1.015 · block verification on greedy drafts was 0.999× (Card BR3)" }
+
+guesser:
+  name: DSpark
+  source: "in-checkpoint MTP (mtp.0–2), 1017 revision"
+  schedule: "k = 5 at 1–8 seqs, 1 at 9–24 (unchanged) · P: draft_sample_method probabilistic · PB: + rejection_sample_method block"
+  accept: { "per position 1–5, ctrl": ".699 .501 .378 .299 .245", "P": ".785 .587 .443 .346 .278", "PB": ".786 .598 .457 .360 .290" }
+
+secondary:
+  - label: "Verdict BR4-PPASS_PBFAIL-G2b-G6 (pre-registered, not re-scored)"
+    items:
+      "P": "PASS on all 10 gates → promoted as the reference v28-prob"
+      "PB, G2b temp-0 parity": "shell_ops C1 +3.6% vs a 2.6% bar (control spread 1.7%) ✗"
+      "PB, G6 replay turns": "9/12 tool turns in one pass vs control range 6–8 ✗"
+      "reading": "both trips faster/more, on gates where neither key acts → nondeterminism vs tight bars (untested)"
+  - label: "Mechanism and serving"
+    items:
+      "why P works": "a sampled draft matches a sampled target far better than an argmax · +0.03–0.09 at every position"
+      "why block needs it": "block reweights the draft distribution · greedy draft = one-hot → nothing to reweight (BR3 null)"
+      "mixed C1, temp 1.0": "P 181.1 · PB 182.5 · ctrl 179.9 tok/s"
+      "serving": ":30006 = sidecar v27 pair (unchanged) · v28 parked · v26seed = rollback"
+
+fidelity:
+  - { status: pass, text: "Weights unchanged: 1017 checkpoint as shipped; both keys are sampling/verification rules that keep the target distribution" }
+  - { status: pass, text: "Teacher-forced top-1 flips P 1.129% / 1.098%, PB 1.095% / 1.099% vs control floor 1.136% (79,544 positions, 39 docs, 0 token-mismatch) · margin-weighted flips 0" }
+  - { status: pass, text: "Gauntlet 12/12 on A, P, PB and A2 · 0 FF errors · 0 foreign requests · x3 acceptance canary (temp 0) identical on all arms" }
+  - { status: pass, text: "P temperature-0 parity on every class (prose +2.2%, structured −0.5%, code +2.6%, shell +0.2%, tool-JSON +1.3%; all inside bars) · replay turns [6, 8] in range" }
+  - { status: fail, text: "PB temperature-0 parity: shell_ops C1 +3.6% vs 2.6% bar (G2b) and replay tool turns [8, 9] vs 6–8 (G6) — candidate, re-bracket alone" }
+  - { status: pending, text: "BFCL, GSM8K, long context (128K / 1M), C16+, and a soak not run with either key" }

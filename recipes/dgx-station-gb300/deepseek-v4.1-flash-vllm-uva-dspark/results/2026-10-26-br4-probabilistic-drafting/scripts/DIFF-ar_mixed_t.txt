@@ -1,0 +1,38 @@
+2c2,6
+< """Mixed-domain traffic at concurrency C: JP/DE prose and agent English
+---
+> """ar_mixed_t.py — Card BR1 copy of ar_mixed_v2.py (2026-10-25, Milo desk) + --temperature/--seed/--top-p after the 4
+> positionals (defaults 0 / 42 / 1.0 = the original body + top_p). seed per request = --seed + the worker's prompt counter i.
+> BR1 runs it at --temperature 1.0 (block verification is a no-op on greedy rows). Original docstring follows.
+> 
+> Mixed-domain traffic at concurrency C: JP/DE prose and agent English
+6c10
+< Usage: ar_mixed.py <tag> <outdir> <concurrency> <seconds>
+---
+> Usage: ar_mixed.py <tag> <outdir> <concurrency> <seconds>   (BR1: ar_mixed_t.py ... [--temperature T] [--seed S] [--top-p P])
+13a18
+> import argparse
+23c28,34
+< tag, outdir, C, SECS = sys.argv[1], Path(sys.argv[2]), int(sys.argv[3]), float(sys.argv[4])
+---
+> _ap = argparse.ArgumentParser()
+> _ap.add_argument("tag"); _ap.add_argument("outdir"); _ap.add_argument("C", type=int); _ap.add_argument("SECS", type=float)
+> _ap.add_argument("--temperature", type=float, default=0.0); _ap.add_argument("--seed", type=int, default=42)
+> _ap.add_argument("--top-p", type=float, default=1.0)
+> _a = _ap.parse_args()
+> tag, outdir, C, SECS = _a.tag, Path(_a.outdir), _a.C, _a.SECS
+> TEMP, SEED, TOP_P = _a.temperature, _a.seed, _a.top_p
+59c70
+< def stream(prompt):
+---
+> def stream(prompt, seed):
+61c72
+<             "max_tokens": MAXTOK, "temperature": 0, "seed": 42, "stream": True,
+---
+>             "max_tokens": MAXTOK, "temperature": TEMP, "top_p": TOP_P, "seed": seed, "stream": True,
+107c118
+<             rec = stream(p)
+---
+>             rec = stream(p, SEED + i)
+138a150
+>     "sampling": {"temperature": TEMP, "seed_base": SEED, "seed_rule": "seed_base + worker prompt counter", "top_p": TOP_P},  # BR1

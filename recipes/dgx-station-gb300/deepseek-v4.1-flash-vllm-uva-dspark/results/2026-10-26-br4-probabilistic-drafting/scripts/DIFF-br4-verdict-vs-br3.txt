@@ -1,0 +1,788 @@
+2,17c2,30
+< """br3_verdict.py — Card BR3 verdict (DSpark block verification vs sequential rejection sampling, A -> B -> A2) on the GB300-ONLY
+< v26seed "Seeded Adaptive" recipe (Grace UVA offload, no RTX sidecar). Pure stdlib. Clone of br1_verdict_rescore.py (the fixed
+< BR1 verdict: env compared order-insensitively, G2b no-op bar honours the controls' r1/r2 spread) with BR3 paths/names.
+< 
+< Usage:  br3_verdict.py <R> [--out verdict.json]   -> <R>/verdict.json + human table on stdout.
+<         rc 0 PASS, 1 FAIL, 3 INVALID (control or B polluted / control missing), 2 no input.
+< 
+< Shape (KV3 / recipe-factory adapter): {"result", "suffix", "gates": {name: [PASS|FAIL, text]}, ...}. A gate whose status is
+< INVALID (a control cell missing or polluted) is emitted as ["FAIL", "INVALID-CONTROL(<arms>): ..."] in "gates" so the adapter
+< shape stays PASS|FAIL; the true tri-state lives in "gate_status" {name: PASS|FAIL|INVALID} and "invalid_arms".
+< UNMEASURED semantics (KV3): a missing cell on B = FAIL; a missing cell on a control = that gate INVALID.
+< 
+< Differences vs BR1: ground truth = the stopped v26seed container (args-ref-<REF>.json, env-ref-, binds-ref-), not production;
+< G0 KV rule = B and A2 equal A (no fixed constant; v26seed's own boot-log value is an annotation); G0 also checks the v26ar2 hook
+< wiring/guard lines, the Binds (equal except the per-arm /ar source) and that GO + unfreeze were acknowledged (production regime);
+< no sidecar / card watchdog => G7 = server FF errors 0 + foreign POSTs 0 per arm. Bars G1..G6 unchanged.
+---
+> """br4_verdict.py — Card BR4 verdict (DSpark PROBABILISTIC drafting, alone [P] and with BLOCK verification on top [PB], vs the
+> production greedy-draft / sequential-verify config, A -> P -> PB -> A2) on the GB300-ONLY v26seed "Seeded Adaptive" recipe (Grace
+> UVA offload, no RTX sidecar). Pure stdlib. Clone of br3_verdict.py @da59e401 (DIFF-br4-verdict-vs-br3.txt shows every change).
+> 
+> Usage:  br4_verdict.py <R> [--out verdict.json]   -> <R>/verdict.json + human table on stdout.
+>         rc 0 PASS (both candidates), 1 FAIL or PASS-P / PASS-PB (one candidate), 3 INVALID (control polluted/missing, or both
+>         candidates INVALID), 2 no input.
+> 
+> Two candidates, each judged against mean(A, A2) with the SAME bars as BR3 (G0..G7). Controls are shared: a control that is
+> missing / polluted makes the whole card INVALID-CONTROL-<arms> (no candidate can be scored without both controls).
+> Shape (KV3 / recipe-factory adapter): {"result", "suffix", "gates": {name: [PASS|FAIL, text]}, ...}. "gates" PASS only if the gate
+> passes for BOTH candidates; the per-candidate tri-state lives in "gate_status_by_candidate" {name: {P: .., PB: ..}} and the
+> overall tri-state in "gate_status" {name: PASS|FAIL|INVALID}; "per_candidate" {P: {result, failed}, PB: {...}}.
+> UNMEASURED semantics (KV3): a missing cell on a candidate = FAIL for that candidate; on a control = that gate INVALID.
+> 
+> Differences vs BR3:
+>   * arms A P PB A2; candidates P (spec + "draft_sample_method":"probabilistic") and PB (+ "rejection_sample_method":"block").
+>   * G0: prob_in_args want 0/1/1/0, block_in_args want 0/0/1/0; P/PB Args == v26seed except the spec element, which must equal the
+>     exact expected strings (string AND json level).
+>   * G0 KV rule: A2 == A exactly (odd control named by the v26seed boot-log value); each candidate within [A x (1 - 1.5 %), A]
+>     (probabilistic drafting allocates a bf16 draft-logits cache max_num_reqs x k x vocab = 24 x 5 x 129280 x 2 B ~ 31 MB in the
+>     speculator __init__, i.e. BEFORE KV profiling; at ~2,254 B/token that is ~ -13.8k tokens ~ -0.55 %). P == PB is reported (info).
+>     KV_CAND_MAX_DROP = 0.0 restores the literal "all arms equal A" rule.
+>   * G1 temp-0 referee for an odd control = mean of the candidates' temp-0 values (both are parity at temp 0, see G2b).
+>   * G2b stays a two-sided PARITY gate: in the 0909 image, at temperature 0 gumbel_noised_argmax is a plain argmax (no noise, no
+>     temperature) so probabilistic drafts == greedy drafts, the greedy rejection path never reads the draft logits, and block
+>     verification is skipped on greedy rows (USE_BLOCK_VERIFICATION and not is_greedy). Only the draft-logits cache write is extra.
+>   * annotations: headline PB vs P vs A on tokens/verify-step (pct1 window, mixed C1) and per class C1/C8 (tok/s ratio and tokens/
+>     step), per-position acceptance (vllm:spec_decode_num_accepted_tokens_per_pos), TF P-vs-PB.
+19,20c32,33
+< Inputs (<R> = ~/dsv41/m3/br3/results-cardBR3, written by cardBR3_runner.sh):
+<   <X>/facts.json, args.json, env.json, binds.json, go.json, boot-autotune.log, boot-block.log, ar-lines.tsv   (X in A B A2)
+---
+> Inputs (<R> = ~/dsv41/m3/br4/results-cardBR4, written by cardBR4_runner.sh):
+>   <X>/facts.json, args.json, env.json, binds.json, go.json, boot-autotune.log, boot-block.log, boot-prob.log, ar-lines.tsv  (X in ARMS)
+22,27c35,40
+<   <X>/perclass-t1/perclass-table-BR3-<X>-t1.json (+ raw perclass-BR3-<X>-t1-r{1,2}-{c1,c8}.json)   temp 1.0 (G1, G2)
+<   <X>/perclass-t0/perclass-table-BR3-<X>-t0.json                                         stock temp-0 window (G1, G2b)
+<   <X>/mixed-BR3-<X>-c1-r<k>.json      ar_mixed_t.py C1 120 s at temp 1.0 (G3)
+<   tf-compare-BR3-A-vs-BR3-B.json, tf-compare-BR3-A2-vs-BR3-B.json, tf-compare-BR3-A-vs-BR3-A2.json; <X>/tf-BR3-<X>.jsonl (G4)
+<   flipsm-B-vs-A.txt, flipsm-B-vs-A2.txt, flipsm-A2-vs-A.txt   flips_margin_p2.py output, last line GATE ... (G4 margin)
+<   gauntlet-<X>/summary.json (G5) ; <X>/turns-BR3-<X>.json (G6) ; errcount-<X>.txt (G7)
+---
+>   <X>/perclass-t1/perclass-table-BR4-<X>-t1.json (+ raw perclass-BR4-<X>-t1-r{1,2}-{c1,c8}.json)   temp 1.0 (G1, G2)
+>   <X>/perclass-t0/perclass-table-BR4-<X>-t0.json                                         stock temp-0 window (G1, G2b)
+>   <X>/mixed-BR4-<X>-c1-r<k>.json      ar_mixed_t.py C1 120 s at temp 1.0 (G3)
+>   tf-compare-BR4-{A,A2}-vs-BR4-{P,PB}.json, tf-compare-BR4-A-vs-BR4-A2.json (floor), tf-compare-BR4-P-vs-BR4-PB.json (info) (G4)
+>   flipsm-{P,PB}-vs-{A,A2}.txt, flipsm-A2-vs-A.txt   flips_margin_p2.py output, last line GATE ... (G4 margin)
+>   gauntlet-<X>/summary.json (G5) ; <X>/turns-BR4-<X>.json (G6) ; errcount-<X>.txt (G7)
+42c55
+< ARMS = ("A", "B", "A2")
+---
+> ARMS = ("A", "P", "PB", "A2")
+43a57
+> CANDS = ("P", "PB")
+49c63,68
+< SPEC_B = ',"rejection_sample_method":"block"'
+---
+> SPEC_STR = {"P": ',"draft_sample_method":"probabilistic"',
+>             "PB": ',"draft_sample_method":"probabilistic","rejection_sample_method":"block"'}
+> SPEC_KEYS = {"P": {"draft_sample_method": "probabilistic"},
+>              "PB": {"draft_sample_method": "probabilistic", "rejection_sample_method": "block"}}
+> WANT = {"A": (0, 0), "P": (1, 0), "PB": (1, 1), "A2": (0, 0)}   # (prob_in_args, block_in_args)
+> KV_CAND_MAX_DROP = 0.015   # candidate KV may sit up to 1.5 % below A (draft-logits cache precedes KV profiling); 0.0 = strict
+56c75
+< SHORT = {"G0_binding": "G0", "G0b_foreign": "G0b", "G1_controls": "G1", "G2_perclass_t1": "G2", "G2b_t0_noop": "G2b",
+---
+> SHORT = {"G0_binding": "G0", "G0b_foreign": "G0b", "G1_controls": "G1", "G2_perclass_t1": "G2", "G2b_t0_parity": "G2b",
+82a102,112
+> def ratio(a, b):
+>     return (a / b) if (a is not None and b) else None
+> 
+> 
+> def kvint(s):
+>     try:
+>         return int(str(s).replace(",", ""))
+>     except Exception:  # noqa: BLE001
+>         return None
+> 
+> 
+106a137,155
+> POS = re.compile(r'^vllm:spec_decode_num_accepted_tokens_per_pos_total\{[^}]*position="(\d+)"[^}]*\}\s+(\S+)')
+> 
+> 
+> def metrics_pos(p):
+>     """per-position accepted counters {pos: value} (summed over other labels)"""
+>     out = {}
+>     try:
+>         for ln in Path(p).read_text().splitlines():
+>             m = POS.match(ln)
+>             if m:
+>                 try:
+>                     out[int(m.group(1))] = out.get(int(m.group(1)), 0.0) + float(m.group(2))
+>                 except ValueError:
+>                     pass
+>     except Exception:  # noqa: BLE001
+>         return None
+>     return out
+> 
+> 
+113a163,164
+>     ps, pe = metrics_pos(A / "metrics" / f"{cell}-start.txt") or {}, metrics_pos(A / "metrics" / f"{cell}-end.txt") or {}
+>     per_pos = [round((pe.get(k, 0.0) - ps.get(k, 0.0)) / dr, 4) if dr else None for k in sorted(pe)] if pe else None
+116c167
+<             "accept_rate": (ac / dt_) if dt_ else None}
+---
+>             "accept_rate": (ac / dt_) if dt_ else None, "accept_per_pos": per_pos}
+178c229
+<     tag = f"BR3-{arm}-{win}"
+---
+>     tag = f"BR4-{arm}-{win}"
+180c231
+<     out = {"table": t is not None, "cells": {}, "x3": {}, "hygiene": (t or {}).get("hygiene"), "acc": {}}
+---
+>     out = {"table": t is not None, "cells": {}, "x3": {}, "hygiene": (t or {}).get("hygiene"), "acc": {}, "spread": {}}
+184a236
+>             out["spread"][(c, m)] = ((S.get(c) or {}).get(m) or {}).get("spread")
+202,205c254,258
+<     try:
+<         c["block_boot_sample"] = Path(A / "boot-block.log").read_text().splitlines()[:3]
+<     except Exception:  # noqa: BLE001
+<         c["block_boot_sample"] = []
+---
+>     for k in ("block", "prob"):
+>         try:
+>             c[f"{k}_boot_sample"] = Path(A / f"boot-{k}.log").read_text().splitlines()[:3]
+>         except Exception:  # noqa: BLE001
+>             c[f"{k}_boot_sample"] = []
+208c261
+<     for f in sorted(glob.glob(str(A / f"mixed-BR3-{arm}-c1-r*.json")), key=lambda s: int(s.rsplit("-r", 1)[1].split(".")[0])):
+---
+>     for f in sorted(glob.glob(str(A / f"mixed-BR4-{arm}-c1-r*.json")), key=lambda s: int(s.rsplit("-r", 1)[1].split(".")[0])):
+215c268
+<     c["tf_capture"] = (A / f"tf-BR3-{arm}.jsonl").exists() and (A / f"tf-BR3-{arm}.jsonl").stat().st_size > 0
+---
+>     c["tf_capture"] = (A / f"tf-BR4-{arm}.jsonl").exists() and (A / f"tf-BR4-{arm}.jsonl").stat().st_size > 0
+217c270
+<     t = jl(A / f"turns-BR3-{arm}.json")
+---
+>     t = jl(A / f"turns-BR4-{arm}.json")
+256c309
+<     """gate accumulator: status PASS/FAIL/INVALID + arms that make it INVALID"""
+---
+>     """gate accumulator: failed candidates + controls that make it INVALID"""
+259c312
+<         self.fail, self.inv, self.txt = False, set(), []
+---
+>         self.fail, self.inv, self.txt = set(), set(), []
+261,262c314,323
+<     def status(self):
+<         return "INVALID" if self.inv else ("FAIL" if self.fail else "PASS")
+---
+>     def bad(self, arm):
+>         """a defect on <arm>: control -> INVALID(arm); candidate -> FAIL(that candidate)"""
+>         (self.inv.add(arm) if arm in CTRL else self.fail.add(arm))
+> 
+>     def status(self, cand=None):
+>         if self.inv:
+>             return "INVALID"
+>         if cand is None:
+>             return "FAIL" if self.fail else "PASS"
+>         return "FAIL" if cand in self.fail else "PASS"
+277,280c338,342
+<     # ---- G0 binding + wiring: every arm bound; KV: B and A2 equal A; block_in_args 0/1/0; A/A2 Args == v26seed; B Args ==
+<     # v26seed except the spec (== v26seed + the key); Env == v26seed (order-insensitive); Binds == v26seed except the /ar source;
+<     # image 0909; hook wiring/guard lines; GO + unfreeze acknowledged (production regime). A control with broken wiring /
+<     # regime / odd KV is INVALID (its numbers are not the control); B -> FAIL.
+---
+>     # ---- G0 binding + wiring: every arm bound; KV rule (below); prob_in_args 0/1/1/0, block_in_args 0/0/1/0; A/A2 Args ==
+>     # v26seed; P/PB Args == v26seed except the spec (== v26seed + the exact keys); Env == v26seed (order-insensitive); Binds ==
+>     # v26seed except the /ar source; image 0909; hook wiring/guard lines; GO + unfreeze acknowledged (production regime).
+>     # A control with broken wiring / regime / odd KV is INVALID; a candidate -> FAIL. As in BR3, a control's Args/Env/Binds/
+>     # image/key-count mismatch is a recipe FAIL (both candidates), not INVALID.
+286,291c348,356
+<             (g.inv.add(a) if a in CTRL else setattr(g, "fail", True)); g.txt.append(f"{a}: NOT BOUND"); continue
+<         want = 1 if a == "B" else 0
+<         bad_ctl = lambda: (g.inv.add(a) if a in CTRL else setattr(g, "fail", True))
+<         bits = [f"kv={kvs[a] or 'MISSING'}", f"block_in_args={f.get('block_in_args')}(want {want})"]
+<         if f.get("block_in_args") != want:
+<             g.fail = True; bits.append("BLOCK!")
+---
+>             g.bad(a); g.txt.append(f"{a}: NOT BOUND"); continue
+>         recipe_bad = (lambda: g.fail.update(CANDS)) if a in CTRL else (lambda a=a: g.fail.add(a))
+>         wp, wb = WANT[a]
+>         bits = [f"kv={kvs[a] or 'MISSING'}", f"prob_in_args={f.get('prob_in_args')}(want {wp})",
+>                 f"block_in_args={f.get('block_in_args')}(want {wb})"]
+>         if f.get("prob_in_args") != wp:
+>             recipe_bad(); bits.append("PROB!")
+>         if f.get("block_in_args") != wb:
+>             recipe_bad(); bits.append("BLOCK!")
+294c359
+<             g.fail = True; bits.append("args UNMEASURED")
+---
+>             recipe_bad(); bits.append("args UNMEASURED")
+298c363,364
+<             g.fail |= not ok
+---
+>             if not ok:
+>                 recipe_bad()
+302c368
+<             spec_ok = ps is not None and bs == ps[:-1] + SPEC_B + "}"
+---
+>             spec_ok = ps is not None and bs == ps[:-1] + SPEC_STR[a] + "}"
+304c370
+<                 spec_ok = spec_ok and json.loads(bs) == dict(json.loads(ps), rejection_sample_method="block")
+---
+>                 spec_ok = spec_ok and json.loads(bs) == dict(json.loads(ps), **SPEC_KEYS[a])
+307,308c373,375
+<             bits.append(f"args==v26seed-except-spec {rest_ok} spec==v26seed+block {spec_ok}")
+<             g.fail |= not (rest_ok and spec_ok)
+---
+>             bits.append(f"args==v26seed-except-spec {rest_ok} spec==v26seed+{'+'.join(SPEC_KEYS[a].values())} {spec_ok}")
+>             if not (rest_ok and spec_ok):
+>                 recipe_bad()
+310c377
+<         eok = (env is not None and prod_env is not None and sorted(env) == sorted(prod_env))   # order-insensitive from the start
+---
+>         eok = (env is not None and prod_env is not None and sorted(env) == sorted(prod_env))   # order-insensitive
+314c381,382
+<         g.fail |= not (eok and bok and iok)
+---
+>         if not (eok and bok and iok):
+>             recipe_bad()
+320c388
+<             bad_ctl(); bits.append("HOOK!")
+---
+>             g.bad(a); bits.append("HOOK!")
+325c393
+<             bad_ctl(); bits.append("REGIME!")
+---
+>             g.bad(a); bits.append("REGIME!")
+327,343c395,422
+<     # KV rule: B and A2 equal A. Majority names the odd arm: odd B -> FAIL, odd control -> INVALID(that control).
+<     present = {a: v for a, v in kvs.items() if v and cells[a]["facts"] and cells[a]["facts"].get("bound_at")}
+<     kvtxt = f"KV A={kvs['A']} B={kvs['B']} A2={kvs['A2']} (v26seed boot log {kv_ref}, info)"
+<     if "A" in present and all(present.get(a) == present["A"] for a in ("B", "A2") if a in present):
+<         for a in ("B", "A2"):
+<             if (cells[a]["facts"] or {}).get("bound_at") and a not in present:
+<                 (g.inv.add(a) if a in CTRL else setattr(g, "fail", True)); kvtxt += f" KV MISSING on bound {a}"
+<     else:
+<         vals = [present.get(a) for a in ARMS]
+<         maj = next((v for v in vals if v is not None and vals.count(v) >= 2), None)
+<         odd = [a for a in ARMS if present.get(a) != maj] if maj else list(ARMS)
+<         for a in odd:
+<             if a in CTRL:
+<                 g.inv.add(a)
+<             else:
+<                 g.fail = True
+<         kvtxt += f" KV! odd={odd}"
+---
+>     # KV rule. Controls: A2 == A exactly; if not, the v26seed boot-log value names the odd control (neither matches -> both).
+>     # Candidates: A x (1 - KV_CAND_MAX_DROP) <= X <= A (draft-logits cache precedes KV profiling). P == PB is info.
+>     bound = {a: bool(cells[a]["facts"] and cells[a]["facts"].get("bound_at")) for a in ARMS}
+>     kvi = {a: kvint(kvs[a]) for a in ARMS}
+>     kvr = kvint(kv_ref)
+>     kvtxt = f"KV A={kvs['A']} P={kvs['P']} PB={kvs['PB']} A2={kvs['A2']} (v26seed boot log {kv_ref}; candidate drop bar {KV_CAND_MAX_DROP * 100:.1f}%)"
+>     for a in CTRL:
+>         if bound[a] and kvi[a] is None:
+>             g.inv.add(a); kvtxt += f" KV MISSING on bound {a}"
+>     if kvi["A"] is not None and kvi["A2"] is not None and kvi["A"] != kvi["A2"]:
+>         odd = [x for x in CTRL if kvr is None or kvi[x] != kvr] or list(CTRL)
+>         g.inv.update(odd); kvtxt += f" KV! A2 != A (odd control(s) {odd} vs v26seed log)"
+>     for x in CANDS:
+>         if not bound[x]:
+>             continue
+>         if kvi[x] is None:
+>             g.fail.add(x); kvtxt += f" KV MISSING on bound {x}"; continue
+>         if kvi["A"] is None:
+>             continue
+>         drop = (kvi["A"] - kvi[x]) / kvi["A"]
+>         ok = 0.0 <= drop <= KV_CAND_MAX_DROP
+>         kvtxt += f"; {x} vs A {-drop * 100:+.2f}%{'' if ok else ' KV!'}"
+>         if not ok:
+>             g.fail.add(x)
+>     if kvi["P"] is not None and kvi["PB"] is not None:
+>         kvtxt += f"; P==PB {kvi['P'] == kvi['PB']} (info)"
+>     calc["kv"] = {"tokens": kvi, "v26seed_log": kvr,
+>                   "cand_drop": {x: ((kvi["A"] - kvi[x]) / kvi["A"]) if (kvi["A"] and kvi[x] is not None) else None for x in CANDS}}
+346,347c425,426
+<     bs = {a: (cells[a]["facts"] or {}).get("boot_s") for a in ARMS}
+<     cb = mean([bs[a] for a in CTRL])
+---
+>     bs_ = {a: (cells[a]["facts"] or {}).get("boot_s") for a in ARMS}
+>     cb = mean([bs_[a] for a in CTRL])
+350c429
+<         f"autotune_span={at[a]['elapsed_s']}s boot={bs[a]}s" for a in ARMS)
+---
+>         f"autotune_span={at[a]['elapsed_s']}s boot={bs_[a]}s" for a in ARMS)
+354,355c433,435
+<     if bs["B"] and cb:
+<         hh += f"; B boot / controls = {bs['B'] / cb:.2f} (<= 1.5 expected)"
+---
+>     for x in CANDS:
+>         if bs_[x] and cb:
+>             hh += f"; {x} boot / controls = {bs_[x] / cb:.2f} (<= 1.5 expected)"
+358,359c438,439
+<     # ---- G0b foreign POSTs (non-loopback) per arm
+<     g = G(); b_foreign = False
+---
+>     # ---- G0b foreign POSTs (non-loopback) per arm; a candidate that served a foreign client is INVALID-<cand>
+>     g = G(); cand_foreign = set()
+365,368c445,446
+<             if a in CTRL and cells[a]["facts"]:
+<                 g.inv.add(a)
+<             elif a == "B" and cells[a]["facts"]:
+<                 g.fail = True
+---
+>             if cells[a]["facts"]:
+>                 g.bad(a)
+370,374c448,452
+<             if a in CTRL:
+<                 g.inv.add(a)
+<             else:
+<                 b_foreign = True; g.fail = True
+<     gs["G0b_foreign"] = (g, "non-127.0.0.1 POST /v1 per arm: " + "; ".join(g.txt) + (" -> B INVALID" if b_foreign else ""))
+---
+>             g.bad(a)
+>             if a in CANDS:
+>                 cand_foreign.add(a)
+>     gs["G0b_foreign"] = (g, "non-127.0.0.1 POST /v1 per arm: " + "; ".join(g.txt)
+>                          + (f" -> {','.join(sorted(cand_foreign, key=ARMS.index))} INVALID" if cand_foreign else ""))
+380c458,459
+<             va, va2, vb = (cells[x]["pc"][w]["cells"][(c, "c1")] for x in ("A", "A2", "B"))
+---
+>             va, va2 = (cells[x]["pc"][w]["cells"][(c, "c1")] for x in ("A", "A2"))
+>             vref = mean([cells[x]["pc"][w]["cells"][(c, "c1")] for x in CANDS])
+388,390c467,469
+<                 # B is a neutral referee only in the temp-0 window (greedy rows: B == A by construction). At temp 1.0 B is
+<                 # expected to differ, so a t1 disagreement cannot name the odd control -> both.
+<                 odd = ("A" if abs(vb - va) > abs(vb - va2) else "A2") if (vb is not None and w == "t0") else None
+---
+>                 # The candidates are neutral referees only in the temp-0 window (both keys are no-ops on greedy rows). At temp
+>                 # 1.0 they are expected to differ, so a t1 disagreement cannot name the odd control -> both.
+>                 odd = ("A" if abs(vref - va) > abs(vref - va2) else "A2") if (vref is not None and w == "t0") else None
+400c479
+<     # ---- G2 PRIMARY per-class decode at temp 1.0, C1 and C8: B >= ctrl x (1 - max(2%, 1.5 x |A-A2| spread)) vs BOTH controls
+---
+>     # ---- G2 PRIMARY per-class decode at temp 1.0, C1 and C8: X >= ctrl x (1 - max(2%, 1.5 x |A-A2| spread)) vs BOTH controls
+402,413c481,496
+<     for c in CLASSES:
+<         for m in MODES:
+<             va, va2, vb = (cells[x]["pc"]["t1"]["cells"][(c, m)] for x in ("A", "A2", "B"))
+<             if vb is None:
+<                 g.fail = True; g.txt.append(f"{c}/{m} B UNMEASURED"); continue
+<             if va is None or va2 is None:
+<                 g.inv.update([x for x, v in (("A", va), ("A2", va2)) if v is None]); g.txt.append(f"{c}/{m} control UNMEASURED"); continue
+<             cm = (va + va2) / 2; sp = abs(va - va2) / cm; bar = max(FLOOR, SPREAD_K * sp)
+<             ok = vb >= va * (1 - bar) and vb >= va2 * (1 - bar)
+<             g.fail |= not ok
+<             rows.append({"class": c, "mode": m, "A": va, "A2": va2, "B": vb, "ratio": vb / cm, "spread": sp, "bar": bar, "pass": ok})
+<             g.txt.append(f"{c}/{m} B/ctrl={vb / cm:.3f} (A {va:.1f} A2 {va2:.1f} B {vb:.1f}; bar -{bar * 100:.1f}%){'' if ok else ' FAIL'}")
+---
+>     for x in CANDS:
+>         sub = []
+>         for c in CLASSES:
+>             for m in MODES:
+>                 va, va2, vb = (cells[y]["pc"]["t1"]["cells"][(c, m)] for y in ("A", "A2", x))
+>                 if vb is None:
+>                     g.fail.add(x); sub.append(f"{c}/{m} {x} UNMEASURED"); continue
+>                 if va is None or va2 is None:
+>                     g.inv.update([y for y, v in (("A", va), ("A2", va2)) if v is None]); sub.append(f"{c}/{m} control UNMEASURED"); continue
+>                 cm = (va + va2) / 2; sp = abs(va - va2) / cm; bar = max(FLOOR, SPREAD_K * sp)
+>                 ok = vb >= va * (1 - bar) and vb >= va2 * (1 - bar)
+>                 if not ok:
+>                     g.fail.add(x)
+>                 rows.append({"cand": x, "class": c, "mode": m, "A": va, "A2": va2, "X": vb, "ratio": vb / cm, "spread": sp, "bar": bar, "pass": ok})
+>                 sub.append(f"{c}/{m} {x}/ctrl={vb / cm:.3f} (A {va:.1f} A2 {va2:.1f} {x} {vb:.1f}; bar -{bar * 100:.1f}%){'' if ok else ' FAIL'}")
+>         g.txt.append(f"[{x}] " + "; ".join(sub))
+415c498
+<     gs["G2_perclass_t1"] = (g, "temp 1.0 forced-length decode tok/s: " + "; ".join(g.txt))
+---
+>     gs["G2_perclass_t1"] = (g, "temp 1.0 forced-length decode tok/s: " + " || ".join(g.txt))
+417c500,501
+<     # ---- G2b temp-0 no-op sanity: B within control noise at C1 per class (two-sided); C8 info
+---
+>     # ---- G2b temp-0 PARITY: X within control noise at C1 per class (two-sided); C8 info. In the 0909 image both keys are
+>     # no-ops on greedy rows (plain argmax drafting at temp 0; greedy rejection ignores draft logits; block skipped when greedy).
+419,435c503,519
+<     for c in CLASSES:
+<         for m in MODES:
+<             va, va2, vb = (cells[x]["pc"]["t0"]["cells"][(c, m)] for x in ("A", "A2", "B"))
+<             if m == "c8":
+<                 if None not in (va, va2, vb):
+<                     info.append(f"{c}/c8 B/ctrl={vb / ((va + va2) / 2):.3f}")
+<                 continue
+<             if vb is None:
+<                 g.fail = True; g.txt.append(f"{c} B UNMEASURED"); continue
+<             if va is None or va2 is None:
+<                 g.inv.update([x for x, v in (("A", va), ("A2", va2)) if v is None]); g.txt.append(f"{c} control UNMEASURED"); continue
+<             cm = (va + va2) / 2
+<             # RESCORE: the no-op bar also honours the controls' own r1/r2 spread for this class (within-arm noise).
+<             import json as _j, glob as _g
+<             wspread = 0.0
+<             for _x in ("A", "A2"):
+<                 for _f in _g.glob(f"{R}/{_x}/perclass-t0/perclass-table-*-t0.json"):
+---
+>     for x in CANDS:
+>         sub = []
+>         for c in CLASSES:
+>             for m in MODES:
+>                 va, va2, vb = (cells[y]["pc"]["t0"]["cells"][(c, m)] for y in ("A", "A2", x))
+>                 if m == "c8":
+>                     if None not in (va, va2, vb):
+>                         info.append(f"{x} {c}/c8 {x}/ctrl={vb / ((va + va2) / 2):.3f}")
+>                     continue
+>                 if vb is None:
+>                     g.fail.add(x); sub.append(f"{c} {x} UNMEASURED"); continue
+>                 if va is None or va2 is None:
+>                     g.inv.update([y for y, v in (("A", va), ("A2", va2)) if v is None]); sub.append(f"{c} control UNMEASURED"); continue
+>                 cm = (va + va2) / 2
+>                 # BR1-rescore rule: the parity bar also honours the controls' own r1/r2 spread for this class (within-arm noise).
+>                 wsp = []
+>                 for y in CTRL:
+437,438c521,522
+<                         wspread = max(wspread, float(_j.load(open(_f))["summary"][c]["c1"]["spread"]))
+<                     except Exception:
+---
+>                         wsp.append(float(cells[y]["pc"]["t0"]["spread"].get((c, "c1"))))
+>                     except (TypeError, ValueError):
+440,445c524,532
+<             bar = max(FLOOR, SPREAD_K * abs(va - va2) / cm, SPREAD_K * wspread); r = vb / cm - 1
+<             ok = abs(r) <= bar
+<             g.fail |= not ok
+<             g.txt.append(f"{c}/c1 B {pct(r, 1)} (|.| bar {bar * 100:.1f}%, ctrl r1/r2 spread {wspread * 100:.1f}%){'' if ok else ' OUTSIDE NOISE'}")
+<     gs["G2b_t0_noop"] = (g, "stock temp-0 window (greedy rows never use block verification; B must equal A within noise): "
+<                          + "; ".join(g.txt) + " | C8 info: " + "; ".join(info))
+---
+>                 wspread = max(wsp or [0.0])
+>                 bar = max(FLOOR, SPREAD_K * abs(va - va2) / cm, SPREAD_K * wspread); r = vb / cm - 1
+>                 ok = abs(r) <= bar
+>                 if not ok:
+>                     g.fail.add(x)
+>                 sub.append(f"{c}/c1 {x} {pct(r, 1)} (|.| bar {bar * 100:.1f}%, ctrl r1/r2 spread {wspread * 100:.1f}%){'' if ok else ' OUTSIDE NOISE'}")
+>         g.txt.append(f"[{x}] " + "; ".join(sub))
+>     gs["G2b_t0_parity"] = (g, "stock temp-0 window (PARITY: draft_sample_method and block are no-ops on greedy rows; X must equal A within noise): "
+>                            + " || ".join(g.txt) + " | C8 info: " + "; ".join(info))
+449,454c536,539
+<     mb, ma, ma2 = cells["B"]["mixed_mean"], cells["A"]["mixed_mean"], cells["A2"]["mixed_mean"]
+<     nb = len(cells["B"]["mixed"])
+<     if mb is None or nb < 2:
+<         g.fail = True; g.txt.append(f"B UNMEASURED (reps={nb}, need >= 2)")
+<     elif ma is None or ma2 is None or len(cells["A"]["mixed"]) < 2 or len(cells["A2"]["mixed"]) < 2:
+<         g.inv.update([x for x in CTRL if cells[x]["mixed_mean"] is None or len(cells[x]["mixed"]) < 2])
+---
+>     ma, ma2 = cells["A"]["mixed_mean"], cells["A2"]["mixed_mean"]
+>     ctrl_ok = not (ma is None or ma2 is None or len(cells["A"]["mixed"]) < 2 or len(cells["A2"]["mixed"]) < 2)
+>     if not ctrl_ok:
+>         g.inv.update([y for y in CTRL if cells[y]["mixed_mean"] is None or len(cells[y]["mixed"]) < 2])
+456c541,547
+<     else:
+---
+>     calc["G3"] = {}
+>     for x in CANDS:
+>         mb, nb = cells[x]["mixed_mean"], len(cells[x]["mixed"])
+>         if mb is None or nb < 2:
+>             g.fail.add(x); g.txt.append(f"[{x}] UNMEASURED (reps={nb}, need >= 2)"); continue
+>         if not ctrl_ok:
+>             continue
+458,461c549,554
+<         g.fail = r < -bar
+<         calc["G3"] = {"B": mb, "A": ma, "A2": ma2, "ctrl_mean": cm, "spread": sp, "bar": bar, "rel": r}
+<         g.txt.append(f"B mean {mb:.2f} vs ctrl {cm:.2f} ({pct(r)}; A {ma:.2f} A2 {ma2:.2f}; bar -{bar * 100:.2f}%) "
+<                      f"reps B={[round(x['agg_tok_s_all'], 1) for x in cells['B']['mixed']]} errors B={sum(x['errors'] or 0 for x in cells['B']['mixed'])}")
+---
+>         if r < -bar:
+>             g.fail.add(x)
+>         calc["G3"][x] = {"X": mb, "A": ma, "A2": ma2, "ctrl_mean": cm, "spread": sp, "bar": bar, "rel": r}
+>         g.txt.append(f"[{x}] mean {mb:.2f} vs ctrl {cm:.2f} ({pct(r)}; A {ma:.2f} A2 {ma2:.2f}; bar -{bar * 100:.2f}%) "
+>                      f"reps={[round(y['agg_tok_s_all'], 1) for y in cells[x]['mixed']]} errors={sum(y['errors'] or 0 for y in cells[x]['mixed'])}"
+>                      f"{'' if r >= -bar else ' FAIL'}")
+464c557
+<     # ---- G4 TF (teacher-forced; temperature-independent)
+---
+>     # ---- G4 TF (teacher-forced; temperature-independent; draft keys do not touch the target forward)
+466,471c559,565
+<     if not cells["B"]["tf_capture"]:
+<         g.fail = True; g.txt.append("B capture MISSING")
+<     else:
+<         miss = [a for a in CTRL if not cells[a]["tf_capture"]]
+<         fl = jl(R / "tf-compare-BR3-A-vs-BR3-A2.json")
+<         cmp = {a: jl(R / f"tf-compare-BR3-{a}-vs-BR3-B.json") for a in CTRL}
+---
+>     miss = [a for a in CTRL if not cells[a]["tf_capture"]]
+>     fl = jl(R / "tf-compare-BR4-A-vs-BR4-A2.json")
+>     if miss:
+>         g.inv.update(miss); g.txt.append(f"control capture MISSING {miss}")
+>     for x in CANDS:
+>         if not cells[x]["tf_capture"]:
+>             g.fail.add(x); g.txt.append(f"[{x}] capture MISSING"); continue
+473,475c567,592
+<             g.inv.update(miss); g.txt.append(f"control capture MISSING {miss}")
+<         elif fl is None or any(v is None for v in cmp.values()):
+<             g.fail = True; g.txt.append("compare file(s) MISSING with captures present (runner fault)")
+---
+>             continue
+>         cmp = {a: jl(R / f"tf-compare-BR4-{a}-vs-BR4-{x}.json") for a in CTRL}
+>         if fl is None or any(v is None for v in cmp.values()):
+>             g.fail.add(x); g.txt.append(f"[{x}] compare file(s) MISSING with captures present (runner fault)"); continue
+>         floor = fl.get("top1_flip_rate")
+>         sub = []
+>         for a in CTRL:
+>             rate = cmp[a].get("top1_flip_rate")
+>             ok = rate is not None and floor is not None and rate <= TF_ABS and rate <= TF_FLOOR_K * floor
+>             if not ok:
+>                 g.fail.add(x)
+>             sub.append(f"{x}-vs-{a} flips {(rate or 0) * 100:.3f}% (bar <=3% and <= {TF_FLOOR_K} x floor {(floor or 0) * 100:.3f}% = "
+>                        f"{TF_FLOOR_K * (floor or 0) * 100:.3f}%; token-mismatch docs {cmp[a].get('docs_token_mismatch')}){'' if ok else ' FAIL'}")
+>         mg = []
+>         for a in CTRL:
+>             p = R / f"flipsm-{x}-vs-{a}.txt"
+>             last = (p.read_text().strip().splitlines() or [""])[-1] if p.exists() else ""
+>             m = re.search(r"hi_agent_tool=(\d+)", last)
+>             sk = re.search(r"skipped_docs=(\d+)", last)
+>             mg.append((a, int(m.group(1)) if m else None, sk.group(1) if sk else "?"))
+>         if all(y[1] is not None for y in mg):
+>             bad = [y for y in mg if y[1] != 0]
+>             if bad:
+>                 g.fail.add(x)
+>             sub.append("margin flips at ref p>=0.9 on agent/tool docs: " + ", ".join(f"vs {a}={n} (skipped_docs {s})" for a, n, s in mg)
+>                        + ("" if not bad else " FAIL"))
+477,497c594,595
+<             floor = fl.get("top1_flip_rate")
+<             for a in CTRL:
+<                 rate = cmp[a].get("top1_flip_rate")
+<                 ok = rate is not None and rate <= TF_ABS and rate <= TF_FLOOR_K * floor
+<                 g.fail |= not ok
+<                 g.txt.append(f"B-vs-{a} flips {rate * 100:.3f}% (bar <=3% and <= {TF_FLOOR_K} x floor {floor * 100:.3f}% = {TF_FLOOR_K * floor * 100:.3f}%; "
+<                              f"token-mismatch docs {cmp[a].get('docs_token_mismatch')}){'' if ok else ' FAIL'}")
+<             mg = []
+<             for a in CTRL:
+<                 p = R / f"flipsm-B-vs-{a}.txt"
+<                 last = (p.read_text().strip().splitlines() or [""])[-1] if p.exists() else ""
+<                 m = re.search(r"hi_agent_tool=(\d+)", last)
+<                 sk = re.search(r"skipped_docs=(\d+)", last)
+<                 mg.append((a, int(m.group(1)) if m else None, sk.group(1) if sk else "?"))
+<             if all(x[1] is not None for x in mg):
+<                 bad = [x for x in mg if x[1] != 0]
+<                 g.fail |= bool(bad)
+<                 g.txt.append("margin flips at ref p>=0.9 on agent/tool docs: " + ", ".join(f"vs {a}={n} (skipped_docs {s})" for a, n, s in mg)
+<                              + ("" if not bad else " FAIL"))
+<             else:
+<                 g.txt.append("margin flips UNMEASURED (flips_margin_p2 output missing/unparsable; not failing)")
+---
+>             sub.append("margin flips UNMEASURED (flips_margin_p2 output missing/unparsable; not failing)")
+>         g.txt.append(f"[{x}] " + "; ".join(sub))
+500c598
+<     # ---- G5 gauntlet 12/12 on B (controls reported)
+---
+>     # ---- G5 gauntlet 12/12 on each candidate (controls reported)
+502d599
+<     gb = cells["B"]["gauntlet"]
+504,506c601,604
+<     if not gb:
+<         g.fail = True; g.txt.append("B UNMEASURED")
+<     else:
+---
+>     for x in CANDS:
+>         gb = cells[x]["gauntlet"]
+>         if not gb:
+>             g.fail.add(x); g.txt.append(f"{x} UNMEASURED"); continue
+508c606,608
+<         g.fail = not (s == GAUNTLET_N and t == GAUNTLET_N); g.txt.append(f"B {s}/{t}")
+---
+>         if not (s == GAUNTLET_N and t == GAUNTLET_N):
+>             g.fail.add(x)
+>         g.txt.append(f"{x} {s}/{t}")
+514d613
+<     tb = cells["B"]["turns"]
+516,520c615,623
+<     if not tb:
+<         g.fail = True; g.txt.append("B UNMEASURED")
+<     elif any(cells[a]["turns"] is None for a in CTRL):
+<         g.inv.update([a for a in CTRL if cells[a]["turns"] is None]); g.txt.append("control UNMEASURED")
+<     else:
+---
+>     cmiss = [a for a in CTRL if cells[a]["turns"] is None]
+>     if cmiss:
+>         g.inv.update(cmiss); g.txt.append("control UNMEASURED")
+>     for x in CANDS:
+>         tb = cells[x]["turns"]
+>         if not tb:
+>             g.fail.add(x); g.txt.append(f"[{x}] UNMEASURED"); continue
+>         if cmiss:
+>             continue
+523,527c626,632
+<         ok = all(lo <= x <= hi for x in be) and berr == 0
+<         g.fail = not ok
+<         g.txt.append(f"B per pass {be}/{tb[0]['tool_turns']} vs control range [{lo},{hi}] (A {[p['tool_emitted'] for p in cells['A']['turns']]}, "
+<                      f"A2 {[p['tool_emitted'] for p in cells['A2']['turns']]}); B errors {berr}; text-turn emissions B "
+<                      f"{[p['text_emitted'] for p in tb]} (temp 0: replay_turns.py)")
+---
+>         ok = all(lo <= y <= hi for y in be) and berr == 0
+>         if not ok:
+>             g.fail.add(x)
+>         g.txt.append(f"[{x}] per pass {be}/{tb[0]['tool_turns']} vs control range [{lo},{hi}] (A {[p['tool_emitted'] for p in cells['A']['turns']]}, "
+>                      f"A2 {[p['tool_emitted'] for p in cells['A2']['turns']]}); errors {berr}; text-turn emissions "
+>                      f"{[p['text_emitted'] for p in tb]}{'' if ok else ' FAIL'}")
+>     g.txt.append("(temp 0: replay_turns.py)")
+538c643
+<             (g.inv.add(a) if a in CTRL else setattr(g, "fail", True)); g.txt.append(f"{a}: UNMEASURED (ff={e} foreign={n})"); continue
+---
+>             g.bad(a); g.txt.append(f"{a}: UNMEASURED (ff={e} foreign={n})"); continue
+541c646
+<             (g.inv.add(a) if a in CTRL else setattr(g, "fail", True))
+---
+>             g.bad(a)
+545c650
+<     # ---- result
+---
+>     # ---- result (per candidate, shared controls)
+546a652
+>     by_cand = {k: {x: v[0].status(x) for x in CANDS} for k, v in gs.items()}
+548c654,665
+<     failed = [k for k, s in status.items() if s == "FAIL"]
+---
+>     per = {}
+>     for x in CANDS:
+>         failed = [k for k in gs if by_cand[k][x] == "FAIL"]
+>         if inv:
+>             r = "INVALID-CONTROL"
+>         elif x in cand_foreign:
+>             r = "INVALID"
+>         elif failed:
+>             r = "FAIL"
+>         else:
+>             r = "PASS"
+>         per[x] = {"result": r, "failed": failed}
+550,554c667
+<         res = "INVALID-CONTROL-" + "-".join(inv); suffix = "BR3-" + res
+<     elif b_foreign:
+<         res = "INVALID-B"; suffix = "BR3-INVALID-B"
+<     elif failed:
+<         res = "FAIL"; suffix = "BR3FAIL-" + "-".join(SHORT[k] for k in failed)
+---
+>         res = "INVALID-CONTROL-" + "-".join(inv); suffix = "BR4-" + res
+556c669,679
+<         res = "PASS"; suffix = "BR3PASS"
+---
+>         tok = lambda x: x + (per[x]["result"] if per[x]["result"] != "FAIL" else "FAIL-" + "-".join(SHORT[k] for k in per[x]["failed"]))
+>         suffix = "BR4-" + "_".join(tok(x) for x in CANDS)
+>         passed = [x for x in CANDS if per[x]["result"] == "PASS"]
+>         if len(passed) == len(CANDS):
+>             res = "PASS"
+>         elif passed:
+>             res = "PASS-" + passed[0]
+>         elif all(per[x]["result"] == "INVALID" for x in CANDS):
+>             res = "INVALID-" + "-".join(CANDS)
+>         else:
+>             res = "FAIL"
+560c683,684
+<         gates[k] = ["PASS", txt] if s == "PASS" else ["FAIL", (f"INVALID-CONTROL({','.join(sorted(g.inv, key=ARMS.index))}): " if s == "INVALID" else "") + txt]
+---
+>         head = " ".join(f"{x}:{by_cand[k][x]}" for x in CANDS)
+>         gates[k] = ["PASS", txt] if s == "PASS" else ["FAIL", (f"INVALID-CONTROL({','.join(sorted(g.inv, key=ARMS.index))}): " if s == "INVALID" else f"[{head}] ") + txt]
+562c686
+<     # ---- annotations (NOT gates): acceptance is not comparable across verification methods
+---
+>     # ---- annotations (NOT gates). Headline: is PB > P > A at temp 1.0 on tokens/verify-step and per class C1/C8?
+567,570c691,695
+<     ann["tokens_per_verify_step_t1"] = {"pct1_window": tps, "mixed_c1": tpm,
+<                                         "B_over_ctrl_pct1": (tps["B"] / ctps) if (tps["B"] and ctps) else None,
+<                                         "B_over_ctrl_mixed": (tpm["B"] / ctpm) if (tpm["B"] and ctpm) else None}
+<     pcs = {}
+---
+>     ann["tokens_per_verify_step_t1"] = {
+>         "pct1_window": tps, "mixed_c1": tpm,
+>         "P_over_ctrl_pct1": ratio(tps["P"], ctps), "PB_over_ctrl_pct1": ratio(tps["PB"], ctps), "PB_over_P_pct1": ratio(tps["PB"], tps["P"]),
+>         "P_over_ctrl_mixed": ratio(tpm["P"], ctpm), "PB_over_ctrl_mixed": ratio(tpm["PB"], ctpm), "PB_over_P_mixed": ratio(tpm["PB"], tpm["P"])}
+>     pcs, pct_ratio = {}, {}
+575c700,704
+<             pcs[f"{c}/{m}"] = {"B": None if v["B"] is None else 1 + v["B"], "ctrl": None if cm is None else 1 + cm}
+---
+>             pcs[f"{c}/{m}"] = {"P": None if v["P"] is None else 1 + v["P"], "PB": None if v["PB"] is None else 1 + v["PB"],
+>                                "ctrl": None if cm is None else 1 + cm}
+>             t = {a: cells[a]["pc"]["t1"]["cells"][(c, m)] for a in ARMS}
+>             ct = mean([t[a] for a in CTRL])
+>             pct_ratio[f"{c}/{m}"] = {"P/ctrl": ratio(t["P"], ct), "PB/ctrl": ratio(t["PB"], ct), "PB/P": ratio(t["PB"], t["P"])}
+576a706,722
+>     ann["tok_s_ratio_t1_per_class"] = pct_ratio
+> 
+>     def order3(p, pb, c_):
+>         return None if None in (p, pb, c_) else (pb > p > c_)
+> 
+>     hl = {"pct1_tokens_per_step_PB>P>ctrl": order3(tps["P"], tps["PB"], ctps),
+>           "mixed_tokens_per_step_PB>P>ctrl": order3(tpm["P"], tpm["PB"], ctpm)}
+>     for m in MODES:
+>         o_tps = [order3(pcs[f"{c}/{m}"]["P"], pcs[f"{c}/{m}"]["PB"], pcs[f"{c}/{m}"]["ctrl"]) for c in CLASSES]
+>         o_tok = [None if None in (pct_ratio[f"{c}/{m}"]["P/ctrl"], pct_ratio[f"{c}/{m}"]["PB/P"]) else
+>                  (pct_ratio[f"{c}/{m}"]["PB/P"] > 1 and pct_ratio[f"{c}/{m}"]["P/ctrl"] > 1) for c in CLASSES]
+>         hl[f"{m}_classes_tokens_per_step_PB>P>ctrl"] = f"{sum(1 for o in o_tps if o)}/{sum(1 for o in o_tps if o is not None)}"
+>         hl[f"{m}_classes_tok_s_PB>P>ctrl"] = f"{sum(1 for o in o_tok if o)}/{sum(1 for o in o_tok if o is not None)}"
+>     ann["headline_PB_P_A"] = hl
+>     ann["accept_per_position_pct1"] = {a: (cells[a]["m_pct1"] or {}).get("accept_per_pos") for a in ARMS}
+>     tpp = jl(R / "tf-compare-BR4-P-vs-BR4-PB.json")
+>     ann["tf_P_vs_PB"] = None if tpp is None else {"top1_flip_rate": tpp.get("top1_flip_rate"), "docs_token_mismatch": tpp.get("docs_token_mismatch")}
+579a726
+>     ann["boot_prob_lines"] = {a: cells[a]["prob_boot_sample"] for a in ARMS}
+587c734
+<     calc["G2_ratio_by_cell"] = {f"{r['class']}/{r['mode']}": round(r["ratio"], 4) for r in rows}
+---
+>     calc["G2_ratio_by_cell"] = {f"{r['cand']} {r['class']}/{r['mode']}": round(r["ratio"], 4) for r in rows}
+594,595c741,744
+<     return {"card": "BR3 block verification (GB300-only v26seed)", "result": res, "suffix": suffix, "gates": gates, "gate_status": status,
+<             "invalid_arms": inv, "valid": not inv and not b_foreign, "annotations": ann, "calc": calc, "cells": slim, "R": str(R)}
+---
+>     return {"card": "BR4 probabilistic drafting (P) and probabilistic + block (PB) (GB300-only v26seed)", "result": res, "suffix": suffix,
+>             "gates": gates, "gate_status": status, "gate_status_by_candidate": by_cand, "per_candidate": per,
+>             "invalid_arms": inv, "invalid_candidates": sorted(cand_foreign, key=ARMS.index), "valid": not inv,
+>             "annotations": ann, "calc": calc, "cells": slim, "R": str(R)}
+603,604c752,754
+<     L = [f"Card BR3 verdict: {v['result']}   suffix {v['suffix']}", "",
+<          "| gate | status | detail |", "|---|---|---|"]
+---
+>     pc = v["per_candidate"]
+>     L = [f"Card BR4 verdict: {v['result']}   suffix {v['suffix']}   (P: {pc['P']['result']}; PB: {pc['PB']['result']})", "",
+>          "| gate | status | P | PB | detail |", "|---|---|---|---|---|"]
+606c756
+<         L.append(f"| {k} | {v['gate_status'][k]} | {t} |")
+---
+>         L.append(f"| {k} | {v['gate_status'][k]} | {v['gate_status_by_candidate'][k]['P']} | {v['gate_status_by_candidate'][k]['PB']} | {t} |")
+608,609c758,759
+<     L += ["", "| arm | KV tokens | block_in_args | boot s | mixed C1 t1 mean | t1 prose C1 | t1 tool_json C1 | t0 prose C1 | swaps during cells | ff | foreign |",
+<           "|---|---|---|---|---|---|---|---|---|---|---|"]
+---
+>     L += ["", "| arm | KV tokens | prob_in_args | block_in_args | boot s | mixed C1 t1 mean | t1 prose C1 | t1 tool_json C1 | t0 prose C1 | swaps during cells | ff | foreign |",
+>           "|---|---|---|---|---|---|---|---|---|---|---|---|"]
+612c762
+<         L.append(f"| {a} | {f.get('kv_tokens', '-')} | {f.get('block_in_args', '-')} | {f.get('boot_s', '-')} | "
+---
+>         L.append(f"| {a} | {f.get('kv_tokens', '-')} | {f.get('prob_in_args', '-')} | {f.get('block_in_args', '-')} | {f.get('boot_s', '-')} | "
+616,617c766,768
+<     t = v["annotations"]["tokens_per_verify_step_t1"]
+<     L += ["", "ANNOTATION (not a gate) — accepted tokens per verify step at temp 1.0 (1 + accepted/drafts from /metrics):",
+---
+>     an = v["annotations"]; t = an["tokens_per_verify_step_t1"]
+>     L += ["", f"HEADLINE (annotation, not a gate) — PB > P > A at temp 1.0? {an['headline_PB_P_A']}",
+>           "ANNOTATION — accepted tokens per verify step at temp 1.0 (1 + accepted/drafts from /metrics):",
+619,622c770,778
+<           + f"  B/ctrl={f2(t['B_over_ctrl_pct1'], 3)};  mixed C1: " + ", ".join(f"{a}={f2(t['mixed_c1'][a], 3)}" for a in ARMS)
+<           + f"  B/ctrl={f2(t['B_over_ctrl_mixed'], 3)}",
+<           "  per class (B vs ctrl mean): " + "; ".join(f"{k} {f2(x['B'], 2)}/{f2(x['ctrl'], 2)}"
+<                                                        for k, x in v["annotations"]["tokens_per_verify_step_t1_per_class"].items()),
+---
+>           + f"  P/ctrl={f2(t['P_over_ctrl_pct1'], 3)} PB/ctrl={f2(t['PB_over_ctrl_pct1'], 3)} PB/P={f2(t['PB_over_P_pct1'], 3)}",
+>           "  mixed C1: " + ", ".join(f"{a}={f2(t['mixed_c1'][a], 3)}" for a in ARMS)
+>           + f"  P/ctrl={f2(t['P_over_ctrl_mixed'], 3)} PB/ctrl={f2(t['PB_over_ctrl_mixed'], 3)} PB/P={f2(t['PB_over_P_mixed'], 3)}",
+>           "  per class tokens/step (P / PB / ctrl): " + "; ".join(f"{k} {f2(x['P'], 2)}/{f2(x['PB'], 2)}/{f2(x['ctrl'], 2)}"
+>                                                        for k, x in an["tokens_per_verify_step_t1_per_class"].items()),
+>           "  per class tok/s ratios (P/ctrl, PB/ctrl, PB/P): " + "; ".join(
+>               f"{k} {f2(x['P/ctrl'], 3)},{f2(x['PB/ctrl'], 3)},{f2(x['PB/P'], 3)}" for k, x in an["tok_s_ratio_t1_per_class"].items()),
+>           f"ANNOTATION — per-position acceptance (pct1 window, accepted_pos/drafts): {an['accept_per_position_pct1']}",
+>           f"ANNOTATION — TF P vs PB: {an['tf_P_vs_PB']}",
+624,629c780,785
+<               f"{w}/{cl} " + "/".join(f2(v['annotations']['x3_accept_canary'][w][cl][a], 3) for a in ARMS)
+<               for w in ("t1",) for cl in CLASSES) + " (A/B/A2)",
+<           f"ANNOTATION — G2 B/mean(A,A2) by cell: {v['calc'].get('G2_ratio_by_cell')}",
+<           f"ANNOTATION — KV tokens in the v26seed boot log: {v['annotations']['kv_v26seed_boot_log']}; host_avail at rehome layer 9 (GiB): {v['annotations']['host_avail_l9_gib']}",
+<           f"ANNOTATION — adaptive residency during cells (/ar line deltas pct1-start -> turns-end): {v['annotations']['adaptive_ar_lines_cells_delta']}",
+<           f"ANNOTATION — production (v27) watchdog after restore: {v['annotations']['restore_watchdog']}"]
+---
+>               f"{w}/{cl} " + "/".join(f2(an['x3_accept_canary'][w][cl][a], 3) for a in ARMS)
+>               for w in ("t1",) for cl in CLASSES) + " (A/P/PB/A2)",
+>           f"ANNOTATION — G2 X/mean(A,A2) by cell: {v['calc'].get('G2_ratio_by_cell')}",
+>           f"ANNOTATION — KV: {v['calc'].get('kv')}; host_avail at rehome layer 9 (GiB): {an['host_avail_l9_gib']}",
+>           f"ANNOTATION — adaptive residency during cells (/ar line deltas pct1-start -> turns-end): {an['adaptive_ar_lines_cells_delta']}",
+>           f"ANNOTATION — production (v27) watchdog after restore: {an['restore_watchdog']}"]
+650c806
+<     return 0 if v["result"] == "PASS" else (1 if v["result"] == "FAIL" else 3)
+---
+>     return 0 if v["result"] == "PASS" else (3 if v["result"].startswith("INVALID") else 1)
