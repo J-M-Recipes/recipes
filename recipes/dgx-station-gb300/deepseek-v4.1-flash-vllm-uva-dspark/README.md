@@ -1,6 +1,14 @@
 # DeepSeek-V4.1-Flash at 1M context on one DGX Station GB300
 
-**2026-10-24 ~21:30 CDT — v26 "Seeded Adaptive" promoted; `:30006` serves this GB300-only recipe again.**
+> **Status, 2026-10-26: `:30006` does NOT serve this recipe.** v26 served it only from 2026-10-24 ~21:30 to 23:16 CDT.
+> Since then the lane has served the **sidecar sibling's** pair: v25m-kvtier until 2026-10-26 03:58 CDT, and **v27
+> (+ block verification)** since 04:08 CDT
+> ([`../deepseek-v4.1-flash-vllm-uva-dspark-sidecar`](../deepseek-v4.1-flash-vllm-uva-dspark-sidecar/README.md)).
+> v26 is still this recipe's release for a GB300 with no second GPU. Its container `dsv41-vllm-1017-v26seed-BOUND-REF`
+> is kept stopped. *(Corrected 2026-10-26: this banner said "`:30006` serves this GB300-only recipe again".)*
+> Latest round: **Card BR3, block verification on v26 = a NULL, not promoted** (below).
+
+**2026-10-24 ~21:30 CDT — v26 "Seeded Adaptive" promoted** (on `:30006` until 23:16 CDT that night; see the status above).
 v26 is the v23 launch (same image, same flags), plus three changes:
 - **adaptive expert residency** — hook v26ar.2;
 - **a seed boot map** — the top 295 experts per layer, taken from the live counter's own dump;
@@ -18,6 +26,53 @@ round adds a 48 GiB Grace host prefix-KV tier. This recipe is the reference for 
 
 **Before v26 — Pin Exact, v23** (serving 2026-10-18 → 2026-10-22; v26 launches from it) (v22 + exact-size pinned host allocations: pinned host 328.0 → 252.8 GiB, boot-guard margin 12 → 198 GiB, decode and greedy non-tool output unchanged; **188.2 tok/s C1 real text, accept 2.99/step**; BFCL held-out 77.65; see the 2026-10-18 round) · rollback **v22** (k=5 band to 8 sequences, 2026-10-17) · **candidate, not promoted:** vLLM nightly-39983a5e "config C" passed all seven pre-registered gates (+6% C1, TTFT 8K 0.43 s, KV +55%; GSM8K exactly at its bar), pending James · previous **Fused Split, v21** (2026-09-27: v18 launch on the 0909 image + hook v21 — `split_ids()` as one Triton kernel; **182.8 tok/s C1 prose, +6.2 % vs v18 bracketing controls 171.8 / 172.5**, C8 687 (+4.6 %), C16 993 (+4.0 %), non-tool greedy 16/16 vs both controls; held-out BFCL on v21 pending; see Round 12) · documented release **Clean Nightly, v20** (2026-09-21: vLLM nightly `2671fedf` — the last before the #56633 mHC-fold drift — + v15 hook + off54 + fp8_ds_mla + v18's 24-seat/cudagraph flags; **181 tok/s C1 prose (+5.1% pair mean vs v18)**, KV 2.55M tokens, C24 warm agent p95 2.4–2.8 s vs 3.4; **held-out BFCL live sibling 78.8% vs v18 78.9%**, dev 92.7–93.5%; tools 64/64 ×3; $0.008 per 1000 solved tasks; see Round 11b) · rollback **Many Seat, v18** (2026-09-18: v15 hook + `--max-num-seqs 24` + token-sized `--cudagraph-capture-sizes`; 172 tok/s C1 prose, KV 2.50M tokens, C24 warm agent turn 0.55 s p50; **BFCL v4 tool-call exact-match 93.3%**) · **v19 "Nightly" was promoted and reverted on 2026-09-20** (see Round 10) · previous **v15 Pin Hot Experts** (retired 2026-09-18) · **v14 Sixty-K Agent** (retired 2026-09-17) · Historical **v13: 90 tok/s single-stream prose · 140–160 tok/s on agent/code text · 429 agg tok/s at C16** (v12: 89 / 140–160 / 311 · v11: 82 / 130–150 / 287) · 972K-token prompt prefilled in 85 s · Hermes tool-calling 10/10
 
+
+## 2026-10-26 round — block verification on v26 (Card BR3): a NULL, NOT promoted
+
+**What changed.** One key was added to the v26 speculative config: `"rejection_sample_method":"block"` (block
+verification, Sun et al.). The idea came to this lab via
+[fraserprice/DeepSeek-4.1-Flash-1017-BRRR](https://huggingface.co/fraserprice/DeepSeek-4.1-Flash-1017-BRRR).
+Everything else is the v26 lane as booted: image 0909, `launch_ar6.sh` + `SPEC_EXTRA`, **greedy drafting**,
+k-schedule `[[1,8,5],[9,24,1]]`, 24 seqs. The run was bracketed A → B → A2, 2026-10-26 04:26–06:49 CDT:
+- every arm was a hash-hit boot, 474–484 s;
+- KV was 2,495,694 tokens on all arms;
+- adaptive residency was unfrozen (GO + `ctrl freeze=false`) on every arm.
+
+Receipts: [`results/2026-10-26-br3-block-verification-null/`](results/2026-10-26-br3-block-verification-null/README.md).
+
+**Verdict: FAIL `BR3FAIL-G2`** (pre-registered). Structured decode at temperature 1.0 read C1 0.973 and C8 0.970,
+against a −2% bar (−2.1% at C1). **The headline is a null, not a regression.**
+
+| temp 1.0, B ÷ mean(A, A2) | C1 | C8 |
+|---|--:|--:|
+| accepted tokens per verify step (per-class window) | **0.999** (3.116 vs 3.118) | — |
+| mixed traffic tok/s (`ar_mixed_t.py`, 3 × 120 s) | 0.998 (−0.2%) | — |
+| prose | 1.000 | 0.989 |
+| structured | **0.973** ✗ | **0.970** ✗ |
+| code | 0.984 | 1.088 |
+| shell_ops | 0.995 | 1.044 |
+| tool_json | 1.015 | 1.086 |
+
+The C8 code and tool_json rises are within the controls' own C8 spread: A and A2 differ by 4.2% on code and 9.1% on
+tool_json at C8.
+
+**Fidelity is unchanged.**
+- Teacher-forced top-1 flips are 1.09–1.13%, against an A-vs-A2 control floor of 1.09%; margin-weighted flips 0.
+- Gauntlet 12/12 on all arms.
+- The temperature-0 window is a no-op on every class (G2b PASS).
+- 0 errors, 0 foreign requests.
+
+**Mechanism (our reading, not tested by a receipt).** This lane drafts greedy: there is no `draft_sample_method` in
+its config. Block verification reweights the draft distribution, and a one-hot draft leaves it nothing to reweight,
+so it degenerates to standard verification.
+
+The contrast is the sidecar lane. It already drafts probabilistically, and the same key gained +2.0% tokens/step
+there (Card BR1, promoted as v27):
+[BR1 bundle](../deepseek-v4.1-flash-vllm-uva-dspark-sidecar/results/2026-10-26-br1-block-verification/README.md),
+[blog](https://al-engr.com/gb300-vs-4x-rtx6000-dsv41-flash-brrr.html).
+
+**Decision:** not promoted on this lane; v26 stays as published. **Next: Card BR4.** It tests probabilistic drafting
+alone, then probabilistic + block, in the same bracket (queued 2026-10-26).
 
 ## 2026-10-24 round — v26 "Seeded Adaptive": seed map + adaptive residency, PROMOTED (48 h soak waived)
 
@@ -611,7 +666,10 @@ FlashInfer autotunes the MXFP4 MoE kernels and caches the result under a hash of
 
 ## Results
 
-### v26 — Seeded Adaptive (serving since 2026-10-24 ~21:30 CDT)
+### v26 — Seeded Adaptive (this recipe's release; served `:30006` 2026-10-24 ~21:30–23:16 CDT)
+
+2026-10-26: block verification on v26 (Card BR3) is a null, with 0.999× tokens per verify step at temperature 1.0. It was
+not adopted; see the 2026-10-26 round and [`results/2026-10-26-br3-block-verification-null/`](results/2026-10-26-br3-block-verification-null/README.md).
 
 Bundle: [`results/2026-10-24-v26-seeded-adaptive/`](results/2026-10-24-v26-seeded-adaptive/README.md); every cell is in [`throughput.csv`](results/2026-10-24-v26-seeded-adaptive/throughput.csv).
 
@@ -797,6 +855,13 @@ Zero preemptions at 972K; HBM peaked at 243 GiB. Warm prefix on an 8.8K-token sy
 
 See `limits:` in [`recipe.yaml`](recipe.yaml).
 
+2026-10-26 addition (Card BR3):
+- **Block verification is a no-op with greedy drafting. Measure spec-decode changes at temperature > 0.**
+  `rejection_sample_method: block` on v26 (greedy DSpark drafts) moved tokens per verify step by 0.999× at
+  temperature 1.0. At temperature 0 block verification is never applied. Any stock temperature-0 speed instrument
+  therefore reads a verifier change as a null by construction. The sidecar lane drafts probabilistically, and there
+  the same key is +2.0%. Card BR4 tests probabilistic drafting on this lane.
+
 2026-10-24 additions (v26):
 - **The 48 h soak was waived at promotion** (James, 2026-10-24). The AR5 soak ran ~19:57 → ~20:4x CDT and was cancelled. The longest unattended window on v26 so far is ~1 h plus the Card AR6 / gauntlet battery traffic. Multi-day memory drift and multi-hour swap churn under real traffic are unmeasured.
 - **Convergence correction.** The 2026-10-23 card and Part 1 said 60–90 s. That figure was a windowing artifact; re-analysis gives cold share < 1 % in 9–16 s, and AR6 measures T90 at 8.7 / 14.0 s on the seed boot.
@@ -817,11 +882,18 @@ See `limits:` in [`recipe.yaml`](recipe.yaml).
 
 **Exact v23 runtime:** `docker stop dsv41-vllm-1017-v26seed-BOUND-REF`, then `docker start` the kept v23 container (hash hit, ~5 min).
 
-**The live lane's operational rollback** is the sidecar v25m-MIXMAP pair plus its fail-stop watchdog; see the sibling recipe.
+**The live lane** is the sidecar sibling's v27 pair (since 2026-10-26 04:08 CDT); its rollback is the v25m-kvtier pair plus its fail-stop watchdog; see the sibling recipe. *(Corrected 2026-10-26: this line named the v25m-MIXMAP pair.)*
 
 v23 → v22: `docker stop dsv41-vllm-1017-v23-pinexact-BOUND-REF && docker start dsv41-vllm-1017-v22-ksched1to8-RETIRED-REF` (~5 min, autotune hash hit). Every bound config is kept as a stopped container `dsv41-vllm-<tag>`. `docker stop` the lane, `docker start` the previous one; ~4 min. Production surfaces on other ports are never part of this lane.
 
 ## Credits
+
+2026-10-26 round (Card BR3):
+- **Block verification:** Sun et al. (block verification, a distribution-preserving verifier for speculative
+  decoding), as implemented in vLLM's `rejection_sample_method: block`.
+- **The idea to try it on this checkpoint:** [fraserprice/DeepSeek-4.1-Flash-1017-BRRR](https://huggingface.co/fraserprice/DeepSeek-4.1-Flash-1017-BRRR).
+- **Runner, verdict and write-up:** Milo (Hermes). The desk brief and runner were drafted by a claude-opus-5-5
+  subagent and reviewed before launch.
 
 2026-10-24 round (Card AR6 v2, v26):
 - **Campaign, runner, verdict and write-up:** Milo (Hermes) — the Part 3 byline lists one anthropic/claude-fable-5 session for measurements and campaign.

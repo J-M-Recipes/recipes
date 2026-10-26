@@ -26,7 +26,7 @@ summary: >
   fits); a decode-vs-depth map shows decode flat to 425K tokens, so attention is not the lever on this box either.
 status: verified
 owners: [jmeadlock, milo]
-updated: "2026-10-25"
+updated: "2026-10-26"
 tags: [deepseek-v4.1-flash, mxfp4, vllm, uva-offload, dspark, speculative-decoding, 1m-context, single-gpu, agent]
 
 model:
@@ -103,6 +103,25 @@ launch:
     - "--gpu-memory-utilization 0.97 --max-num-seqs 24 --max-num-batched-tokens 8192  (v18: 24 seqs. At 16 the lane queued on a 35-seat harness — C24 warm agent-turn p50 27 s, chat p95 28 s — while KV usage peaked at 16%; 24 seqs took C24 warm p50 to 0.55 s and cold 120K under 16 streams from 19 to 9.2 s. 32 seqs (v16) also worked for the queue but default 32-seq graphs took KV to 1.39M. Do NOT lower --long-prefill-token-threshold to fix this: 2048 cost idle prefill -47% and prose p10 -29% (v16); the V1 scheduler serves running FCFS with that value as the per-request chunk cap, and max_num_partial_prefills does not exist in this build. util alone moves nothing: at 70 it only grew KV 10→17.5 GiB with identical tok/s. util is the headroom that lets OFFGB drop; OFFGB is the lever)"
 
 metrics:
+  - name: "accepted tokens per verify step at temperature 1.0 - block verification / control (Card BR3, v26 GB300-only, greedy drafting)"
+    value: 0.999
+    unit: ratio
+    workload: "temp-1.0 per-class window (perclass_run_t.sh, 40 real Hermes prompts x 5 classes, 256 forced tokens, C1 + C8, r1/r2, seed 42); v26 launch (launch_ar6.sh + SPEC_EXTRA), image 0909, k [[1,8,5],[9,24,1]], greedy drafting, adaptive residency unfrozen on every arm"
+    aggregation: "1 + accepted/drafts from /metrics deltas over the whole window; B 3.116 vs mean(A 3.111, A2 3.125) = 3.118; bracket A -> B -> A2 2026-10-26 04:26-06:49 CDT. Mixed C1 window 2.093 vs 2.087 (1.003)."
+    label: "NULL - block verification does not change acceptance on a greedy-drafting lane; not promoted (BR3FAIL-G2)"
+    provenance: { run_id: 2026-10-26-br3-block-verification-null, method: "cardBR3_runner.sh + br3_verdict.py annotation tokens_per_verify_step_t1", raw: throughput.csv }
+  - name: "mixed C1 tok/s at temperature 1.0 - block verification / control (Card BR3)"
+    value: 0.998
+    unit: ratio
+    workload: "ar_mixed_t.py C1, 3 x 120 s, JP/DE essays + agent English alternating, temperature 1.0 seeded"
+    aggregation: "B 179.54 vs mean(A 180.07, A2 179.87) = 179.97 (-0.24%; bar -2%), 0 errors"
+    provenance: { run_id: 2026-10-26-br3-block-verification-null, method: "cardBR3_runner.sh G3 + br3_verdict.py", raw: throughput.csv }
+  - name: "per-class decode at temperature 1.0, structured class - block verification / control (Card BR3, the failing G2 cell)"
+    value: 0.973
+    unit: ratio
+    workload: "perclass_run_t.sh structured class, C1, 40 prompts x 256 forced tokens, r1/r2, temperature 1.0"
+    aggregation: "B 210.3 vs mean(A 214.7, A2 217.8) at C1 (bar -2.1%); C8 0.970 (bar -2.0%). Other C1 cells prose 1.000, code 0.984, shell 0.995, tool_json 1.015; C8 prose 0.989, code 1.088, shell 1.044, tool_json 1.086 (controls' own C8 spread 4.2% code, 9.1% tool_json). TF flips 1.09-1.13% vs control floor 1.09%, gauntlet 12/12 all arms."
+    provenance: { run_id: 2026-10-26-br3-block-verification-null, method: "br3_verdict.py G2_perclass_t1", raw: throughput.csv }
   - name: "held-out mixed C1 aggregate, adaptation frozen — v26 seed map vs September static map (Card AR6 H1)"
     value: 183.73
     unit: tok/s
@@ -589,6 +608,7 @@ verification:
 
 
 limits:
+  - "Block verification is a no-op with greedy drafting; measure spec-decode changes at temperature>0 (Card BR3, 2026-10-26). rejection_sample_method=block on v26 (greedy DSpark drafts, k [[1,8,5],[9,24,1]]) gave 0.999x accepted tokens per verify step at temperature 1.0 and mixed C1 -0.2%; verdict BR3FAIL-G2 on structured C1 0.973 / C8 0.970, fidelity at the control floor (TF flips 1.09-1.13% vs 1.09%, gauntlet 12/12). Our reading, untested - a one-hot greedy draft leaves block verification nothing to reweight. The sidecar lane drafts probabilistically and gained +2.0% tok/step from the same key (Card BR1, v27). Not promoted here; Card BR4 (probabilistic drafting, then probabilistic + block) is queued. results/2026-10-26-br3-block-verification-null/."
   - "v26 PROMOTED 2026-10-24 ~21:30 CDT WITHOUT THE 48 h SOAK (waived by James at promotion). The AR5 soak started ~19:57 CDT and was cancelled ~20:4x CDT; the longest unattended window on the v26 config so far is ~1 h plus the Card AR6 / gauntlet battery traffic. Unmeasured on v26: multi-day host-memory drift, multi-hour swap churn under real traffic, BFCL, GSM8K, teacher-forced Δlogprob, C4+ concurrency, and any 128K / 1M request (boot KV is 2,495,694 tokens = 2.38x at 1M; the nearest 1M-class receipt, a 954,028-token needle recalled in ~33 s, is the SIDECAR lane's Card KV3, not this lane). results/2026-10-24-v26-seeded-adaptive/."
   - "CORRECTED 2026-10-24: adaptive-residency convergence is NOT 60-90 s (2026-10-23 card and the Part 1 post first said so). That figure came from 30-second medians over five rotating prompts whose converged speeds differ by up to 19% - a windowing artifact. Re-analysis of the 2026-10-23 telemetry (static boot): cold share back under 1% in 9-16 s and each prompt at ~90% of its converged speed in ~12-20 s. Card AR6 on the v26 seed boot: cold-share T90 8.7 s (agent -> JP/DE) and 14.0 s (JP/DE -> agent). Correction live on https://al-engr.com/gb300-adaptive-expert-residency.html."
   - "Swap cost on v26 (first measurement, hook v26ar.2 step ring): a host step that applies swaps runs ~1.9x the p95 of a swap-free step (G2 FAIL vs its 1.25 bar on every cell including the shipped-policy control); ~1.3-2.4 ms excess per applied swap, of which the CUDA row copy is ~0.26 ms (the rest is the in-step stall). Whole seed boot - 2.53% of 267,226 host steps were swap-bearing; p99 host step 22.17 ms vs 19.52 ms for swap-free steps alone, under shift-heavy test traffic; steady churn 95-112 swaps/min. If tail latency binds, the designed follow-up is a spare row per bank with asynchronous rotation (not built)."
@@ -655,3 +675,4 @@ links:
   pin_hot_experts: https://al-engr.com/vllm-pin-hot-experts.html
   blog_adaptive_residency_part1: https://al-engr.com/gb300-adaptive-expert-residency.html
   blog_adaptive_residency_part3_seed_map: https://al-engr.com/gb300-adaptive-residency-seed-map.html
+  blog_brrr_block_verification: https://al-engr.com/gb300-vs-4x-rtx6000-dsv41-flash-brrr.html

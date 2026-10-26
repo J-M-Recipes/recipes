@@ -1,0 +1,269 @@
+2c2,4
+< """br1_verdict.py — Card BR1 verdict (DSpark block verification vs sequential rejection sampling, A -> B -> A2). Pure stdlib.
+---
+> """br3_verdict.py — Card BR3 verdict (DSpark block verification vs sequential rejection sampling, A -> B -> A2) on the GB300-ONLY
+> v26seed "Seeded Adaptive" recipe (Grace UVA offload, no RTX sidecar). Pure stdlib. Clone of br1_verdict_rescore.py (the fixed
+> BR1 verdict: env compared order-insensitively, G2b no-op bar honours the controls' r1/r2 spread) with BR3 paths/names.
+4c6
+< Usage:  br1_verdict.py <R> [--out verdict.json]   -> <R>/verdict.json + human table on stdout.
+---
+> Usage:  br3_verdict.py <R> [--out verdict.json]   -> <R>/verdict.json + human table on stdout.
+12,21c14,25
+< Why temperature 1.0 is primary: at af7f9488 block verification runs only for non-greedy rows (rejection_sampler_utils.py
+< `USE_BLOCK_VERIFICATION and not is_greedy`); greedy rows accept iff draft == target argmax, so a temp-0 B is A by construction.
+< 
+< Inputs (<R> = ~/dsv41/m3/br1/results-cardBR1, written by cardBR1_runner.sh):
+<   <X>/facts.json, args.json, env.json, rtx-args.json, boot-autotune.log, boot-block.log    boot facts (X in A B A2)
+<   args-before-<V25>.json, env-before-<V25>.json, args-before-<V25>-rtx.json                production ground truth
+<   <X>/perclass-t1/perclass-table-BR1-<X>-t1.json (+ raw perclass-BR1-<X>-t1-r{1,2}-{c1,c8}.json)   temp 1.0 (G1, G2)
+<   <X>/perclass-t0/perclass-table-BR1-<X>-t0.json                                         stock temp-0 window (G1, G2b)
+<   <X>/mixed-BR1-<X>-c1-r<k>.json      ar_mixed_t.py C1 120 s at temp 1.0 (G3)
+<   tf-compare-BR1-A-vs-BR1-B.json, tf-compare-BR1-A2-vs-BR1-B.json, tf-compare-BR1-A-vs-BR1-A2.json; <X>/tf-BR1-<X>.jsonl (G4)
+---
+> Differences vs BR1: ground truth = the stopped v26seed container (args-ref-<REF>.json, env-ref-, binds-ref-), not production;
+> G0 KV rule = B and A2 equal A (no fixed constant; v26seed's own boot-log value is an annotation); G0 also checks the v26ar2 hook
+> wiring/guard lines, the Binds (equal except the per-arm /ar source) and that GO + unfreeze were acknowledged (production regime);
+> no sidecar / card watchdog => G7 = server FF errors 0 + foreign POSTs 0 per arm. Bars G1..G6 unchanged.
+> 
+> Inputs (<R> = ~/dsv41/m3/br3/results-cardBR3, written by cardBR3_runner.sh):
+>   <X>/facts.json, args.json, env.json, binds.json, go.json, boot-autotune.log, boot-block.log, ar-lines.tsv   (X in A B A2)
+>   args-ref-<REF>.json, env-ref-<REF>.json, binds-ref-<REF>.json, kv-ref.txt                     control ground truth
+>   <X>/perclass-t1/perclass-table-BR3-<X>-t1.json (+ raw perclass-BR3-<X>-t1-r{1,2}-{c1,c8}.json)   temp 1.0 (G1, G2)
+>   <X>/perclass-t0/perclass-table-BR3-<X>-t0.json                                         stock temp-0 window (G1, G2b)
+>   <X>/mixed-BR3-<X>-c1-r<k>.json      ar_mixed_t.py C1 120 s at temp 1.0 (G3)
+>   tf-compare-BR3-A-vs-BR3-B.json, tf-compare-BR3-A2-vs-BR3-B.json, tf-compare-BR3-A-vs-BR3-A2.json; <X>/tf-BR3-<X>.jsonl (G4)
+23,24c27,28
+<   gauntlet-<X>/summary.json (G5) ; <X>/turns-BR1-<X>.json (G6) ; <X>/wd.json, errcount-<X>[-rtx].txt (G7)
+<   <X>/foreign-*.txt (G0b) ; <X>/metrics/<cell>-{start,end}.txt (annotation) ; mem.tsv ; restore-watchdog.json (annotation)
+---
+>   gauntlet-<X>/summary.json (G5) ; <X>/turns-BR3-<X>.json (G6) ; errcount-<X>.txt (G7)
+>   <X>/foreign-*.txt (G0b, G7) ; <X>/metrics/<cell>-{start,end}.txt (annotation) ; mem.tsv ; restore-watchdog.json (annotation)
+42,43c46,48
+< KV_EXPECT = "4,400,013"
+< V25 = "dsv41-vllm-1017-v25m-kvtier"
+---
+> REF = "dsv41-vllm-1017-v26seed-BOUND-REF"
+> IMAGE_ID = "sha256:00d577a6a63281e15336029d5bcee4e9a2cf182214a4f20ba6111b1c8e79893d"
+> HOOK_KEYS_N = 40        # PIN_HOT rehome layer= lines (one per MoE layer)
+52c57
+<          "G3_mixed_c1_t1": "G3", "G4_tf": "G4", "G5_gauntlet": "G5", "G6_turns": "G6", "G7_watchdog": "G7"}
+---
+>          "G3_mixed_c1_t1": "G3", "G4_tf": "G4", "G5_gauntlet": "G5", "G6_turns": "G6", "G7_errors": "G7"}
+142a148,176
+> def ar_lines(p):
+>     """<epoch> <tag> swaps=N telemetry=M steps_bytes=K  ->  {tag: {swaps, telemetry, steps_bytes}} (last wins) + cells delta"""
+>     out = {}
+>     try:
+>         for ln in Path(p).read_text().splitlines():
+>             parts = ln.split("\t")
+>             if len(parts) < 3:
+>                 continue
+>             d = {}
+>             for kv in parts[2:]:
+>                 k, _, v = kv.partition("=")
+>                 try:
+>                     d[k] = int(v)
+>                 except ValueError:
+>                     d[k] = v
+>             out[parts[1]] = d
+>     except Exception:  # noqa: BLE001
+>         return None
+>     s, e = out.get("pct1-start"), out.get("turns-end") or out.get("stop")
+>     if s and e:
+>         out["_cells_delta"] = {k: e.get(k, 0) - s.get(k, 0) for k in ("swaps", "telemetry", "steps_bytes")
+>                                if isinstance(e.get(k), int) and isinstance(s.get(k), int)}
+>     return out
+> 
+> 
+> def norm_binds(L):
+>     return sorted(("<AR>:/ar" if b.endswith(":/ar") else b) for b in (L or []))
+> 
+> 
+144c178
+<     tag = f"BR1-{arm}-{win}"
+---
+>     tag = f"BR3-{arm}-{win}"
+166c200,201
+<          "rtx_args": jl(A / "rtx-args.json"), "autotune": autotune(A / "boot-autotune.log")}
+---
+>          "binds": jl(A / "binds.json"), "go": jl(A / "go.json"), "autotune": autotune(A / "boot-autotune.log"),
+>          "ar_lines": ar_lines(A / "ar-lines.tsv")}
+173c208
+<     for f in sorted(glob.glob(str(A / f"mixed-BR1-{arm}-c1-r*.json")), key=lambda s: int(s.rsplit("-r", 1)[1].split(".")[0])):
+---
+>     for f in sorted(glob.glob(str(A / f"mixed-BR3-{arm}-c1-r*.json")), key=lambda s: int(s.rsplit("-r", 1)[1].split(".")[0])):
+180c215
+<     c["tf_capture"] = (A / f"tf-BR1-{arm}.jsonl").exists() and (A / f"tf-BR1-{arm}.jsonl").stat().st_size > 0
+---
+>     c["tf_capture"] = (A / f"tf-BR3-{arm}.jsonl").exists() and (A / f"tf-BR3-{arm}.jsonl").stat().st_size > 0
+182c217
+<     t = jl(A / f"turns-BR1-{arm}.json")
+---
+>     t = jl(A / f"turns-BR3-{arm}.json")
+190d224
+<     c["wd"] = jl(A / "wd.json")
+192d225
+<     c["err_sidecar"] = rint(R / f"errcount-{arm}-rtx.txt")
+234,236c267,273
+<     prod_args = jl(R / f"args-before-{V25}.json")
+<     prod_env = jl(R / f"env-before-{V25}.json")
+<     prod_rtx = jl(R / f"args-before-{V25}-rtx.json")
+---
+>     prod_args = jl(R / f"args-ref-{REF}.json")      # "prod" = the v26seed control ground truth in this card
+>     prod_env = jl(R / f"env-ref-{REF}.json")
+>     prod_binds = jl(R / f"binds-ref-{REF}.json")
+>     try:
+>         kv_ref = (R / "kv-ref.txt").read_text().strip() or None
+>     except Exception:  # noqa: BLE001
+>         kv_ref = None
+240c277,280
+<     # ---- G0 binding + wiring: every arm bound, kv tokens, block_in_args 1/0/0, args/env identical to production but the spec
+---
+>     # ---- G0 binding + wiring: every arm bound; KV: B and A2 equal A; block_in_args 0/1/0; A/A2 Args == v26seed; B Args ==
+>     # v26seed except the spec (== v26seed + the key); Env == v26seed (order-insensitive); Binds == v26seed except the /ar source;
+>     # image 0909; hook wiring/guard lines; GO + unfreeze acknowledged (production regime). A control with broken wiring /
+>     # regime / odd KV is INVALID (its numbers are not the control); B -> FAIL.
+241a282
+>     kvs = {a: (cells[a]["facts"] or {}).get("kv_tokens") or None for a in ARMS}
+247,249c288,289
+<         bits = [f"kv={f.get('kv_tokens') or 'MISSING'}", f"block_in_args={f.get('block_in_args')}(want {want})"]
+<         if f.get("kv_tokens") != KV_EXPECT:
+<             g.fail = True; bits.append("KV!")
+---
+>         bad_ctl = lambda: (g.inv.add(a) if a in CTRL else setattr(g, "fail", True))
+>         bits = [f"kv={kvs[a] or 'MISSING'}", f"block_in_args={f.get('block_in_args')}(want {want})"]
+257c297
+<             bits.append(f"args==prod {ok}")
+---
+>             bits.append(f"args==v26seed {ok}")
+267c307
+<             bits.append(f"args==prod-except-spec {rest_ok} spec==prod+block {spec_ok}")
+---
+>             bits.append(f"args==v26seed-except-spec {rest_ok} spec==v26seed+block {spec_ok}")
+269,273c309,325
+<         env, rtx = cells[a]["env"], cells[a]["rtx_args"]
+<         eok = (env is not None and prod_env is not None and sorted(env) == sorted(prod_env))  # RESCORE: order-insensitive
+<         rok = (rtx is not None and prod_rtx is not None and rtx == prod_rtx)
+<         bits += [f"env==prod {eok}", f"rtx_args==prod {rok}"]
+<         g.fail |= not (eok and rok)
+---
+>         env, binds = cells[a]["env"], cells[a]["binds"]
+>         eok = (env is not None and prod_env is not None and sorted(env) == sorted(prod_env))   # order-insensitive from the start
+>         bok = (binds is not None and prod_binds is not None and norm_binds(binds) == norm_binds(prod_binds))
+>         iok = f.get("image") == IMAGE_ID
+>         bits += [f"env==v26seed(sorted) {eok}", f"binds==v26seed(except /ar) {bok}", f"image0909 {iok}"]
+>         g.fail |= not (eok and bok and iok)
+>         hk = (f.get("rehome_done") == 1 and f.get("rehome_layers") == HOOK_KEYS_N and f.get("pin_abort") == 0
+>               and f.get("hook_failed") == 0 and not f.get("hook_keys_missing"))
+>         bits.append(f"hook rehome {f.get('rehome_layers')}/{HOOK_KEYS_N} done={f.get('rehome_done')} abort={f.get('pin_abort')} "
+>                     f"failed={f.get('hook_failed')} missing=[{f.get('hook_keys_missing') or ''}] host_avail@L9={f.get('host_avail_l9_gib')}GiB")
+>         if not hk:
+>             bad_ctl(); bits.append("HOOK!")
+>         go = cells[a]["go"] or {}
+>         gok = (go.get("go_seen_log") or 0) >= 1 and (go.get("unfreeze_log") or 0) >= 1
+>         bits.append(f"GO+unfreeze {go.get('go_seen_log')}/{go.get('unfreeze_log')} ctrl={json.dumps(go.get('ctrl'))}")
+>         if not gok:
+>             bad_ctl(); bits.append("REGIME!")
+274a327,344
+>     # KV rule: B and A2 equal A. Majority names the odd arm: odd B -> FAIL, odd control -> INVALID(that control).
+>     present = {a: v for a, v in kvs.items() if v and cells[a]["facts"] and cells[a]["facts"].get("bound_at")}
+>     kvtxt = f"KV A={kvs['A']} B={kvs['B']} A2={kvs['A2']} (v26seed boot log {kv_ref}, info)"
+>     if "A" in present and all(present.get(a) == present["A"] for a in ("B", "A2") if a in present):
+>         for a in ("B", "A2"):
+>             if (cells[a]["facts"] or {}).get("bound_at") and a not in present:
+>                 (g.inv.add(a) if a in CTRL else setattr(g, "fail", True)); kvtxt += f" KV MISSING on bound {a}"
+>     else:
+>         vals = [present.get(a) for a in ARMS]
+>         maj = next((v for v in vals if v is not None and vals.count(v) >= 2), None)
+>         odd = [a for a in ARMS if present.get(a) != maj] if maj else list(ARMS)
+>         for a in odd:
+>             if a in CTRL:
+>                 g.inv.add(a)
+>             else:
+>                 g.fail = True
+>         kvtxt += f" KV! odd={odd}"
+>     g.txt.append(kvtxt)
+282c352,353
+<     hh += f"; one autotune key across arms: {len(dirs) == 1}"
+---
+>     hh += f"; one autotune key across arms: {len(dirs) == 1}; 0909 hash-hit shape (Loaded N == Saved N, same dir, span <= 60 s): " + ", ".join(
+>         f"{a}={bool(at[a].get('hash_hit_shape')) and (at[a]['elapsed_s'] is not None and at[a]['elapsed_s'] <= 60)}" for a in ARMS)
+399,400c470,471
+<         fl = jl(R / "tf-compare-BR1-A-vs-BR1-A2.json")
+<         cmp = {a: jl(R / f"tf-compare-BR1-{a}-vs-BR1-B.json") for a in CTRL}
+---
+>         fl = jl(R / "tf-compare-BR3-A-vs-BR3-A2.json")
+>         cmp = {a: jl(R / f"tf-compare-BR3-{a}-vs-BR3-B.json") for a in CTRL}
+459c530
+<     # ---- G7 watchdog + FF errors (sidecar FF reported)
+---
+>     # ---- G7 server FF errors 0 + foreign POSTs 0 per arm (no sidecar, no card watchdog on this lane)
+462c533
+<         w, e = cells[a]["wd"], cells[a]["err_server"]
+---
+>         e, fr = cells[a]["err_server"], cells[a]["foreign"]
+465,467c536,539
+<         if not w or w.get("timeouts") is None or w.get("trips") is None or e is None:
+<             (g.inv.add(a) if a in CTRL else setattr(g, "fail", True)); g.txt.append(f"{a}: UNMEASURED (wd={bool(w)} err={e})"); continue
+<         bad = w["timeouts"] != 0 or w["trips"] != 0 or not w.get("alive_at_collect") or e != 0
+---
+>         n = sum(v or 0 for v in fr.values()) if fr else None
+>         if e is None or n is None:
+>             (g.inv.add(a) if a in CTRL else setattr(g, "fail", True)); g.txt.append(f"{a}: UNMEASURED (ff={e} foreign={n})"); continue
+>         bad = e != 0 or n != 0
+470,471c542,543
+<         g.txt.append(f"{a}: timeouts={w['timeouts']} trips={w['trips']} alive={w.get('alive_at_collect')} ff={e} (sidecar ff={cells[a]['err_sidecar']}){' BAD' if bad else ''}")
+<     gs["G7_watchdog"] = (g, "; ".join(g.txt))
+---
+>         g.txt.append(f"{a}: ff={e} foreign={n}{' BAD' if bad else ''}")
+>     gs["G7_errors"] = (g, "; ".join(g.txt))
+478c550
+<         res = "INVALID-CONTROL-" + "-".join(inv); suffix = "BR1-" + res
+---
+>         res = "INVALID-CONTROL-" + "-".join(inv); suffix = "BR3-" + res
+480c552
+<         res = "INVALID-B"; suffix = "BR1-INVALID-B"
+---
+>         res = "INVALID-B"; suffix = "BR3-INVALID-B"
+482c554
+<         res = "FAIL"; suffix = "BR1FAIL-" + "-".join(SHORT[k] for k in failed)
+---
+>         res = "FAIL"; suffix = "BR3FAIL-" + "-".join(SHORT[k] for k in failed)
+484c556
+<         res = "PASS"; suffix = "BR1PASS"
+---
+>         res = "PASS"; suffix = "BR3PASS"
+509a582,586
+>     ann["kv_v26seed_boot_log"] = kv_ref
+>     ann["adaptive_ar_lines_cells_delta"] = {a: (cells[a]["ar_lines"] or {}).get("_cells_delta") for a in ARMS}
+>     ann["go"] = {a: cells[a]["go"] for a in ARMS}
+>     ann["host_avail_l9_gib"] = {a: (cells[a]["facts"] or {}).get("host_avail_l9_gib") for a in ARMS}
+>     ann["rtx_used_after_bind_mib"] = {a: (cells[a]["facts"] or {}).get("rtx_used_after_bind_mib") for a in ARMS}
+514,515c591,592
+<                 "turns": cells[a]["turns"], "wd": {k: (cells[a]["wd"] or {}).get(k) for k in ("timeouts", "trips", "alive_at_collect")},
+<                 "errcount_server": cells[a]["err_server"], "errcount_sidecar": cells[a]["err_sidecar"], "foreign": cells[a]["foreign"],
+---
+>                 "turns": cells[a]["turns"], "ar_cells_delta": (cells[a]["ar_lines"] or {}).get("_cells_delta"),
+>                 "errcount_server": cells[a]["err_server"], "foreign": cells[a]["foreign"],
+517c594
+<     return {"card": "BR1 block verification", "result": res, "suffix": suffix, "gates": gates, "gate_status": status,
+---
+>     return {"card": "BR3 block verification (GB300-only v26seed)", "result": res, "suffix": suffix, "gates": gates, "gate_status": status,
+526c603
+<     L = [f"Card BR1 verdict: {v['result']}   suffix {v['suffix']}", "",
+---
+>     L = [f"Card BR3 verdict: {v['result']}   suffix {v['suffix']}", "",
+531c608
+<     L += ["", "| arm | KV tokens | block_in_args | boot s | mixed C1 t1 mean | t1 prose C1 | t1 tool_json C1 | t0 prose C1 | wd t/trips | ff | foreign |",
+---
+>     L += ["", "| arm | KV tokens | block_in_args | boot s | mixed C1 t1 mean | t1 prose C1 | t1 tool_json C1 | t0 prose C1 | swaps during cells | ff | foreign |",
+537c614
+<                  f"{f2(x['perclass_t1']['tool_json/c1'])} | {f2(x['perclass_t0']['prose/c1'])} | {x['wd'].get('timeouts')}/{x['wd'].get('trips')} | "
+---
+>                  f"{f2(x['perclass_t1']['tool_json/c1'])} | {f2(x['perclass_t0']['prose/c1'])} | {(x['ar_cells_delta'] or {}).get('swaps', '-')} | "
+550c627,629
+<           f"ANNOTATION — production watchdog after restore: {v['annotations']['restore_watchdog']}"]
+---
+>           f"ANNOTATION — KV tokens in the v26seed boot log: {v['annotations']['kv_v26seed_boot_log']}; host_avail at rehome layer 9 (GiB): {v['annotations']['host_avail_l9_gib']}",
+>           f"ANNOTATION — adaptive residency during cells (/ar line deltas pct1-start -> turns-end): {v['annotations']['adaptive_ar_lines_cells_delta']}",
+>           f"ANNOTATION — production (v27) watchdog after restore: {v['annotations']['restore_watchdog']}"]

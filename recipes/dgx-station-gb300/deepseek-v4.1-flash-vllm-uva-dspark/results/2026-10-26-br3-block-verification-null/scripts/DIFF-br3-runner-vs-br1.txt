@@ -1,0 +1,622 @@
+2,13c2,17
+< # cardBR1_runner.sh — Card BR1: DSpark BLOCK verification ("rejection_sample_method":"block", Sun et al.) vs the default
+< # sequential rejection sampler, on the production v25m-kvtier sidecar recipe, bracketed A -> B -> A2, lane :30006, GB300.
+< # ONE AXIS = SPEC_EXTRA=',"rejection_sample_method":"block"' spliced into --speculative-config by launch_br1.sh (empty on
+< # A/A2 => args byte-identical to production). Not a compute-hash factor => hash-hit boot (~519 s) expected on every arm.
+< # Block verification applies only to NON-GREEDY rows (af7f9488 rejection_sampler_utils.py: USE_BLOCK_VERIFICATION and not
+< # is_greedy) => the primary speed cells sample at temperature 1.0 (perclass_run_t.sh, ar_mixed_t.py); the stock temp-0
+< # window is a no-op/parity sanity cell (G2b). TF, gauntlet, replay_turns are temp-0/teacher-forced (unchanged instruments).
+< # Detached: cd ~/dsv41/m3/br1 && setsid nohup bash cardBR1_runner.sh > /dev/null 2>&1 < /dev/null & echo $! > cardBR1.pid
+< # Abort: touch ~/dsv41/m3/br1/results-cardBR1/ABORT (checked between cells/boots) or kill -TERM <pid>.
+< # Structure cloned from ~/dsv41/m3/kv3/cardKV3_runner.sh (DIFF-vs-cardKV3.txt). Production restore, watchdog argv capture +
+< # re-arm, ISOLATE, foreign-POST counts, SETTLE gate and the append-only LANE-OWNER own() line from ~/dsv41/m2/cardM2_runner.sh
+< # (DIFF-restore-vs-cardM2.txt). DECISIONS + open questions: BRIEF-BR1.md.
+---
+> # cardBR3_runner.sh — Card BR3: DSpark BLOCK verification ("rejection_sample_method":"block") vs the default sequential
+> # rejection sampler, on the GB300-ONLY v26 "Seeded Adaptive" recipe (Grace UVA offload, no RTX sidecar), bracketed A -> B -> A2,
+> # lane :30006, GB300. Clone of ~/dsv41/m3/br1/cardBR1_runner.sh (DIFF-br3-runner-vs-br1.txt shows every change).
+> # CONTROL = exactly the stopped-kept container dsv41-vllm-1017-v26seed-BOUND-REF (launch_ar6.sh, image 0909, hook v26ar2,
+> # ROWMAP rowmap-mixed-ar-v1.json, --offload-backend uva --cpu-offload-gb 60, greedy drafting, k-schedule [[1,8,5],[9,24,1]],
+> # seqs 24). ONE AXIS = SPEC_EXTRA=',"rejection_sample_method":"block"' spliced into --speculative-config by launch_br3.sh
+> # (empty on A/A2 => Args byte-identical to v26seed). Not a compute-hash factor => hash-hit boot (~474-484 s on 0909) expected.
+> # Block verification is a no-op on greedy rows => the primary speed cells sample at temperature 1.0 (perclass_run_t.sh,
+> # ar_mixed_t.py — the BR1 instruments, reused by absolute path); the stock temp-0 window is a parity sanity cell (G2b).
+> # ADAPTIVE RESIDENCY (production regime, M2/AR6 GO+ctrl handling): the hook boots FROZEN (PIN_ADAPTIVE_FREEZE=1, worker parked on
+> # /ar/GO). After bind every arm gets: touch <run>/GO -> ctrl.json = {"freeze": false, "baseline": true} (byte-identical to the
+> # v26seed production ~/dsv41/ar/soak/ctrl.json) -> fixed ADAPT_SETTLE_S (90 s) -> cells. Each arm has its OWN /ar run
+> # dir ($R/<arm>/ar): the production soak dir is never written. swaps.jsonl / telemetry.jsonl line counts at every cell start/end
+> # -> <arm>/ar-lines.tsv (annotation).
+> # Detached: cd ~/dsv41/m3/br3 && setsid nohup bash cardBR3_runner.sh > /dev/null 2>&1 < /dev/null & echo $! > cardBR3.pid
+> # Abort: touch ~/dsv41/m3/br3/results-cardBR3/ABORT (checked between cells/boots) or kill -TERM <pid>.
+15,20c19,24
+< #   preflight (refusals leave the lane untouched) -> capture production watchdog argv+cwd -> stop it (log moved aside)
+< #     -> stop the v25m-kvtier pair (kept) -> ISOLATE (tagged REJECT on :30006 for non-loopback)
+< #   per arm X in A B A2: wait_quiet + stop_all + drop_caches + SETTLE + MEM_MIN -> launch_br1.sh sidecar -> server
+< #       (EXTRA = production KV flags; SPEC_EXTRA empty on A/A2, block on B) -> arm BR1 watchdog (enforce) -> wait_bind
+< #       -> boot facts (KV tokens, args/env vs production, hash-hit shape, block_in_args)
+< #     cells (each via bg() with a timeout; /metrics vllm:spec_decode_* at every cell start/end):
+---
+> #   preflight (refusals leave the lane untouched) -> capture production (v27) watchdog argv+cwd -> stop it (log moved aside)
+> #     -> stop the v27-block pair (kept) -> ISOLATE -> REFUSE (and restore) if the RTX still holds > 2048 MiB (BR3 is Grace-only)
+> #   per arm X in A B A2: wait_quiet + stop_all + drop_caches + SETTLE + MEM_MIN + RTX idle + GB300 idle -> launch_br3.sh
+> #       (single step, no sidecar, no card watchdog) -> wait_bind -> boot facts (KV, args/env/binds vs v26seed, hook guard lines,
+> #       hash-hit shape, block_in_args) -> GO + unfreeze + 90 s settle
+> #     cells (each via bg() with a timeout; /metrics vllm:spec_decode_* + /ar line counts at every cell start/end):
+22c26
+< #       (2) pct0  : stock perclass_run.sh (temp 0, full r1+r2: it cannot skip r2) -> X/perclass-t0   (no-op sanity, G2b)
+---
+> #       (2) pct0  : stock perclass_run.sh (temp 0, full r1+r2) -> X/perclass-t0   (no-op sanity, G2b)
+25,29c29,34
+< #       (5) gauntlet (KV3 gauntlet(), tags br1-X; G5)   (6) turns: replay_turns.py PASSES=2 (G6)
+< #       (7) errcount server/-rtx, foreign POSTs, BR1 watchdog collect (G7, G0b)
+< #     -> kill BR1 watchdog -> stop pair (keep)
+< #   END: restore production pair + fail-stop watchdog (M2 restore_lane; double-forked; PPID 1 checked; ISOLATE removed
+< #     first) -> TF compares + margin flips (CPU) -> verdict -> renames -> SUMMARY -> ledger -> LANE-OWNER append -> FINAL
+---
+> #       (5) gauntlet (tags br3-X; G5)   (6) turns: replay_turns.py PASSES=2 (G6)
+> #       (7) errcount server, foreign POSTs (G7, G0b)
+> #     -> stop arm (keep)
+> #   END: restore production v27 pair + fail-stop watchdog (BR1 restore_lane; -rtx first, wait 'serving', server; double-forked
+> #     watchdog, PPID 1 checked; ISOLATE removed first) -> TF compares + margin flips (CPU) -> verdict -> renames -> SUMMARY
+> #     -> ledger -> LANE-OWNER append -> FINAL
+31,33c36,38
+< HM=${BR1_HOME:-~}   # desk dry-run override only; production = ~
+< DS=$HM/dsv41; D=$DS/m3; B1=$D/br1
+< R=$B1/results-cardBR1
+---
+> HM=${BR3_HOME:-~}   # desk dry-run override only; production = ~
+> DS=$HM/dsv41; D=$DS/m3; B1=$D/br1; B3=$D/br3
+> R=$B3/results-cardBR3
+35,36c40,43
+< IMAGE=vllm/vllm-openai@sha256:3af6a45b060d681aa6254200f87859d1bb3c1f962afb3d15540b4b31d4a41063   # = launch_sidecar.sh default (af7f9488)
+< MODEL=${BR1_MODEL_DIR:-/models/DeepSeek-V4.1-Flash-1017-1bae0e1088993b9b82de08f59de5be5a34e42170}
+---
+> IMAGE=vllm/vllm-openai:deepseekv41-flash-0909                                         # = launch_ar6.sh / v26seed
+> IMAGE_ID=sha256:00d577a6a63281e15336029d5bcee4e9a2cf182214a4f20ba6111b1c8e79893d       # docker image inspect, 2026-10-26
+> PROD_IMAGE_ID=sha256:3af6a45b060d681aa6254200f87859d1bb3c1f962afb3d15540b4b31d4a41063  # v27 pair (af7f9488), restored at END
+> MODEL=${BR3_MODEL_DIR:-/models/DeepSeek-V4.1-Flash-1017-1bae0e1088993b9b82de08f59de5be5a34e42170}
+38c45
+< M3HOOK=$D/el8/deepseek-v4.1-flash/m3/hook
+---
+> HOOK=$HM/pin-hot-experts/v26ar2/hook
+40,41c47,48
+< LAUNCH=$B1/launch_br1.sh; LAUNCH_REF=$D/launch_sidecar.sh
+< VERDICT=$B1/br1_verdict.py
+---
+> LAUNCH=$B3/launch_br3.sh; LAUNCH_REF=$DS/ar/launch_ar6.sh
+> VERDICT=$B3/br3_verdict.py
+46,47c53,54
+< TF=$HM/pin-hot-experts/scripts/tf_logprob.py; CORPUS=$HM/pin-hot-experts/tf_corpus.jsonl   # CORPUS = cardR_1017_runner.sh line 15
+< FLIPS=$DS/1017/flips_margin_p2.py   # CLI from its header: REF.jsonl CAND.jsonl [--label X] [--calib R2B.jsonl]; last line GATE ...
+---
+> TF=$HM/pin-hot-experts/scripts/tf_logprob.py; CORPUS=$HM/pin-hot-experts/tf_corpus.jsonl
+> FLIPS=$DS/1017/flips_margin_p2.py   # CLI: REF.jsonl CAND.jsonl [--label X] [--calib R2B.jsonl]; last line GATE ...
+49,55c56,61
+< WD=$D/sidecar_watchdog.py
+< V25=dsv41-vllm-1017-v25m-kvtier; V25R=$V25-rtx
+< WDLOG=$D/logs/sidecar_watchdog.kvtier.log   # production fail-stop watchdog log (M2)
+< CWDLOG=$D/logs/sidecar_watchdog.br1.log; CWDSTAT=$D/logs/sidecar_watchdog.br1.status.json; CWDPID=$D/logs/sidecar_watchdog.br1.pid   # card watchdog
+< N_A=dsv41-vllm-1017-BR1-A; N_B=dsv41-vllm-1017-BR1-B; N_A2=dsv41-vllm-1017-BR1-A2
+< ALLN="$N_A $N_A-rtx $N_B $N_B-rtx $N_A2 $N_A2-rtx"
+< KVX="--kv-cache-memory 9126805504 --kv-offloading-size 48 --kv-offloading-backend native"   # production EXTRA, every arm
+---
+> WD=$D/sidecar_watchdog.py   # PRODUCTION watchdog only (re-armed at restore); BR3 arms run no card watchdog (no sidecar)
+> REF=dsv41-vllm-1017-v26seed-BOUND-REF   # control ground truth: STOPPED-and-kept, never started/stopped/renamed by this card
+> V27=dsv41-vllm-1017-v27-block-BOUND-REF; V27R=$V27-rtx
+> WDLOG=$D/logs/sidecar_watchdog.v27.log   # production fail-stop watchdog log (v27 promotion 2026-10-26 04:08)
+> N_A=dsv41-vllm-1017-BR3-A; N_B=dsv41-vllm-1017-BR3-B; N_A2=dsv41-vllm-1017-BR3-A2
+> ALLN="$N_A $N_B $N_A2"
+57c63,64
+< KV_EXPECT=4,400,013
+---
+> GO_CTRL='{"freeze": false, "baseline": true}'   # byte-identical to the v26seed production soak/ctrl.json (35 bytes)
+> RTX_IDLE_MIB=2048; GB_IDLE_MIB=8192
+64,66c71,74
+< # >>>>> TODO-SHA (Milo, after review + rename of the five BR1 drafts): fill the 8-char sha1 prefixes below. TODO-SHA never
+< # >>>>> matches, so the runner REFUSES at preflight until these are filled.
+< SHA_LAUNCH=${SHA_LAUNCH-24cdb66e}; SHA_VERDICT=${SHA_VERDICT-46a2ad52}
+---
+> # >>>>> TODO-SHA (Milo, after review + rename of the BR3 drafts): fill the 8-char sha1 prefixes of launch_br3.sh and
+> # >>>>> br3_verdict.py below. TODO-SHA never matches, so the runner REFUSES at preflight until these are filled.
+> SHA_LAUNCH=${SHA_LAUNCH-TODO-SHA}; SHA_VERDICT=${SHA_VERDICT-TODO-SHA}
+> # reused BR1 instruments (absolute paths in br1/, measured on the box 2026-10-26, desk read-only sha1sum)
+68d75
+< # measured on the box 2026-10-25 (desk, read-only sha1sum)
+70,74c77,81
+< SHA_TF=${SHA_TF-3638227d}; SHA_TURNS=${SHA_TURNS-5f7934a9}; SHA_ROWMAP=${SHA_ROWMAP-52e2861c}; SHA_SITE=${SHA_SITE-efe0bb6a}
+< SHA_PEER=${SHA_PEER-15d11022}
+< # extra pins (not in the card's list; same convention): diff reference, perclass table/x3/prompts, margin flips, corpora
+< SHA_LREF=${SHA_LREF-1796f1d9}; SHA_PCTAB=${SHA_PCTAB-6e6d3ff8}; SHA_X3=${SHA_X3-9d10d2e3}; SHA_PCPROMPTS=${SHA_PCPROMPTS-618898aa}
+< SHA_FLIPS=${SHA_FLIPS-affda07d}; SHA_CORPUS=${SHA_CORPUS-3672c1a7}; SHA_FIXTURE=${SHA_FIXTURE-e3f1aea4}
+---
+> SHA_TF=${SHA_TF-3638227d}; SHA_TURNS=${SHA_TURNS-5f7934a9}
+> # v26ar2 hook dir (mounted as /w): rowmap, sitecustomize, hook, adaptive module
+> SHA_ROWMAP=${SHA_ROWMAP-52e2861c}; SHA_SITE=${SHA_SITE-e65a93d7}; SHA_HOOKPY=${SHA_HOOKPY-69bf0777}; SHA_E4=${SHA_E4-7ea55cbd}
+> SHA_LREF=${SHA_LREF-f9df7b3f}; SHA_PCTAB=${SHA_PCTAB-6e6d3ff8}; SHA_X3=${SHA_X3-9d10d2e3}; SHA_PCPROMPTS=${SHA_PCPROMPTS-618898aa}
+> SHA_FLIPS=${SHA_FLIPS-affda07d}; SHA_CORPUS=${SHA_CORPUS-3672c1a7}; SHA_FIXTURE=${SHA_FIXTURE-e3f1aea4}; SHA_SUITE=${SHA_SUITE-e5f575dc}
+78a86
+> ADAPT_SETTLE_S=${ADAPT_SETTLE_S:-90}
+81c89
+< if [[ -e $R ]]; then echo "$(date '+%F %T %Z') REFUSE: $R exists (refuse to mix runs; move it aside)" | tee -a "$B1/cardBR1.refused.log" >&2; exit 5; fi
+---
+> if [[ -e $R ]]; then echo "$(date '+%F %T %Z') REFUSE: $R exists (refuse to mix runs; move it aside)" | tee -a "$B3/cardBR3.refused.log" >&2; exit 5; fi
+91c99
+< not_known(){ docker ps --format '{{.Names}}' | grep -vxE "$V25|$V25R" | tr '\n' ' '; }
+---
+> not_known(){ docker ps --format '{{.Names}}' | grep -vxE "$V27|$V27R" | tr '\n' ' '; }
+93,96c101,102
+< wd_pids(){ ps -eo pid=,comm=,args= | awk -v s="$V25" '$2=="python3" && index($0,"sidecar_watchdog.py") && index($0,"--server " s " ") {print $1}' | tr '\n' ' '; }   # python3 process only (its bash -c parent also carries the same argv text)
+< wd_orphan_parent(){ # pid of an orphaned bash (PPID 1, one child) holding the production watchdog: the M2 form
+<   # `( cd && setsid nohup ... & )` backgrounds the whole AND-list, so a bash copy carrying the PREVIOUS runner's argv
+<   # stays the watchdog's parent (seen 2026-10-25 after cardM3: ppid 1870623 'bash .../cardM3_runner.sh'). It is not a runner.
+---
+> wd_pids(){ ps -eo pid=,comm=,args= | awk -v s="$V27" '$2=="python3" && index($0,"sidecar_watchdog.py") && index($0,"--server " s " ") {print $1}' | tr '\n' ' '; }   # python3 process only
+> wd_orphan_parent(){ # pid of an orphaned bash (PPID 1, one child) holding the production watchdog (BR1)
+102c108
+<   ps -eo pid,args | grep -E '^ *[0-9]+ bash .*(runner\.sh|perclass_run\.sh|perclass_run_t\.sh)' | grep -v "cardBR1_runner.sh" | grep -v grep \
+---
+>   ps -eo pid,args | grep -E '^ *[0-9]+ bash .*(runner\.sh|perclass_run\.sh|perclass_run_t\.sh)' | grep -v "cardBR3_runner.sh" | grep -v grep \
+115a122
+> gb_used(){ nvidia-smi --id=$GB300 --query-gpu=memory.used --format=csv,noheader,nounits 2>/dev/null | tr -d ' '; }
+116a124,126
+> envcmp(){ python3 -c 'import json,sys;print(int(sorted(json.load(open(sys.argv[1])))==sorted(json.load(open(sys.argv[2])))))' "$1" "$2" 2>/dev/null || echo 0; }   # ORDER-INSENSITIVE (docker reorders Env)
+> spec_el(){ python3 -c 'import json,sys;a=json.load(open(sys.argv[1]));print(a[a.index("--speculative-config")+1])' "$1" 2>/dev/null; }
+> lc(){ if [[ -f $1 ]]; then grep -c . "$1"; else echo 0; fi; }
+137c147
+< FW_TAG=cardBR1-isolate
+---
+> FW_TAG=cardBR3-isolate
+156c166
+< wait_bind(){ # name maxmin since [nofastfail] [sidecar]
+---
+> wait_bind(){ # name maxmin since [nofastfail] [sidecar]   (sidecar arg used only by the v27 restore)
+165c175
+<     (( i % 30 == 0 )) && log "  $n waiting $((i/6)) min: MemAvail=$(memavail)GiB last=[$(tr '\r' '\n' < "$lf" | grep -E 'MEGA_PEER|Offload|offload|Autotun|Capturing|KV cache size|Loading safetensors|Loading weights|compile' | tail -1 | cut -c1-160)]"
+---
+>     (( i % 30 == 0 )) && log "  $n waiting $((i/6)) min: MemAvail=$(memavail)GiB last=[$(tr '\r' '\n' < "$lf" | grep -E 'PIN_HOT|MEGA_PEER|Offload|offload|Autotun|Capturing|KV cache size|Loading safetensors|Loading weights|compile' | tail -1 | cut -c1-160)]"
+178c188
+<   bg bash -c 'cd "$1" && shift && exec timeout 1200 python3 run_suite.py "$@"' _ "$GDIR" --base-url $U/v1 --model $M --output "$R/gauntlet-$tag" --tag "br1-$tag" --cache-salt "br1-$tag" --sandbox-image "$GIMG" --workers 4 > "$R/gauntlet-log-$tag.txt" 2>&1 || log "gauntlet $tag nonzero rc"
+---
+>   bg bash -c 'cd "$1" && shift && exec timeout 1200 python3 run_suite.py "$@"' _ "$GDIR" --base-url $U/v1 --model $M --output "$R/gauntlet-$tag" --tag "br3-$tag" --cache-salt "br3-$tag" --sandbox-image "$GIMG" --workers 4 > "$R/gauntlet-log-$tag.txt" 2>&1 || log "gauntlet $tag nonzero rc"
+180c190
+< BOOT="-"; NAME=""; A=""
+---
+> BOOT="-"; NAME=""; A=""; RUN=""
+184a195,201
+> # ---- AR conventions (M2/AR6): RUN = the boot's /ar mount; ctrl() atomic tmp+mv then 3 s (hook polls 1 s, mtime-gated)
+> ctrl(){ printf '%s' "$1" > "$RUN/ctrl.tmp" && mv "$RUN/ctrl.tmp" "$RUN/ctrl.json" && touch "$RUN/ctrl.json"
+>   ph ctrl "\"ctrl\": $1${2:+, \"why\": \"$2\"}"; log "CTRL $BOOT ${2:-} $1"; sleep 3; }
+> arlines(){ # tag -> one annotation line: /ar swaps.jsonl + telemetry.jsonl line counts, steps.bin bytes
+>   [[ -n $RUN && -n $A ]] || return 0
+>   printf '%s\t%s\tswaps=%s\ttelemetry=%s\tsteps_bytes=%s\n' "$(date +%s)" "$1" "$(lc "$RUN/swaps.jsonl")" "$(lc "$RUN/telemetry.jsonl")" \
+>     "$(stat -c %s "$RUN/steps.bin" 2>/dev/null || echo 0)" >> "$A/ar-lines.tsv"; }
+193,228c210,212
+< # ---- BR1 card watchdog (one per boot; enforce). Killed BEFORE the pair is stopped (else it trips on the sidecar stop).
+< card_wd_pids(){ ps -eo pid=,comm=,args= | awk '$2=="python3" && index($0,"sidecar_watchdog.py") && index($0,"--server dsv41-vllm-1017-BR1-") {print $1}' | tr '\n' ' '; }
+< arm_wd(){ [[ -s $CWDLOG ]] && mv "$CWDLOG" "$R/watchdog-stale-$(date +%H%M%S).log"
+<   rm -f "$CWDSTAT"
+<   setsid nohup python3 "$WD" --server "$1" --mode enforce --interval 1 --stall 2 \
+<     --status "$CWDSTAT" --log "$CWDLOG" > /dev/null 2>&1 < /dev/null &
+<   echo $! > "$CWDPID"; sleep 3
+<   kill -0 "$(cat "$CWDPID")" 2>/dev/null && log "BR1 watchdog armed pid $(cat "$CWDPID") on $1 (enforce, stall 2 s)" || log "WARN: BR1 watchdog did not start on $1"; }
+< wd_collect(){ # arm -> $R/<arm>/wd.json ; must run BEFORE kill_wd
+<   local arm=$1 alive=false p; p=$(cat "$CWDPID" 2>/dev/null)
+<   [[ -n $p ]] && kill -0 "$p" 2>/dev/null && alive=true
+<   python3 - "$CWDSTAT" "$CWDLOG" "$alive" "$R/$arm/wd.json" <<'PY' 2>/dev/null || echo '{"error": "wd_collect failed"}' > "$R/$arm/wd.json"
+< import json, sys
+< stat, logf, alive, out = sys.argv[1:5]
+< d = {"alive_at_collect": alive == "true", "status": None, "timeouts": None, "trips": None}
+< try:
+<     st = json.load(open(stat)); d["status"] = st
+<     if st.get("words") is not None and st.get("timeouts_base") is not None:
+<         d["timeouts"] = st["words"][2] - st["timeouts_base"]
+< except Exception as e:
+<     d["status_error"] = repr(e)
+< try:
+<     L = open(logf).read().splitlines()
+<     d["trips"] = sum(1 for l in L if " TRIP " in l); d["log_lines"] = len(L); d["trip_lines"] = [l for l in L if " TRIP " in l][:5]
+< except Exception as e:
+<     d["log_error"] = repr(e)
+< json.dump(d, open(out, "w"), indent=1)
+< PY
+<   log "WATCHDOG $arm: $(python3 -c "import json;d=json.load(open('$R/$arm/wd.json'));print('alive',d.get('alive_at_collect'),'timeouts',d.get('timeouts'),'trips',d.get('trips'))" 2>&1 | tail -1)"; }
+< kill_wd(){ local p; p=$(cat "$CWDPID" 2>/dev/null)
+<   [[ -n $p ]] && kill "$p" 2>/dev/null && log "BR1 watchdog $p stopped"
+<   for p in $(card_wd_pids); do kill "$p" 2>/dev/null; done; sleep 2
+<   for p in $(card_wd_pids); do log "WARN: BR1 watchdog $p still alive; kill -9"; kill -9 "$p" 2>/dev/null; done
+<   rm -f "$CWDPID"; return 0; }
+< stop_pair(){ local n=$1
+<   kill_wd
+---
+> # ---- BR3 arms are single GB300-only containers: no sidecar, no card watchdog. stop_arm never touches any -rtx container.
+> stop_arm(){ local n=$1
+>   arlines stop
+230,231d213
+<   is_up "$n-rtx" && { log "stop-and-keep $n-rtx"; docker stop -t 30 "$n-rtx" >/dev/null; }
+<   [[ -n $A && -s $CWDLOG ]] && mv "$CWDLOG" "$A/watchdog.log"
+234c216
+< # ---- production fail-stop watchdog (M2): argv captured from /proc at preflight; re-armed with the SAME argv (log pinned to $WDLOG)
+---
+> # ---- production fail-stop watchdog (BR1/M2): argv captured from /proc at preflight; re-armed with the SAME argv (log pinned to $WDLOG)
+242c224
+<   ( cd "$cwd" || exit 1; setsid nohup "${A[@]}" > /dev/null 2>&1 < /dev/null & )   # double-fork; ';' not '&&' so ONLY setsid is backgrounded (M2's '&&' form backgrounds the AND-list and leaves a bash copy as the parent, PPID != 1)
+---
+>   ( cd "$cwd" || exit 1; setsid nohup "${A[@]}" > /dev/null 2>&1 < /dev/null & )   # double-fork; ';' not '&&' so ONLY setsid is backgrounded (BR1 fork_test)
+248c230
+<     log "fail-stop watchdog armed pid $NEWWD (ppid $pp) on $V25: $(tr '\0' ' ' < /proc/$NEWWD/cmdline | cut -c1-300) | log tail: $(tail -1 "$WDLOG" 2>/dev/null | cut -c1-160)"
+---
+>     log "fail-stop watchdog armed pid $NEWWD (ppid $pp) on $V27: $(tr '\0' ' ' < /proc/$NEWWD/cmdline | cut -c1-300) | log tail: $(tail -1 "$WDLOG" 2>/dev/null | cut -c1-160)"
+256c238
+< restore_lane(){ # idempotent: BR1 pairs stop-and-keep, v25m-kvtier pair docker start (flags kept), fail-stop watchdog re-armed
+---
+> restore_lane(){ # idempotent: BR3 arms stop-and-keep, v27-block pair docker start (flags kept), fail-stop watchdog re-armed
+260,262c242
+<   kill_wd
+<   for n in $N_A $N_B $N_A2; do is_up "$n" && { log "stop-and-keep $n"; docker stop -t 60 "$n" >/dev/null; }
+<     is_up "$n-rtx" && { log "stop-and-keep $n-rtx"; docker stop -t 30 "$n-rtx" >/dev/null; }; done
+---
+>   for n in $ALLN; do is_up "$n" && { log "stop-and-keep $n"; docker stop -t 60 "$n" >/dev/null; }; done
+266,268c246,248
+<   log "RESTORE start: RTX used=$(rtx_used)MiB /dev/shm/vllm_peer_tier2=[$(ls -la /dev/shm/vllm_peer_tier2 2>&1 | cut -c1-120)] (reused, same layout; never deleted)"
+<   docker start "$V25R" >/dev/null 2>&1 || log "WARN docker start $V25R rc=$?"
+<   for ((i=0;i<36;i++)); do docker logs --since "$since" "$V25R" > "$R/.restore-rtx.log" 2>&1
+---
+>   log "RESTORE start: RTX used=$(rtx_used)MiB GB300 used=$(gb_used)MiB /dev/shm/vllm_peer_tier2=[$(ls -la /dev/shm/vllm_peer_tier2 2>&1 | cut -c1-120)] (reused, same layout; never deleted)"
+>   docker start "$V27R" >/dev/null 2>&1 || log "WARN docker start $V27R rc=$?"
+>   for ((i=0;i<36;i++)); do docker logs --since "$since" "$V27R" > "$R/.restore-rtx.log" 2>&1
+270,278c250,258
+<   log "RESTORE sidecar $V25R running=$(docker inspect -f '{{.State.Running}}' "$V25R" 2>/dev/null) after $(( $(date +%s)-t0 ))s: $(grep -m1 -E 'serving|prepared 40 layers' "$R/.restore-rtx.log" | cut -c1-120)"
+<   docker start "$V25" >/dev/null 2>&1 || log "WARN docker start $V25 rc=$?"
+<   if wait_bind "$V25" 45 "$since" nofastfail "$V25R"; then
+<     log "LANE DARK ends ($V25 bound after $(( $(date +%s)-t0 ))s)"
+<     docker logs --since "$since" "$V25" > "$R/restore-v25m-kvtier.log" 2>&1
+<     docker inspect -f '{{json .Args}}' "$V25" > "$R/args-after-$V25.json"; docker inspect -f '{{json .Config.Env}}' "$V25" > "$R/env-after-$V25.json"
+<     log "RESTORE FACTS rowmap40=$(grep -cE 'MEGA_PEER rowmap .*: 40 layers' "$R/restore-v25m-kvtier.log") peer2=$(grep -c 'peer mode 2, check 0' "$R/restore-v25m-kvtier.log") kvline=[$(tr '\r' '\n' < "$R/restore-v25m-kvtier.log" | grep -m1 -oE 'GPU KV cache size: [0-9,]+ tokens')] kvdecl=$(grep -c 9126805504 "$R/args-after-$V25.json") kvtier=$(grep -c 'kv-offloading-size' "$R/args-after-$V25.json") block=$(grep -o rejection_sample_method "$R/args-after-$V25.json" | wc -l | tr -d ' ') args_same=$(cmp -s "$R/args-before-$V25.json" "$R/args-after-$V25.json" && echo 1 || echo 0) env_same=$(cmp -s "$R/env-before-$V25.json" "$R/env-after-$V25.json" && echo 1 || echo 0)"
+<     health restore "$V25R"; arm_prod_wd
+<     own "cardBR1 done; lane restored to $V25 pair + watchdog pid ${NEWWD:-NONE} (ppid $(ps -o ppid= -p "${NEWWD:-0}" 2>/dev/null | tr -d ' ')); ISOLATE removed (receipts $R)"
+---
+>   log "RESTORE sidecar $V27R running=$(docker inspect -f '{{.State.Running}}' "$V27R" 2>/dev/null) after $(( $(date +%s)-t0 ))s: $(grep -m1 -E 'serving|prepared 40 layers' "$R/.restore-rtx.log" | cut -c1-120)"
+>   docker start "$V27" >/dev/null 2>&1 || log "WARN docker start $V27 rc=$?"
+>   if wait_bind "$V27" 45 "$since" nofastfail "$V27R"; then
+>     log "LANE DARK ends ($V27 bound after $(( $(date +%s)-t0 ))s)"
+>     docker logs --since "$since" "$V27" > "$R/restore-v27-block.log" 2>&1
+>     docker inspect -f '{{json .Args}}' "$V27" > "$R/args-after-$V27.json"; docker inspect -f '{{json .Config.Env}}' "$V27" > "$R/env-after-$V27.json"
+>     log "RESTORE FACTS rowmap40=$(grep -cE 'MEGA_PEER rowmap .*: 40 layers' "$R/restore-v27-block.log") peer2=$(grep -c 'peer mode 2, check 0' "$R/restore-v27-block.log") kvline=[$(tr '\r' '\n' < "$R/restore-v27-block.log" | grep -m1 -oE 'GPU KV cache size: [0-9,]+ tokens')] kvdecl=$(grep -c 9126805504 "$R/args-after-$V27.json") kvtier=$(grep -c 'kv-offloading-size' "$R/args-after-$V27.json") block=$(grep -o rejection_sample_method "$R/args-after-$V27.json" | wc -l | tr -d ' ')(want 1) args_same=$(cmp -s "$R/args-before-$V27.json" "$R/args-after-$V27.json" && echo 1 || echo 0) env_same_sorted=$(envcmp "$R/env-before-$V27.json" "$R/env-after-$V27.json")"
+>     health restore "$V27R"; arm_prod_wd
+>     own "cardBR3 done; lane restored to $V27 pair + watchdog pid ${NEWWD:-NONE} (ppid $(ps -o ppid= -p "${NEWWD:-0}" 2>/dev/null | tr -d ' ')); ISOLATE removed (receipts $R)"
+280,281c260,261
+<     log "RESTORE FAILED — lane dark, needs hands (BRIEF-BR1.md §Restore)"
+<     own "OWNER: cardBR1 RESTORE FAILED — lane dark; see $R/runner.log (manual: docker start $V25R; docker start $V25; re-arm watchdog from $WARGV)"
+---
+>     log "RESTORE FAILED — lane dark, needs hands (BRIEF-BR3.md §Restore)"
+>     own "OWNER: cardBR3 RESTORE FAILED — lane dark; see $R/runner.log (manual: docker start $V27R; wait 'serving'; docker start $V27; re-arm watchdog from $WARGV)"
+294c274
+<     log "===== CARD BR1 END (ABORTED rc=$rc; lane = $(docker ps --format '{{.Names}}' | grep -E '^dsv41-' | tr '\n' ' ') watchdog=$(wd_pids)) ====="
+---
+>     log "===== CARD BR3 END (ABORTED rc=$rc; lane = $(docker ps --format '{{.Names}}' | grep -E '^dsv41-' | tr '\n' ' ') watchdog=$(wd_pids)) ====="
+299,301c279,299
+< boot_br1(){ # arm name spec_extra
+<   local arm=$1 name=$2 spec=$3 since t0 ma want
+<   BOOT=$arm; NAME=$name; A=$R/$arm; mkdir -p "$A/metrics"
+---
+> # ---- GO + unfreeze + fixed settle: the v26seed production regime (seed map + adaptive unfrozen), identical on every arm
+> go_unfreeze(){ local since i gs uf tg tu
+>   since=$(date -u +%FT%TZ); setphase "$BOOT:go"; ph go
+>   arlines pre-go
+>   touch "$RUN/GO"
+>   for ((i=0;i<30;i++)); do grep -q '"baseline GO"' "$RUN/telemetry.jsonl" 2>/dev/null && break; sleep 2; done
+>   ctrl "$GO_CTRL" unfreeze
+>   for ((i=0;i<15;i++)); do grep -q '"ctrl freeze=0"' "$RUN/telemetry.jsonl" 2>/dev/null && break; sleep 2; done
+>   docker logs --since "$since" "$NAME" > "$A/go.log" 2>&1
+>   gs=$(tr '\r' '\n' < "$A/go.log" | grep -c 'ADAPT GO seen'); uf=$(tr '\r' '\n' < "$A/go.log" | grep -c 'ADAPT ctrl freeze=0')
+>   tg=$(grep -c '"baseline GO"' "$RUN/telemetry.jsonl" 2>/dev/null); tu=$(grep -c '"ctrl freeze=0"' "$RUN/telemetry.jsonl" 2>/dev/null)
+>   printf '{"go_seen_log": %s, "unfreeze_log": %s, "baseline_go_tel": %s, "unfreeze_tel": %s, "ctrl": %s, "settle_s": %s}\n' \
+>     "${gs:-0}" "${uf:-0}" "${tg:-0}" "${tu:-0}" "$(cat "$RUN/ctrl.json" 2>/dev/null || echo null)" "$ADAPT_SETTLE_S" > "$A/go.json"
+>   log "GO $BOOT: log 'GO seen'=$gs 'ctrl freeze=0'=$uf | telemetry 'baseline GO'=$tg 'ctrl freeze=0'=$tu | ctrl.json=$(cat "$RUN/ctrl.json" 2>/dev/null)"
+>   [[ ${gs:-0} -ge 1 && ${uf:-0} -ge 1 ]] || log "WARN $BOOT: GO/unfreeze not acknowledged by the hook — arm NOT in the production regime (G0 will FAIL; cells continue for receipts)"
+>   setphase "$BOOT:adapt-settle"; log "ADAPT SETTLE $BOOT: ${ADAPT_SETTLE_S}s (unfrozen, no traffic)"; sleep "$ADAPT_SETTLE_S"
+>   arlines settled; }
+> 
+> boot_br3(){ # arm name spec_extra
+>   local arm=$1 name=$2 spec=$3 since t0 ma want u g
+>   BOOT=$arm; NAME=$name; A=$R/$arm; RUN=$A/ar; mkdir -p "$A/metrics" "$RUN"
+308c306,309
+<   docker rm -f "$name" "$name-rtx" >/dev/null 2>&1 || true   # preflight guaranteed none pre-existed; clears only this run's half-made pair
+---
+>   u=$(rtx_used); [[ -n $u && $u -lt $RTX_IDLE_MIB ]] || { log "REFUSE boot $arm: RTX busy (${u:-?} MiB >= $RTX_IDLE_MIB) — BR3 arms are Grace-only"; return 1; }
+>   g=$(gb_used); [[ -n $g && $g -lt $GB_IDLE_MIB ]] || { log "REFUSE boot $arm: GB300 busy (${g:-?} MiB >= $GB_IDLE_MIB)"; return 1; }
+>   docker rm -f "$name" >/dev/null 2>&1 || true   # preflight guaranteed none pre-existed; clears only this run's half-made container
+>   rm -f "$RUN/GO" "$RUN/ctrl.json" "$RUN/ctrl.tmp" "$RUN/telemetry.jsonl" "$RUN/swaps.jsonl" "$RUN/steps.bin"   # this run's own dir only
+311,314c312,314
+<   log "BOOT $arm: $name EXTRA=[$KVX] SPEC_EXTRA=[$spec] ROWMAP=$ROWMAP MemAvail=${ma}GiB"
+<   bg env NAME="$name" ROWMAP="$ROWMAP" EXTRA="$KVX" SPEC_EXTRA="$spec" bash "$LAUNCH" sidecar >> "$R/launch-$arm.txt" 2>&1 || { log "LAUNCH sidecar FAILED $arm: $(tail -2 "$R/launch-$arm.txt" | tr '\n' '|')"; return 1; }
+<   log "SIDECAR $arm serving: $(grep -m1 '^serving' "$D/logs/peer_server2.log" 2>/dev/null | cut -c1-120)"
+<   bg env NAME="$name" ROWMAP="$ROWMAP" EXTRA="$KVX" SPEC_EXTRA="$spec" bash "$LAUNCH" server >> "$R/launch-$arm.txt" 2>&1 || { log "LAUNCH server FAILED $arm: $(tail -2 "$R/launch-$arm.txt" | tr '\n' '|')"; return 1; }
+---
+>   log "BOOT $arm: $name HOOK=$HOOK ROWMAP=$ROWMAP RUN=$RUN SPEC_EXTRA=[$spec] MemAvail=${ma}GiB RTX=${u}MiB GB300=${g}MiB"
+>   bg env NAME="$name" RUN="$RUN" HOOK="$HOOK" ROWMAP="$ROWMAP" PIN_STEP_RING=65536 PIN_SWAP_CUDA_EVENTS=1 SPEC_EXTRA="$spec" bash "$LAUNCH" >> "$R/launch-$arm.txt" 2>&1 \
+>     || { log "LAUNCH FAILED $arm: $(tail -2 "$R/launch-$arm.txt" | tr '\n' '|')"; return 1; }
+317,319c317,318
+<   docker inspect -f '{{json .Args}}' "$name-rtx" > "$A/rtx-args.json" 2>&1; docker inspect -f '{{.Image}}' "$name" > "$A/image.txt" 2>&1
+<   arm_wd "$name"
+<   if ! wait_bind "$name" "$BOOT_MIN" "$since" "" "$name-rtx"; then docker logs "$name" > "$A/boot-FAIL.log" 2>&1; return 1; fi
+---
+>   docker inspect -f '{{json .HostConfig.Binds}}' "$name" > "$A/binds.json" 2>&1; docker inspect -f '{{.Image}}' "$name" > "$A/image.txt" 2>&1
+>   if ! wait_bind "$name" "$BOOT_MIN" "$since"; then docker logs "$name" > "$A/boot-FAIL.log" 2>&1; return 1; fi
+323c322
+<   tr '\r' '\n' < "$A/boot.log" | grep -E 'KV cache size|Maximum concurrency|MEGA_PEER rowmap|peer mode|OffloadingConnector|KVConnector|speculative_config=' | cut -c1-400 > "$A/boot-facts.log"
+---
+>   tr '\r' '\n' < "$A/boot.log" | grep -E 'KV cache size|Maximum concurrency|speculative_config=' | cut -c1-400 > "$A/boot-facts.log"
+326c325,326
+<   local kv blk bl ffb ld sv as ae
+---
+>   tr '\r' '\n' < "$A/boot.log" | grep -E 'PIN_HOT|pin-hot|hook FAILED' | cut -c1-300 > "$A/boot-pin.log"
+>   local kv blk bl ffb ld sv as ae rl rd l9 pab hf km k ae_ref ee_ref be_ref im ru
+332,333c332,352
+<   printf '{"arm": "%s", "name": "%s", "kv_tokens": "%s", "kv_expect": "%s", "block_in_args": %s, "block_boot_lines": %s, "ff_boot": %s, "loaded_lines": %s, "saved_lines": %s, "autotune_starts": %s, "autotune_ends": %s, "boot_s": %s, "bound_at": %s}\n' \
+<     "$arm" "$name" "${kv:-}" "$KV_EXPECT" "${blk:-0}" "${bl:-0}" "${ffb:-0}" "${ld:-0}" "${sv:-0}" "${as:-0}" "${ae:-0}" "$(( $(date +%s)-t0 ))" "$(date +%s)" > "$A/facts.json"
+---
+>   # hook guard lines (v26ar2 pin_hot_experts_hook.py _budget_ok: 'PIN_HOT abort <where>: MemAvailable ... < 10 GiB' raises)
+>   rl=$(grep -c 'PIN_HOT rehome layer=' "$A/boot-pin.log"); rd=$(grep -c 'PIN_HOT rehome done layers=40' "$A/boot-pin.log")
+>   l9=$(grep -m1 'PIN_HOT rehome layer=9 ' "$A/boot-pin.log" | grep -oE 'host_avail=[0-9.]+' | cut -d= -f2)
+>   pab=$(grep -c 'PIN_HOT abort' "$A/boot-pin.log"); hf=$(grep -c 'hook FAILED' "$A/boot-pin.log")
+>   km=""; for k in "atomic counter ready" "atomic mode ready" "swap barrier" "v26ar.2 telemetry step_ring=65536" "cuda_events=1" "rowmap=/w/$ROWMAP" "freeze=True"; do
+>     grep -qF "$k" "$A/boot-pin.log" || km="$km${km:+;}$k"; done
+>   ae_ref=$(cmp -s "$A/args.json" "$R/args-ref-$REF.json" && echo 1 || echo 0); ee_ref=$(envcmp "$A/env.json" "$R/env-ref-$REF.json")
+>   be_ref=$(python3 -c 'import json,sys
+> r=json.load(open(sys.argv[1])); a=json.load(open(sys.argv[2])); run=sys.argv[3]
+> n=lambda L: sorted(("<AR>:/ar" if b.endswith(":/ar") else b) for b in (L or []))
+> print(int(n(r) == n(a) and (run + ":/ar") in (a or [])))' "$R/binds-ref-$REF.json" "$A/binds.json" "$RUN" 2>/dev/null || echo 0)
+>   im=$(cat "$A/image.txt" 2>/dev/null); ru=$(rtx_used)
+>   python3 -c 'import json,sys
+> d={}
+> for a in sys.argv[2:]:
+>     k,v=a.split("=",1); d[k]=int(v) if v.lstrip("-").isdigit() else v
+> json.dump(d, open(sys.argv[1],"w"), indent=1)' "$A/facts.json" arm="$arm" name="$name" kv_tokens="${kv:-}" kv_ref="$(cat "$R/kv-ref.txt" 2>/dev/null)" \
+>     block_in_args="${blk:-0}" block_boot_lines="${bl:-0}" ff_boot="${ffb:-0}" loaded_lines="${ld:-0}" saved_lines="${sv:-0}" \
+>     autotune_starts="${as:-0}" autotune_ends="${ae:-0}" rehome_layers="${rl:-0}" rehome_done="${rd:-0}" host_avail_l9_gib="${l9:-}" \
+>     pin_abort="${pab:-0}" hook_failed="${hf:-0}" hook_keys_missing="$km" args_eq_ref="$ae_ref" env_eq_ref_sorted="$ee_ref" \
+>     binds_eq_ref_except_ar="$be_ref" image="$im" rtx_used_after_bind_mib="${ru:-}" boot_s="$(( $(date +%s)-t0 ))" bound_at="$(date +%s)"
+335c354
+<   log "FACTS $arm: kv=[${kv:-MISSING}] expect=$KV_EXPECT block_in_args=$blk (want $want) block_boot_lines=$bl ff_boot=$ffb autotune loaded=$ld saved=$sv starts=$as ends=$ae args_eq_prod=$(cmp -s "$A/args.json" "$R/args-before-$V25.json" && echo 1 || echo 0)"
+---
+>   log "FACTS $arm: kv=[${kv:-MISSING}] (v26seed log: $(cat "$R/kv-ref.txt" 2>/dev/null)) block_in_args=$blk (want $want) block_boot_lines=$bl ff_boot=$ffb autotune loaded=$ld saved=$sv starts=$as ends=$ae | rehome layers=$rl done40=$rd host_avail@L9=${l9:-?}GiB pin_abort=$pab hook_failed=$hf keys_missing=[${km}] | args_eq_v26seed=$ae_ref env_eq_v26seed(sorted)=$ee_ref binds_eq_v26seed(except /ar)=$be_ref image=${im:0:19} rtx_after_bind=${ru}MiB"
+337,338c356,360
+<   [[ ${kv:-} == "$KV_EXPECT" ]] || log "WARN $arm: GPU KV cache size [${kv:-MISSING}] != $KV_EXPECT (G0 will FAIL; cells continue for receipts)"
+<   health "$arm" "$name-rtx"
+---
+>   if [[ $arm != A ]]; then local kva; kva=$(python3 -c 'import json,sys;print(json.load(open(sys.argv[1])).get("kv_tokens",""))' "$R/A/facts.json" 2>/dev/null)
+>     [[ -n $kv && $kv == "$kva" ]] || log "WARN $arm: GPU KV cache size [${kv:-MISSING}] != arm A [${kva:-MISSING}] (G0 rule: B and A2 equal A)"; fi
+>   [[ $rd == 1 && $pab == 0 && $hf == 0 && -z $km ]] || log "WARN $arm: hook wiring incomplete (rehome_done=$rd abort=$pab failed=$hf missing=[$km]) — G0 will FAIL"
+>   health "$arm"
+>   go_unfreeze
+343c365
+< alive(){ is_up "$NAME" && is_up "$NAME-rtx" && return 0; log "ARM $BOOT DEAD ($NAME up=$(is_up "$NAME" && echo y || echo n) rtx up=$(is_up "$NAME-rtx" && echo y || echo n)) — skipping remaining cells"; return 1; }
+---
+> alive(){ is_up "$NAME" && return 0; log "ARM $BOOT DEAD ($NAME up=n) — skipping remaining cells"; return 1; }
+345c367
+< cell(){ # tag cmd... -> runs with bg, logs one line; /metrics spec-decode snapshot at start and end
+---
+> cell(){ # tag cmd... -> runs with bg, logs one line; /metrics spec-decode + /ar line counts at start and end
+347c369
+<   ph cell_start "\"cell\": \"$tag\""; metrics "$tag-start"
+---
+>   ph cell_start "\"cell\": \"$tag\""; metrics "$tag-start"; arlines "$tag-start"
+349c371
+<   metrics "$tag-end"; ph cell_end "\"cell\": \"$tag\", \"rc\": $rc"
+---
+>   metrics "$tag-end"; arlines "$tag-end"; ph cell_end "\"cell\": \"$tag\", \"rc\": $rc"
+356c378
+<     "$BENCH" "BR1-$arm-t1" "$A/perclass-t1" "$TEMP_T" "$SEED_T" "$TOP_P_T" "$PCDEC_T" "$T_PERCLASS" "$PERCLASS_T"
+---
+>     "$BENCH" "BR3-$arm-t1" "$A/perclass-t1" "$TEMP_T" "$SEED_T" "$TOP_P_T" "$PCDEC_T" "$T_PERCLASS" "$PERCLASS_T"
+358c380
+<   cell pct0 bash -c 'cd "$1" && ARM="$2" OUTDIR="$3" exec timeout "$4" bash perclass_run.sh' _ "$BENCH" "BR1-$arm-t0" "$A/perclass-t0" "$T_PERCLASS"
+---
+>   cell pct0 bash -c 'cd "$1" && ARM="$2" OUTDIR="$3" exec timeout "$4" bash perclass_run.sh' _ "$BENCH" "BR3-$arm-t0" "$A/perclass-t0" "$T_PERCLASS"
+361c383
+<     cell "c1-r$r" timeout "$T_MIXED" env HELDOUT=1 python3 "$MIXED_T" "BR1-$arm-c1-r$r" "$A" 1 "$MIX_S" --temperature "$TEMP_T" --seed "$SEED_T" --top-p "$TOP_P_T" || break
+---
+>     cell "c1-r$r" timeout "$T_MIXED" env HELDOUT=1 python3 "$MIXED_T" "BR3-$arm-c1-r$r" "$A" 1 "$MIX_S" --temperature "$TEMP_T" --seed "$SEED_T" --top-p "$TOP_P_T" || break
+363,364c385,386
+<   # (4) teacher-forced TF capture (prefill only; temperature-independent) -> $A/tf-BR1-<arm>.jsonl
+<   cell tf bash -c 'cd "$1" && MAXPOS=4096 CONC=4 exec timeout "$2" python3 "$3" capture "$4" "$5"' _ "$A" "$T_TF" "$TF" "BR1-$arm" "$CORPUS"
+---
+>   # (4) teacher-forced TF capture (prefill only; temperature-independent) -> $A/tf-BR3-<arm>.jsonl
+>   cell tf bash -c 'cd "$1" && MAXPOS=4096 CONC=4 exec timeout "$2" python3 "$3" capture "$4" "$5"' _ "$A" "$T_TF" "$TF" "BR3-$arm" "$CORPUS"
+366c388
+<   check_abort; alive && { ph cell_start '"cell": "gauntlet"'; metrics gauntlet-start; gauntlet "$arm"; metrics gauntlet-end; ph cell_end '"cell": "gauntlet"'; }
+---
+>   check_abort; alive && { ph cell_start '"cell": "gauntlet"'; metrics gauntlet-start; arlines gauntlet-start; gauntlet "$arm"; metrics gauntlet-end; arlines gauntlet-end; ph cell_end '"cell": "gauntlet"'; }
+368,369c390,391
+<   cell turns env TAG="BR1-$arm" PASSES=2 timeout "$T_TURNS" python3 "$TURNS"
+<   [[ -s $TURNS_OUT/turns-BR1-$arm.json ]] && mv "$TURNS_OUT/turns-BR1-$arm.json" "$A/" && log "TURNS $arm: moved turns-BR1-$arm.json into $A"
+---
+>   cell turns env TAG="BR3-$arm" PASSES=2 timeout "$T_TURNS" python3 "$TURNS"
+>   [[ -s $TURNS_OUT/turns-BR3-$arm.json ]] && mv "$TURNS_OUT/turns-BR3-$arm.json" "$A/" && log "TURNS $arm: moved turns-BR3-$arm.json into $A"
+372c394
+<   errcount "$arm" "$NAME" "$sinceC"; errcount "$arm-rtx" "$NAME-rtx" "$sinceC"
+---
+>   errcount "$arm" "$NAME" "$sinceC"
+374,375c396
+<   wd_collect "$arm"
+<   log "ARM $arm cells took $(( $(date +%s)-ta ))s"; }
+---
+>   log "ARM $arm cells took $(( $(date +%s)-ta ))s; /ar lines: $(tail -1 "$A/ar-lines.tsv" 2>/dev/null | tr '\t' ' ')"; }
+378c399
+< log "===== CARD BR1 START (arms=$ARMS spec_B=[$SPEC_B] temp_t=$TEMP_T seed_t=$SEED_T mix_s=$MIX_S c1_reps=$C1_REPS settle_s=$SETTLE_S isolate=$ISOLATE mem_min=$MEM_MIN boot_min=$BOOT_MIN R=$R) ====="
+---
+> log "===== CARD BR3 START (arms=$ARMS spec_B=[$SPEC_B] temp_t=$TEMP_T seed_t=$SEED_T mix_s=$MIX_S c1_reps=$C1_REPS settle_s=$SETTLE_S adapt_settle_s=$ADAPT_SETTLE_S isolate=$ISOLATE mem_min=$MEM_MIN boot_min=$BOOT_MIN R=$R) ====="
+383,384c404,405
+< x=$(not_known); [[ -n ${x// /} ]] && { log "REFUSE: running container(s) outside the production pair {$V25, $V25R}: $x"; exit 4; }
+< is_up "$V25" && is_up "$V25R" || { log "ABORT: $V25 pair not running — lane untouched"; exit 5; }
+---
+> x=$(not_known); [[ -n ${x// /} ]] && { log "REFUSE: running container(s) outside the production pair {$V27, $V27R}: $x"; exit 4; }
+> is_up "$V27" && is_up "$V27R" || { log "ABORT: $V27 pair not running — lane untouched"; exit 5; }
+386,387c407,411
+< for n in $ALLN; do exists "$n" && { log "ABORT: BR1 container already exists: $n"; exit 5; }; done
+< ls "$TURNS_OUT"/turns-BR1-* >/dev/null 2>&1 && { log "ABORT: $TURNS_OUT/turns-BR1-* already exist (tag clash)"; exit 5; }
+---
+> exists "$REF" || { log "ABORT: control ground-truth container $REF missing"; exit 5; }
+> is_up "$REF" && { log "ABORT: $REF is RUNNING (expected stopped-and-kept) — lane untouched"; exit 5; }
+> [[ "$(docker inspect -f '{{.Image}}' "$REF" 2>/dev/null)" == "$IMAGE_ID" ]] || { log "ABORT: $REF does not run $IMAGE ($IMAGE_ID)"; exit 5; }
+> for n in $ALLN; do exists "$n" && { log "ABORT: BR3 container already exists: $n"; exit 5; }; exists "$n-rtx" && { log "ABORT: unexpected $n-rtx exists"; exit 5; }; done
+> ls "$TURNS_OUT"/turns-BR3-* >/dev/null 2>&1 && { log "ABORT: $TURNS_OUT/turns-BR3-* already exist (tag clash)"; exit 5; }
+389c413
+< docker image inspect "$IMAGE" >/dev/null 2>&1 || { log "ABORT: $IMAGE missing"; exit 5; }
+---
+> [[ "$(docker image inspect -f '{{.Id}}' "$IMAGE" 2>/dev/null)" == "$IMAGE_ID" ]] || { log "ABORT: $IMAGE missing or not $IMAGE_ID"; exit 5; }
+392c416
+< [[ "$(docker inspect -f '{{.Image}}' "$V25" 2>/dev/null)" == "${IMAGE#*@}" ]] || { log "ABORT: $V25 does not run $IMAGE — the clone would not be production"; exit 5; }
+---
+> [[ "$(docker inspect -f '{{.Image}}' "$V27" 2>/dev/null)" == "$PROD_IMAGE_ID" ]] || { log "ABORT: $V27 is not on $PROD_IMAGE_ID — restore target is not the expected v27"; exit 5; }
+396c420
+< chk "$M3HOOK/$ROWMAP" "$SHA_ROWMAP"; chk "$M3HOOK/sitecustomize.py" "$SHA_SITE"; chk "$D/local/peer_server2_local.py" "$SHA_PEER"
+---
+> chk "$HOOK/$ROWMAP" "$SHA_ROWMAP"; chk "$HOOK/sitecustomize.py" "$SHA_SITE"; chk "$HOOK/pin_hot_experts_hook.py" "$SHA_HOOKPY"; chk "$HOOK/e4_adaptive.py" "$SHA_E4"
+398,399c422,432
+< chk "$CORPUS" "$SHA_CORPUS"; chk "$FIXTURE" "$SHA_FIXTURE"; chk "$GDIR/run_suite.py"
+< # launcher drift: the clone may differ from launch_sidecar.sh ONLY by comments, the SPEC_EXTRA definition and the splice
+---
+> chk "$CORPUS" "$SHA_CORPUS"; chk "$FIXTURE" "$SHA_FIXTURE"; chk "$GDIR/run_suite.py" "$SHA_SUITE"
+> # launcher drift: the clone may differ from launch_ar6.sh ONLY by comments, the SPEC_EXTRA definition and the one spliced line
+> REF_SPEC_LINE=$(cat <<'EOF'
+>   --speculative-config '{"method":"dspark","num_speculative_tokens":5,"num_speculative_tokens_per_batch_size":[[1,8,5],[9,24,1]]}' \
+> EOF
+> )
+> NEW_SPEC_LINE=$(cat <<'EOF'
+>   --speculative-config "{\"method\":\"dspark\",\"num_speculative_tokens\":5,\"num_speculative_tokens_per_batch_size\":[[1,8,5],[9,24,1]]$SPEC_EXTRA}" \
+> EOF
+> )
+> normlaunch(){ grep -v '^#' "$1" | grep -vxF 'SPEC_EXTRA=${SPEC_EXTRA:-}' | SPECL="$2" awk '$0==ENVIRON["SPECL"]{print "@@SPEC@@"; next} {print}'; }
+402,404c435,437
+< dd=$(diff <(grep -v '^#' "$LAUNCH_REF") <(grep -v '^#' "$LAUNCH" | grep -vxF 'SPEC_EXTRA=${SPEC_EXTRA:-}' | sed 's/\$SPEC_EXTRA}/}/') | grep -cE '^[<>]')
+< sd=$(grep -cxF 'SPEC_EXTRA=${SPEC_EXTRA:-}' "$LAUNCH"); sp=$(grep -F -- '--speculative-config' "$LAUNCH" | grep -cF '$SPEC_EXTRA}')
+< [[ $h == 3 && $dd == 0 && $sd == 1 && $sp == 1 ]] || { log "ABORT: $LAUNCH drifted from $LAUNCH_REF (hunks=$h non-SPEC_EXTRA changed lines=$dd SPEC_EXTRA defs=$sd splices=$sp; want 3/0/1/1) — see DIFF-launch-preflight.txt"; exit 5; }
+---
+> dd=$(diff <(normlaunch "$LAUNCH_REF" "$REF_SPEC_LINE") <(normlaunch "$LAUNCH" "$NEW_SPEC_LINE") | grep -cE '^[<>]')
+> sd=$(grep -cxF 'SPEC_EXTRA=${SPEC_EXTRA:-}' "$LAUNCH"); rs=$(grep -cxF -- "$REF_SPEC_LINE" "$LAUNCH_REF"); ns=$(grep -cxF -- "$NEW_SPEC_LINE" "$LAUNCH")
+> [[ $h == 3 && $dd == 0 && $sd == 1 && $rs == 1 && $ns == 1 ]] || { log "ABORT: $LAUNCH drifted from $LAUNCH_REF (hunks=$h non-SPEC changed lines=$dd SPEC_EXTRA defs=$sd ref spec lines=$rs new spec lines=$ns; want 3/0/1/1/1) — see DIFF-launch-preflight.txt"; exit 5; }
+408,409c441,443
+<       "$TURNS" "$FIXTURE" "$GDIR/run_suite.py" "$M3HOOK/$ROWMAP" "$M3HOOK/sitecustomize.py" "$D/local/peer_server2_local.py"; do echo "sha1 $(sha1sum "$f" | cut -c1-12) $f"; done
+<   echo "image $IMAGE"; echo "gauntlet image $GIMG"; echo "all arms EXTRA=[$KVX]"; echo "B SPEC_EXTRA=[$SPEC_B]"
+---
+>       "$TURNS" "$FIXTURE" "$GDIR/run_suite.py" "$HOOK/$ROWMAP" "$HOOK/sitecustomize.py" "$HOOK/pin_hot_experts_hook.py" "$HOOK/e4_adaptive.py"; do echo "sha1 $(sha1sum "$f" | cut -c1-12) $f"; done
+>   echo "arm image $IMAGE ($IMAGE_ID)"; echo "production image $PROD_IMAGE_ID"; echo "gauntlet image $GIMG"; echo "B SPEC_EXTRA=[$SPEC_B]"
+>   echo "GO ctrl $GO_CTRL; adapt settle ${ADAPT_SETTLE_S}s"
+415,418c449,465
+< docker inspect -f '{{json .Args}}' "$V25" > "$R/args-before-$V25.json"; docker inspect -f '{{json .Config.Env}}' "$V25" > "$R/env-before-$V25.json"
+< docker inspect -f '{{json .Args}}' "$V25R" > "$R/args-before-$V25R.json"
+< grep -q 9126805504 "$R/args-before-$V25.json" && grep -q 'kv-offloading-size' "$R/args-before-$V25.json" && ! grep -q rejection_sample_method "$R/args-before-$V25.json" \
+<   || { log "ABORT: production args are not the expected v25m-kvtier recipe (kv decl + tier, no rejection_sample_method)"; exit 5; }
+---
+> # control ground truth (read-only inspect of the stopped v26seed container)
+> docker inspect -f '{{json .Args}}' "$REF" > "$R/args-ref-$REF.json"; docker inspect -f '{{json .Config.Env}}' "$REF" > "$R/env-ref-$REF.json"
+> docker inspect -f '{{json .HostConfig.Binds}}' "$REF" > "$R/binds-ref-$REF.json"
+> docker logs "$REF" 2>&1 | tr '\r' '\n' | grep -oE 'GPU KV cache size: [0-9,]+ tokens' | tail -1 | grep -oE '[0-9,]+' > "$R/kv-ref.txt"
+> grep -q '"--offload-backend","uva"' "$R/args-ref-$REF.json" && grep -qF '[[1,8,5],[9,24,1]]' "$R/args-ref-$REF.json" && grep -q '"--max-num-seqs","24"' "$R/args-ref-$REF.json" \
+>   && ! grep -q rejection_sample_method "$R/args-ref-$REF.json" && ! grep -q draft_sample_method "$R/args-ref-$REF.json" \
+>   && grep -q '"PIN_ADAPTIVE_FREEZE=1"' "$R/env-ref-$REF.json" && grep -qF "\"PIN_ROWMAP=/w/$ROWMAP\"" "$R/env-ref-$REF.json" && grep -qF "\"$HOOK:/w:ro\"" "$R/binds-ref-$REF.json" \
+>   || { log "ABORT: $REF args/env/binds are not the expected v26seed recipe (uva, k [[1,8,5],[9,24,1]], seqs 24, greedy draft, no block, freeze=1, $ROWMAP, /w=$HOOK)"; exit 5; }
+> # rendered spec element (launcher line evaluated with SPEC_EXTRA) vs the v26seed Args element
+> render_spec(){ SPEC_EXTRA=$1 bash -c 'l=$(grep -E -- "^ +--speculative-config " "$1"); l=${l#*--speculative-config }; l=${l% \\}; eval "set -- $l"; printf "%s" "$1"' _ "$LAUNCH"; }
+> se=$(spec_el "$R/args-ref-$REF.json"); r0=$(render_spec ""); rb=$(render_spec "$SPEC_B")
+> [[ -n $se && $r0 == "$se" && $rb == "${se%\}}$SPEC_B}" ]] || { log "ABORT: launch_br3.sh renders spec [$r0] / B [$rb]; v26seed has [$se]"; exit 5; }
+> log "spec render OK: A/A2 == v26seed [$se]; B == v26seed + block"
+> docker inspect -f '{{json .Args}}' "$V27" > "$R/args-before-$V27.json"; docker inspect -f '{{json .Config.Env}}' "$V27" > "$R/env-before-$V27.json"
+> docker inspect -f '{{json .Args}}' "$V27R" > "$R/args-before-$V27R.json"
+> grep -q 9126805504 "$R/args-before-$V27.json" && grep -q 'kv-offloading-size' "$R/args-before-$V27.json" && grep -qF '\"rejection_sample_method\":\"block\"' "$R/args-before-$V27.json" \
+>   || { log "ABORT: production args are not the expected v27-block recipe (kv decl + tier + rejection_sample_method block)"; exit 5; }
+420c467
+< [[ -n $WP ]] || { log "ABORT: no live sidecar_watchdog.py --server $V25 — refusing (cannot mirror its restore); lane untouched"; exit 5; }
+---
+> [[ -n $WP ]] || { log "ABORT: no live sidecar_watchdog.py --server $V27 — refusing (cannot mirror its restore); lane untouched"; exit 5; }
+422c469
+< grep -qx -- "--server" "$WARGV" && grep -qx -- "$V25" "$WARGV" || { log "ABORT: captured watchdog argv does not name $V25: $(tr '\n' ' ' < "$WARGV")"; exit 5; }
+---
+> grep -qx -- "--server" "$WARGV" && grep -qx -- "$V27" "$WARGV" || { log "ABORT: captured watchdog argv does not name $V27: $(tr '\n' ' ' < "$WARGV")"; exit 5; }
+425c472
+< log "preflight OK: MemAvailable=$(memavail)GiB RTX=${u}MiB oom_lines=${OOM0:-unreadable} (sha1s in instruments.txt; docker ps -a / nvidia-smi / free -g in preflight-*.txt)"
+---
+> log "preflight OK: MemAvailable=$(memavail)GiB RTX=${u}MiB (production -rtx up by design; checked again after the pair stops) kv_ref=[$(cat "$R/kv-ref.txt")] oom_lines=${OOM0:-unreadable}"
+427c474
+< own "cardBR1 runner pid $$ preflight OK — about to take :30006 dark (A=$N_A, B=$N_B, A2=$N_A2; ~3 h); restores $V25 pair + watchdog at END. Receipts $R"
+---
+> own "cardBR3 runner pid $$ preflight OK — about to take :30006 dark (A=$N_A, B=$N_B, A2=$N_A2; GB300-only, ~2.5 h); restores $V27 pair + watchdog at END. Receipts $R"
+431c478
+< # ================= lane dark: watchdog off (log moved aside), v25m-kvtier pair stopped-and-kept =================
+---
+> # ================= lane dark: watchdog off (log moved aside), v27-block pair stopped-and-kept =================
+433c480
+< echo "cardBR1 $(date '+%F %T %Z')" > "$D/logs/MAINTENANCE"
+---
+> echo "cardBR3 $(date '+%F %T %Z')" > "$D/logs/MAINTENANCE"
+435c482
+< for p in $(wd_pids); do kill "$p" 2>/dev/null && log "fail-stop watchdog $p stopped (cardBR1)"; done
+---
+> for p in $(wd_pids); do kill "$p" 2>/dev/null && log "fail-stop watchdog $p stopped (cardBR3)"; done
+437,439c484,486
+< [[ -n $(wd_pids) ]] && { log "ABORT: sidecar watchdog still alive ($(wd_pids)) — refusing to stop $V25 under a fail-stop watchdog"; exit 6; }
+< echo "$(date '+%F %T %Z') watchdog stopped by cardBR1 (re-armed after restore)" >> "$WDLOG"
+< mv "$WDLOG" "$WDLOG.pre-cardBR1-$(date +%Y%m%d-%H%M%S)"
+---
+> [[ -n $(wd_pids) ]] && { log "ABORT: sidecar watchdog still alive ($(wd_pids)) — refusing to stop $V27 under a fail-stop watchdog"; exit 6; }
+> echo "$(date '+%F %T %Z') watchdog stopped by cardBR3 (re-armed after restore)" >> "$WDLOG"
+> mv "$WDLOG" "$WDLOG.pre-cardBR3-$(date +%Y%m%d-%H%M%S)"
+441,443c488,490
+< log "LANE DARK begins (stopping $V25 pair, kept)"
+< own "cardBR1: lane :30006 DARK (watchdog $WP stopped, $V25 + $V25R stopped-and-kept)"
+< docker stop -t 60 "$V25" "$V25R" >/dev/null 2>&1; log "stop-and-keep $V25 $V25R"
+---
+> log "LANE DARK begins (stopping $V27 pair, kept)"
+> own "cardBR3: lane :30006 DARK (watchdog $WP stopped, $V27 + $V27R stopped-and-kept)"
+> docker stop -t 60 "$V27" "$V27R" >/dev/null 2>&1; log "stop-and-keep $V27 $V27R"
+444a492,497
+> # Grace-only gate: with the production pair down, the RTX must be idle before the first boot (else refuse -> EXIT trap restores)
+> for i in $(seq 1 12); do u=$(rtx_used); [[ -n $u && $u -lt $RTX_IDLE_MIB ]] && break; sleep 5; done
+> if [[ -z $u || $u -ge $RTX_IDLE_MIB ]]; then
+>   log "REFUSE: RTX still holds ${u:-?} MiB (>= $RTX_IDLE_MIB) 60 s after the production pair stopped — BR3 is Grace-only; restoring production"
+>   nvidia-smi --query-compute-apps=pid,process_name,used_memory --format=csv > "$R/rtx-busy.txt" 2>&1; exit 6; fi
+> log "RTX idle after pair stop: ${u} MiB"
+454c507
+<   if boot_br1 "$arm" "$n" "$sx"; then
+---
+>   if boot_br3 "$arm" "$n" "$sx"; then
+458c511
+<     [[ -d $A ]] && { wd_collect "$arm"; foreign_log boot "$(cat "$A/boot_since.txt" 2>/dev/null || date -u +%FT%TZ)"; }
+---
+>     [[ -d $A ]] && exists "$n" && foreign_log boot "$(cat "$A/boot_since.txt" 2>/dev/null || date -u +%FT%TZ)"
+460c513
+<   stop_pair "$n"
+---
+>   stop_arm "$n"
+470,472c523,525
+<   if [[ -s $R/$1/tf-BR1-$1.jsonl && -s $R/$2/tf-BR1-$2.jsonl ]]; then
+<     ( cd "$R" && timeout 600 python3 "$TF" compare "$1/tf-BR1-$1.jsonl" "$2/tf-BR1-$2.jsonl" ) > "$R/tfcmp-$2-vs-$1.log" 2>&1; log "TFCMP $2 vs $1: $(tail -1 "$R/tfcmp-$2-vs-$1.log" | cut -c1-240)"
+<   else log "TFCMP $2 vs $1: UNMEASURED (missing tf-BR1-$1.jsonl or tf-BR1-$2.jsonl)"; fi; done
+---
+>   if [[ -s $R/$1/tf-BR3-$1.jsonl && -s $R/$2/tf-BR3-$2.jsonl ]]; then
+>     ( cd "$R" && timeout 600 python3 "$TF" compare "$1/tf-BR3-$1.jsonl" "$2/tf-BR3-$2.jsonl" ) > "$R/tfcmp-$2-vs-$1.log" 2>&1; log "TFCMP $2 vs $1: $(tail -1 "$R/tfcmp-$2-vs-$1.log" | cut -c1-240)"
+>   else log "TFCMP $2 vs $1: UNMEASURED (missing tf-BR3-$1.jsonl or tf-BR3-$2.jsonl)"; fi; done
+475,476c528,529
+<   [[ -s $R/$ref/tf-BR1-$ref.jsonl && -s $R/$cand/tf-BR1-$cand.jsonl ]] || { log "FLIPSM $cand vs $ref: UNMEASURED (missing capture)"; return 0; }
+<   ( cd "$R" && timeout 600 python3 "$FLIPS" "$ref/tf-BR1-$ref.jsonl" "$cand/tf-BR1-$cand.jsonl" --label "$cand-vs-$ref" ${cal:+--calib "$cal/tf-BR1-$cal.jsonl"} ) > "$out" 2>&1
+---
+>   [[ -s $R/$ref/tf-BR3-$ref.jsonl && -s $R/$cand/tf-BR3-$cand.jsonl ]] || { log "FLIPSM $cand vs $ref: UNMEASURED (missing capture)"; return 0; }
+>   ( cd "$R" && timeout 600 python3 "$FLIPS" "$ref/tf-BR3-$ref.jsonl" "$cand/tf-BR3-$cand.jsonl" --label "$cand-vs-$ref" ${cal:+--calib "$cal/tf-BR3-$cal.jsonl"} ) > "$out" 2>&1
+480c533
+< SUF=$(python3 -c "import json;print(json.load(open('$R/verdict.json'))['suffix'])" 2>/dev/null); SUF=${SUF:-BR1-NOVERDICT}
+---
+> SUF=$(python3 -c "import json;print(json.load(open('$R/verdict.json'))['suffix'])" 2>/dev/null); SUF=${SUF:-BR3-NOVERDICT}
+484,486c537,539
+< grep -hE ' (=====|CELL|BOOT|SIDECAR|SERVER|FACTS|HEALTH|GAUNTLET|TURNS|TFCMP|FLIPSM|WATCHDOG|BR1 watchdog|boot->ready|BOUND|FASTFAIL|DIED|TIMEOUT|ERRCOUNT|FOREIGN|ISOLATE|SETTLE|HOST|HOLD|RESTORE|LANE|VERDICT|MEM_GUARD|WARN|ABORT|REFUSE|ARM|kept|stop-and-keep|fail-stop|re-arm|watchdog) ' "$R/runner.log" > "$R/SUMMARY.txt"
+< { echo; echo "## $(date '+%F %H:%M %Z') — Card BR1: DSpark block verification (rejection_sample_method block) vs sequential, A/B/A2 on the v25m-kvtier recipe, :30006 — $(python3 -c "import json;d=json.load(open('$R/verdict.json'));print(d['result'], d['suffix'])" 2>/dev/null)"
+<   cat "$R/VERDICT.txt" 2>/dev/null; echo "Receipts: $R. Production restored to $V25 pair + watchdog ${NEWWD:-NONE}. NOT promoted — James decides."; } >> "$LEDGER"
+---
+> grep -hE ' (=====|CELL|BOOT|SERVER|FACTS|GO|CTRL|ADAPT|HEALTH|GAUNTLET|TURNS|TFCMP|FLIPSM|boot->ready|BOUND|FASTFAIL|DIED|TIMEOUT|ERRCOUNT|FOREIGN|ISOLATE|SETTLE|HOST|HOLD|RESTORE|LANE|RTX|VERDICT|MEM_GUARD|WARN|ABORT|REFUSE|ARM|kept|stop-and-keep|fail-stop|re-arm|watchdog|spec) ' "$R/runner.log" > "$R/SUMMARY.txt"
+> { echo; echo "## $(date '+%F %H:%M %Z') — Card BR3: DSpark block verification (rejection_sample_method block) vs sequential, A/B/A2 on the GB300-only v26seed (Seeded Adaptive) recipe, :30006 — $(python3 -c "import json;d=json.load(open('$R/verdict.json'));print(d['result'], d['suffix'])" 2>/dev/null)"
+>   cat "$R/VERDICT.txt" 2>/dev/null; echo "Receipts: $R. Production restored to $V27 pair + watchdog ${NEWWD:-NONE}. NOT promoted — James decides."; } >> "$LEDGER"
+489c542
+< log "===== CARD BR1 END (lane = $V25) ====="
+---
+> log "===== CARD BR3 END (lane = $V27) ====="
