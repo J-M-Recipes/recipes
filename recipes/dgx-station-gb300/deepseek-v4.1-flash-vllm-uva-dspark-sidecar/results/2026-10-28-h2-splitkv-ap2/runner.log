@@ -1,0 +1,184 @@
+2026-10-28 15:10:35 CDT ===== CARD AP2 START (pid 2402755, arms A S8 S4 A2, budget 9900s, frozen ~/dsv41/m3/ap2/h2ref-att2b, preflight_only=0) =====
+2026-10-28 15:10:40 CDT watchdog argv == pr1/promote/wd-argv.txt
+2026-10-28 15:10:40 CDT watchdog pid 2339085 argv: python3 ~/dsv41/m3/sidecar_watchdog.py --server dsv41-vllm-1017-h1-REF --mode enforce --interval 1 --stall 2 --status ~/dsv41/m3/logs/sidecar_watchdog.status.json --log ~/dsv41/m3/logs/sidecar_watchdog.v27.log 
+2026-10-28 15:10:41 CDT kernel log: 355 Xid lines so far this boot (baseline)
+2026-10-28 15:10:41 CDT GATES FROZEN: ap2_verdict.py sha256=88cac1b98000282d5d5e8cb393ccd9b23d511940b9c80f107a8896f97e9f8438 (pinned 88cac1b98000282d5d5e8cb393ccd9b23d511940b9c80f107a8896f97e9f8438) -> ~/dsv41/m3/ap2/results-cardAP2/ap2_verdict.frozen.py
+2026-10-28 15:10:41 CDT DISK free 471 GiB on /
+2026-10-28 15:10:41 CDT fail-stop watchdog 2339085 stopped (cardAP2)
+2026-10-28 15:10:41 CDT LANE DARK begins (stopping dsv41-vllm-1017-h1-REF pair, kept)
+2026-10-28 15:11:42 CDT stop-and-keep dsv41-vllm-1017-h1-REF dsv41-vllm-1017-h1-REF-rtx
+2026-10-28 15:11:42 CDT ISOLATE on: non-loopback TCP :30006 rejected (cardAP2-isolate; removed before restore)
+2026-10-28 15:11:49 CDT strays: 3868 0.5GiB /usr/bin/containerd |5719 0.3GiB /usr/bin/gnome-shell |4385 0.2GiB /usr/bin/dockerd -H|5508 0.1GiB /usr/lib/xorg/Xorg vt2| MemAvailable=462.1GiB
+2026-10-28 15:11:49 CDT SETTLE pre-A: sleeping 90s before the next boot
+2026-10-28 15:13:19 CDT HOST pre-A: MemAvailable=462.0GiB shm_used=125M new_shm_gt1G=[] GB300 sm,mem,W,pstate=[120 MHz, 3996 MHz, 148.84 W, P0] RTX used=233MiB
+2026-10-28 15:13:20 CDT BOOT A: dsv41-vllm-1017-AP2-A LAUNCH=~/dsv41/m3/ap2/h2ref-att2b/launch_att2d.sh AENV=[HOOK=~/dsv41/m3/hook-h1 OVERLAY_61161=1 O61=~/dsv41/m3/desk-hook/L3/tree/vllm MEGA_SHARE_TOPK=2 MEGA_POS_I32_ONCE=1 MEGA_L2_VERIFY=1 MEGA_L2_STATS_EVERY=2000 NOCORE=1] EXTRA=[--kv-cache-memory 9126805504 --kv-offloading-size 48 --kv-offloading-backend native] SPEC_EXTRA=[,"rejection_sample_method":"block"] MemAvail=462.0GiB xid_base=355 disk=471GiB elapsed=159s
+2026-10-28 15:14:37 CDT card watchdog 2405223  on dsv41-vllm-1017-AP2-A (enforce, stall 2 s, no rollback)
+2026-10-28 15:14:37 CDT   dsv41-vllm-1017-AP2-A waiting 0 min: MemAvail=462.1GiB last=[]
+2026-10-28 15:19:38 CDT   dsv41-vllm-1017-AP2-A waiting 5 min: MemAvail=132.9GiB last=[2026-10-28 20:18:58,283 - INFO - autotuner.py:1046 - flashinfer.jit: [Autotuner]: Autotuning process starts ...]
+2026-10-28 15:22:09 CDT BOUND dsv41-vllm-1017-AP2-A after 452s
+2026-10-28 15:22:09 CDT boot->ready A 530s
+env add=['CUDA_ENABLE_COREDUMP_ON_EXCEPTION=0', 'CUDA_ENABLE_CPU_COREDUMP_ON_EXCEPTION=0'] rem=[] extra_binds=[] gone_binds=[] over_shipped=[] ulimits={'memlock': (-1, -1), 'stack': (67108864, 67108864)} core=(0, 0)
+2026-10-28 15:22:09 CDT FACTS A: kv=[4,400,013] args_ok=1 env_ok=1 binds_ok=1 ulimit_core0=1 guard_rsu=OK l2_lines=2 autotune=[Loaded 117 configs Saved 117 configs ]
+2026-10-28 15:22:09 CDT HEALTH A: models_http=200 chat_http=200 (reasoning_effort low) content=[OK] sidecar=true
+2026-10-28 15:22:09 CDT FOREIGN A bind: 0 (non-127.0.0.1 POST /v1 since 2026-10-28T20:13:19Z)
+2026-10-28 15:22:14 CDT CELL A warm rc=0: WARM OK (elapsed 693s)
+2026-10-28 15:22:34 CDT CELL A brrr0 rc=0: C1DECOMP END (elapsed 713s)
+2026-10-28 15:22:43 CDT CELL A greedy rc=0: GREEDY wrote ~/dsv41/m3/ap2/results-cardAP2/A/greedy.json: 16 prompts, errors=0, 7s (elapsed 722s)
+2026-10-28 15:26:52 CDT CELL A lib rc=0: Results saved to ~/dsv41/m3/ap2/results-cardAP2/A/lib.json (elapsed 971s)
+2026-10-28 15:27:05 CDT CELL A ttft rc=0: TTFT DONE ok=8/8 8192:39887.3tok/s,0.2057s 16384:41389.0tok/s,0.3966s 65536:41913.0tok/s,1.5635s 131072:40519.2tok/s,3.2327s (11.1s) (elapsed 984s)
+2026-10-28 15:36:43 CDT CELL A pct1 rc=0: PCT DONE (elapsed 1562s)
+2026-10-28 15:36:52 CDT CELL A tf rc=0: [AP2-A] wrote tf-AP2-A.jsonl: docs=39 errors=0 positions=79544 wall=7s (elapsed 1571s)
+2026-10-28 15:37:10 CDT CELL A gauntlet rc=0: {"tag": "ap2-A", "task": "struct-readings", "success": true, "done": 12, "expected": 12} (elapsed 1589s)
+2026-10-28 15:37:10 CDT GAUNTLET A: 12 / 12
+2026-10-28 15:37:25 CDT CELL A probe rc=1: GATE FAIL: 15/16 cells ok -> ~/dsv41/m3/ap2/results-cardAP2/A/probe62417.json (elapsed 1604s)
+2026-10-28 15:37:43 CDT CELL A soak rc=0: SOAK DONE pass=4/4 correct=4/4 loops=0 nonstop=0 max_completion=4785 (16.4s) (elapsed 1622s)
+2026-10-28 15:38:16 CDT CELL A onem rc=0: ONEM PASS prompt_tokens=900372 ttft=31.265s wall=31.274s finish=stop content='amber-falcon-7319' why=[] (elapsed 1655s)
+2026-10-28 15:38:16 CDT ENGAGE A: {"arm": "A", "expect_splits": 0, "shipped_sha256": "df2cdd1c3acfe6546b10a8d6d9b3d8bae3783a4910337d9721d83ff653e4fc13", "side_sha256": null, "side_mapped_pids": 0, "rsu_sha256_end": "2d43d5133c1fb96399e186ed10c5a26b54c12e6a019d9d163cbff1adbcfbcc39", "enabled": 0, "enabled_cap": [], "enabled_max_reqs": [], "decode_lines": [], "sqN_side": 0, "decode_other": 0, "trace_lines": 0, "trace_ok1": [], "trace_ok1_sq6": 0, "trace_ok1_bad": 0, "guard_lines": 0, "att2_any": 0, "l2_patched": 2}
+2026-10-28 15:38:16 CDT XID A: 0 new Xid line(s) since boot (base 355)
+2026-10-28 15:38:16 CDT ERRCOUNT A 0 (since 2026-10-28T20:22:09Z)
+2026-10-28 15:38:16 CDT ERRCOUNT A-rtx 0 (since 2026-10-28T20:22:09Z)
+2026-10-28 15:38:16 CDT FOREIGN A cells: 0 (non-127.0.0.1 POST /v1 since 2026-10-28T20:22:09Z)
+2026-10-28 15:38:16 CDT CARD WD A: {"t": 1793219896.0711892, "server_up": true, "words": [2557040, 2557040, 0, 41379310, 66748271, 40647603424, 2175212], "timeouts_base": 0, "wait_ms_per_wait": 0.018686731879007656, "mode": "enforce",  trips=0
+2026-10-28 15:38:16 CDT ARM A cells took 967s (elapsed 1655s of 9900s) crash-evidence: xid_new=0 err=0/0 gpu_fault_lines=0 fault_cell=[] alive=1
+2026-10-28 15:38:16 CDT card watchdog 2405223 stopped
+2026-10-28 15:38:18 CDT stop-and-keep dsv41-vllm-1017-AP2-A
+2026-10-28 15:38:24 CDT stop-and-keep dsv41-vllm-1017-AP2-A-rtx
+2026-10-28 15:39:01 CDT strays: 3868 0.6GiB /usr/bin/containerd |5719 0.3GiB /usr/bin/gnome-shell |4385 0.2GiB /usr/bin/dockerd -H|5508 0.1GiB /usr/lib/xorg/Xorg vt2| MemAvailable=460.9GiB
+2026-10-28 15:39:01 CDT SETTLE pre-S8: sleeping 90s before the next boot
+2026-10-28 15:40:31 CDT HOST pre-S8: MemAvailable=460.8GiB shm_used=125M new_shm_gt1G=[] GB300 sm,mem,W,pstate=[120 MHz, 3996 MHz, 149.97 W, P0] RTX used=233MiB
+2026-10-28 15:40:32 CDT BOOT S8: dsv41-vllm-1017-AP2-S8 LAUNCH=~/dsv41/m3/ap2/h2ref-att2b/launch_att2d.sh AENV=[HOOK=~/dsv41/m3/hook-h1 OVERLAY_61161=1 O61=~/dsv41/m3/desk-hook/L3/tree/vllm MEGA_SHARE_TOPK=2 MEGA_POS_I32_ONCE=1 MEGA_L2_VERIFY=1 MEGA_L2_STATS_EVERY=2000 NOCORE=1 ATT2B=1 B2D=~/dsv41/m3/ap2/h2ref-att2b COREDUMP=0 SPLITKV_MAX_TOKENS=8 SPLITKV_MAX_REQS=1 SPLITKV_SQ=6 SPLITKV_TRACE=1 SPLITKV_GUARD=0 SPLITKV=8] EXTRA=[--kv-cache-memory 9126805504 --kv-offloading-size 48 --kv-offloading-backend native] SPEC_EXTRA=[,"rejection_sample_method":"block"] MemAvail=460.8GiB xid_base=355 disk=471GiB elapsed=1791s
+2026-10-28 15:41:49 CDT card watchdog 2460469  on dsv41-vllm-1017-AP2-S8 (enforce, stall 2 s, no rollback)
+2026-10-28 15:41:50 CDT   dsv41-vllm-1017-AP2-S8 waiting 0 min: MemAvail=457.7GiB last=[]
+2026-10-28 15:46:51 CDT   dsv41-vllm-1017-AP2-S8 waiting 5 min: MemAvail=133.7GiB last=[2026-10-28 20:46:31,218 - INFO - autotuner.py:1046 - flashinfer.jit: [Autotuner]: Autotuning process starts ...]
+2026-10-28 15:49:41 CDT BOUND dsv41-vllm-1017-AP2-S8 after 472s
+2026-10-28 15:49:41 CDT boot->ready S8 550s
+env add=['CUDA_ENABLE_COREDUMP_ON_EXCEPTION=0', 'CUDA_ENABLE_CPU_COREDUMP_ON_EXCEPTION=0', 'VLLM_DSV41_MEGA_SPLITKV=8', 'VLLM_DSV41_MEGA_SPLITKV_GUARD=0', 'VLLM_DSV41_MEGA_SPLITKV_MAX_REQS=1', 'VLLM_DSV41_MEGA_SPLITKV_MAX_TOKENS=8', 'VLLM_DSV41_MEGA_SPLITKV_PRELOAD=1', 'VLLM_DSV41_MEGA_SPLITKV_SO=/usr/local/lib/python3.12/dist-packages/vllm/_flashmla_splitkv_C.abi3.so', 'VLLM_DSV41_MEGA_SPLITKV_SQ=6', 'VLLM_DSV41_MEGA_SPLITKV_STRICT=1', 'VLLM_DSV41_MEGA_SPLITKV_SWA=0', 'VLLM_DSV41_MEGA_SPLITKV_TRACE=1'] rem=[] extra_binds=['~/dsv41/m3/ap2/h2ref-att2b/build/out/_flashmla_splitkv_C.abi3.so:/usr/local/lib/python3.12/dist-packages/vllm/_flashmla_splitkv_C.abi3.so:ro', '~/dsv41/m3/ap2/h2ref-att2b/overlay/vllm/models/deepseek_v41/nvidia/flash_mla_mega_attn.py:/usr/local/lib/python3.12/dist-packages/vllm/models/deepseek_v41/nvidia/flash_mla_mega_attn.py:ro', '~/dsv41/m3/ap2/h2ref-att2b/overlay/vllm/models/deepseek_v41/nvidia/mega_splitkv_combine.py:/usr/local/lib/python3.12/dist-packages/vllm/models/deepseek_v41/nvidia/mega_splitkv_combine.py:ro'] gone_binds=[] over_shipped=[] ulimits={'memlock': (-1, -1), 'stack': (67108864, 67108864)} core=(0, 0)
+2026-10-28 15:49:42 CDT FACTS S8: kv=[4,400,013] args_ok=1 env_ok=1 binds_ok=1 ulimit_core0=1 guard_rsu=OK l2_lines=2 autotune=[Loaded 117 configs Saved 117 configs ]
+2026-10-28 15:49:42 CDT HEALTH S8: models_http=200 chat_http=200 (reasoning_effort low) content=[OK] sidecar=true
+2026-10-28 15:49:42 CDT FOREIGN S8 bind: 0 (non-127.0.0.1 POST /v1 since 2026-10-28T20:40:31Z)
+2026-10-28 15:49:47 CDT CELL S8 warm rc=0: WARM OK (elapsed 2346s)
+2026-10-28 15:50:05 CDT CELL S8 brrr0 rc=0: C1DECOMP END (elapsed 2364s)
+2026-10-28 15:50:13 CDT CELL S8 greedy rc=0: GREEDY wrote ~/dsv41/m3/ap2/results-cardAP2/S8/greedy.json: 16 prompts, errors=0, 7s (elapsed 2372s)
+2026-10-28 15:54:23 CDT CELL S8 lib rc=0: Results saved to ~/dsv41/m3/ap2/results-cardAP2/S8/lib.json (elapsed 2622s)
+2026-10-28 15:54:36 CDT CELL S8 ttft rc=0: TTFT DONE ok=8/8 8192:39192.5tok/s,0.2093s 16384:40731.8tok/s,0.403s 65536:41819.0tok/s,1.5671s 131072:40611.5tok/s,3.2253s (11.1s) (elapsed 2635s)
+2026-10-28 16:04:01 CDT CELL S8 pct1 rc=0: PCT DONE (elapsed 3200s)
+2026-10-28 16:04:10 CDT CELL S8 tf rc=0: [AP2-S8] wrote tf-AP2-S8.jsonl: docs=39 errors=0 positions=79544 wall=7s (elapsed 3209s)
+2026-10-28 16:04:27 CDT CELL S8 gauntlet rc=0: {"tag": "ap2-S8", "task": "struct-readings", "success": true, "done": 12, "expected": 12} (elapsed 3226s)
+2026-10-28 16:04:28 CDT GAUNTLET S8: 12 / 12
+2026-10-28 16:04:50 CDT CELL S8 probe rc=0: GATE PASS: 16/16 cells ok -> ~/dsv41/m3/ap2/results-cardAP2/S8/probe62417.json (elapsed 3248s)
+2026-10-28 16:05:07 CDT CELL S8 soak rc=0: SOAK DONE pass=4/4 correct=4/4 loops=0 nonstop=0 max_completion=4532 (16.1s) (elapsed 3266s)
+2026-10-28 16:05:40 CDT CELL S8 onem rc=0: ONEM PASS prompt_tokens=900372 ttft=31.182s wall=31.191s finish=stop content='amber-falcon-7319' why=[] (elapsed 3299s)
+2026-10-28 16:05:40 CDT ENGAGE S8: {"arm": "S8", "expect_splits": 8, "shipped_sha256": "df2cdd1c3acfe6546b10a8d6d9b3d8bae3783a4910337d9721d83ff653e4fc13", "side_sha256": "744a9de89060730eecbb7c4c249dedc36f3dbfb3854de17299780b66cb90e983", "side_mapped_pids": 1, "rsu_sha256_end": "2d43d5133c1fb96399e186ed10c5a26b54c12e6a019d9d163cbff1adbcfbcc39", "enabled": 1, "enabled_cap": [8], "enabled_max_reqs": [1], "decode_lines": ["s_q=6 splits=8 kind=compressed op=_flashmla_splitkv_C"], "sqN_side": 1, "decode_other": 0, "trace_lines": 284, "trace_ok1": ["s_q=6 num_tokens=6 decodes=1 prefills=0 capturing=0", "s_q=6 num_tokens=6 decodes=1 p
+2026-10-28 16:05:40 CDT XID S8: 0 new Xid line(s) since boot (base 355)
+2026-10-28 16:05:41 CDT ERRCOUNT S8 0 (since 2026-10-28T20:49:42Z)
+2026-10-28 16:05:41 CDT ERRCOUNT S8-rtx 0 (since 2026-10-28T20:49:42Z)
+2026-10-28 16:05:41 CDT FOREIGN S8 cells: 0 (non-127.0.0.1 POST /v1 since 2026-10-28T20:49:42Z)
+2026-10-28 16:05:41 CDT CARD WD S8: {"t": 1793221541.0309923, "server_up": true, "words": [2579520, 2579520, 0, 41246298, 66583341, 40212089376, 2181438], "timeouts_base": 0, "wait_ms_per_wait": 0.01843375304546817, "mode": "enforce", " trips=0
+2026-10-28 16:05:41 CDT ARM S8 cells took 959s (elapsed 3300s of 9900s) crash-evidence: xid_new=0 err=0/0 gpu_fault_lines=0 fault_cell=[] alive=1
+2026-10-28 16:05:41 CDT card watchdog 2460469 stopped
+2026-10-28 16:05:43 CDT stop-and-keep dsv41-vllm-1017-AP2-S8
+2026-10-28 16:05:48 CDT stop-and-keep dsv41-vllm-1017-AP2-S8-rtx
+2026-10-28 16:06:25 CDT strays: 3868 0.6GiB /usr/bin/containerd |5719 0.3GiB /usr/bin/gnome-shell |4385 0.2GiB /usr/bin/dockerd -H|5508 0.1GiB /usr/lib/xorg/Xorg vt2| MemAvailable=460.8GiB
+2026-10-28 16:06:25 CDT SETTLE pre-S4: sleeping 90s before the next boot
+2026-10-28 16:07:55 CDT HOST pre-S4: MemAvailable=460.7GiB shm_used=125M new_shm_gt1G=[] GB300 sm,mem,W,pstate=[120 MHz, 3996 MHz, 149.06 W, P0] RTX used=233MiB
+2026-10-28 16:07:56 CDT BOOT S4: dsv41-vllm-1017-AP2-S4 LAUNCH=~/dsv41/m3/ap2/h2ref-att2b/launch_att2d.sh AENV=[HOOK=~/dsv41/m3/hook-h1 OVERLAY_61161=1 O61=~/dsv41/m3/desk-hook/L3/tree/vllm MEGA_SHARE_TOPK=2 MEGA_POS_I32_ONCE=1 MEGA_L2_VERIFY=1 MEGA_L2_STATS_EVERY=2000 NOCORE=1 ATT2B=1 B2D=~/dsv41/m3/ap2/h2ref-att2b COREDUMP=0 SPLITKV_MAX_TOKENS=8 SPLITKV_MAX_REQS=1 SPLITKV_SQ=6 SPLITKV_TRACE=1 SPLITKV_GUARD=0 SPLITKV=4] EXTRA=[--kv-cache-memory 9126805504 --kv-offloading-size 48 --kv-offloading-backend native] SPEC_EXTRA=[,"rejection_sample_method":"block"] MemAvail=460.7GiB xid_base=355 disk=471GiB elapsed=3435s
+2026-10-28 16:09:13 CDT card watchdog 2515889  on dsv41-vllm-1017-AP2-S4 (enforce, stall 2 s, no rollback)
+2026-10-28 16:09:14 CDT   dsv41-vllm-1017-AP2-S4 waiting 0 min: MemAvail=460.2GiB last=[]
+2026-10-28 16:14:15 CDT   dsv41-vllm-1017-AP2-S4 waiting 5 min: MemAvail=132.3GiB last=[2026-10-28 21:13:35,226 - INFO - autotuner.py:1046 - flashinfer.jit: [Autotuner]: Autotuning process starts ...]
+2026-10-28 16:16:45 CDT BOUND dsv41-vllm-1017-AP2-S4 after 452s
+2026-10-28 16:16:45 CDT boot->ready S4 529s
+env add=['CUDA_ENABLE_COREDUMP_ON_EXCEPTION=0', 'CUDA_ENABLE_CPU_COREDUMP_ON_EXCEPTION=0', 'VLLM_DSV41_MEGA_SPLITKV=4', 'VLLM_DSV41_MEGA_SPLITKV_GUARD=0', 'VLLM_DSV41_MEGA_SPLITKV_MAX_REQS=1', 'VLLM_DSV41_MEGA_SPLITKV_MAX_TOKENS=8', 'VLLM_DSV41_MEGA_SPLITKV_PRELOAD=1', 'VLLM_DSV41_MEGA_SPLITKV_SO=/usr/local/lib/python3.12/dist-packages/vllm/_flashmla_splitkv_C.abi3.so', 'VLLM_DSV41_MEGA_SPLITKV_SQ=6', 'VLLM_DSV41_MEGA_SPLITKV_STRICT=1', 'VLLM_DSV41_MEGA_SPLITKV_SWA=0', 'VLLM_DSV41_MEGA_SPLITKV_TRACE=1'] rem=[] extra_binds=['~/dsv41/m3/ap2/h2ref-att2b/build/out/_flashmla_splitkv_C.abi3.so:/usr/local/lib/python3.12/dist-packages/vllm/_flashmla_splitkv_C.abi3.so:ro', '~/dsv41/m3/ap2/h2ref-att2b/overlay/vllm/models/deepseek_v41/nvidia/mega_splitkv_combine.py:/usr/local/lib/python3.12/dist-packages/vllm/models/deepseek_v41/nvidia/mega_splitkv_combine.py:ro', '~/dsv41/m3/ap2/h2ref-att2b/overlay/vllm/models/deepseek_v41/nvidia/flash_mla_mega_attn.py:/usr/local/lib/python3.12/dist-packages/vllm/models/deepseek_v41/nvidia/flash_mla_mega_attn.py:ro'] gone_binds=[] over_shipped=[] ulimits={'memlock': (-1, -1), 'stack': (67108864, 67108864)} core=(0, 0)
+2026-10-28 16:16:46 CDT FACTS S4: kv=[4,400,013] args_ok=1 env_ok=1 binds_ok=1 ulimit_core0=1 guard_rsu=OK l2_lines=2 autotune=[Loaded 117 configs Saved 117 configs ]
+2026-10-28 16:16:46 CDT HEALTH S4: models_http=200 chat_http=200 (reasoning_effort low) content=[OK] sidecar=true
+2026-10-28 16:16:46 CDT FOREIGN S4 bind: 0 (non-127.0.0.1 POST /v1 since 2026-10-28T21:07:56Z)
+2026-10-28 16:16:51 CDT CELL S4 warm rc=0: WARM OK (elapsed 3970s)
+2026-10-28 16:17:08 CDT CELL S4 brrr0 rc=0: C1DECOMP END (elapsed 3987s)
+2026-10-28 16:17:17 CDT CELL S4 greedy rc=0: GREEDY wrote ~/dsv41/m3/ap2/results-cardAP2/S4/greedy.json: 16 prompts, errors=0, 7s (elapsed 3996s)
+2026-10-28 16:21:26 CDT CELL S4 lib rc=0: Results saved to ~/dsv41/m3/ap2/results-cardAP2/S4/lib.json (elapsed 4245s)
+2026-10-28 16:21:39 CDT CELL S4 ttft rc=0: TTFT DONE ok=8/8 8192:39673.6tok/s,0.2067s 16384:41726.8tok/s,0.3934s 65536:42058.7tok/s,1.5581s 131072:40700.8tok/s,3.2182s (11.1s) (elapsed 4258s)
+2026-10-28 16:31:11 CDT CELL S4 pct1 rc=0: PCT DONE (elapsed 4830s)
+2026-10-28 16:31:20 CDT CELL S4 tf rc=0: [AP2-S4] wrote tf-AP2-S4.jsonl: docs=39 errors=0 positions=79544 wall=7s (elapsed 4839s)
+2026-10-28 16:31:38 CDT CELL S4 gauntlet rc=0: {"tag": "ap2-S4", "task": "code-totals", "success": true, "done": 12, "expected": 12} (elapsed 4857s)
+2026-10-28 16:31:38 CDT GAUNTLET S4: 12 / 12
+2026-10-28 16:31:53 CDT CELL S4 probe rc=0: GATE PASS: 16/16 cells ok -> ~/dsv41/m3/ap2/results-cardAP2/S4/probe62417.json (elapsed 4872s)
+2026-10-28 16:32:11 CDT CELL S4 soak rc=0: SOAK DONE pass=4/4 correct=4/4 loops=0 nonstop=0 max_completion=4636 (15.4s) (elapsed 4890s)
+2026-10-28 16:32:44 CDT CELL S4 onem rc=0: ONEM PASS prompt_tokens=900372 ttft=31.172s wall=31.182s finish=stop content='amber-falcon-7319' why=[] (elapsed 4923s)
+2026-10-28 16:32:44 CDT ENGAGE S4: {"arm": "S4", "expect_splits": 4, "shipped_sha256": "df2cdd1c3acfe6546b10a8d6d9b3d8bae3783a4910337d9721d83ff653e4fc13", "side_sha256": "744a9de89060730eecbb7c4c249dedc36f3dbfb3854de17299780b66cb90e983", "side_mapped_pids": 1, "rsu_sha256_end": "2d43d5133c1fb96399e186ed10c5a26b54c12e6a019d9d163cbff1adbcfbcc39", "enabled": 1, "enabled_cap": [4], "enabled_max_reqs": [1], "decode_lines": ["s_q=6 splits=4 kind=compressed op=_flashmla_splitkv_C"], "sqN_side": 1, "decode_other": 0, "trace_lines": 272, "trace_ok1": ["s_q=6 num_tokens=6 decodes=1 prefills=0 capturing=0", "s_q=6 num_tokens=6 decodes=1 p
+2026-10-28 16:32:44 CDT XID S4: 0 new Xid line(s) since boot (base 355)
+2026-10-28 16:32:44 CDT ERRCOUNT S4 0 (since 2026-10-28T21:16:46Z)
+2026-10-28 16:32:44 CDT ERRCOUNT S4-rtx 0 (since 2026-10-28T21:16:46Z)
+2026-10-28 16:32:44 CDT FOREIGN S4 cells: 0 (non-127.0.0.1 POST /v1 since 2026-10-28T21:16:46Z)
+2026-10-28 16:32:44 CDT CARD WD S4: {"t": 1793223163.9202447, "server_up": true, "words": [2565320, 2565320, 0, 41341101, 66703453, 39418659424, 2176413], "timeouts_base": 0, "wait_ms_per_wait": 0.018111755178819463, "mode": "enforce",  trips=0
+2026-10-28 16:32:44 CDT ARM S4 cells took 958s (elapsed 4923s of 9900s) crash-evidence: xid_new=0 err=0/0 gpu_fault_lines=0 fault_cell=[] alive=1
+2026-10-28 16:32:44 CDT card watchdog 2515889 stopped
+2026-10-28 16:32:46 CDT stop-and-keep dsv41-vllm-1017-AP2-S4
+2026-10-28 16:32:51 CDT stop-and-keep dsv41-vllm-1017-AP2-S4-rtx
+2026-10-28 16:33:29 CDT strays: 3868 0.6GiB /usr/bin/containerd |5719 0.3GiB /usr/bin/gnome-shell |4385 0.2GiB /usr/bin/dockerd -H|5508 0.1GiB /usr/lib/xorg/Xorg vt2| MemAvailable=461.2GiB
+2026-10-28 16:33:29 CDT SETTLE pre-A2: sleeping 90s before the next boot
+2026-10-28 16:34:59 CDT HOST pre-A2: MemAvailable=461.2GiB shm_used=125M new_shm_gt1G=[] GB300 sm,mem,W,pstate=[120 MHz, 3996 MHz, 149.82 W, P0] RTX used=233MiB
+2026-10-28 16:35:00 CDT BOOT A2: dsv41-vllm-1017-AP2-A2 LAUNCH=~/dsv41/m3/ap2/h2ref-att2b/launch_att2d.sh AENV=[HOOK=~/dsv41/m3/hook-h1 OVERLAY_61161=1 O61=~/dsv41/m3/desk-hook/L3/tree/vllm MEGA_SHARE_TOPK=2 MEGA_POS_I32_ONCE=1 MEGA_L2_VERIFY=1 MEGA_L2_STATS_EVERY=2000 NOCORE=1] EXTRA=[--kv-cache-memory 9126805504 --kv-offloading-size 48 --kv-offloading-backend native] SPEC_EXTRA=[,"rejection_sample_method":"block"] MemAvail=461.2GiB xid_base=355 disk=470GiB elapsed=5059s
+2026-10-28 16:36:17 CDT card watchdog 2570858  on dsv41-vllm-1017-AP2-A2 (enforce, stall 2 s, no rollback)
+2026-10-28 16:36:18 CDT   dsv41-vllm-1017-AP2-A2 waiting 0 min: MemAvail=462.5GiB last=[]
+2026-10-28 16:41:19 CDT   dsv41-vllm-1017-AP2-A2 waiting 5 min: MemAvail=133.5GiB last=[2026-10-28 21:40:57,538 - INFO - autotuner.py:1046 - flashinfer.jit: [Autotuner]: Autotuning process starts ...]
+2026-10-28 16:43:59 CDT BOUND dsv41-vllm-1017-AP2-A2 after 462s
+2026-10-28 16:43:59 CDT boot->ready A2 540s
+env add=['CUDA_ENABLE_COREDUMP_ON_EXCEPTION=0', 'CUDA_ENABLE_CPU_COREDUMP_ON_EXCEPTION=0'] rem=[] extra_binds=[] gone_binds=[] over_shipped=[] ulimits={'memlock': (-1, -1), 'stack': (67108864, 67108864)} core=(0, 0)
+2026-10-28 16:44:00 CDT FACTS A2: kv=[4,400,013] args_ok=1 env_ok=1 binds_ok=1 ulimit_core0=1 guard_rsu=OK l2_lines=2 autotune=[Loaded 117 configs Saved 117 configs ]
+2026-10-28 16:44:00 CDT HEALTH A2: models_http=200 chat_http=200 (reasoning_effort low) content=[OK] sidecar=true
+2026-10-28 16:44:00 CDT FOREIGN A2 bind: 0 (non-127.0.0.1 POST /v1 since 2026-10-28T21:34:59Z)
+2026-10-28 16:44:05 CDT CELL A2 warm rc=0: WARM OK (elapsed 5604s)
+2026-10-28 16:44:24 CDT CELL A2 brrr0 rc=0: C1DECOMP END (elapsed 5623s)
+2026-10-28 16:44:33 CDT CELL A2 greedy rc=0: GREEDY wrote ~/dsv41/m3/ap2/results-cardAP2/A2/greedy.json: 16 prompts, errors=0, 7s (elapsed 5632s)
+2026-10-28 16:48:42 CDT CELL A2 lib rc=0: Results saved to ~/dsv41/m3/ap2/results-cardAP2/A2/lib.json (elapsed 5881s)
+2026-10-28 16:48:56 CDT CELL A2 ttft rc=0: TTFT DONE ok=8/8 8192:39635.2tok/s,0.2069s 16384:40869.6tok/s,0.4014s 65536:41499.3tok/s,1.5789s 131072:40692.2tok/s,3.219s (11.1s) (elapsed 5895s)
+2026-10-28 16:58:36 CDT CELL A2 pct1 rc=0: PCT DONE (elapsed 6475s)
+2026-10-28 16:58:45 CDT CELL A2 tf rc=0: [AP2-A2] wrote tf-AP2-A2.jsonl: docs=39 errors=0 positions=79544 wall=7s (elapsed 6484s)
+2026-10-28 16:59:03 CDT CELL A2 gauntlet rc=0: {"tag": "ap2-A2", "task": "struct-readings", "success": true, "done": 12, "expected": 12} (elapsed 6502s)
+2026-10-28 16:59:03 CDT GAUNTLET A2: 12 / 12
+2026-10-28 16:59:20 CDT CELL A2 probe rc=0: GATE PASS: 16/16 cells ok -> ~/dsv41/m3/ap2/results-cardAP2/A2/probe62417.json (elapsed 6519s)
+2026-10-28 16:59:36 CDT CELL A2 soak rc=0: SOAK DONE pass=4/4 correct=4/4 loops=0 nonstop=0 max_completion=4156 (14.0s) (elapsed 6535s)
+2026-10-28 16:59:36 CDT ONEM A2 not run: not in ONEM_ARMS=[A S8 S4]
+2026-10-28 16:59:36 CDT ENGAGE A2: {"arm": "A2", "expect_splits": 0, "shipped_sha256": "df2cdd1c3acfe6546b10a8d6d9b3d8bae3783a4910337d9721d83ff653e4fc13", "side_sha256": null, "side_mapped_pids": 0, "rsu_sha256_end": "2d43d5133c1fb96399e186ed10c5a26b54c12e6a019d9d163cbff1adbcfbcc39", "enabled": 0, "enabled_cap": [], "enabled_max_reqs": [], "decode_lines": [], "sqN_side": 0, "decode_other": 0, "trace_lines": 0, "trace_ok1": [], "trace_ok1_sq6": 0, "trace_ok1_bad": 0, "guard_lines": 0, "att2_any": 0, "l2_patched": 2}
+2026-10-28 16:59:36 CDT XID A2: 0 new Xid line(s) since boot (base 355)
+2026-10-28 16:59:36 CDT ERRCOUNT A2 0 (since 2026-10-28T21:44:00Z)
+2026-10-28 16:59:36 CDT ERRCOUNT A2-rtx 0 (since 2026-10-28T21:44:00Z)
+2026-10-28 16:59:36 CDT FOREIGN A2 cells: 0 (non-127.0.0.1 POST /v1 since 2026-10-28T21:44:00Z)
+2026-10-28 16:59:36 CDT CARD WD A2: {"t": 1793224776.2479994, "server_up": true, "words": [2562560, 2562560, 0, 26914440, 47435477, 32512296608, 2172211], "timeouts_base": 0, "wait_ms_per_wait": 0.014967374996259572, "mode": "enforce",  trips=0
+2026-10-28 16:59:36 CDT ARM A2 cells took 936s (elapsed 6535s of 9900s) crash-evidence: xid_new=0 err=0/0 gpu_fault_lines=0 fault_cell=[] alive=1
+2026-10-28 16:59:36 CDT card watchdog 2570858 stopped
+2026-10-28 16:59:38 CDT stop-and-keep dsv41-vllm-1017-AP2-A2
+2026-10-28 16:59:44 CDT stop-and-keep dsv41-vllm-1017-AP2-A2-rtx
+2026-10-28 17:00:18 CDT strays: 3868 0.6GiB /usr/bin/containerd |5719 0.3GiB /usr/bin/gnome-shell |4385 0.2GiB /usr/bin/dockerd -H|5508 0.1GiB /usr/lib/xorg/Xorg vt2| MemAvailable=461.6GiB
+2026-10-28 17:00:18 CDT ISOLATE off (cardAP2-isolate removed)
+2026-10-28 17:00:18 CDT RESTORE start: RTX used=233MiB GB300 used=22MiB /dev/shm/vllm_peer_tier2=[-rw-r--r-- 1 root root 127541248 Oct 28 16:40 /dev/shm/vllm_peer_tier2] (reused, same layout; never deleted)
+2026-10-28 17:01:21 CDT RESTORE sidecar dsv41-vllm-1017-h1-REF-rtx running=true after 63s: prepared 40 layers in 42s; 68.4 GB allocated
+2026-10-28 17:01:21 CDT   dsv41-vllm-1017-h1-REF waiting 0 min: MemAvail=450.5GiB last=[]
+2026-10-28 17:06:24 CDT   dsv41-vllm-1017-h1-REF waiting 5 min: MemAvail=134.0GiB last=[2026-10-28 22:05:13,370 - INFO - autotuner.py:1046 - flashinfer.jit: [Autotuner]: Autotuning process starts ...]
+2026-10-28 17:08:15 CDT BOUND dsv41-vllm-1017-h1-REF after 414s
+2026-10-28 17:08:15 CDT LANE DARK ends (dsv41-vllm-1017-h1-REF bound after 477s)
+2026-10-28 17:08:15 CDT RESTORE FACTS rowmap40=1 peer2=2 kvline=[GPU KV cache size: 4,400,013 tokens] kvdecl=1 kvtier=1 block=1(want 1) args_same=1 env_same_sorted=1
+2026-10-28 17:08:15 CDT HEALTH restore: models_http=200 chat_http=200 (reasoning_effort low) content=[OK] sidecar=true
+2026-10-28 17:08:15 CDT re-arm watchdog: (cd ~/dsv41/m3) python3 ~/dsv41/m3/sidecar_watchdog.py --server dsv41-vllm-1017-h1-REF --mode enforce --interval 1 --stall 2 --status ~/dsv41/m3/logs/sidecar_watchdog.status.json --log ~/dsv41/m3/logs/sidecar_watchdog.v27.log
+2026-10-28 17:08:19 CDT fail-stop watchdog armed pid 2627557 (ppid 1) on dsv41-vllm-1017-h1-REF: python3 ~/dsv41/m3/sidecar_watchdog.py --server dsv41-vllm-1017-h1-REF --mode enforce --interval 1 --stall 2 --status ~/dsv41/m3/logs/sidecar_watchdog.status.json --log ~/dsv41/m3/logs/sidecar_watchdog.v27.log  | log tail: 2026-10-28 17:08:15 CDT start v2 mode=enforce server=dsv41-vllm-1017-h1-REF sidecar=dsv41-vllm-1017-h1-REF-rtx rollback=None stall=2.0s interval=1.0s
+2026-10-28 17:08:19 CDT watchdog PPID 1 OK (reparented to init; survives this runner's EXIT trap)
+2026-10-28 17:08:19 CDT LANE DARK total 7058s (budget 9900s)
+2026-10-28 17:08:20 CDT kernel log: 355 Xid lines at END (preflight baseline 355)
+2026-10-28 17:08:21 CDT TFCMP A2 vs A: TF Δlogprob AP2-A → AP2-A2: positions=79544 docs=39 (token-mismatch docs=0) mean|Δ|=0.05519 p50=0.00007 p99=0.9899 max=9.272 top-1 flips=1722 (2.165%) ppl 1.5183 → 1.5180; wrote tf-compare-AP2-A-vs-AP2-A2.json
+2026-10-28 17:08:22 CDT TFCMP S8 vs A: TF Δlogprob AP2-A → AP2-S8: positions=79544 docs=39 (token-mismatch docs=0) mean|Δ|=0.05530 p50=0.00007 p99=0.9889 max=11.741 top-1 flips=1721 (2.164%) ppl 1.5183 → 1.5193; wrote tf-compare-AP2-A-vs-AP2-S8.json
+2026-10-28 17:08:23 CDT TFCMP S4 vs A: TF Δlogprob AP2-A → AP2-S4: positions=79544 docs=39 (token-mismatch docs=0) mean|Δ|=0.05585 p50=0.00007 p99=1.0085 max=14.622 top-1 flips=1745 (2.194%) ppl 1.5183 → 1.5184; wrote tf-compare-AP2-A-vs-AP2-S4.json
+2026-10-28 17:08:23 CDT FLIPSM A2 vs A: GATE PASS hi_agent_tool=0 hi_prose_pct=0.005 W=2.554 W_calib=3.077 skipped_docs=0
+2026-10-28 17:08:23 CDT FLIPSM S8 vs A: GATE PASS hi_agent_tool=0 hi_prose_pct=0.009 W=2.751 W_calib=2.554 skipped_docs=0
+2026-10-28 17:08:23 CDT FLIPSM S4 vs A: GATE PASS hi_agent_tool=0 hi_prose_pct=0.006 W=2.784 W_calib=2.554 skipped_docs=0
+2026-10-28 17:08:23 CDT GATES still frozen: sha256 88cac1b98000282d5d5e8cb393ccd9b23d511940b9c80f107a8896f97e9f8438
+2026-10-28 17:08:24 CDT VERDICT rc=0 RESULT S8=NO S4=PROMOTE-READY WINNER {'arm': 'S4', 'splits': 4, 'brrr_tok_s': 484.5, 'onem': 'PASS'} VERDICT-SHA256 88cac1b98000282d5d5e8cb393ccd9b23d511940b9c80f107a8896f97e9f8438 G0_validity: PASS — A=ok A2=ok S8=ok S4=ok | controls CRASH-FREE A=PASS A2=PASS G1_controls: PASS — A 11.092 / A2 11.106 ms/step, spread 0.13% (bar <= 1.0%) A_crashfree: PASS — xid=0 errors=[0, 0] gpu_fault_lines=0 fault_cell=[] alive_end=1 wd_trips=0 lib_crash=0 A2_crashfree: PASS — xid=0 errors=[0, 0] gpu_fault_lines=0 fault_cell=[] alive_end=1 wd_trips=0 lib_crash=0 S8_engaged: PASS — {"arm": "S8", "expect_splits": 8, "shipped_sha256": "df2cdd1c3acfe6546b10a8d6d9b3d8bae3783a4910337d9721d83ff653e4fc13", "side_sha256": "744a9de89060730eecbb7c4c249dedc36f3dbfb3854de17299780b66cb90e983", "side_mapped_pids": 1, "rsu_sha256_end": "2d43d5133c1fb96399e186ed10c5a26b54c12e6a019d9d163cbff1adbcfbcc39", "enabled": 1, "enabled_cap": [8], "enabled_max_reqs": [1], "decode_lines": ["s_q=6 splits=8 kind=compressed op=_flashmla_splitkv_C"], "sqN_side": 1, "decode_other": 0, "trace_lines": 284,  S8_G_crashfree: PASS — xid=0 errors=[0, 0] gpu_fault_lines=0 fault_cell=[] alive_end=1 wd_trips=0 lib_crash=0 S8_G_brrr: FAIL — S8 477.8 tok/s vs max(A,A2) 467.5: 1.022x (bar >= 1.025x); step -0.357 ms vs mean(A,A2) S8_G_tf: FAIL — W 2.751 (bar <= 1.25 x A2's 2.554 = 3.192); confident flips 6 (bar <= max(3,2)+1 = 4); agent/tool confident 0 (bar 0); raw TF flips {'flips': 1721, 'pct': 2.164} vs A2 {'flips': 1722, 'pct': 2.165} S8_G_gauntlet: PASS — S8 12/12 (A 12/12, A2 12/12) S8_G_probe62417: PASS — S8
+2026-10-28 17:08:25 CDT kept dsv41-vllm-1017-AP2-A-AP2-S8NO-S4PROMOTE-READY (stopped)
+2026-10-28 17:08:25 CDT kept dsv41-vllm-1017-AP2-A-rtx-AP2-S8NO-S4PROMOTE-READY (stopped)
+2026-10-28 17:08:26 CDT kept dsv41-vllm-1017-AP2-S8-AP2-S8NO-S4PROMOTE-READY (stopped)
+2026-10-28 17:08:27 CDT kept dsv41-vllm-1017-AP2-S8-rtx-AP2-S8NO-S4PROMOTE-READY (stopped)
+2026-10-28 17:08:27 CDT kept dsv41-vllm-1017-AP2-S4-AP2-S8NO-S4PROMOTE-READY (stopped)
+2026-10-28 17:08:28 CDT kept dsv41-vllm-1017-AP2-S4-rtx-AP2-S8NO-S4PROMOTE-READY (stopped)
+2026-10-28 17:08:29 CDT kept dsv41-vllm-1017-AP2-A2-AP2-S8NO-S4PROMOTE-READY (stopped)
+2026-10-28 17:08:29 CDT kept dsv41-vllm-1017-AP2-A2-rtx-AP2-S8NO-S4PROMOTE-READY (stopped)
+2026-10-28 17:08:29 CDT FINAL dsv41 running=[dsv41-vllm-1017-h1-REF dsv41-vllm-1017-h1-REF-rtx ] bound=1 watchdog=2627557 ppid=1 isolate_rule=0
+2026-10-28 17:08:29 CDT ===== CARD AP2 END (lane = dsv41-vllm-1017-h1-REF) =====
+2026-10-28 17:08:29 CDT ISOLATE off (cardAP2-isolate removed)

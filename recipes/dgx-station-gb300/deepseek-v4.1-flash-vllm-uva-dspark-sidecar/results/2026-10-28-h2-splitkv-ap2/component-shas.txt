@@ -1,0 +1,13 @@
+# sha256 of every file h2-REF adds over v27, read in-container per arm (engage.json / facts.json) and at promotion (promote/promote.log FACTS)
+2d43d5133c1fb96399e186ed10c5a26b54c12e6a019d9d163cbff1adbcfbcc39  vllm/v1/worker/gpu/spec_decode/rejection_sampler_utils.py  (#61161 overlay + #60945 guard; was 42c5e8a0b9ba5fbf89de026969bfbc805b8a13ef02ea2c6e5635c839d59b0310 in h1-REF before 2026-10-28 14:42 CDT)
+ee5072d245ea850ff4efa60ec548c172484019415f5d687b805d2d6af650ade1  vllm/v1/worker/gpu/sample/gumbel.py  (#61161 overlay; sha1 6eac3e13)
+4aad3ed14897174c299f01e9360bb75d7450dee40c91ef19707cff58d4c577c5  vllm/v1/worker/gpu/spec_decode/dflash2/speculator.py  (#61161 overlay; sha1 896f9b5c)
+744a9de89060730eecbb7c4c249dedc36f3dbfb3854de17299780b66cb90e983  vllm/_flashmla_splitkv_C.abi3.so  (SIDE extension, extra file)
+df2cdd1c3acfe6546b10a8d6d9b3d8bae3783a4910337d9721d83ff653e4fc13  vllm/_flashmla_C.abi3.so  (the image's own, NOT mounted over)
+9946e6eef6c1f8e342261c7383e4d2ae69a18111c244f5efc7258cfe87d56d14  vllm/models/deepseek_v41/nvidia/flash_mla_mega_attn.py  (#57711-derived overlay, quarantine gate)
+97c67176a1b8f036de6d122a6dc2525a3e981e476a9584a13c571b158cbe0b56  vllm/models/deepseek_v41/nvidia/mega_splitkv_combine.py  (new file, #57711)
+sha1 0f8f5552f85c  hook-h1/mega_peer_hook.py (el8 hook @87af662 + L2 install hunk) ; sha1 fe0e994441b7  hook-h1/attn_share.py
+88cac1b98000282d5d5e8cb393ccd9b23d511940b9c80f107a8896f97e9f8438  ap2_verdict.frozen.py (gates, frozen before boot A)
+
+# pins.txt as written by the runner:
+SHIPPED_SHA256=df2cdd1c3acfe6546b10a8d6d9b3d8bae3783a4910337d9721d83ff653e4fc13 SIDE_SHA256=744a9de89060730eecbb7c4c249dedc36f3dbfb3854de17299780b66cb90e983 OVL_SHA256=9946e6eef6c1f8e342261c7383e4d2ae69a18111c244f5efc7258cfe87d56d14 CMB_SHA256=97c67176a1b8f036de6d122a6dc2525a3e981e476a9584a13c571b158cbe0b56 RSU_SHA256=2d43d5133c1fb96399e186ed10c5a26b54c12e6a019d9d163cbff1adbcfbcc39 FZ=~/dsv41/m3/ap2/h2ref-att2b LAUNCH=~/dsv41/m3/ap2/h2ref-att2b/launch_att2d.sh sha1 88476d94

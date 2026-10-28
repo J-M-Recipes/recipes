@@ -1,0 +1,183 @@
+#!/usr/bin/env bash
+# promote_guard_split.sh — DRAFT (Card AP2, 2026-10-28, claude-opus-5-5; from ap/promote_att2.sh + w12/guard_promote.sh).
+# RUN ONLY ON JAMES'S EXPLICIT GO after Card AP2. Creates the new :30006 reference pair
+#   dsv41-vllm-1017-h2-REF (+-rtx) = today's h1-REF (with the vLLM #60945 guard) + the ATT2B split-KV side extension under the
+#   CRASH2 quarantine env, at the WINNING split of results-cardAP2/verdict.json, from the SAME frozen paths the card measured
+#   (ap2/h2ref-att2b, chmod a-w); keeps dsv41-vllm-1017-h1-REF (+-rtx) STOPPED-and-kept as the rollback; re-arms the fail-stop
+#   watchdog from pr1/promote/wd-argv.txt (names h1-REF; used VERBATIM for any rollback, and with only --server swapped to
+#   h2-REF for the new pair; same status/log/pid paths, so the lane check keeps working); writes LANE-OWNER + ledger.
+# Entry gate: verdict winner PROMOTE-READY, verdict.json produced by the frozen ap2_verdict (sha256 match). James override for a
+#   HOLD candidate only: FORCE=1 SPLIT=<4|8> JAMES_OK="<his words>" (logged verbatim). NO / INVALID-* / INCOMPLETE never.
+# Post-boot proof before the watchdog is re-armed (any miss -> automatic rollback to h1-REF + its watchdog):
+#   KV 4,400,013; vllm args == h1-REF; env delta and binds == EXACTLY those of the winning card arm (measured == promoted);
+#   ulimit core=0; in-container shas: guard rsu 2d43d513, shipped _flashmla_C df2cdd1c, side 744a9de8 (and mapped);
+#   'split-KV ENABLED: cap=SPLIT ... max_reqs=1'; split-decode lines only 's_q=6 splits=SPLIT kind=compressed op=_flashmla_splitkv_C';
+#   TRACE ok=1 only at (6,6,1,0); smokes 17*19 thinking off/on -> 323; 1M needle smoke PASS; 0 new Xid + 0 engine errors.
+# Dark ~13-15 min (> the 10-min foreground tool cap): run detached and poll the log:
+#   ssh <station> 'setsid nohup bash ~/dsv41/m3/ap2/promote_guard_split.sh > /dev/null 2>&1 < /dev/null & sleep 3; tail -3 ~/dsv41/m3/ap2/promote/promote.log'
+# Afterwards (Mac): install research/.../ap2-build/dsv41_v27_lane_check.sh.new over ~/.hermes/profiles/milo/scripts/dsv41_v27_lane_check.sh.
+set -uo pipefail
+D=~/dsv41/m3; P=$D/ap2; U=http://127.0.0.1:30006; M=dsv41-flash-uva
+OLD=dsv41-vllm-1017-h1-REF; NREF=dsv41-vllm-1017-h2-REF
+WD=$D/sidecar_watchdog.py; PIDF=$D/logs/sidecar_watchdog.pid; WL=$D/logs/sidecar_watchdog.v27.log
+WARGV=$D/pr1/promote/wd-argv.txt; SHA_WARGV=49d2f936   # retargeted to h1-REF on 2026-10-28; used verbatim
+RES=$P/results-cardAP2; VJ=$RES/verdict.json; FROZEN_V=$RES/ap2_verdict.frozen.py
+FZ=$P/h2ref-att2b
+DPV=/usr/local/lib/python3.12/dist-packages/vllm
+RSU_IN=$DPV/v1/worker/gpu/spec_decode/rejection_sampler_utils.py; SO_IN=$DPV/_flashmla_C.abi3.so; SIDE_IN=$DPV/_flashmla_splitkv_C.abi3.so
+RSU=$D/desk-hook/L3/tree/vllm/v1/worker/gpu/spec_decode/rejection_sampler_utils.py
+SHA_RSU=2d43d5133c1fb96399e186ed10c5a26b54c12e6a019d9d163cbff1adbcfbcc39
+SHIPPED_SHA256=df2cdd1c3acfe6546b10a8d6d9b3d8bae3783a4910337d9721d83ff653e4fc13
+SIDE_SHA256=744a9de89060730eecbb7c4c249dedc36f3dbfb3854de17299780b66cb90e983
+FF=' ERROR [0-9]{2}-[0-9]{2} |Traceback \(most recent call last\)|ValueError:|RuntimeError:|OutOfMemoryError|EngineCore failed'
+GPUFAULT='illegal memory access|ILLEGAL_ADDRESS|CUDA error|Xid|cudaErrorLaunchFailure|unspecified launch failure'
+OUT=$P/promote; L=$OUT/promote.log
+if [[ -e $OUT/DONE ]]; then echo "REFUSE: $OUT/DONE exists (already promoted)"; exit 2; fi
+mkdir -p "$OUT"
+log(){ echo "$(date '+%F %T %Z') $*" | tee -a "$L"; }
+own(){ echo "- $(date '+%F %T %Z') $*" >> "$D/LANE-OWNER.txt"; }
+wd_pids(){ ps -eo pid=,comm=,args= | awk '$2=="python3" && index($0,"sidecar_watchdog.py") && (index($0,"--server dsv41-vllm-1017-h1-REF ") || index($0,"--server dsv41-vllm-1017-h2-REF ")) {print $1}' | tr '\n' ' '; }
+xid_count(){ journalctl -k --no-pager -q -o short-unix 2>/dev/null | grep -c 'NVRM: Xid'; }
+arm_wd(){ # $1 server name: pr1/promote/wd-argv.txt VERBATIM for h1-REF, only the --server value swapped for h2-REF; double-fork -> PPID 1
+  local -a A=(); local i p pp
+  mapfile -t A < "$WARGV"
+  if [[ $1 != "$OLD" ]]; then for ((i=0;i<${#A[@]};i++)); do [[ ${A[$i]} == --server && $((i+1)) -lt ${#A[@]} ]] && A[$((i+1))]=$1; done; fi
+  printf '%s\n' "${A[@]}" > "$OUT/wd-argv-$1.txt"
+  ( cd "$D" || exit 1; setsid nohup "${A[@]}" > /dev/null 2>&1 < /dev/null & ); sleep 4
+  p=$(ps -eo pid=,comm=,args= | awk -v s="--server $1 " '$2=="python3" && index($0,"sidecar_watchdog.py") && index($0,s) {print $1; exit}')
+  pp=$(ps -o ppid= -p "${p:-0}" 2>/dev/null | tr -d ' ')
+  [[ -n $p ]] && echo "$p" > "$PIDF"
+  log "watchdog armed pid=${p:-NONE} ppid=${pp:-?} on $1 (argv $OUT/wd-argv-$1.txt)$([[ $pp == 1 ]] || echo ' — WARN PPID != 1 or not started (needs hands)')"; }
+bound(){ curl -s -m 5 $U/v1/models | grep -q "$M"; }
+rollback(){ log "ROLLBACK: $*"
+  docker stop -t 60 "$NREF" >/dev/null 2>&1; docker stop -t 30 "$NREF-rtx" >/dev/null 2>&1
+  local since; since=$(date -u +%FT%TZ)
+  docker start "$OLD-rtx" >/dev/null
+  for i in $(seq 1 36); do docker logs --since "$since" "$OLD-rtx" 2>&1 | grep -qE 'serving|prepared 40 layers' && break; sleep 5; done
+  docker start "$OLD" >/dev/null
+  for i in $(seq 1 90); do bound && break; sleep 10; done
+  if bound; then arm_wd "$OLD"; own "PROMOTION ROLLED BACK ($*) — lane back on $OLD (+-rtx) + watchdog $(cat "$PIDF"); $NREF pair kept stopped for diagnosis"
+  else own "PROMOTION ROLLBACK FAILED ($*) — lane DARK, needs hands: docker start $OLD-rtx; wait 'serving'; docker start $OLD; re-arm the watchdog from $WARGV"; fi
+  rm -f "$D/logs/MAINTENANCE"; log "===== promote_guard_split ROLLED BACK ====="; exit 3; }
+chat(){ # $1 = JSON body -> prints "finish<TAB>content"
+  curl -s -m 600 $U/v1/chat/completions -H 'Content-Type: application/json' -d "$1" \
+    | python3 -c 'import json,sys;c=json.load(sys.stdin)["choices"][0];print(c.get("finish_reason"),"\t",(c["message"].get("content") or "").strip()[:80])' 2>&1; }
+
+log "===== promote_guard_split start ====="
+# ---------------- preflight (refusals leave the lane untouched)
+[[ -s $VJ && -s $FROZEN_V ]] || { log "ABORT: no Card AP2 verdict ($VJ)"; exit 2; }
+read -r W_ARM W_SPLIT VSHA RES_LINE < <(python3 -c 'import json,sys;v=json.load(open(sys.argv[1]));w=v.get("winner") or {};print(w.get("arm","none"),w.get("splits",0),v.get("verdict_sha256","?"),v["result"].replace(" ",","))' "$VJ")
+[[ $(sha256sum "$FROZEN_V" | cut -d' ' -f1) == "$VSHA" ]] || { log "ABORT: verdict.json was not produced by the frozen ap2_verdict ($VSHA)"; exit 2; }
+if [[ ${FORCE:-0} == 1 ]]; then
+  [[ ${SPLIT:-} == 4 || ${SPLIT:-} == 8 ]] || { log "ABORT: FORCE needs SPLIT=4|8"; exit 2; }
+  [[ -n ${JAMES_OK:-} ]] || { log "ABORT: FORCE needs JAMES_OK=\"<James's words>\""; exit 2; }
+  st=$(python3 -c 'import json,sys;print(json.load(open(sys.argv[1]))["per_candidate"].get("S"+sys.argv[2],"MISSING"))' "$VJ" "$SPLIT")
+  [[ $st == PROMOTE-READY || $st == HOLD ]] || { log "ABORT: S$SPLIT is $st — FORCE only covers HOLD (never NO: a crash or a correctness fail)"; exit 2; }
+  W_ARM=S$SPLIT; log "FORCE: promoting S$SPLIT ($st) on James's words: \"$JAMES_OK\""
+else
+  [[ $W_ARM == S8 || $W_ARM == S4 ]] || { log "ABORT: Card AP2 has no PROMOTE-READY winner ($RES_LINE)"; exit 2; }
+  SPLIT=$W_SPLIT; log "winner $W_ARM (split $SPLIT); card result $RES_LINE"
+fi
+ARMD=$RES/$W_ARM
+[[ -s $ARMD/env.json && -s $ARMD/binds.json && -s $ARMD/ulimits.json && -s $RES/env-before-$OLD.json ]] || { log "ABORT: the winning arm's env/binds/ulimits receipts are missing ($ARMD)"; exit 2; }
+grep -q "FZ=$FZ " "$RES/pins.txt" || { log "ABORT: the card did not measure $FZ ($(cat "$RES/pins.txt" 2>/dev/null | cut -c1-200))"; exit 2; }
+docker ps --format '{{.Names}}' | grep -qx "$OLD" || { log "ABORT: $OLD not running"; exit 2; }
+bound || { log "ABORT: $OLD not bound"; exit 2; }
+docker ps -a --format '{{.Names}}' | grep -qxE "$NREF|$NREF-rtx" && { log "ABORT: $NREF already exists"; exit 2; }
+ps -eo args | grep -E '^bash .*card[A-Za-z0-9]*_runner\.sh' | grep -v grep | grep -q . && { log "ABORT: a card runner is live"; exit 2; }
+df -Pk / | awk 'NR==2{exit !(int($4/1048576) >= 100)}' || { log "ABORT: < 100 GiB free on /"; exit 2; }
+# the guard: on disk and live in h1-REF
+[[ $(sha256sum "$RSU" | cut -d' ' -f1) == "$SHA_RSU" ]] || { log "ABORT: L3 rejection_sampler_utils.py is not the guarded 2d43d513"; exit 2; }
+[[ $(timeout 20 docker exec "$OLD" sha256sum "$RSU_IN" 2>/dev/null | cut -d' ' -f1) == "$SHA_RSU" ]] || { log "ABORT: h1-REF does not serve the guard"; exit 2; }
+( cd $D/hook-h1 && sha1sum -c --quiet SHA1SUMS ) || { log "ABORT: hook-h1 SHA1SUMS"; exit 2; }
+( cd $D/desk-hook/L3/tree && sha1sum -c --quiet SHA1SUMS ) || { log "ABORT: overlay-61161 (L3) SHA1SUMS"; exit 2; }
+# the frozen artifacts (read-only, exactly what the card mounted)
+[[ -z $(find "$FZ" -perm /222 2>/dev/null | head -1) ]] || { log "ABORT: $FZ is writable"; exit 2; }
+( cd "$FZ/build/out" && sha256sum -c --quiet SHA256SUMS ) && [[ $(sha256sum "$FZ/build/out/_flashmla_splitkv_C.abi3.so" | cut -d' ' -f1) == "$SIDE_SHA256" ]] || { log "ABORT: frozen side .so"; exit 2; }
+( cd "$FZ/overlay" && sha256sum -c --quiet SHA256SUMS ) || { log "ABORT: frozen overlay sha256"; exit 2; }
+[[ $(sha1sum "$FZ/launch_att2d.sh" | cut -c1-8) == 88476d94 ]] || { log "ABORT: frozen launcher sha1"; exit 2; }
+[[ $(sha1sum "$P/start_h2ref.sh" | cut -c1-8) == $(grep ' start_h2ref.sh$' "$P/SHA1SUMS.live" | cut -c1-8) ]] || { log "ABORT: start_h2ref.sh differs from the staged copy"; exit 2; }
+# the watchdog: pr1/promote/wd-argv.txt (verbatim) must name h1-REF and match the live process
+[[ $(sha1sum "$WARGV" | cut -c1-8) == "$SHA_WARGV" ]] || { log "ABORT: $WARGV sha1 changed (pinned $SHA_WARGV)"; exit 2; }
+grep -qx -- "$OLD" "$WARGV" || { log "ABORT: $WARGV does not name $OLD"; exit 2; }
+WP=$(wd_pids); WP=${WP%% *}; [[ -n $WP ]] || { log "ABORT: no live production watchdog"; exit 2; }
+tr '\0' '\n' < "/proc/$WP/cmdline" | sed '/^$/d' > "$OUT/wd-argv-live.txt"
+cmp -s "$OUT/wd-argv-live.txt" "$WARGV" || { log "ABORT: live watchdog argv != $WARGV (needs a human look before the re-arm path is trusted)"; exit 2; }
+docker inspect -f '{{json .Args}}' "$OLD" > "$OUT/args-h1ref.json"; docker inspect -f '{{json .Config.Env}}' "$OLD" > "$OUT/env-h1ref.json"
+docker inspect -f '{{json .HostConfig.Binds}}' "$OLD" > "$OUT/binds-h1ref.json"; docker inspect -f '{{json .HostConfig.Ulimits}}' "$OLD" > "$OUT/ulimits-h1ref.json"
+python3 -c 'import json,sys;sys.exit(0 if set(json.load(open(sys.argv[1])))==set(json.load(open(sys.argv[2]))) else 1)' "$OUT/env-h1ref.json" "$RES/env-before-$OLD.json" \
+  || { log "ABORT: h1-REF env changed since Card AP2 measured it"; exit 2; }
+log "preflight OK; h1-REF watchdog pid $WP; split $SPLIT; frozen $FZ"
+
+# ---------------- dark
+XB=$(xid_count)
+echo "promote-guard-split $(date '+%F %T %Z')" > "$D/logs/MAINTENANCE"
+own "PROMOTION start: :30006 dark to replace $OLD (kept stopped as rollback) with $NREF (h1-REF + guard + ATT2B side split-KV cap $SPLIT, quarantine; Card AP2). Log $L"
+kill "$WP"; sleep 2; [[ -z $(wd_pids) ]] || { log "ABORT: watchdog still alive"; rm -f "$D/logs/MAINTENANCE"; exit 2; }
+echo "$(date '+%F %T %Z') watchdog stopped by promote_guard_split (h1-REF kept as rollback)" >> "$WL"
+docker stop -t 60 "$OLD" >/dev/null; docker stop -t 30 "$OLD-rtx" >/dev/null; log "stopped-and-kept $OLD (+-rtx)"
+[[ -e $OUT/SPLIT ]] && chmod u+w "$OUT/SPLIT"; echo "$SPLIT" > "$OUT/SPLIT"; chmod a-w "$OUT/SPLIT"
+t0=$(date +%s); since=$(date -u +%FT%TZ)
+NAME=$NREF SPLIT=$SPLIT bash "$P/start_h2ref.sh" >> "$OUT/start.log" 2>&1 || rollback "start_h2ref failed: $(tail -2 "$OUT/start.log" | tr '\n' '|')"
+for i in $(seq 1 90); do bound && break
+  docker ps --format '{{.Names}}' | grep -qx "$NREF" || rollback "server container died"; sleep 10; done
+bound || rollback "not bound after 15 min"
+log "bound after $(( $(date +%s)-t0 ))s"
+
+# ---------------- proof (any miss -> rollback)
+s1=$(chat '{"model":"dsv41-flash-uva","messages":[{"role":"user","content":"17*19=? number only"}],"max_tokens":64,"temperature":0,"chat_template_kwargs":{"thinking":false}}')
+log "smoke thinking-off 17*19 -> [$s1]"; [[ $s1 == *323* ]] || rollback "smoke (thinking off) wrong: $s1"
+s2=$(chat '{"model":"dsv41-flash-uva","messages":[{"role":"user","content":"17*19=? answer with the number only"}],"max_tokens":4096,"temperature":0,"reasoning_effort":"high","chat_template_kwargs":{"thinking":true}}')
+log "smoke thinking-on 17*19 -> [$s2]"; [[ $s2 == stop*323* ]] || rollback "smoke (thinking on) wrong: $s2"
+docker logs "$NREF" > "$OUT/boot.log" 2>&1
+kv=$(tr '\r' '\n' < "$OUT/boot.log" | grep -m1 -oE 'GPU KV cache size: [0-9,]+ tokens' | grep -oE '[0-9,]+')
+l2=$(tr '\r' '\n' < "$OUT/boot.log" | grep -c 'MEGA_L2 patched')
+at=$(tr '\r' '\n' < "$OUT/boot.log" | grep -oE 'Loaded [0-9]+ configs|Saved [0-9]+ configs' | tr '\n' ' ')
+ship=$(timeout 20 docker exec "$NREF" sha256sum "$SO_IN" 2>/dev/null | cut -d' ' -f1)
+side=$(timeout 20 docker exec "$NREF" sha256sum "$SIDE_IN" 2>/dev/null | cut -d' ' -f1)
+rsu=$(timeout 20 docker exec "$NREF" sha256sum "$RSU_IN" 2>/dev/null | cut -d' ' -f1)
+sm=$(timeout 30 docker exec "$NREF" sh -c 'n=0; for m in /proc/[0-9]*/maps; do grep -q _flashmla_splitkv_C.abi3.so "$m" 2>/dev/null && n=$((n+1)); done; echo $n' 2>/dev/null)
+docker inspect -f '{{json .Args}}' "$NREF" > "$OUT/args-h2ref.json"; docker inspect -f '{{json .Config.Env}}' "$NREF" > "$OUT/env-h2ref.json"
+docker inspect -f '{{json .HostConfig.Binds}}' "$NREF" > "$OUT/binds-h2ref.json"; docker inspect -f '{{json .HostConfig.Ulimits}}' "$NREF" > "$OUT/ulimits-h2ref.json"
+read -r argeq envok bindok ulok en dec_ok tr_ok gl < <(python3 - "$OUT" "$ARMD" "$RES/env-before-$OLD.json" "$SPLIT" <<'PY'
+import json, re, sys
+o, armd, envbefore, n = sys.argv[1], sys.argv[2], sys.argv[3], int(sys.argv[4])
+j = lambda f: json.load(open(f))  # noqa: E731
+argeq = int(j(f"{o}/args-h2ref.json") == j(f"{o}/args-h1ref.json"))
+# measured == promoted: h2's env delta vs h1-REF == the winning arm's env delta vs h1-REF (card preflight capture)
+h2, h1 = set(j(f"{o}/env-h2ref.json")), set(j(f"{o}/env-h1ref.json"))
+arm, ref = set(j(f"{armd}/env.json")), set(j(envbefore))
+envok = int((h2 - h1, h1 - h2) == (arm - ref, ref - arm) and f"VLLM_DSV41_MEGA_SPLITKV={n}" in h2)
+bindok = int(sorted(j(f"{o}/binds-h2ref.json") or []) == sorted(j(f"{armd}/binds.json") or []))
+ulok = int((j(f"{o}/ulimits-h2ref.json") or []) == (j(f"{armd}/ulimits.json") or []))
+lines = open(f"{o}/boot.log", errors="replace").read().replace("\r", "\n").splitlines()
+en = sum(bool(re.search(rf"split-KV ENABLED: cap={n} max_tokens=8 swa_only_layers=\w+ max_reqs=1", l)) for l in lines)
+dec = [m.groups() for l in lines for m in [re.search(r"split-KV decode: s_q=(\d+) splits=(\d+) kind=(\w+)(?: op=(\w+))?", l)] if m]
+dec_ok = int(bool(dec) and all(d == ("6", str(n), "compressed", "_flashmla_splitkv_C") for d in dec))
+tr = {m.groups()[1:5] for l in lines for m in [re.search(r"CRASH2 split gate: ok=(\d) s_q=(\d+) num_tokens=(\d+) decodes=(\d+) prefills=(\d+)", l)] if m and m.group(1) == "1"}
+tr_ok = int(tr == {("6", "6", "1", "0")})
+gl = sum("guard band overwritten" in l for l in lines)
+print(argeq, envok, bindok, ulok, en, dec_ok, tr_ok, gl)
+PY
+)
+log "FACTS kv=[$kv] l2_patched=$l2 autotune=[$at] args_eq_h1ref=$argeq env_delta==arm=$envok binds==arm=$bindok ulimits==arm=$ulok enabled=$en split_decode_only_sq6_s$SPLIT=$dec_ok trace_ok1_only_6611=$tr_ok guard_lines=$gl shipped=${ship:0:16} side=${side:0:16} side_mapped=${sm:-?} rsu=${rsu:0:16}"
+[[ $kv == 4,400,013 && $l2 -ge 1 && $argeq == 1 && $envok == 1 && $bindok == 1 && $ulok == 1 && $en -ge 1 && $dec_ok == 1 && $tr_ok == 1 && $gl == 0 \
+   && $ship == "$SHIPPED_SHA256" && $side == "$SIDE_SHA256" && $rsu == "$SHA_RSU" && ${sm:-0} -ge 1 ]] \
+  || rollback "boot facts wrong (kv=$kv l2=$l2 args=$argeq env=$envok binds=$bindok ulimits=$ulok enabled=$en dec=$dec_ok trace=$tr_ok guard=$gl ship=${ship:0:8} side=${side:0:8} rsu=${rsu:0:8} mapped=${sm:-?})"
+log "1M needle smoke (ap_1m.py, ~900K tokens)"
+timeout 1000 python3 "$P/ap_1m.py" --base $U --model $M --out "$OUT/onem.json" > "$OUT/onem.log" 2>&1
+log "$(tail -1 "$OUT/onem.log")"
+grep -q '^ONEM PASS' "$OUT/onem.log" || rollback "1M smoke failed: $(tail -1 "$OUT/onem.log" | cut -c1-200)"
+bound || rollback "lane not bound after the 1M smoke"
+docker logs --since "$since" "$NREF" > "$OUT/postlog.log" 2>&1
+ec=$(grep -cE "$FF" "$OUT/postlog.log"); gf=$(tr '\r' '\n' < "$OUT/postlog.log" | grep -ciE "$GPUFAULT"); xn=$(( $(xid_count) - XB ))
+log "CRASH-FREE during promotion: engine_errors=$ec gpu_fault_lines=$gf new_xid=$xn"
+[[ $ec == 0 && $gf == 0 && $xn == 0 ]] || rollback "not crash-free during the promotion checks (errors=$ec faults=$gf xid=$xn)"
+
+# ---------------- serve
+arm_wd "$NREF"
+[[ -n $(ps -eo pid=,comm=,args= | awk -v s="--server $NREF " '$2=="python3" && index($0,"sidecar_watchdog.py") && index($0,s)') ]] || log "WARN: h2-REF watchdog not running — needs hands (argv $OUT/wd-argv-$NREF.txt)"
+rm -f "$D/logs/MAINTENANCE"; touch "$OUT/DONE"
+{ echo; echo "## $(date '+%F %H:%M %Z') — PROMOTED $NREF on :30006 (James go${JAMES_OK:+: \"$JAMES_OK\"}): h1-REF (vLLM #60945 guard 2d43d513) + ATT2B split-KV side extension _flashmla_splitkv_C 744a9de8 under the CRASH2 quarantine (cap $SPLIT, s_q 6 / 1 request, overlay 9946e6ee), cores off; frozen artifacts $FZ (= the paths Card AP2 measured). Evidence: Card AP2 $RES_LINE (receipts $RES). Post-boot: KV 4,400,013, args == h1-REF, env/binds/ulimits == card arm $W_ARM, in-container shas ok, thinking on/off smokes 323, 1M needle PASS, 0 errors/faults/Xid. Rollback: $OLD (+-rtx) stopped-and-kept; watchdog argv $WARGV (verbatim)."; } >> ~/dsv41/results/ledger.md
+own "PROMOTED: :30006 reference = $NREF (+-rtx) = h1-REF + guard + ATT2B split-KV cap $SPLIT (Card AP2). Watchdog pid $(cat "$PIDF") (argv $OUT/wd-argv-$NREF.txt). Cold start: bash $P/start_h2ref.sh, then re-arm the watchdog from $OUT/wd-argv-$NREF.txt. Rollback = docker stop $NREF $NREF-rtx; docker start $OLD-rtx; wait 'serving'; docker start $OLD; re-arm the watchdog from $WARGV (verbatim). Lane check: install ap2-build/dsv41_v27_lane_check.sh.new on the Mac."
+log "===== promote_guard_split DONE ($NREF, split $SPLIT, watchdog $(cat "$PIDF")) ====="

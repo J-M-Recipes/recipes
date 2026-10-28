@@ -1,0 +1,21 @@
+112a113,132
+> 
+> # ---- ATT2b (Card W6, desk 2026-10-28): build PR #25 as a SIDE extension, never a replacement for vllm/_flashmla_C ----
+> # The sources register under torch library namespace _flashmla_splitkv_C (patches/01-splitkv-namespace.diff), so this
+> # .so loads next to the shipped vllm/_flashmla_C.abi3.so in one process (torch.ops.load_library; never imported).
+> # Its kernel templates / host stubs share mangled names with the shipped .so but use PR #25's Params layout, so:
+> #   * every non-API symbol is hidden (C++ and CUDA host code) -> nothing to interpose in either direction;
+> #   * -Bsymbolic: whatever stays exported binds INSIDE this .so first (DT_SYMBOLIC / DF_SYMBOLIC).
+> # The target keeps vLLM's internal name _flashmla_C (flashmla.cmake is verbatim); only the output file is renamed.
+> set_target_properties(_flashmla_C PROPERTIES
+>     OUTPUT_NAME _flashmla_splitkv_C
+>     CXX_VISIBILITY_PRESET hidden
+>     CUDA_VISIBILITY_PRESET hidden
+>     VISIBILITY_INLINES_HIDDEN ON)
+> target_compile_options(_flashmla_C PRIVATE
+>     $<$<COMPILE_LANGUAGE:CXX>:-fvisibility=hidden>
+>     $<$<COMPILE_LANGUAGE:CXX>:-fvisibility-inlines-hidden>
+>     $<$<COMPILE_LANGUAGE:CUDA>:-Xcompiler=-fvisibility=hidden>
+>     $<$<COMPILE_LANGUAGE:CUDA>:-Xcompiler=-fvisibility-inlines-hidden>)
+> target_link_options(_flashmla_C PRIVATE "LINKER:-Bsymbolic")
+> message(STATUS "ATT2b: _flashmla_C target -> _flashmla_splitkv_C (hidden visibility, -Bsymbolic)")

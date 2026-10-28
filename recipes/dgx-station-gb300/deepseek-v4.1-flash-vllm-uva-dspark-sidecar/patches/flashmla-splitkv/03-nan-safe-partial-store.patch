@@ -1,0 +1,20 @@
+--- a/csrc/kernels/sm100/prefill/sparse/fused_norm_rope_attn_rope_cast_fwd/core_attn/kernel.cuh
++++ b/csrc/kernels/sm100/prefill/sparse/fused_norm_rope_attn_rope_cast_fwd/core_attn/kernel.cuh
+@@ -469,10 +469,13 @@
+                             CUTE_UNROLL
+                             for (uint32_t j = 0; j < EPILOGUE_TILE_SIZE; j += 4) {
+                                 float4 v;
+-                                v.x = output[j+0]*output_scale;
+-                                v.y = output[j+1]*output_scale;
+-                                v.z = output[j+2]*output_scale;
+-                                v.w = output[j+3]*output_scale;
++                                // ATT2b fix B (NaN-safe): output_scale == 0 marks an empty / non-contributing split
++                                // (li == 0 or !contributes); 0 * NaN would still poison the combine, so select 0.
++                                const bool zero_split = output_scale == 0.0f;
++                                v.x = zero_split ? 0.0f : output[j+0]*output_scale;
++                                v.y = zero_split ? 0.0f : output[j+1]*output_scale;
++                                v.z = zero_split ? 0.0f : output[j+2]*output_scale;
++                                v.w = zero_split ? 0.0f : output[j+3]*output_scale;
+                                 *(float4*)(dst + j) = v;
+                             }
+                         }

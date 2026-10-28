@@ -1,0 +1,27 @@
+#!/usr/bin/env bash
+# start_h2ref.sh — DRAFT (Card AP2, 2026-10-28, claude-opus-5-5). Reproduce the h2-REF :30006 reference after a reboot, or from
+#   promote_guard_split.sh. h2-REF = h1-REF exactly (v27 + hook-h1 L2 key-sharing + overlay-61161 WITH the vLLM #60945 guard,
+#   KV decl + 48 GiB host tier + block verification) + the ATT2B split-KV side extension under the CRASH2 quarantine
+#   (split only at 1 request x s_q 6) + NOCORE — byte-for-byte the env/binds the winning Card AP2 arm ran, from the SAME frozen
+#   paths ($FZ, chmod a-w). Sidecar first, then server.
+# Usage: bash start_h2ref.sh        (SPLIT from $P/promote/SPLIT, written by promote_guard_split.sh; NAME defaults to h2-REF)
+#        SPLIT=8 NAME=... LAUNCH=<sandboxed copy> bash start_h2ref.sh   (dry runs only)
+set -uo pipefail
+D=~/dsv41/m3; P=$D/ap2; FZ=$P/h2ref-att2b
+LAUNCH=${LAUNCH:-$FZ/launch_att2d.sh}
+L3=$D/desk-hook/L3; RSU=$L3/tree/vllm/v1/worker/gpu/spec_decode/rejection_sampler_utils.py
+SPLIT=${SPLIT:-$(cat "$P/promote/SPLIT" 2>/dev/null)}
+[[ $SPLIT == 4 || $SPLIT == 8 ]] || { echo "SPLIT must be 4 or 8 (got '$SPLIT'; promote_guard_split.sh writes $P/promote/SPLIT)"; exit 2; }
+[[ $(sha1sum "$FZ/launch_att2d.sh" | cut -c1-8) == 88476d94 ]] || { echo "frozen launch_att2d.sh sha1 changed"; exit 2; }
+[[ -z $(find "$FZ" -perm /222 2>/dev/null | head -1) ]] || { echo "$FZ is writable (must stay chmod -R a-w)"; exit 2; }
+[[ $(sha256sum "$FZ/build/out/_flashmla_splitkv_C.abi3.so" | cut -d' ' -f1) == 744a9de89060730eecbb7c4c249dedc36f3dbfb3854de17299780b66cb90e983 ]] || { echo "frozen side .so sha256 changed"; exit 2; }
+[[ $(sha256sum "$RSU" | cut -d' ' -f1) == 2d43d5133c1fb96399e186ed10c5a26b54c12e6a019d9d163cbff1adbcfbcc39 ]] || { echo "L3 rejection_sampler_utils.py is not the #60945-guarded file"; exit 2; }
+export HOOK=$D/hook-h1
+export OVERLAY_61161=1 O61=$L3/tree/vllm
+export MEGA_SHARE_TOPK=2 MEGA_POS_I32_ONCE=1 MEGA_L2_VERIFY=1 MEGA_L2_STATS_EVERY=2000
+export NAME=${NAME:-dsv41-vllm-1017-h2-REF} ROWMAP=rowmap-mixed-ar-v1.json
+export EXTRA="--kv-cache-memory 9126805504 --kv-offloading-size 48 --kv-offloading-backend native"
+export SPEC_EXTRA=',"rejection_sample_method":"block"'
+export NOCORE=1 ATT2B=1 B2D=$FZ COREDUMP=0 SPLITKV=$SPLIT SPLITKV_MAX_TOKENS=8 SPLITKV_MAX_REQS=1 SPLITKV_SQ=6 SPLITKV_TRACE=1 SPLITKV_GUARD=0
+for step in ${STEPS:-sidecar server}; do bash "$LAUNCH" "$step" || exit 1; done   # STEPS=server only in the argv dry run
+echo "started $NAME (+-rtx) = h2-REF (h1-REF + guard + ATT2B side split-KV cap $SPLIT, quarantine s_q 6 / 1 request, cores off); re-arm the fail-stop watchdog against $NAME"

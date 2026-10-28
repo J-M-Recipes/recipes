@@ -1,0 +1,20 @@
+W12 RESULT FIXED
+PATCHED: PASS -- pinned 2d43d5133c1fb963 | in-container 2d43d5133c1fb963 env 2d43d5133c1fb963 launcher 2d43d5133c1fb963 | binds_ok=1 env_ok=1 | triton residual-mass kernels since boot: patched=2 unpatched=0 any-patched=2 -> PROVEN
+FAULT: none -- 0 new Xid (arm and card), 0 GPU-fault lines, alive at end, cores=0 | card Xid +0
+STABLE: PASS -- {'repro1': 'PASS', 'repro2': 'PASS'} engine errors ['0', '0']
+BIT-IDENTICAL: PASS -- kernel A/B: 100/100 cases bit-identical, neg-control 8/8, unpatched wrote the extra (bonus) last row in 6/6 k3 t1 cases (patched left it untouched); patched 2d43d5133c1f vs unpatched 42c5e8a0b9ba | sanitizer CONFIRMS
+VALID: PASS -- kv=4,400,013 args=1 env=1 binds=1 core0=1 l2=2 foreign=['0', '0'] engaged=True (enabled=1 cap=[4] sq6s4=1 bad=0)
+THROUGHPUT (agg tok/s): P/repro1: C1@0=251.9 C1@65536=246.9 C8@0=1110.0 C32@0=2551.1 C8@65536=1103.2 C32@65536=2542.6 ; P/repro2: C1@0=249.7 C1@65536=268.0 C8@0=1120.3 C32@0=2575.5 C8@65536=1115.6 C32@65536=2518.4
+C8 serving (info, in-boot rep A vs B): PASS -- s1: {'status': 'OK', 'pairs': 8, 'identical': 1, 'first_divergence': [43, 20, 8, 42, 24, 6, 33], 'max_abs_dlogprob_common_prefix': 0.749941, 'ids_source': ['token_ids']} | t0: {'status': 'OK', 'pairs': 8, 'identical': 1, 'first_divergence': [54, 9, 1, 13, 24, 6, 19], 'max_abs_dlogprob_common_prefix'
+D (GPU core on, optional): SKIP -- SKIPPED: budget: elapsed 1301s + boot 720s + cells 75s + restore 600s > 2400s
+No promotion (verification card).
+KAB_window_xid_info: +1 -- Xid lines logged while the KAB container ran (sanitizer/A-B window; excluded from FAULT)
+XID_delta: +0 -- baseline 354 -> end 355; new codes {'43': 1}; KAB-window Xid +1 (excluded); P +0
+BIT_IDENTICAL: PASS -- kernel A/B: 100/100 cases bit-identical, neg-control 8/8, unpatched wrote the extra (bonus) last row in 6/6 k3 t1 cases (patched left it untouched); patched 2d43d5133c1f vs unpatched 42c5e8a0b9ba
+SANITIZER_info: CONFIRMS -- {"unpatched": {"invalid_reads": 20, "in_residual_kernel": 20, "error_summary": 1060, "size4": true, "ran": "ERROR"}, "patched": {"invalid_reads": 0, "in_residual_kernel": 0, "error_summary": 0, "size4": false, "ran": "RAN"}}
+PATCHED: PASS -- pinned 2d43d5133c1fb963 | in-container 2d43d5133c1fb963 env 2d43d5133c1fb963 launcher 2d43d5133c1fb963 | binds_ok=1 env_ok=1 | triton residual-mass kernels since boot: patched=2 unpatched=0 any-patched=2 -> PROVEN
+VALID: PASS -- kv=4,400,013 args=1 env=1 binds=1 core0=1 l2=2 foreign=['0', '0'] engaged=True (enabled=1 cap=[4] sq6s4=1 bad=0)
+FAULT: none -- 0 new Xid (arm and card), 0 GPU-fault lines, alive at end, cores=0
+STABLE: PASS -- {'repro1': 'PASS', 'repro2': 'PASS'} engine errors ['0', '0']
+C8_serving_info: PASS -- s1: {'status': 'OK', 'pairs': 8, 'identical': 1, 'first_divergence': [43, 20, 8, 42, 24, 6, 33], 'max_abs_dlogprob_common_prefix': 0.749941, 'ids_source': ['token_ids']} | t0: {'status': 'OK', 'pairs': 8, 'identical': 1, 'first_divergence': [54, 9, 1, 13, 24, 6, 19], 'max_abs_dlogprob_common_prefix': 0.333379, 'ids_source': ['token_ids']}
+D_coredump_arm: SKIP -- SKIPPED: budget: elapsed 1301s + boot 720s + cells 75s + restore 600s > 2400s

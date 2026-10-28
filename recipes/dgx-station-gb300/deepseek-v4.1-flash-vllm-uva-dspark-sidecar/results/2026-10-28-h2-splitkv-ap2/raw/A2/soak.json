@@ -1,0 +1,68 @@
+{
+ "t0": 1793224761.013738,
+ "secs": 14.0,
+ "max_tokens": 16384,
+ "n": 4,
+ "n_pass": 4,
+ "n_correct": 4,
+ "n_loop": 0,
+ "n_nonstop": 0,
+ "res": {
+  "no_consecutive": {
+   "want": 1597,
+   "finish": "stop",
+   "completion_tokens": 623,
+   "reasoning_chars": 1103,
+   "content_chars": 387,
+   "got": 1597,
+   "correct": true,
+   "loop": null,
+   "content_tail": "ich case \\(n-1\\) cannot be included, giving \\(a_{n-2}\\) possibilities. Thus\n\\[\na_n=a_{n-1}+a_{n-2},\n\\]\nwith \\(a_0=1\\) and \\(a_1=2\\). This gives the Fibonacci sequence:\n\\[\na_{15}=1597.\n\\]\n\nANSWER: 1597",
+   "reasoning_head": "We need answer. Need reason carefully. Count subsets of [15] with no consecutive. Classic Fibonacci: number for n = F_{n+2}, with F1=1,F2=1. For n=15, F17=1597? Let's compute Fibonacci: F1=1, F2=1, F3",
+   "pass": true,
+   "secs": 2.3
+  },
+  "mod_1000": {
+   "want": 954,
+   "finish": "stop",
+   "completion_tokens": 802,
+   "reasoning_chars": 1111,
+   "content_chars": 712,
+   "got": 954,
+   "correct": true,
+   "loop": null,
+   "content_tail": "d \\(2\\pmod 8\\).\n\nLet \\(x=79+125k\\). Modulo \\(8\\):\n\\[\n79+125k\\equiv 7+5k\\equiv 2\\pmod 8.\n\\]\nSo\n\\[\n5k\\equiv 3\\pmod 8 \\implies k\\equiv 7\\pmod 8.\n\\]\nTaking \\(k=7\\),\n\\[\nx=79+125\\cdot 7=954.\n\\]\n\nANSWER: 954",
+   "reasoning_head": "We need solve. Need reason carefully. Need final answer with line. Compute mod1000 = 8*125? Need use CRT. 3^2026 +5^2026 mod1000.\n\nModulo 8: 3^even? 3^2=9\u22611 mod8. 2026 even => 3^2026\u22611 mod8. 5^2026 mo",
+   "pass": true,
+   "secs": 2.8
+  },
+  "square_sum": {
+   "want": 38,
+   "finish": "stop",
+   "completion_tokens": 1324,
+   "reasoning_chars": 2479,
+   "content_chars": 642,
+   "got": 38,
+   "correct": true,
+   "loop": null,
+   "content_tail": "\\(n=18\\).\n- \\((5,7)\\): \\(x=1\\), so \\(n=10\\).\n- \\((7,5)\\): \\(x=-1\\), so \\(n=9\\).\n- \\((35,1)\\): \\(x=-17\\), so \\(n=1\\).\n\nChecking:\n\\[\nn=1,9,10,18\n\\]\nall work. Their sum is\n\\[\n1+9+10+18=38.\n\\]\n\nANSWER: 38",
+   "reasoning_head": "We need answer. Need solve. Need reason carefully. Problem: positive integers n such that polynomial n^2 -19n +99 is perfect square (nonnegative integer square). Need sum all positive integers n. Need",
+   "pass": true,
+   "secs": 4.3
+  },
+  "pairs_no_zero": {
+   "want": 738,
+   "finish": "stop",
+   "completion_tokens": 4156,
+   "reasoning_chars": 10986,
+   "content_chars": 1273,
+   "got": 738,
+   "correct": true,
+   "loop": null,
+   "content_tail": "it: \\(8\\cdot 9=72\\).\n  - For \\(t=9\\), \\(b=10-u\\in\\{1,\\dots,9\\}\\), giving \\(9\\) more choices.\n\nSo for three-digit \\(a\\):\n\\[\n576+72+9=657.\n\\]\n\nTotal valid ordered pairs:\n\\[\n9+72+657=738.\n\\]\n\nANSWER: 738",
+   "reasoning_head": "We need answer. Need reason carefully. Need count ordered positive pairs (a,b) with a+b=1000 and neither has zero digit in decimal representation. Ordered pairs positive. Since sum fixed, ordered corr",
+   "pass": true,
+   "secs": 14.0
+  }
+ }
+}

@@ -1,0 +1,12 @@
+resolve_fault: 15 dumps (10 with torch snapshot), 1 Xid lines, 1 VA(s)
+VA 0xebfb5f200000 (low29 0x00001f200000 == R5 0x1F200000, 2MiB-aligned=True) FAULT_PDE ACCESS_TYPE_VIRT_READ GPCCLIENT_T1_5 host_pid=2049286
+  CLASS R1-over-end
+    - VA is 0 B past the END of torch segment 0xebfb5f000000 (size 2097152, pool (0, 0)) -> R1-over-end of the last block of that segment
+  [fault] maps=IN anon-reserved(PROT_NONE: CUDA/UVA VA reservation?) seg=- pool=- blk=- probe=- hist=0 cuda=-
+  [faultmaps-1-vllm] maps=not mapped seg=- pool=- blk=- probe=- hist=- cuda=-
+  [faultmaps-696-python3] maps=- seg=- pool=- blk=- probe=- hist=- cuda=-
+  [faultmaps-698-python3] maps=- seg=- pool=- blk=- probe=- hist=- cuda=-
+  [faultmaps-907-python3] maps=not mapped seg=- pool=- blk=- probe=- hist=- cuda=-
+  [faultmaps-908-VLLM__EngineCor] maps=- seg=- pool=- blk=- probe=- hist=- cuda=-
+  offset mode [faultmaps-907-python3]: 15 maps regions, 0 torch hits
+  offset mode [faultmaps-908-VLLM__EngineCor]: 0 maps regions, 0 torch hits

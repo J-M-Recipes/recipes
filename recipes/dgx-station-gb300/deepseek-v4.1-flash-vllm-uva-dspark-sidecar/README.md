@@ -26,6 +26,10 @@ Cards GV, KV3 and BR1 below):
 Both recipes serve the same weights and stay published; this one is the faster lane on this hardware, the
 sibling is the one that needs nothing but the GB300.
 
+The table above is the v25 base launch on 2026-10-22. The serving release since 2026-10-28 is **h2-REF**; its own
+bracket (Card AP2, controls = h1-REF) is in [the 2026-10-28 section](#2026-10-28-h2-ref--the-60945-guard-and-split-kv-attention-card-ap2-promoted):
+coding C1 **484.5 tok/s** (BRRR 2K codegen, T=0) against 467.5 for its controls.
+
 > **Lineage, stated up front.** The production shape of this recipe — two-step `sidecar` → `server` launch, the
 > b12x peer tier-2 protocol, the `rowmap-mix-v1` calibration, the published same-chassis numbers, and the
 > `kbench_chat_ds` harness this recipe is measured on — is **RonanLabsAI's**
@@ -34,7 +38,24 @@ sibling is the one that needs nothing but the GB300.
 > the 295/89 map, the agreement gate run on real prompts, the ack-before-bookkeeping sidecar fix, the
 > fail-closed watchdog and the bracketed measurement discipline. See [Credits](#credits).
 
-> **Status, 2026-10-26 16:45 CDT (recipe stays experimental): v27 is the serving release.** Lane `:30006` on the
+> **Status, 2026-10-28 17:23 CDT (recipe stays experimental): h2-REF is the serving release.** Lane `:30006` on the
+> reference box serves **`dsv41-vllm-1017-h2-REF` + `-rtx`**, promoted 2026-10-28 17:22:58 CDT (James's call) after
+> Card AP2 (S4 = PROMOTE-READY). It is v27 plus three things:
+>
+> 1. **h1** (served from 2026-10-27 16:46 CDT): the hook's L2 attention/indexer key-sharing and a backport of vLLM
+>    [#61161](https://github.com/vllm-project/vllm/pull/61161). Both are bit-identical at T=0, and h1 is about −0.12 ms/step.
+> 2. **The vLLM [#60945](https://github.com/vllm-project/vllm/pull/60945) rejection-sampler guard.** It fixes a
+>    latent out-of-bounds read that v27 also carries. It killed five card runs before it was found
+>    (see [Known limits](#known-limits)).
+> 3. **Split-KV decode attention at 4 splits**, quarantined to one request at s_q = 6. It comes from FlashMLA PR #25,
+>    built as a *side* extension next to the image's untouched `_flashmla_C`, plus a #57711-derived overlay.
+>
+> Measured against same-window h1-REF controls: coding C1 **484.5 vs 467.5 tok/s (1.036×, −0.43 ms/step)**, and
+> crash-free on all four arms. The whole launch is `scripts/start-h2ref.sh`. Rollback pair:
+> `dsv41-vllm-1017-h1-REF` (+`-rtx`, guard, no split), stopped and kept. The v27 pair is also kept.
+> No 48 h soak has completed on any sidecar config, and T2/BFCL were not re-run on h1 or h2.
+>
+> **Previous status, 2026-10-26 16:45 CDT (v27; superseded by h1 on 2026-10-27 and h2 on 2026-10-28):** Lane `:30006` on the
 > reference box serves **v27 = `dsv41-vllm-1017-v27-block-BOUND-REF` + `-rtx`**: the v25m-kvtier sidecar launch
 > (`ROWMAP=rowmap-mixed-ar-v1.json`,
 > `EXTRA="--kv-cache-memory 9126805504 --kv-offloading-size 48 --kv-offloading-backend native"`) plus one spec key,
@@ -58,6 +79,98 @@ sibling is the one that needs nothing but the GB300.
 > [Adaptive Residency Part 3, the seed map](https://al-engr.com/gb300-adaptive-residency-seed-map.html) and
 > [Part 1, with its convergence correction](https://al-engr.com/gb300-adaptive-expert-residency.html). Peer recipe:
 > [fraserprice/DeepSeek-4.1-Flash-1017-BRRR](https://huggingface.co/fraserprice/DeepSeek-4.1-Flash-1017-BRRR).
+
+## 2026-10-28: h2-REF — the #60945 guard and split-KV attention (Card AP2), PROMOTED
+
+Bundle: [`results/2026-10-28-h2-splitkv-ap2/`](results/2026-10-28-h2-splitkv-ap2/README.md). Frozen gates: `ap2_verdict.py`, sha256 `88cac1b9…`, frozen before boot A.
+Verdict: **`S8=NO S4=PROMOTE-READY`**. Promotion log: [`promote/promote.log`](results/2026-10-28-h2-splitkv-ap2/promote/promote.log).
+
+**What changed, from v27 up:**
+
+| step | change | evidence | served |
+|---|---|---|---|
+| v27 | v25m map + 48 GiB host prefix-KV tier + block verification | Card BR1, T2, held-out (below) | 2026-10-26 04:08 → 10-27 |
+| **h1** | + L2 attention/indexer key-sharing in the hook ([`patches/hook-h1-l2-key-sharing.patch`](patches/hook-h1-l2-key-sharing.patch)) + vLLM #61161 backport ([`patches/vllm-61161-…`](patches/vllm-61161-block-verification-fresh-draws.patch)) | Card H1: −0.117 ms/step vs the control mean, bit-identical (150/150 shared tables re-verified), TF at the floor, gauntlet 12/12. SUBBAR against its −0.10 ms bar on min(ctrl); promoted by James ([`h1-lineage/`](results/2026-10-28-h2-splitkv-ap2/h1-lineage/)) | 2026-10-27 16:46 → 10-28 17:13 |
+| h1 + guard | + vLLM #60945, 3 lines in the #61161 file: `rejection_sampler_utils.py` 42c5e8a0 → **2d43d513** ([`patches/vllm-60945-…`](patches/vllm-60945-rejection-sampler-guard.patch)) | Card W12 `FIXED`: compute-sanitizer 20 → 0 invalid reads, 100/100 kernel A/B bit-identical, W11 crash shape clean twice ([`guard-w12/`](results/2026-10-28-h2-splitkv-ap2/guard-w12/)) | 2026-10-28 14:42 → 17:13 |
+| **h2** | + split-KV decode attention: side extension `_flashmla_splitkv_C` (**744a9de8**) + overlay `flash_mla_mega_attn.py` (9946e6ee) / `mega_splitkv_combine.py` (97c67176); quarantine `SPLITKV=4 MAX_TOKENS=8 MAX_REQS=1 SQ=6 STRICT=1` | **Card AP2** (this section) | since 2026-10-28 17:22:58 |
+
+### Why the guard came first
+
+vLLM af7f9488's block-verification kernel `_compute_local_residual_mass_kernel` reads
+`draft_sampled[logit_idx + 1]`. Its guard compares against the **configured** 5 speculative steps, but this lane's
+k-schedule runs **k=3 at 5–32 requests**. On a full 32-request decode step (32 × 4 = 128 logits), the last program
+therefore reads one `int32` past the 512-byte `draft_sampled` tensor.
+
+Most of the time that read is silent: the row it feeds is never used. It turns fatal only when the tensor ends
+exactly at the end of a 2 MiB torch segment that sits in front of an unmapped hole. The read then raises a
+`FAULT_PDE VIRT_READ` (Xid 31), CUDA reports an illegal memory access, and EngineCore dies.
+
+- **Blast radius.** The read killed five card runs: AP S8, AP S4, W5 S0, W6 S2 and W7 S3. All five were blamed on
+  the split-KV build at first.
+- **The decisive card.** Card W11 crashed the same way **with split off**. Its allocator trace put the faulting
+  address 0 B past the end of a segment ([`guard-w12/w11-S6-owner.txt`](results/2026-10-28-h2-splitkv-ap2/guard-w12/w11-S6-owner.txt),
+  [`OOB-desk-analysis.md`](results/2026-10-28-h2-splitkv-ap2/guard-w12/OOB-desk-analysis.md)).
+- **The fix.** Upstream fixed it in [#60945](https://github.com/vllm-project/vllm/pull/60945), merged 2026-10-12,
+  830 commits after our pin.
+- **v27 carries the same read.** See [Known limits](#known-limits).
+
+### Card AP2 — A → S8 → S4 → A2, 2026-10-28 15:10–17:08 CDT
+
+- **Controls (A, A2):** h1-REF with the guard.
+- **S8 / S4:** h2 at 8 and 4 splits.
+- **Launcher:** every arm used the same frozen launcher and the same frozen artifacts as the promotion.
+- **Fault watcher:** a 2 s watcher on every cell stops the arm on any new Xid, GPU-fault line or container death.
+- **No core dumps:** `NOCORE=1` on every arm.
+
+| cell | A | A2 | S8 | **S4 = h2** | S4 vs controls |
+|---|--:|--:|--:|--:|---|
+| **BRRR padded codegen 2K, C1, T=0** (tok/s) | 464.9 | 467.5 | 477.8 | **484.5** | **1.036×** max(A,A2) (bar 1.025×) |
+| step (ms) / tok per step | 11.092 / 5.16 | 11.106 / 5.19 | 10.742 / 5.14 | **10.670 / 5.17** | −0.429 ms vs mean |
+| per-class C1, T=1 (prose / structured / code / shell / tool_json) | 277 / 308 / 366 / 391 / 350 | 279 / 300 / 365 / 381 / 353 | 295 / 313 / 383 / 396 / 352 | **291 / 317 / 381 / 394 / 349** | 1.047 / 1.044 / 1.043 / 1.021 / 0.992× |
+| per-class C8 (per stream) | — | — | 0.980–1.009× | **0.989–1.011×** | HOLD PASS |
+| llm-inference-bench 0.6.2 C1 @ 0 / 64K | 233.5 / 261.2 | 255.9 / 259.9 | 273.1 / 268.1 | **253.4 / 278.6** | 1.036 / 1.069× of mean |
+| C8 @ 0 / C32 @ 0 / C32 @ 64K | 1,159 / 2,578 / 2,549 | 1,146 / 2,587 / 2,533 | 1,137 / 2,568 / 2,537 | **1,154 / 2,583 / 2,592** | 1.001 / 1.000 / 1.020× |
+| prefill 8K / 16K / 64K / 128K (tok/s) | 39,887 / 41,389 / 41,913 / 40,519 | 39,635 / 40,870 / 41,499 / 40,692 | 39,193 / 40,732 / 41,819 / 40,612 | **39,674 / 41,727 / 42,059 / 40,701** | 1.001–1.021× of the worse control; TTFT 0.980–0.999× |
+| 1M needle (900,372 tokens) TTFT | 31.265 s | — | 31.182 s | **31.172 s** | PASS, 0.997× |
+| TF vs A: W / confident flips / agent-tool confident | — (A2: 2.554 / 3 / 0) | — | 2.751 / **6** / 0 | **2.784 / 4 / 0** | bars 3.192 / 4 / 0 |
+| gauntlet · #62417 probe · long-thinking soak | 12/12 · 15/16 (P5 37/40) · 4/4 | 12/12 · 16/16 · 4/4 | 12/12 · 16/16 · 4/4 | **12/12 · 16/16 · 4/4, 0 loops** | PASS |
+| **crash-free** (new Xid / engine errors / fault lines / alive) | 0 / 0 / 0 / yes | 0 / 0 / 0 / yes | 0 / 0 / 0 / yes | **0 / 0 / 0 / yes** | hard gate PASS |
+| verdict | control | control | **NO** (1.022×; 6 confident flips) | **PROMOTE-READY** | |
+
+**Reading the table:**
+
+- **4 splits beat 8.** S8 has the best single lib C1 cell (273.1). Its extra combine work still loses on the
+  pre-registered BRRR cell, and its 6 confident TF flips exceed the bar of 4.
+- **S4 passes TF at the bar, not under it.** S4's 4 confident flips equal the bar exactly. Split-KV changes the
+  summation order, so it is not bit-identical; agent/tool confident flips are 0.
+- **The gain is single-user only.** The quarantine means splitting engages only with one request, so C8 and C32
+  read 1.00× and prefill is unchanged.
+- **Greedy parity says nothing here.** Greedy parity vs A read 2/16 for S4 and 2/16 for the A2 control, so it is
+  not a usable gate on this lane (probabilistic drafting + sidecar), as before.
+
+**Promotion (17:12:45 → 17:22:58 CDT):**
+
+- **Swap.** `promote_guard_split.sh` stopped and kept h1-REF, then booted h2-REF from the same frozen paths.
+  It bound after 537 s.
+- **Checks on the live container, all passed:**
+  - argv equal to h1-REF's, and env, binds and ulimits equal to arm S4's;
+  - KV 4,400,013 and autotune `Loaded 117`;
+  - split enabled for decode only, at s_q 6 with 4 splits;
+  - smokes 17×19 → 323 with thinking off and on;
+  - the 1M needle (TTFT 31.237 s);
+  - 0 new Xid.
+- **Guard re-armed.** The fail-stop watchdog was re-armed with PPID 1.
+- **Live read.** At 22:53Z the in-container shas still matched, the watchdog showed `trip: null`, and sidecar
+  timeouts were 0 ([`live-check-…`](results/2026-10-28-h2-splitkv-ap2/live-check-2026-10-28T2253Z.txt)).
+- **Launcher check.** The published launcher renders the live container's argv exactly
+  ([`launch/render-vs-live.txt`](results/2026-10-28-h2-splitkv-ap2/launch/render-vs-live.txt)).
+
+**Not measured on h2:**
+
+- T2 (needle-checksum, GSM8K-200), BFCL dev or held-out, tool-eval, and T3. The quality gates above are TF,
+  gauntlet, the probe, the soak and the needle.
+- A 48 h soak, which no sidecar config has had.
+- Any multi-user split. The quarantine never lets it engage.
 
 ## 2026-10-26 (evening): T2, held-out and cosine R2 on v27
 
@@ -342,7 +455,7 @@ has not run. Card GS was cancelled with the soak on 2026-10-24, and v27 serves o
 Known limits.)* Receipts: [`results/2026-10-24-gv-v25m-gates/`](results/2026-10-24-gv-v25m-gates/).
 - **Same-instrument speed vs v25:** real-text English C1 273.2 vs 279.2 (−2 %), knee C8 887 vs 934 (−5 %), C16 1,411 vs 1,409. The mixed map trades a little English-only speed for +15 % on JP/DE.
 - **Soak:** 48 h on v25m, restarted after Card GV2 at 07:12 Sat 10-24 → 07:12 Mon 10-26 CDT, fail-stop watchdog armed. Card GS (static check boots + R2 re-judge) runs right after. **Cancelled 2026-10-24 by James** (soak and Card GS); v25m was never soak-cleared.
-- **Card:** [`card-v25m.png`](card-v25m.png) (base v25 card: [`card.png`](card.png)).
+- **Card:** [`card-v25m.png`](card-v25m.png) (v27 card: [`card-v27.png`](card-v27.png); the current h2-REF card is [`card.png`](card.png)).
 - **Launch:** both steps with `ROWMAP=rowmap-mixed-ar-v1.json` (the file goes in the hook directory), for example `NAME=… ROWMAP=rowmap-mixed-ar-v1.json bash launch_sidecar.sh sidecar`, then the same for `server`.
 - Receipts, fitter, harness and the layout-separability test: [`results/2026-10-23-ar5-mixed-map/`](results/2026-10-23-ar5-mixed-map/).
 
@@ -358,7 +471,13 @@ full **1,048,576-token** context, on:
   per layer** and computing their contribution on demand. The two processes share one `/dev/shm` buffer with
   a device-side sequence counter: the GB300 publishes a step, the card answers, the GB300 adds the result.
 
-**As served (v27, since 2026-10-26 04:08 CDT):** the base launch plus the v25m mixed map
+**As served (h2-REF, since 2026-10-28 17:22:58 CDT):** v27 (next paragraph) plus h1's hook-side L2
+attention/indexer key-sharing and vLLM #61161 backport, the vLLM #60945 rejection-sampler guard, and split-KV decode
+attention. That last piece is a FlashMLA PR #25 build loaded as a **side** extension `_flashmla_splitkv_C` next to
+the image's own `_flashmla_C`. It is used only when exactly one request is decoding a 6-token (k=5) verify step;
+every other call uses the shipped kernel.
+
+**As served 2026-10-26 04:08 → 2026-10-27 16:46 CDT (v27):** the base launch plus the v25m mixed map
 (`rowmap-mixed-ar-v1.json`, still 295 hot / 89 cold per layer), the 48 GiB Grace prefix-KV tier, and
 `"rejection_sample_method":"block"` in the spec config. The base launch (static map, no tier, sequential
 verification) is what the 2026-10-22 headline numbers were measured on.
@@ -407,10 +526,19 @@ Two settings that are not optional:
 | sidecar server | el8 `peer_server2.py` @87af662 + [`patches/peer-server2-local.patch`](patches/peer-server2-local.patch) (path edits + ack-before-bookkeeping), run as `/sc/peer_server2_local.py` |
 | sidecar kernels | [local-inference-lab/b12x](https://github.com/local-inference-lab/b12x) `@2cc7f66aaef76a9c7cbb660a1efb865cf3f26c88` (Apache-2.0) |
 | overlay | vLLM [#58132](https://github.com/vllm-project/vllm/pull/58132) decoder bounded replay, 5 files bind-mounted over `dist-packages` |
+| h1: L2 key-sharing (hook) | el8 `mega_peer_hook.py` (sha256 `be50bdc1`, as in hook-lock.txt) + [`patches/hook-h1-l2-key-sharing.patch`](patches/hook-h1-l2-key-sharing.patch) → `e181c58c`, plus new `attn_share.py` (`fd44715c`). Off unless `MEGA_SHARE_TOPK` is set |
+| h1: block-verification draws | vLLM [#61161](https://github.com/vllm-project/vllm/pull/61161) backported onto af7f9488, 3 files bind-mounted: [`patches/vllm-61161-block-verification-fresh-draws.patch`](patches/vllm-61161-block-verification-fresh-draws.patch) → `gumbel.py` `ee5072d2`, `dflash2/speculator.py` `4aad3ed1`, `spec_decode/rejection_sampler_utils.py` `42c5e8a0` |
+| **h2: sampler guard** | vLLM [#60945](https://github.com/vllm-project/vllm/pull/60945) on top of the #61161 file: [`patches/vllm-60945-rejection-sampler-guard.patch`](patches/vllm-60945-rejection-sampler-guard.patch) → `rejection_sampler_utils.py` **`2d43d513`** (launcher refuses any other hash) |
+| **h2: split-KV overlay** | derived from vLLM [#57711](https://github.com/vllm-project/vllm/pull/57711) (closed, unmerged): [`patches/vllm-57711-splitkv-overlay-on-af7f9488.patch`](patches/vllm-57711-splitkv-overlay-on-af7f9488.patch) → `flash_mla_mega_attn.py` `9946e6ee` (from af7f9488's `a8be566e`) + new `mega_splitkv_combine.py` `97c67176` |
+| **h2: split-KV side extension** | [vllm-project/FlashMLA PR #25](https://github.com/vllm-project/FlashMLA/pull/25) on FlashMLA `0eee43b1` (CUTLASS `147f5673`) + three patches in [`patches/flashmla-splitkv/`](patches/flashmla-splitkv/) (own torch namespace `_flashmla_splitkv_C`, shape guards, NaN-safe empty-split store); built in the image toolchain with cmake, `compute_100f/sm_100f`, hidden visibility, `-Wl,-Bsymbolic` → `_flashmla_splitkv_C.abi3.so` **`744a9de8`**. The image's `_flashmla_C.abi3.so` (`df2cdd1c`) is never mounted over. Build files: [`side-extension/`](results/2026-10-28-h2-splitkv-ap2/side-extension/) |
 | launcher lineage | [RonanLabsAI/dgx-station-frontier](https://github.com/RonanLabsAI/dgx-station-frontier) `recipes/dsv41-flash-sidecar` (Apache-2.0), adapted for Grace-only/CAND arms and our caches |
 
 Every mounted file's sha256, read **inside the running containers**, is in
-[`results/2026-10-22-v25-sidecar/raw/hook-lock.txt`](results/2026-10-22-v25-sidecar/raw/hook-lock.txt).
+[`results/2026-10-22-v25-sidecar/raw/hook-lock.txt`](results/2026-10-22-v25-sidecar/raw/hook-lock.txt); the files h2
+adds are in [`results/2026-10-28-h2-splitkv-ap2/component-shas.txt`](results/2026-10-28-h2-splitkv-ap2/component-shas.txt) and were re-read in the live h2-REF container
+([`live-check-…`](results/2026-10-28-h2-splitkv-ap2/live-check-2026-10-28T2253Z.txt)). Every patch above was re-applied on the desk to the af7f9488 /
+el8 @87af662 originals and reproduces those hashes byte for byte (the side `.so` is a build output, so only its
+inputs are reproducible from here).
 Checkpoint identity (revision, 49 shards, 510,311,114,235 B, config/index hashes) is in
 [`raw/weights-1017-receipt.txt`](results/2026-10-22-v25-sidecar/raw/weights-1017-receipt.txt).
 
@@ -429,7 +557,51 @@ bash scripts/launch-sidecar.sh sidecar
 EXTRA="--kv-cache-memory 9126805504" bash scripts/launch-sidecar.sh server
 ```
 
-**The serving release, v27** — the base launch plus the v25m map, the kv-host-tier flags and block verification.
+**The serving release, h2-REF.** First build the three local trees once, under `M3_DIR` (`~/dsv41/m3`):
+
+```bash
+W=~/dsv41/m3; IMG=vllm/vllm-openai@sha256:3af6a45b060d681aa6254200f87859d1bb3c1f962afb3d15540b4b31d4a41063
+DP=/usr/local/lib/python3.12/dist-packages
+# 1. hook-h1 = the el8 hook + L2 key-sharing (rowmaps come along with the copy)
+cp -r $W/el8/deepseek-v4.1-flash/m3/hook $W/hook-h1 && patch -d $W/hook-h1 -p1 < patches/hook-h1-l2-key-sharing.patch
+# 2. overlay-61161 = three image files + #61161 + the #60945 guard (expect rejection_sampler_utils.py sha256 2d43d513…)
+O=$W/overlay-61161/tree; for f in v1/worker/gpu/sample/gumbel.py v1/worker/gpu/spec_decode/rejection_sampler_utils.py \
+  v1/worker/gpu/spec_decode/dflash2/speculator.py; do mkdir -p $O/vllm/$(dirname $f)
+  docker run --rm --entrypoint cat $IMG $DP/vllm/$f > $O/vllm/$f; done
+patch -d $O -p1 < patches/vllm-61161-block-verification-fresh-draws.patch
+patch -d $O -p1 < patches/vllm-60945-rejection-sampler-guard.patch
+# 3. split-KV overlay (expect 9946e6ee… / 97c67176…) and the side extension (build: results/2026-10-28-h2-splitkv-ap2/side-extension/)
+K=$W/splitkv/overlay; mkdir -p $K/vllm/models/deepseek_v41/nvidia
+docker run --rm --entrypoint cat $IMG $DP/vllm/models/deepseek_v41/nvidia/flash_mla_mega_attn.py \
+  > $K/vllm/models/deepseek_v41/nvidia/flash_mla_mega_attn.py
+patch -d $K -p1 < patches/vllm-57711-splitkv-overlay-on-af7f9488.patch
+#    FlashMLA 0eee43b + CUTLASS 147f5673, apply patches/flashmla-splitkv/00..03 in order, build with
+#    side-extension/CMakeLists.txt in the image toolchain -> $W/splitkv/build/out/_flashmla_splitkv_C.abi3.so
+```
+
+Then one command (sidecar first, then server; `STEPS=server` for the second step only):
+
+```bash
+GB300_UUID=... RTX_UUID=... bash scripts/start-h2ref.sh
+python3 scripts/sidecar_watchdog.py --server dsv41-vllm-1017-h2-REF --mode enforce --interval 1 --stall 2 \
+  --status ~/dsv41/m3/logs/sidecar_watchdog.status.json --log ~/dsv41/m3/logs/sidecar_watchdog.v27.log &   # setsid nohup, PPID 1
+```
+
+`start-h2ref.sh` sets, for `scripts/launch-sidecar.sh`:
+
+- `HOOK_DIR=$W/hook-h1`, `OVERLAY_61161=1`.
+- The L2 env: `MEGA_SHARE_TOPK=2 MEGA_POS_I32_ONCE=1 MEGA_CAND_COOP=0 MEGA_L2_VERIFY=1 MEGA_L2_STATS_EVERY=2000`.
+- v27's `ROWMAP`, `EXTRA` and `SPEC_EXTRA`.
+- `NOCORE=1`.
+- The split-KV quarantine: `SPLITKV=4 SPLITKV_MAX_TOKENS=8 SPLITKV_MAX_REQS=1 SPLITKV_SQ=6 SPLITKV_TRACE=1 SPLITKV_GUARD=0`.
+
+Every new launcher block is off by default, so v27's argv is unchanged. The rendered h2 argv equals the live
+container's: args element for element, env a subset, binds by destination, ulimits
+([`launch/render-vs-live.txt`](results/2026-10-28-h2-splitkv-ap2/launch/render-vs-live.txt)). The box launcher that actually ran is kept as
+[`launch/launch_att2d.sh.as-run`](results/2026-10-28-h2-splitkv-ap2/launch/launch_att2d.sh.as-run), with paths scrubbed only. For h1-REF, run
+`SPLITKV=0 bash scripts/start-h2ref.sh` with `NOCORE` unset.
+
+**The previous serving release, v27** — the base launch plus the v25m map, the kv-host-tier flags and block verification.
 `SPEC_EXTRA` is spliced into the `--speculative-config` JSON before its closing brace. It defaults to empty, which
 gives the base launch's args byte for byte.
 
@@ -485,6 +657,8 @@ bash scripts/soak_check.sh <ssh-host> "$NAME"     # one health sample from anoth
 | drafter | per-class decode wall-clock, 20 cells × {C1, C8} | no cell worse than −3% vs both controls |
 | speed | bracketed ladders with a control on each side | knee C1 ≥ 198, knee C16 ≥ 974, sidecar C16 ≥ Grace-only +3% |
 | soak | 48 h, sampled every 5 min — restarted with the KV change: 2026-10-22 18:52 → 2026-10-24 18:52 CDT. *(Corrected 2026-10-26: that window was cut at ~25 h and the v25m window was cancelled; no 48 h soak has completed on any sidecar config, v27 included.)* | no timeout, no trip, no stall |
+| **h2-REF serving release** | in-container sha256: `rejection_sampler_utils.py` **2d43d513** (guard; 42c5e8a0 = unguarded), `_flashmla_splitkv_C.abi3.so` 744a9de8 mapped by the engine, `_flashmla_C.abi3.so` df2cdd1c untouched. Log: split-KV `ENABLED cap=4 max_reqs=1`, the only decode gate line `s_q=6 splits=4 … op=_flashmla_splitkv_C`, `TRACE ok=1` only at (6, 6, 1 decode, 0 prefills), 0 GUARD lines, 2 `MEGA_L2` patched lines, `Loaded 117 configs`. KV 4,400,013; `journalctl -k` shows no new Xid since boot; watchdog enforce, PPID 1 | all checked at promotion ([`promote/promote.log`](results/2026-10-28-h2-splitkv-ap2/promote/promote.log)) and re-read at 22:53Z |
+| crash-free (any lane change) | the C32 lib cells in one process (C1/C8/C32 × 0/64K) under a 2 s Xid/fault watcher | 0 new Xid, 0 engine errors, 0 GPU-fault lines, alive at end — Card AP2 all four arms |
 | v27 serving release | boot log KV line 4,400,013; `docker inspect` args contain `"rejection_sample_method":"block"`; watchdog in enforce mode with PPID 1, `trip=null` | checked at promotion (2026-10-26 04:08) and after each of the day's five restores |
 | kv-host-tier (variant) | boot log `Creating v1 connector with name: OffloadingConnector` + `Created mmap file /dev/shm/vllm_offload_….mmap (51.54 GB)`, GPU KV line still 4,400,013; evict-replay probe in `results/2026-10-24-kv3-host-prefix-tier/scripts/kv3_cells.py` (needs dev mode, test boots only) | host-tier hit + load, identical output; Card KV3's 10 gates |
 
@@ -493,7 +667,24 @@ timeout is treated as a correctness bug rather than a slow request.
 
 ## Results
 
-### v27 = the serving release (promoted 2026-10-26 04:08 CDT)
+### h2-REF = the serving release (promoted 2026-10-28 17:22:58 CDT, `results/2026-10-28-h2-splitkv-ap2/`)
+
+Bundle: [`results/2026-10-28-h2-splitkv-ap2/`](results/2026-10-28-h2-splitkv-ap2/README.md) — `throughput.csv` (every BRRR, lib, per-class, prefill and 1M cell for A / S8 / S4
+/ A2), the frozen verdict and its script, per-arm `raw/<arm>/` (facts, engagement, faults, Xid, lib/ttft/onem/probe/soak
+JSON, per-class tables with private rows withheld, gzipped boot logs), the TF compares, the promotion receipts, the W12
+guard verdict and W11 fault forensics, the h1 card verdicts, the side-extension build provenance and the as-run
+launchers. Headline: **coding C1 484.5 tok/s (BRRR padded codegen 2K, T=0) vs 467.5 for h1-REF controls = 1.036×,
+10.67 vs 11.09/11.11 ms per step**; full table in the [2026-10-28 section](#2026-10-28-h2-ref--the-60945-guard-and-split-kv-attention-card-ap2-promoted).
+
+### h1-REF (served 2026-10-27 16:46 → 2026-10-28 17:13 CDT; now the rollback pair)
+
+Card H1 (2026-10-27): L2 attention/indexer key-sharing + #61161 on v27, A → C → A2. BRRR 2K C1 T=0 step C 11.066 ms vs
+A 11.208 / A2 11.157 (−0.117 ms vs mean, −0.091 vs min against a −0.100 bar → `SUBBAR`), 150/150 shared tables
+re-verified equal, TF flips 2.176% / 2.067% vs floor 2.121%, gauntlet 12/12, per-class 0.980–1.034×. Promoted by
+James as h1-REF. Card PR1 (the promotion-shaped re-run) read −0.142 ms but `HOLD` on one prose C8 cell (142.6 < 143.7)
+and an instrument miss on TF. Verdicts: [`results/2026-10-28-h2-splitkv-ap2/h1-lineage/`](results/2026-10-28-h2-splitkv-ap2/h1-lineage/).
+
+### v27 (served 2026-10-26 04:08 → 2026-10-27 16:46 CDT; superseded by h1, then h2)
 
 v27's measured delta over v25m-kvtier is Card BR1 (below). The promoted container got smoke, consumer and
 restore checks, not a new speed bracket. The headline table at the top was measured on the v25 base launch on
@@ -597,6 +788,47 @@ in prefill (2,062 incumbent); RTX p99 ≤ 194 W against its 300 W cap. Full tabl
 
 ## Known limits
 
+* **v27 and every launch before h1-REF's 2026-10-28 14:42 restart carry a latent out-of-bounds read** in
+  vLLM af7f9488's block-verification sampler.
+  - **The read.** `_compute_local_residual_mass_kernel` reads `draft_sampled[logit_idx + 1]`. Its guard is sized
+    for the configured 5 spec steps, while the k-schedule runs 3 at 5–32 requests. On a full 32-request step, that
+    is one `int32` past a 512-byte tensor.
+  - **When it fires.** It is silent unless the tensor ends exactly at a torch segment end. Then it is a CUDA
+    illegal-memory-access and engine death, which happened five times in cards.
+  - **The fix.** vLLM #60945, 3 lines, bit-identical. h1-REF and h2-REF have it
+    ([`patches/vllm-60945-rejection-sampler-guard.patch`](patches/vllm-60945-rejection-sampler-guard.patch), applied
+    to the #61161 file). For stock v27, apply the same 3 lines to the image's own `rejection_sampler_utils.py`, or
+    serve v27 knowing it can die at 32 requests.
+  - **Exposure.** Any lane with block verification and a k-schedule shorter than `num_speculative_tokens` is exposed.
+* **Split-KV is quarantined to one request at s_q = 6** (`MAX_REQS=1 SQ=6 MAX_TOKENS=8`). With two or more requests,
+  or in any prefill, the image's shipped `_flashmla_C` runs. The quarantine dates from before the sampler bug was
+  found. It was kept for AP2, so it is what was measured; widening it is a new card. 8 splits was measured and is
+  **NO** (1.022×, 6 confident TF flips against a bar of 4).
+* **Split-KV is not bit-identical, and its TF margin is zero.** Splitting the KV changes the floating-point
+  summation order. Confident flips came out at 4, which equals the bar of 4. W was 2.784 against a bar of 3.192,
+  and agent/tool confident flips were 0.
+  - **Unreviewed code.** The kernel is an unmerged FlashMLA PR (#25) plus our three patches. The overlay derives
+    from a closed vLLM PR (#57711). Neither has had upstream review.
+  - **Rebuilds.** A rebuild of the side `.so` in another toolchain may not hash to 744a9de8. The launcher warns
+    in that case; run PR #25's tests and the kernel gates before serving it.
+* **h1 and h2 have not re-run T2, BFCL, GSM8K or tool-eval.** Card AP2's correctness gates were TF, the gauntlet,
+  the #62417 probe, a 4-prompt long-thinking soak and a 1M needle. The v27 numbers below (needle 500/500, GSM8K-200
+  192/200, BFCL held-out 77.27%) predate L2, #61161 and split-KV.
+  - h1's pieces are bit-identical at T=0, and #61161 changes only temperature > 0 draws.
+  - h2's split is not bit-identical at C1.
+* **The h2 gain is single-user and class-dependent.**
+
+  | cell | h2 vs h1 controls |
+  |---|---|
+  | BRRR codegen C1 | +3.6% |
+  | temp-1 C1, prose / structured / code | +4.7% / +4.4% / +4.3% |
+  | temp-1 C1, shell / tool-JSON | +2.1% / −0.8% |
+  | C8 | 0.99–1.01× |
+  | C32, prefill, TTFT | unchanged |
+
+* **Card W12's Xid 43** was logged inside its compute-sanitizer kernel A/B container. That is expected when the
+  unguarded kernel runs under the sanitizer, and that window was excluded from the gate by design. Every serving
+  arm of W12 and AP2, and the h2 promotion, logged 0 new Xid.
 * **Block verification (Card BR1) only acts at temperature > 0.** vLLM af7f9488 skips it on greedy rows
   (`USE_BLOCK_VERIFICATION and not is_greedy`), so a temperature-0 bench cannot measure it. It reads as a no-op
   there, and that is what Card BR1's temp-0 window showed. The −0.4…+5.4% C1 (per class) and +2.0% tokens/step were measured at
@@ -674,6 +906,27 @@ in prefill (2,062 incumbent); RTX p99 ≤ 194 W against its 300 W cap. Full tabl
 
 ## Rollback
 
+**h2-REF → h1-REF (guard, no split)**: the same script with an explicit pair and h1-REF's watchdog argv. h1-REF
+mounts the same guarded overlay file, so this rollback keeps the #60945 fix:
+
+```bash
+WD_ARGV=~/dsv41/m3/pr1/promote/wd-argv.txt \
+  bash scripts/rollback-v27.sh --from dsv41-vllm-1017-h2-REF --to dsv41-vllm-1017-h1-REF   # --dry-run first
+```
+
+- **Tested on the desk only.** The dry run prints the expected sequence; the script has not run on the box for this
+  pair.
+- **Manual equivalent.** Kill the watchdog. Run `docker stop -t 60 dsv41-vllm-1017-h2-REF`, then
+  `docker stop -t 30 dsv41-vllm-1017-h2-REF-rtx`. Run `docker start dsv41-vllm-1017-h1-REF-rtx` and wait for
+  `serving`, then `docker start dsv41-vllm-1017-h1-REF` and wait for `/v1/models`. Re-arm the watchdog verbatim from
+  `pr1/promote/wd-argv.txt`, which names h1-REF.
+- **Fresh box.** `SPLITKV=0 bash scripts/start-h2ref.sh`, with `NOCORE` unset, gives h1-REF.
+- **Rolling further back** to the v27 pair below **reintroduces the out-of-bounds read** (see Known limits).
+- **Before any rollback after a watchdog trip,** read `sidecar_watchdog.v27.log`, `peer_server2.log` and
+  `journalctl -k | grep Xid`.
+
+**v27 → v25m-kvtier** (the script's defaults; unchanged):
+
 Rollback is a script: [`scripts/rollback-v27.sh`](scripts/rollback-v27.sh). Run it on the Station.
 
 ```bash
@@ -745,6 +998,14 @@ This recipe is a productionised descendant of someone else's recipe, and the ord
   DeepSeek-V4.1-Flash-1017 on 4× RTX PRO 6000 (fused decode kernels, `decoder.cu`), its published results table, and
   `bench.py`, which our `peerbench.py` ports with his credit header (Apache-2.0). His table is the "theirs" column in
   the 2026-10-26 side-by-side.
+* **vLLM** — [#60945](https://github.com/vllm-project/vllm/pull/60945) (the out-of-bounds lookahead fix we
+  backported verbatim; its compute-sanitizer report matched our fault byte for byte),
+  [#61161](https://github.com/vllm-project/vllm/pull/61161) (fresh block-verification draws) and
+  [#57711](https://github.com/vllm-project/vllm/pull/57711) (split-KV MegaAttn decode, closed unmerged; our overlay
+  is derived from it). **vllm-project/FlashMLA** — [PR #25](https://github.com/vllm-project/FlashMLA/pull/25), the
+  split-KV mega decode kernel the h2 side extension is built from. Our part: building it as a side extension under
+  its own namespace, the shape guards and NaN-safe store, the quarantine, and the crash hunt that found the
+  sampler read.
 * **Sun, Mendlovic, Leviathan, Aharoni, Ro, Beirami, Suresh** —
   [Block Verification Accelerates Speculative Decoding](https://arxiv.org/abs/2403.10444) (ICLR 2025), the algorithm
   behind vLLM's `rejection_sample_method: block`, which Card BR1 measured.
@@ -758,7 +1019,12 @@ quality gates (teacher-forced flips, BFCL, per-class decode) applied to a sideca
 gate design and the write-up: **J&M Recipes** (James Meadlock, Milo). Session note: the numbers were produced
 with a Claude Opus 5.5 orchestrator on the research side; the recipe was written from the receipts.
 
-## Finalisation checklist (2026-10-26)
+## Finalisation checklist (2026-10-26; updated 2026-10-28 for h2-REF)
+
+**2026-10-28:** the serving release moved from v27 to h1-REF (10-27) and then to h2-REF (10-28). Rows below marked DONE
+were done **on v27**. For h2-REF: Card AP2 stamped quality and performance on its own gates; T2, BFCL held-out,
+tool-eval, T3 and a temperature > 0 quality instrument have **not** run on h1 or h2. The 48 h soak clock started
+2026-10-26 16:36 was broken by the H1, E1, AP and W-card dark windows on 10-27 and 10-28, so no soak has completed.
 
 What stands between v27 and `status: verified` (the recipe stays `experimental` until every row is done).
 Updated 2026-10-26 evening.
