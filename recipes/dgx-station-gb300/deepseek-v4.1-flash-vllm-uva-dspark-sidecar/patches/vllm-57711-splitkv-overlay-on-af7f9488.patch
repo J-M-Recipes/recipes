@@ -1,0 +1,458 @@
+diff -ruN a/vllm/models/deepseek_v41/nvidia/flash_mla_mega_attn.py b/vllm/models/deepseek_v41/nvidia/flash_mla_mega_attn.py
+--- a/vllm/models/deepseek_v41/nvidia/flash_mla_mega_attn.py
++++ b/vllm/models/deepseek_v41/nvidia/flash_mla_mega_attn.py
+@@ -15,6 +15,8 @@
+ a single ``wo_a`` einsum covers the whole step.
+ """
+ 
++import functools
++import os
+ from dataclasses import replace
+ from typing import TYPE_CHECKING, cast
+ 
+@@ -23,6 +25,7 @@
+ from vllm.config import VllmConfig
+ from vllm.config.cache import CacheDType
+ from vllm.forward_context import get_forward_context
++from vllm.logger import init_logger
+ from vllm.model_executor.layers.fusion.quant_activation import QuantizedActivation
+ from vllm.model_executor.layers.quantization.utils.quant_utils import kMxfp8Dynamic
+ from vllm.models.deepseek_v41.common.ops import (
+@@ -36,6 +39,7 @@
+     permute_wq_b_,
+ )
+ from vllm.models.deepseek_v41.nvidia.flashmla import DeepseekV4FlashMLAAttention
++from vllm.models.deepseek_v41.nvidia.mega_splitkv_combine import mega_combine
+ from vllm.models.deepseek_v41.sparse_mla import (
+     DeepseekV4FlashMLAMetadata,
+     FlashMLAMegaAttnBackend,
+@@ -49,6 +53,186 @@
+ if TYPE_CHECKING:
+     from vllm.v1.attention.backends.mla.sparse_swa import DeepseekSparseSWAMetadata
+ 
++logger = init_logger(__name__)
++
++# Split-KV decode partials, keyed by (device, padded head count). The mega
++# kernel runs one cluster per query token, so a small decode batch leaves most
++# of the GPU idle; a FlashMLA build with partial-output support can instead
++# split the KV range across CTAs and let `mega_combine` merge the pieces.
++_SPLIT_BUFS: dict[tuple[str, int], tuple[torch.Tensor, torch.Tensor]] = {}
++
++# ATT2b (Card W6, desk 2026-10-28) -- fix A: the split-capable op (FlashMLA-fork
++# PR #25 + W5 shape guards + NaN-safe partial store) lives in a SIDE extension,
++# ``_flashmla_splitkv_C.abi3.so``, registered under its own torch library
++# namespace and loaded next to the shipped ``vllm/_flashmla_C.abi3.so``. ONLY
++# split decode calls (pure decode, <= MAX_REQS decodes, s_q <= MAX_TOKENS,
++# splits > 1) run on it; every other FlashMLA call -- unsplit decode at any
++# s_q, prefill, permutes -- runs the exact shipped binary h1-REF runs.
++_SPLIT_NS = "_flashmla_splitkv_C"
++_DECODE_OP = "fused_norm_rope_attn_rope_cast_decode"
++_SPLIT_SO = os.environ.get("VLLM_DSV41_MEGA_SPLITKV_SO", "")
++# Fix C: split only pure-decode steps with at most this many decode requests.
++# With k>=3 drafts MAX_TOKENS=8 already means C1 only, so this costs nothing
++# measured; it keeps ramp/mixed steps and replay sub-batches on the shipped op.
++# CRASH2 (desk 2026-10-28, DRAFT): default 1. With ksched [[1,4,5],...] two
++# requests are 12 tokens at k=5, so MAX_REQS=2 only ever admitted the q_len-4
++# (8 tok, 2 req) FULL graph, which replays only on shrink steps (AsyncScheduler
++# lags k by one step) and was never exercised by C1 or by the harness.
++_SPLIT_MAX_REQS = int(os.environ.get("VLLM_DSV41_MEGA_SPLITKV_MAX_REQS", "1") or 1)
++# CRASH2: allow-list of decode token counts that may split ("" = any <= MAX_TOKENS).
++# Default "6" = 1 + k at one request, the shape C1 replays (~3,000 clean steps in
++# S2). Drops the (4 tok, 1 req, q_len 4) FULL graph and the eager s_q 1/2/3/5/7
++# splits, none of which any clean run exercised in serving.
++_SPLIT_SQ = frozenset(
++    int(x) for x in os.environ.get("VLLM_DSV41_MEGA_SPLITKV_SQ", "6").split(",") if x.strip()
++)
++# CRASH2 diagnostics (debug arms only): TRACE logs one line per distinct split
++# decision incl. graph capture; GUARD puts sentinel bands around the partial pool
++# and checks them on every eager (non-capturing) split call (host sync).
++_SPLIT_TRACE = os.environ.get("VLLM_DSV41_MEGA_SPLITKV_TRACE", "0") == "1"
++_SPLIT_GUARD = os.environ.get("VLLM_DSV41_MEGA_SPLITKV_GUARD", "0") == "1"
++_GUARD_ELEMS = 1 << 18
++_GUARD_VAL = 1234.5
++_SPLIT_GUARD_BUFS: dict[tuple[str, int], tuple[torch.Tensor, torch.Tensor]] = {}
++_SPLIT_STRICT = os.environ.get("VLLM_DSV41_MEGA_SPLITKV_STRICT", "1") == "1"
++# Load the side extension at the first forward even when split is OFF (arm S1):
++# proves co-residency of the two binaries in the serving process.
++_SPLIT_PRELOAD = os.environ.get("VLLM_DSV41_MEGA_SPLITKV_PRELOAD", "0") == "1"
++
++
++def _shipped_decode_op():
++    return getattr(torch.ops._flashmla_C, _DECODE_OP)
++
++
++@functools.cache
++def _split_op():
++    """The side extension's split-capable decode op, or ``None`` (reason logged).
++
++    Never returns a ``_flashmla_C`` op: a whole-.so replacement is exactly the
++    configuration Card AP/W5 crashed on, so it is not a fallback here.
++    """
++    if not _SPLIT_SO:
++        logger.warning("ATT2b: VLLM_DSV41_MEGA_SPLITKV_SO is unset")
++        return None
++    if not os.path.isfile(_SPLIT_SO):
++        logger.warning("ATT2b: side extension %s does not exist", _SPLIT_SO)
++        return None
++    try:
++        torch.ops.load_library(_SPLIT_SO)
++        op = getattr(getattr(torch.ops, _SPLIT_NS), _DECODE_OP)
++        schema = str(op.default._schema)
++    except Exception as e:  # noqa: BLE001 -- reported, then STRICT decides
++        logger.warning("ATT2b: loading %s (%s::%s) failed: %r", _SPLIT_SO, _SPLIT_NS, _DECODE_OP, e)
++        return None
++    if not schema.startswith(_SPLIT_NS + "::") or "mega_num_splits" not in schema:
++        logger.warning("ATT2b: %s registers no split-KV %s::%s (schema %s)", _SPLIT_SO, _SPLIT_NS, _DECODE_OP, schema)
++        return None
++    return op
++
++
++def _require_split_op(why: str):
++    op = _split_op()
++    if op is None and _SPLIT_STRICT:
++        # An experiment arm that asked for the side extension must not
++        # silently serve without it (wrong/missing mount = invalid arm).
++        raise RuntimeError(
++            f"ATT2b ({why}): the split-KV side extension {_SPLIT_NS} could not be "
++            f"loaded from VLLM_DSV41_MEGA_SPLITKV_SO={_SPLIT_SO!r} (STRICT=1): check "
++            "the _flashmla_splitkv_C.abi3.so bind mount."
++        )
++    return op
++
++
++def _split_gate(num_prefills: int, num_decodes: int, s_q: int, num_tokens: int) -> bool:
++    """Fix C: only pure-decode steps with few decode requests may split.
++
++    CRASH2: and only when this forward holds exactly the decode rows
++    (``num_tokens`` = q rows incl. padding: a padded PIECEWISE replay or any
++    prefill row forces the shipped op, whatever the per-call s_q), and only at
++    an allow-listed s_q.
++    """
++    ok = (
++        num_prefills == 0
++        and 0 < num_decodes <= _SPLIT_MAX_REQS
++        and s_q == num_tokens
++        and (not _SPLIT_SQ or s_q in _SPLIT_SQ)
++    )
++    if _SPLIT_TRACE:
++        logger.info_once(
++            "CRASH2 split gate: ok=%d s_q=%d num_tokens=%d decodes=%d prefills=%d capturing=%d",
++            int(ok), s_q, num_tokens, num_decodes, num_prefills,
++            int(torch.cuda.is_current_stream_capturing()),
++        )
++    return ok
++
++
++def _check_split_guards() -> None:
++    """GUARD=1: raise (naming the pool) if any split call wrote past the partials."""
++    if torch.cuda.is_current_stream_capturing():
++        return
++    for key, (ob, lb) in _SPLIT_GUARD_BUFS.items():
++        g = _GUARD_ELEMS
++        for name, t in (("o_accum", ob), ("lse_accum", lb)):
++            if not (bool((t[:g] == _GUARD_VAL).all()) and bool((t[-g:] == _GUARD_VAL).all())):
++                raise RuntimeError(f"CRASH2: split partial pool {key} {name} guard band overwritten")
++
++
++def _decode_op(num_splits: int):
++    """Shipped op for every unsplit call; side op only when actually splitting."""
++    if num_splits > 1:
++        op = _split_op()
++        assert op is not None, "split requested without the side extension"
++        return op
++    return _shipped_decode_op()
++
++
++@functools.cache
++def _splitkv_config() -> tuple[int, int]:
++    """``(max splits, max decode tokens to split)``; ``(0, 0)`` disables.
++
++    Splitting costs ``splits * tokens * h_q * d_v * 4`` bytes of partials per
++    layer per step, so it only pays while the batch is too small to fill the
++    GPU -- hence the token cap rather than a pure SM-count heuristic.
++    """
++    cap = int(os.environ.get("VLLM_DSV41_MEGA_SPLITKV", "0") or 0)
++    if cap <= 1:
++        if _SPLIT_PRELOAD:
++            op = _require_split_op("preload, split off")
++            if op is not None:
++                logger.info_once(
++                    "ATT2b side extension PRELOADED (split off): %s ns=%s; all decode on shipped _flashmla_C",
++                    _SPLIT_SO,
++                    _SPLIT_NS,
++                )
++        return 0, 0
++    op = _require_split_op("split on")
++    if op is None:
++        logger.warning_once(
++            "VLLM_DSV41_MEGA_SPLITKV is set but the split-KV side extension "
++            "is unavailable; keeping the fused decode path (STRICT=0)."
++        )
++        return 0, 0
++    max_tokens = int(os.environ.get("VLLM_DSV41_MEGA_SPLITKV_MAX_TOKENS", "8") or 8)
++    logger.info_once(
++        "ATT2 MegaAttn split-KV ENABLED: cap=%d max_tokens=%d swa_only_layers=%s "
++        "max_reqs=%d side=%s ns=%s",
++        cap,
++        max_tokens,
++        _SPLIT_SWA_ONLY,
++        _SPLIT_MAX_REQS,
++        _SPLIT_SO,
++        _SPLIT_NS,
++    )
++    return cap, max_tokens
++
++
++# ATT2 (desk 2026-10-27): SWA-only layers (compress_ratio == 0) have only
++# window/64 = 2 KV blocks; #57711 sized their splits from the compressed
++# top-k too and would launch 8 splits of which 6 re-run the last block.
++# Default: keep them on the fused path. =1 restores #57711's behaviour.
++_SPLIT_SWA_ONLY = os.environ.get("VLLM_DSV41_MEGA_SPLITKV_SWA", "0") == "1"
++
++
+ _HEAD_DIM_V = 512
+ _ROPE_DIM = 64
+ # The kernel always emits per-32 scales, whatever num_per_channels says.
+@@ -264,6 +448,7 @@
+         if attn_metadata is None:
+             # Warmup dummy run: reserve the prefill workspace, produce zeros.
+             self._reserve_prefill_workspace(q)
++            self._splitkv_partials(1)  # allocate outside graph capture
+             output.data.zero_()
+             output.scale.zero_()
+             return
+@@ -284,6 +469,10 @@
+         positions_int32 = positions.to(torch.int32)
+         num_decode_tokens = swa_metadata.num_decode_tokens
+ 
++        if _SPLIT_GUARD and swa_metadata.num_prefills > 0:
++            # CRASH2 debug: eager mixed/prefill steps (e.g. the C32 ramp's 31-prefill step,
++            # one step before the W6 S2 fault) re-check the pool's guard bands.
++            _check_split_guards()
+         if swa_metadata.num_prefills > 0:
+             self._forward_prefill_mega(
+                 q[num_decode_tokens:],
+@@ -300,6 +489,7 @@
+                 flashmla_metadata,
+                 swa_metadata,
+                 _token_slice(output, 0, num_decode_tokens),
++                num_tokens=q.shape[0],  # CRASH2: rows of the whole forward, padding incl.
+             )
+ 
+     def _reserve_prefill_workspace(self, q: torch.Tensor) -> None:
+@@ -339,6 +529,58 @@
+         )
+         return self._compressed_kv_cache().unsqueeze(-2), indices, lens
+ 
++    def _splitkv_partials(
++        self, s_q: int
++    ) -> tuple[int, torch.Tensor | None, torch.Tensor | None]:
++        """Per-split partial buffers for this step, or ``(1, None, None)``."""
++        cap, max_tokens = _splitkv_config()
++        if cap <= 1 or not 0 < s_q <= max_tokens or self.topk_indices_buffer is None:
++            return 1, None, None
++        if self.compress_ratio == 0 and not _SPLIT_SWA_ONLY:
++            return 1, None, None
++        if self.compress_ratio == 0:
++            topk = self.window_size
++        else:
++            topk = self.topk_indices_buffer.shape[-1] + self.window_size
++        device = self.attn_sink.device
++        splits = min(
++            cap,
++            -(-topk // 64),  # KV blocks: the most splits that can do any work
++            torch.cuda.get_device_properties(device).multi_processor_count // s_q,
++        )
++        splits = 1 << max(splits, 1).bit_length() - 1  # combine needs a power of two
++        if splits <= 1:
++            return 1, None, None
++        key = (str(device), self.padded_heads)
++        if key not in _SPLIT_BUFS:
++            assert not torch.cuda.is_current_stream_capturing(), (
++                "CRASH2: split partial pool must be allocated outside graph capture"
++            )
++            o_shape = (cap, max_tokens, self.padded_heads, _HEAD_DIM_V)
++            l_shape = (cap, max_tokens, self.padded_heads)
++            if _SPLIT_GUARD:
++                g = _GUARD_ELEMS
++                n_o = cap * max_tokens * self.padded_heads * _HEAD_DIM_V
++                n_l = cap * max_tokens * self.padded_heads
++                ob = torch.full((2 * g + n_o,), _GUARD_VAL, dtype=torch.float32, device=device)
++                lb = torch.full((2 * g + n_l,), _GUARD_VAL, dtype=torch.float32, device=device)
++                _SPLIT_GUARD_BUFS[key] = (ob, lb)
++                o, l = ob[g : g + n_o].view(o_shape), lb[g : g + n_l].view(l_shape)
++                o.zero_()
++                _SPLIT_BUFS[key] = (o, l)
++            else:
++                _SPLIT_BUFS[key] = (
++                    torch.zeros(o_shape, dtype=torch.float32, device=device),
++                    torch.empty(l_shape, dtype=torch.float32, device=device),
++                )
++        o_accum, lse_accum = _SPLIT_BUFS[key]
++        oa, la = o_accum[:splits, :s_q], lse_accum[:splits, :s_q]
++        # W5: torch clamps an over-long slice silently; the kernel trusts only
++        # stride(0). The side op re-checks these extents (PR #25 guards).
++        assert tuple(oa.shape) == (splits, s_q, self.padded_heads, _HEAD_DIM_V), oa.shape
++        assert tuple(la.shape) == (splits, s_q, self.padded_heads), la.shape
++        return splits, oa, la
++
+     def _forward_decode_mega(
+         self,
+         q: torch.Tensor,
+@@ -346,6 +588,7 @@
+         flashmla_metadata: DeepseekV4FlashMLAMetadata | None,
+         swa_metadata: "DeepseekSparseSWAMetadata",
+         out: QuantizedActivation,
++        num_tokens: int | None = None,
+     ) -> None:
+         """Mega attention over the paged quantized caches, in place into ``out``.
+ 
+@@ -358,7 +601,7 @@
+             flashmla_metadata, swa_metadata
+         )
+         assert swa_metadata.decode_swa_indices is not None
+-        torch.ops._flashmla_C.fused_norm_rope_attn_rope_cast_decode(
++        args = [
+             q,
+             self.swa_cache_layer.kv_cache.unsqueeze(-2),
+             swa_metadata.decode_swa_indices.view(q.shape[0], -1),
+@@ -378,7 +621,33 @@
+             *_SF_ARGS,
+             out.data,
+             out.scale,
+-        )
++        ]
++        num_splits, o_accum, lse_accum = 1, None, None
++        if _split_gate(
++            swa_metadata.num_prefills,
++            swa_metadata.num_decodes,
++            q.shape[0],
++            q.shape[0] if num_tokens is None else num_tokens,
++        ):
++            num_splits, o_accum, lse_accum = self._splitkv_partials(q.shape[0])
++        if num_splits > 1:
++            args += [num_splits, o_accum, lse_accum]
++            # ATT2 proof line: one per distinct (s_q, splits, kind), emitted by
++            # a real decode call (graph capture or eager), never by warmup.
++            logger.info_once(
++                "ATT2 MegaAttn split-KV decode: s_q=%d splits=%d kind=%s op=%s",
++                q.shape[0],
++                num_splits,
++                "swa_only" if self.compress_ratio == 0 else "compressed",
++                _SPLIT_NS,
++            )
++        # ATT2b: split calls -> side extension; EVERYTHING else -> shipped op.
++        _decode_op(num_splits)(*args)
++        if num_splits > 1:
++            # The kernel wrote fp32 partials instead of the fused FP8 epilogue.
++            mega_combine(o_accum, lse_accum, out.data, out.scale, self.attn_sink)
++            if _SPLIT_GUARD:
++                _check_split_guards()
+ 
+     def _forward_prefill_mega(
+         self,
+diff -ruN a/vllm/models/deepseek_v41/nvidia/mega_splitkv_combine.py b/vllm/models/deepseek_v41/nvidia/mega_splitkv_combine.py
+--- a/vllm/models/deepseek_v41/nvidia/mega_splitkv_combine.py
++++ b/vllm/models/deepseek_v41/nvidia/mega_splitkv_combine.py
+@@ -0,0 +1,101 @@
++"""Combine kernel for the split-KV mega decode path (Triton stand-in).
++
++Merges the fp32 per-split partials the mega kernel writes, applies the
++attention sink exactly once, and runs the epilogue: fp8 e4m3 cast with packed
++ue8m0 per-32 scales into the kernel's permuted
++[s_q, n_wv_group, wv_group_size*d_v] layout.
++"""
++
++import torch
++import triton
++import triton.language as tl
++
++WV = tl.constexpr(8)
++GRAN = tl.constexpr(32)
++LOG2E = tl.constexpr(1.4426950408889634)
++
++
++@triton.jit
++def _combine(
++    o_accum,
++    lse_accum,
++    out_fp8,
++    out_sf_u8,
++    sink,
++    s_o_split,
++    s_l_split,
++    sf_stride_wv,
++    sf_stride_hd,
++    H_Q: tl.constexpr,
++    NS: tl.constexpr,
++    DV: tl.constexpr,
++    HAS_SINK: tl.constexpr,
++):
++    s = tl.program_id(0)
++    h = tl.program_id(1)
++    sp = tl.arange(0, NS)
++    lse = tl.load(lse_accum + sp * s_l_split + s * H_Q + h)
++    m = tl.max(lse, 0)
++    empty = m == float("-inf")
++    m = tl.where(empty, 0.0, m)
++    g = m + tl.log2(tl.sum(tl.exp2(lse - m), 0))
++    g = tl.where(empty, float("-inf"), g)
++    if HAS_SINK:
++        sk = tl.load(sink + h).to(tl.float32) * LOG2E
++        g = tl.where(empty, sk, g + tl.log2(1.0 + tl.exp2(sk - g)))
++    sc = tl.exp2(lse - g)
++    sc = tl.where(sc != sc, 0.0, sc)
++
++    d = tl.arange(0, DV)
++    acc = tl.zeros([DV], dtype=tl.float32)
++    for i in tl.static_range(NS):
++        v = tl.load(o_accum + i * s_o_split + (s * H_Q + h) * DV + d)
++        # ATT2b fix B (NaN-safe): a zero-weight split contributes exactly 0,
++        # even if its partial holds NaN (0 * NaN = NaN would poison the sum).
++        w = tl.sum(tl.where(sp == i, sc, 0.0), 0)
++        acc += tl.where(w > 0.0, v * w, 0.0)
++
++    grp = d // GRAN
++    a2 = tl.reshape(tl.abs(acc), (DV // GRAN, GRAN))
++    amax = tl.maximum(tl.max(a2, 1), 1e-4)
++    sf = amax / 448.0
++    exp_sf = ((sf.to(tl.int32, bitcast=True) - 1) >> 23) + (1 - 127)
++    sf_inv = ((127 - exp_sf) << 23).to(tl.float32, bitcast=True)
++    q = acc * tl.sum(
++        tl.where(
++            tl.arange(0, DV // GRAN)[None, :] == grp[:, None], sf_inv[None, :], 0.0
++        ),
++        1,
++    )
++    off = (
++        (h // WV) * (WV * DV) + (d // GRAN) * (WV * GRAN) + (h % WV) * GRAN + (d % GRAN)
++    )
++    tl.store(out_fp8 + s * (H_Q * DV) + off, q.to(tl.float8e4nv))
++
++    k = tl.arange(0, DV // GRAN)
++    blk = (h % WV) + k * WV
++    idx = (s + (h // WV) * sf_stride_wv + (blk // 4) * sf_stride_hd) * 4 + (blk % 4)
++    tl.store(out_sf_u8 + idx, (exp_sf + 127).to(tl.uint8))
++
++
++def mega_combine(o_accum, lse_accum, out_fp8, out_sf, attn_sink=None):
++    ns, s_q, h_q, dv = o_accum.shape
++    n_i32 = out_sf.untyped_storage().size() // 4
++    sf_u8 = torch.as_strided(out_sf, (n_i32,), (1,), 0).view(torch.uint8)
++    base = out_sf.storage_offset()
++    _combine[(s_q, h_q)](
++        o_accum,
++        lse_accum,
++        out_fp8,
++        sf_u8[base * 4 :],
++        attn_sink,
++        o_accum.stride(0),
++        lse_accum.stride(0),
++        out_sf.stride(1),
++        out_sf.stride(2),
++        H_Q=h_q,
++        NS=ns,
++        DV=dv,
++        HAS_SINK=attn_sink is not None,
++        num_warps=4,
++    )

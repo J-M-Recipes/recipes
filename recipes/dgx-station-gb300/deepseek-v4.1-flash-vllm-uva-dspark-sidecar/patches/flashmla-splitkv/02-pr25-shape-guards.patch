@@ -1,0 +1,36 @@
+--- a/csrc/api/fused_norm_rope_attn_rope_cast_fwd.cpp
++++ b/csrc/api/fused_norm_rope_attn_rope_cast_fwd.cpp
+@@ -475,6 +475,33 @@
+     }
+     STD_TORCH_CHECK(mega_num_splits == 1 || mega_o_accum_.has_value(),
+         "mega_num_splits > 1 requires the fp32 partial buffers");
++    // W5 (desk 2026-10-28): the kernel writes job (s_q_idx, split) at
++    //   o_accum   + split*stride(0) + (s_q_idx*h_q + h)*d_v + d
++    //   lse_accum + split*stride(0) +  s_q_idx*h_q + h
++    // for EVERY s_q_idx < q.size(0) and split < mega_num_splits, trusting only stride(0). Nothing checked the
++    // buffers' extents, so a [:splits, :s_q] slice of a pool with fewer than s_q rows (torch clamps the slice
++    // silently) wrote past the pool: Card W5 repro, 296 memcheck errors, 128 B of a neighbouring tensor overwritten.
++    STD_TORCH_CHECK(mega_num_splits >= 1, "mega_num_splits must be >= 1, got ", mega_num_splits);
++    if (mega_o_accum_.has_value()) {
++        const Tensor &oa = mega_o_accum_.value();
++        const Tensor &la = mega_lse_accum_.value();
++        STD_TORCH_CHECK(oa.scalar_type() == ScalarType::Float && la.scalar_type() == ScalarType::Float,
++            "mega_o_accum / mega_lse_accum must be float32");
++        STD_TORCH_CHECK(oa.get_device_index() == q.get_device_index() && la.get_device_index() == q.get_device_index(),
++            "mega_o_accum / mega_lse_accum must be on q's device");
++        KU_CHECK_NDIM(oa, 4);
++        KU_CHECK_NDIM(la, 3);
++        KU_CHECK_SHAPE(oa, mega_num_splits, s_q, h_q, d_v);
++        KU_CHECK_SHAPE(la, mega_num_splits, s_q, h_q);
++        STD_TORCH_CHECK(oa.stride(3) == 1 && oa.stride(2) == d_v && oa.stride(1) == (int64_t)h_q * d_v,
++            "mega_o_accum must be contiguous within a split ([s_q, h_q, d_v] block)");
++        STD_TORCH_CHECK(la.stride(2) == 1 && la.stride(1) == h_q,
++            "mega_lse_accum must be contiguous within a split ([s_q, h_q] block)");
++        STD_TORCH_CHECK(mega_num_splits == 1 || (oa.stride(0) >= (int64_t)s_q * h_q * d_v && la.stride(0) >= (int64_t)s_q * h_q),
++            "mega_o_accum / mega_lse_accum splits overlap (stride(0) too small)");
++        STD_TORCH_CHECK(oa.stride(0) <= 0xFFFFFFFFLL && la.stride(0) <= 0xFFFFFFFFLL,
++            "mega accum stride(0) must fit in uint32");
++    }
+ 
+     DISPATCH_NUM_HEADS(h_q, H_Q, ([&]() {
+         DISPATCH_BOOLEAN_FLAG(enable_q_norm, ENABLE_Q_NORM, ([&]() {

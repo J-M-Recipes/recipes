@@ -1,0 +1,14 @@
+Published launcher vs the live h2-REF container (2026-10-28, desk; no box writes)
+
+Method: GB300_UUID/RTX_UUID set, STEPS=server bash scripts/start-h2ref.sh with stub docker / nvidia-smi / sudo on PATH
+and a scratch $HOME holding the overlay files rebuilt from patches/ (sha256 identical to the box, see
+component-shas.txt) and a dummy side .so (the launcher warns on its sha, by design). The stub records the docker run
+argv; it is compared with promote/args-h2ref.json, env-h2ref.json, binds-h2ref.json and ulimits-h2ref.json, which
+promote_guard_split.sh captured with docker inspect from the serving container dsv41-vllm-1017-h2-REF.
+
+ARGS identical: True                       (vllm serve argv, element for element)
+ENV subset of live: True                   (every -e the launcher passes is in the container's Config.Env)
+live env not set by launcher: 24           (all image defaults: PATH, CUDA_*, NVIDIA_*, UV_*, VLLM_BUILD_*, ...)
+BIND dst sets equal: True                  (23 binds, no extra destination, none missing)
+BIND leaf names equal: True                (sources differ only by the $HOME scrub)
+ulimits: memlock=-1, stack=67108864, core=0  == ulimits-h2ref.json

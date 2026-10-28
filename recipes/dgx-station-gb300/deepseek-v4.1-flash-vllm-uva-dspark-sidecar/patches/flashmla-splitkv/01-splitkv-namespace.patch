@@ -1,0 +1,33 @@
+--- a/csrc/api/api.cpp
++++ b/csrc/api/api.cpp
+@@ -4,7 +4,7 @@
+ 
+ #include "interfaces.h"
+ 
+-STABLE_TORCH_LIBRARY(_flashmla_C, m) {
++STABLE_TORCH_LIBRARY(_flashmla_splitkv_C, m) {
+     m.def("sparse_decode_fwd(Tensor q, Tensor kv, Tensor indices, Tensor? topk_length, Tensor? attn_sink, Tensor(a)? tile_scheduler_metadata, Tensor(b)? num_splits, Tensor? extra_kv, Tensor? extra_indices, Tensor? extra_topk_length, int d_v, float sm_scale, Tensor(c!)? out_) -> (Tensor(c!), Tensor, Tensor(a)?, Tensor(b)?)");
+     m.def("dense_decode_fwd(Tensor q, Tensor kcache, int head_size_v, Tensor seqlens_k, Tensor block_table, float softmax_scale, bool is_causal, Tensor(a)? tile_scheduler_metadata, Tensor(b)? num_splits, Tensor(c!)? out_) -> (Tensor(c!), Tensor, Tensor(a)?, Tensor(b)?)");
+     m.def("sparse_prefill_fwd(Tensor q, Tensor kv, Tensor indices, float sm_scale, int d_v, Tensor? attn_sink, Tensor? topk_length, Tensor(a!)? out_) -> Tensor[]");
+@@ -21,7 +21,7 @@
+ #endif
+ }
+ 
+-STABLE_TORCH_LIBRARY_IMPL(_flashmla_C, CUDA, m) {
++STABLE_TORCH_LIBRARY_IMPL(_flashmla_splitkv_C, CUDA, m) {
+     m.impl("sparse_decode_fwd", TORCH_BOX(&sparse_attn_decode_interface));
+     m.impl("dense_decode_fwd", TORCH_BOX(&dense_attn_decode_interface));
+     m.impl("sparse_prefill_fwd", TORCH_BOX(&sparse_attn_prefill_interface));
+@@ -35,9 +35,9 @@
+ #endif
+ }
+ 
+-// To enable vLLM to import vllm._flashmla_C as a python module
+-PyMODINIT_FUNC PyInit__flashmla_C() {
++// ATT2b side extension (Card W6): own namespace so it loads NEXT TO the shipped vllm._flashmla_C (loaded via torch.ops.load_library, never imported)
++PyMODINIT_FUNC PyInit__flashmla_splitkv_C() {
+     static struct PyModuleDef module = {
+-        PyModuleDef_HEAD_INIT, "_flashmla_C", nullptr, 0, nullptr};
++        PyModuleDef_HEAD_INIT, "_flashmla_splitkv_C", nullptr, 0, nullptr};
+     return PyModule_Create(&module);
+ }

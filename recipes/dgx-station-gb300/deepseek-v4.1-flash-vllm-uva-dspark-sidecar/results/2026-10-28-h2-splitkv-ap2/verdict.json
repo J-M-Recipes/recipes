@@ -1,0 +1,929 @@
+{
+ "result": "S8=NO S4=PROMOTE-READY",
+ "suffix": "AP2-S8NO-S4PROMOTE-READY",
+ "per_candidate": {
+  "S8": "NO",
+  "S4": "PROMOTE-READY"
+ },
+ "winner": {
+  "arm": "S4",
+  "splits": 4,
+  "brrr_tok_s": 484.5,
+  "onem": "PASS"
+ },
+ "promotion": "none (James decides; promote_guard_split.sh is a separate script)",
+ "gate_class": {
+  "G_crashfree": "CRASH",
+  "G_brrr": "SPEED",
+  "G_tf": "CORR",
+  "G_gauntlet": "CORR",
+  "G_probe62417": "CORR",
+  "G_soak": "CORR",
+  "G_1M": "CORR",
+  "G_perclass": "HOLD",
+  "G_lib": "HOLD",
+  "G_prefill": "HOLD"
+ },
+ "verdict_sha256": "88cac1b98000282d5d5e8cb393ccd9b23d511940b9c80f107a8896f97e9f8438",
+ "gates": {
+  "G0_validity": [
+   "PASS",
+   "A=ok A2=ok S8=ok S4=ok | controls CRASH-FREE A=PASS A2=PASS"
+  ],
+  "G1_controls": [
+   "PASS",
+   "A 11.092 / A2 11.106 ms/step, spread 0.13% (bar <= 1.0%)"
+  ],
+  "A_crashfree": [
+   "PASS",
+   "xid=0 errors=[0, 0] gpu_fault_lines=0 fault_cell=[] alive_end=1 wd_trips=0 lib_crash=0"
+  ],
+  "A2_crashfree": [
+   "PASS",
+   "xid=0 errors=[0, 0] gpu_fault_lines=0 fault_cell=[] alive_end=1 wd_trips=0 lib_crash=0"
+  ],
+  "S8_engaged": [
+   "PASS",
+   "{\"arm\": \"S8\", \"expect_splits\": 8, \"shipped_sha256\": \"df2cdd1c3acfe6546b10a8d6d9b3d8bae3783a4910337d9721d83ff653e4fc13\", \"side_sha256\": \"744a9de89060730eecbb7c4c249dedc36f3dbfb3854de17299780b66cb90e983\", \"side_mapped_pids\": 1, \"rsu_sha256_end\": \"2d43d5133c1fb96399e186ed10c5a26b54c12e6a019d9d163cbff1adbcfbcc39\", \"enabled\": 1, \"enabled_cap\": [8], \"enabled_max_reqs\": [1], \"decode_lines\": [\"s_q=6 splits=8 kind=compressed op=_flashmla_splitkv_C\"], \"sqN_side\": 1, \"decode_other\": 0, \"trace_lines\": 284, "
+  ],
+  "S8_G_crashfree": [
+   "PASS",
+   "xid=0 errors=[0, 0] gpu_fault_lines=0 fault_cell=[] alive_end=1 wd_trips=0 lib_crash=0"
+  ],
+  "S8_G_brrr": [
+   "FAIL",
+   "S8 477.8 tok/s vs max(A,A2) 467.5: 1.022x (bar >= 1.025x); step -0.357 ms vs mean(A,A2)"
+  ],
+  "S8_G_tf": [
+   "FAIL",
+   "W 2.751 (bar <= 1.25 x A2's 2.554 = 3.192); confident flips 6 (bar <= max(3,2)+1 = 4); agent/tool confident 0 (bar 0); raw TF flips {'flips': 1721, 'pct': 2.164} vs A2 {'flips': 1722, 'pct': 2.165}"
+  ],
+  "S8_G_gauntlet": [
+   "PASS",
+   "S8 12/12 (A 12/12, A2 12/12)"
+  ],
+  "S8_G_probe62417": [
+   "PASS",
+   "S8: 16 cells, corruption-cell fails none (shared with a control: none); P5 {'acc': 0.975, 'ok': 39, 'n': 40} vs bar 0.875 = min(0.93, min(ctrl [0.925, 0.95]) - 0.05); controls A={'fails': 1, 'cells': 16, 'failed': ['P5 synthetic arithmetic acc=0.925 (37/40)'], 'p5': {'acc': 0.925, 'ok': 37, 'n': 40}} A2={'fails': 0, 'cells': 16, 'failed': [], 'p5': {'acc': 0.95, 'ok': 38, 'n': 40}}"
+  ],
+  "S8_G_soak": [
+   "PASS",
+   "S8: loops 0 nonstop 0 correct 4/4 (bar >= 4 = worse control); A 4/4 loops 0 nonstop 0; A2 4/4 loops 0 nonstop 0"
+  ],
+  "S8_G_1M": [
+   "PASS",
+   "S8: ok=True why=[] prompt_tokens=900372 TTFT 31.182s (0.997x A; A ok=True TTFT 31.265s)"
+  ],
+  "S8_G_perclass": [
+   "PASS",
+   "| prose_c1 1.061x structured_c1 1.031x code_c1 1.048x shell_ops_c1 1.027x tool_json_c1 1.002x prose_c8 0.980x structured_c8 0.987x code_c8 1.009x shell_ops_c8 1.000x tool_json_c8 0.992x"
+  ],
+  "S8_G_lib": [
+   "PASS",
+   "[basis 0.95 x min(A,A2)] | C1@0 1.116x C8@0 0.986x C32@0 0.994x C1@65536 1.029x C8@65536 0.994x C32@65536 0.999x"
+  ],
+  "S8_G_prefill": [
+   "PASS",
+   "| 8192: 39192 tok/s (0.989x worse ctrl) TTFT 0.209s (1.012x); 16384: 40732 tok/s (0.997x worse ctrl) TTFT 0.403s (1.004x); 65536: 41819 tok/s (1.008x worse ctrl) TTFT 1.567s (0.993x); 131072: 40612 tok/s (1.002x worse ctrl) TTFT 3.225s (0.998x)"
+  ],
+  "S4_engaged": [
+   "PASS",
+   "{\"arm\": \"S4\", \"expect_splits\": 4, \"shipped_sha256\": \"df2cdd1c3acfe6546b10a8d6d9b3d8bae3783a4910337d9721d83ff653e4fc13\", \"side_sha256\": \"744a9de89060730eecbb7c4c249dedc36f3dbfb3854de17299780b66cb90e983\", \"side_mapped_pids\": 1, \"rsu_sha256_end\": \"2d43d5133c1fb96399e186ed10c5a26b54c12e6a019d9d163cbff1adbcfbcc39\", \"enabled\": 1, \"enabled_cap\": [4], \"enabled_max_reqs\": [1], \"decode_lines\": [\"s_q=6 splits=4 kind=compressed op=_flashmla_splitkv_C\"], \"sqN_side\": 1, \"decode_other\": 0, \"trace_lines\": 272, "
+  ],
+  "S4_G_crashfree": [
+   "PASS",
+   "xid=0 errors=[0, 0] gpu_fault_lines=0 fault_cell=[] alive_end=1 wd_trips=0 lib_crash=0"
+  ],
+  "S4_G_brrr": [
+   "PASS",
+   "S4 484.5 tok/s vs max(A,A2) 467.5: 1.036x (bar >= 1.025x); step -0.429 ms vs mean(A,A2)"
+  ],
+  "S4_G_tf": [
+   "PASS",
+   "W 2.784 (bar <= 1.25 x A2's 2.554 = 3.192); confident flips 4 (bar <= max(3,2)+1 = 4); agent/tool confident 0 (bar 0); raw TF flips {'flips': 1745, 'pct': 2.194} vs A2 {'flips': 1722, 'pct': 2.165}"
+  ],
+  "S4_G_gauntlet": [
+   "PASS",
+   "S4 12/12 (A 12/12, A2 12/12)"
+  ],
+  "S4_G_probe62417": [
+   "PASS",
+   "S4: 16 cells, corruption-cell fails none (shared with a control: none); P5 {'acc': 0.975, 'ok': 39, 'n': 40} vs bar 0.875 = min(0.93, min(ctrl [0.925, 0.95]) - 0.05); controls A={'fails': 1, 'cells': 16, 'failed': ['P5 synthetic arithmetic acc=0.925 (37/40)'], 'p5': {'acc': 0.925, 'ok': 37, 'n': 40}} A2={'fails': 0, 'cells': 16, 'failed': [], 'p5': {'acc': 0.95, 'ok': 38, 'n': 40}}"
+  ],
+  "S4_G_soak": [
+   "PASS",
+   "S4: loops 0 nonstop 0 correct 4/4 (bar >= 4 = worse control); A 4/4 loops 0 nonstop 0; A2 4/4 loops 0 nonstop 0"
+  ],
+  "S4_G_1M": [
+   "PASS",
+   "S4: ok=True why=[] prompt_tokens=900372 TTFT 31.172s (0.997x A; A ok=True TTFT 31.265s)"
+  ],
+  "S4_G_perclass": [
+   "PASS",
+   "| prose_c1 1.047x structured_c1 1.044x code_c1 1.043x shell_ops_c1 1.021x tool_json_c1 0.992x prose_c8 0.993x structured_c8 0.989x code_c8 1.002x shell_ops_c8 1.011x tool_json_c8 0.996x"
+  ],
+  "S4_G_lib": [
+   "PASS",
+   "[basis 0.95 x min(A,A2)] | C1@0 1.036x C8@0 1.001x C32@0 1.000x C1@65536 1.069x C8@65536 0.996x C32@65536 1.020x"
+  ],
+  "S4_G_prefill": [
+   "PASS",
+   "| 8192: 39674 tok/s (1.001x worse ctrl) TTFT 0.207s (0.999x); 16384: 41727 tok/s (1.021x worse ctrl) TTFT 0.393s (0.980x); 65536: 42059 tok/s (1.013x worse ctrl) TTFT 1.558s (0.987x); 131072: 40701 tok/s (1.004x worse ctrl) TTFT 3.218s (0.996x)"
+  ]
+ },
+ "cells": {
+  "ran": {
+   "A": true,
+   "A2": true,
+   "S8": true,
+   "S4": true
+  },
+  "skipped": {
+   "A": null,
+   "A2": null,
+   "S8": null,
+   "S4": null
+  },
+  "boot_failed": {
+   "A": false,
+   "A2": false,
+   "S8": false,
+   "S4": false
+  },
+  "lib": {
+   "A": {
+    "C1@0": 233.5,
+    "C1@65536": 261.2,
+    "C8@0": 1159.4,
+    "C32@0": 2578.3,
+    "C8@65536": 1120.3,
+    "C32@65536": 2549.0,
+    "_crash": [],
+    "_missing": [],
+    "_prefill_scouts": {
+     "8192": {
+      "tok_s": 43806.0,
+      "ttft_s": 0.187
+     },
+     "65536": {
+      "tok_s": 51058.0,
+      "ttft_s": 1.261
+     },
+     "131072": {
+      "tok_s": 48235.0,
+      "ttft_s": 2.665
+     }
+    }
+   },
+   "A2": {
+    "C1@0": 255.9,
+    "C1@65536": 259.9,
+    "C8@0": 1146.2,
+    "C32@0": 2587.0,
+    "C8@65536": 1138.7,
+    "C32@65536": 2532.5,
+    "_crash": [],
+    "_missing": [],
+    "_prefill_scouts": {
+     "8192": {
+      "tok_s": 44570.0,
+      "ttft_s": 0.184
+     },
+     "65536": {
+      "tok_s": 50360.0,
+      "ttft_s": 1.278
+     },
+     "131072": {
+      "tok_s": 48274.0,
+      "ttft_s": 2.663
+     }
+    }
+   },
+   "S8": {
+    "C1@0": 273.1,
+    "C1@65536": 268.1,
+    "C8@0": 1137.2,
+    "C32@0": 2567.8,
+    "C8@65536": 1122.8,
+    "C32@65536": 2537.2,
+    "_crash": [],
+    "_missing": [],
+    "_prefill_scouts": {
+     "8192": {
+      "tok_s": 44250.0,
+      "ttft_s": 0.185
+     },
+     "65536": {
+      "tok_s": 51000.0,
+      "ttft_s": 1.262
+     },
+     "131072": {
+      "tok_s": 48293.0,
+      "ttft_s": 2.662
+     }
+    }
+   },
+   "S4": {
+    "C1@0": 253.4,
+    "C1@65536": 278.6,
+    "C8@0": 1154.1,
+    "C32@0": 2583.3,
+    "C8@65536": 1125.4,
+    "C32@65536": 2591.7,
+    "_crash": [],
+    "_missing": [],
+    "_prefill_scouts": {
+     "8192": {
+      "tok_s": 44912.0,
+      "ttft_s": 0.182
+     },
+     "65536": {
+      "tok_s": 50823.0,
+      "ttft_s": 1.267
+     },
+     "131072": {
+      "tok_s": 48282.0,
+      "ttft_s": 2.663
+     }
+    }
+   }
+  },
+  "crashfree": {
+   "A": [
+    "PASS",
+    "xid=0 errors=[0, 0] gpu_fault_lines=0 fault_cell=[] alive_end=1 wd_trips=0 lib_crash=0"
+   ],
+   "A2": [
+    "PASS",
+    "xid=0 errors=[0, 0] gpu_fault_lines=0 fault_cell=[] alive_end=1 wd_trips=0 lib_crash=0"
+   ],
+   "S8": [
+    "PASS",
+    "xid=0 errors=[0, 0] gpu_fault_lines=0 fault_cell=[] alive_end=1 wd_trips=0 lib_crash=0"
+   ],
+   "S4": [
+    "PASS",
+    "xid=0 errors=[0, 0] gpu_fault_lines=0 fault_cell=[] alive_end=1 wd_trips=0 lib_crash=0"
+   ]
+  },
+  "facts_A": {
+   "arm": "A",
+   "name": "dsv41-vllm-1017-AP2-A",
+   "kv": "4,400,013",
+   "args_ok": 1,
+   "env_ok": 1,
+   "binds_ok": 1,
+   "ulimit_core0": 1,
+   "rsu_sha256": "2d43d5133c1fb96399e186ed10c5a26b54c12e6a019d9d163cbff1adbcfbcc39",
+   "l2_lines": 2,
+   "autotune": "Loaded 117 configs Saved 117 configs ",
+   "boot_s": 530,
+   "launcher": "~/dsv41/m3/ap2/h2ref-att2b/launch_att2d.sh",
+   "splits": 0,
+   "xid_base": 355,
+   "foreign": [
+    "0",
+    "0"
+   ],
+   "sidecar_timeouts": 0,
+   "hash_hit_shape": true,
+   "engage": {
+    "arm": "A",
+    "expect_splits": 0,
+    "shipped_sha256": "df2cdd1c3acfe6546b10a8d6d9b3d8bae3783a4910337d9721d83ff653e4fc13",
+    "side_sha256": null,
+    "side_mapped_pids": 0,
+    "rsu_sha256_end": "2d43d5133c1fb96399e186ed10c5a26b54c12e6a019d9d163cbff1adbcfbcc39",
+    "enabled": 0,
+    "enabled_cap": [],
+    "enabled_max_reqs": [],
+    "decode_lines": [],
+    "sqN_side": 0,
+    "decode_other": 0,
+    "trace_lines": 0,
+    "trace_ok1": [],
+    "trace_ok1_sq6": 0,
+    "trace_ok1_bad": 0,
+    "guard_lines": 0,
+    "att2_any": 0,
+    "l2_patched": 2
+   },
+   "engaged": true,
+   "valid_facts": true
+  },
+  "facts_A2": {
+   "arm": "A2",
+   "name": "dsv41-vllm-1017-AP2-A2",
+   "kv": "4,400,013",
+   "args_ok": 1,
+   "env_ok": 1,
+   "binds_ok": 1,
+   "ulimit_core0": 1,
+   "rsu_sha256": "2d43d5133c1fb96399e186ed10c5a26b54c12e6a019d9d163cbff1adbcfbcc39",
+   "l2_lines": 2,
+   "autotune": "Loaded 117 configs Saved 117 configs ",
+   "boot_s": 541,
+   "launcher": "~/dsv41/m3/ap2/h2ref-att2b/launch_att2d.sh",
+   "splits": 0,
+   "xid_base": 355,
+   "foreign": [
+    "0",
+    "0"
+   ],
+   "sidecar_timeouts": 0,
+   "hash_hit_shape": true,
+   "engage": {
+    "arm": "A2",
+    "expect_splits": 0,
+    "shipped_sha256": "df2cdd1c3acfe6546b10a8d6d9b3d8bae3783a4910337d9721d83ff653e4fc13",
+    "side_sha256": null,
+    "side_mapped_pids": 0,
+    "rsu_sha256_end": "2d43d5133c1fb96399e186ed10c5a26b54c12e6a019d9d163cbff1adbcfbcc39",
+    "enabled": 0,
+    "enabled_cap": [],
+    "enabled_max_reqs": [],
+    "decode_lines": [],
+    "sqN_side": 0,
+    "decode_other": 0,
+    "trace_lines": 0,
+    "trace_ok1": [],
+    "trace_ok1_sq6": 0,
+    "trace_ok1_bad": 0,
+    "guard_lines": 0,
+    "att2_any": 0,
+    "l2_patched": 2
+   },
+   "engaged": true,
+   "valid_facts": true
+  },
+  "facts_S8": {
+   "arm": "S8",
+   "name": "dsv41-vllm-1017-AP2-S8",
+   "kv": "4,400,013",
+   "args_ok": 1,
+   "env_ok": 1,
+   "binds_ok": 1,
+   "ulimit_core0": 1,
+   "rsu_sha256": "2d43d5133c1fb96399e186ed10c5a26b54c12e6a019d9d163cbff1adbcfbcc39",
+   "l2_lines": 2,
+   "autotune": "Loaded 117 configs Saved 117 configs ",
+   "boot_s": 551,
+   "launcher": "~/dsv41/m3/ap2/h2ref-att2b/launch_att2d.sh",
+   "splits": 8,
+   "xid_base": 355,
+   "foreign": [
+    "0",
+    "0"
+   ],
+   "sidecar_timeouts": 0,
+   "hash_hit_shape": true,
+   "engage": {
+    "arm": "S8",
+    "expect_splits": 8,
+    "shipped_sha256": "df2cdd1c3acfe6546b10a8d6d9b3d8bae3783a4910337d9721d83ff653e4fc13",
+    "side_sha256": "744a9de89060730eecbb7c4c249dedc36f3dbfb3854de17299780b66cb90e983",
+    "side_mapped_pids": 1,
+    "rsu_sha256_end": "2d43d5133c1fb96399e186ed10c5a26b54c12e6a019d9d163cbff1adbcfbcc39",
+    "enabled": 1,
+    "enabled_cap": [
+     8
+    ],
+    "enabled_max_reqs": [
+     1
+    ],
+    "decode_lines": [
+     "s_q=6 splits=8 kind=compressed op=_flashmla_splitkv_C"
+    ],
+    "sqN_side": 1,
+    "decode_other": 0,
+    "trace_lines": 284,
+    "trace_ok1": [
+     "s_q=6 num_tokens=6 decodes=1 prefills=0 capturing=0",
+     "s_q=6 num_tokens=6 decodes=1 prefills=0 capturing=1"
+    ],
+    "trace_ok1_sq6": 2,
+    "trace_ok1_bad": 0,
+    "guard_lines": 0,
+    "att2_any": 286,
+    "l2_patched": 2
+   },
+   "engaged": true,
+   "valid_facts": true
+  },
+  "facts_S4": {
+   "arm": "S4",
+   "name": "dsv41-vllm-1017-AP2-S4",
+   "kv": "4,400,013",
+   "args_ok": 1,
+   "env_ok": 1,
+   "binds_ok": 1,
+   "ulimit_core0": 1,
+   "rsu_sha256": "2d43d5133c1fb96399e186ed10c5a26b54c12e6a019d9d163cbff1adbcfbcc39",
+   "l2_lines": 2,
+   "autotune": "Loaded 117 configs Saved 117 configs ",
+   "boot_s": 530,
+   "launcher": "~/dsv41/m3/ap2/h2ref-att2b/launch_att2d.sh",
+   "splits": 4,
+   "xid_base": 355,
+   "foreign": [
+    "0",
+    "0"
+   ],
+   "sidecar_timeouts": 0,
+   "hash_hit_shape": true,
+   "engage": {
+    "arm": "S4",
+    "expect_splits": 4,
+    "shipped_sha256": "df2cdd1c3acfe6546b10a8d6d9b3d8bae3783a4910337d9721d83ff653e4fc13",
+    "side_sha256": "744a9de89060730eecbb7c4c249dedc36f3dbfb3854de17299780b66cb90e983",
+    "side_mapped_pids": 1,
+    "rsu_sha256_end": "2d43d5133c1fb96399e186ed10c5a26b54c12e6a019d9d163cbff1adbcfbcc39",
+    "enabled": 1,
+    "enabled_cap": [
+     4
+    ],
+    "enabled_max_reqs": [
+     1
+    ],
+    "decode_lines": [
+     "s_q=6 splits=4 kind=compressed op=_flashmla_splitkv_C"
+    ],
+    "sqN_side": 1,
+    "decode_other": 0,
+    "trace_lines": 272,
+    "trace_ok1": [
+     "s_q=6 num_tokens=6 decodes=1 prefills=0 capturing=0",
+     "s_q=6 num_tokens=6 decodes=1 prefills=0 capturing=1"
+    ],
+    "trace_ok1_sq6": 2,
+    "trace_ok1_bad": 0,
+    "guard_lines": 0,
+    "att2_any": 274,
+    "l2_patched": 2
+   },
+   "engaged": true,
+   "valid_facts": true
+  },
+  "brrr2k_t0": {
+   "A": {
+    "n": 5,
+    "step_ms": 11.092,
+    "tok_step": 5.16,
+    "tok_s": 464.9
+   },
+   "A2": {
+    "n": 5,
+    "step_ms": 11.1064,
+    "tok_step": 5.19,
+    "tok_s": 467.5
+   },
+   "S8": {
+    "n": 5,
+    "step_ms": 10.742,
+    "tok_step": 5.137,
+    "tok_s": 477.8
+   },
+   "S4": {
+    "n": 5,
+    "step_ms": 10.6699,
+    "tok_step": 5.174,
+    "tok_s": 484.5
+   }
+  },
+  "perclass_t1": {
+   "A": {
+    "prose_c1": 277.22,
+    "prose_c1_n": 2,
+    "structured_c1": 308.03,
+    "structured_c1_n": 2,
+    "code_c1": 365.53,
+    "code_c1_n": 2,
+    "shell_ops_c1": 390.64,
+    "shell_ops_c1_n": 2,
+    "tool_json_c1": 350.05,
+    "tool_json_c1_n": 2,
+    "prose_c8": 149.27,
+    "prose_c8_n": 2,
+    "structured_c8": 157.44,
+    "structured_c8_n": 2,
+    "code_c8": 176.55,
+    "code_c8_n": 2,
+    "shell_ops_c8": 183.44,
+    "shell_ops_c8_n": 2,
+    "tool_json_c8": 176.69,
+    "tool_json_c8_n": 2
+   },
+   "A2": {
+    "prose_c1": 279.19,
+    "prose_c1_n": 2,
+    "structured_c1": 299.71,
+    "structured_c1_n": 2,
+    "code_c1": 364.71,
+    "code_c1_n": 2,
+    "shell_ops_c1": 380.75,
+    "shell_ops_c1_n": 2,
+    "tool_json_c1": 353.47,
+    "tool_json_c1_n": 2,
+    "prose_c8": 148.27,
+    "prose_c8_n": 2,
+    "structured_c8": 159.16,
+    "structured_c8_n": 2,
+    "code_c8": 182.6,
+    "code_c8_n": 2,
+    "shell_ops_c8": 188.92,
+    "shell_ops_c8_n": 2,
+    "tool_json_c8": 178.22,
+    "tool_json_c8_n": 2
+   },
+   "S8": {
+    "prose_c1": 295.28,
+    "prose_c1_n": 2,
+    "structured_c1": 313.44,
+    "structured_c1_n": 2,
+    "code_c1": 382.6,
+    "code_c1_n": 2,
+    "shell_ops_c1": 396.01,
+    "shell_ops_c1_n": 2,
+    "tool_json_c1": 352.41,
+    "tool_json_c1_n": 2,
+    "prose_c8": 145.85,
+    "prose_c8_n": 2,
+    "structured_c8": 156.25,
+    "structured_c8_n": 2,
+    "code_c8": 181.23,
+    "code_c8_n": 2,
+    "shell_ops_c8": 186.11,
+    "shell_ops_c8_n": 2,
+    "tool_json_c8": 175.95,
+    "tool_json_c8_n": 2
+   },
+   "S4": {
+    "prose_c1": 291.17,
+    "prose_c1_n": 2,
+    "structured_c1": 317.21,
+    "structured_c1_n": 2,
+    "code_c1": 381.0,
+    "code_c1_n": 2,
+    "shell_ops_c1": 393.88,
+    "shell_ops_c1_n": 2,
+    "tool_json_c1": 348.97,
+    "tool_json_c1_n": 2,
+    "prose_c8": 147.79,
+    "prose_c8_n": 2,
+    "structured_c8": 156.63,
+    "structured_c8_n": 2,
+    "code_c8": 179.97,
+    "code_c8_n": 2,
+    "shell_ops_c8": 188.14,
+    "shell_ops_c8_n": 2,
+    "tool_json_c8": 176.73,
+    "tool_json_c8_n": 2
+   }
+  },
+  "ttft": {
+   "A": {
+    "8192": {
+     "n": 2,
+     "ttft_s_mean": 0.2057,
+     "tok_s_mean": 39887.3,
+     "prompt_tokens": [
+      8156,
+      8213
+     ]
+    },
+    "16384": {
+     "n": 2,
+     "ttft_s_mean": 0.3966,
+     "tok_s_mean": 41389.0,
+     "prompt_tokens": [
+      16420,
+      16370
+     ]
+    },
+    "65536": {
+     "n": 2,
+     "ttft_s_mean": 1.5635,
+     "tok_s_mean": 41913.0,
+     "prompt_tokens": [
+      65540,
+      65507
+     ]
+    },
+    "131072": {
+     "n": 2,
+     "ttft_s_mean": 3.2327,
+     "tok_s_mean": 40519.2,
+     "prompt_tokens": [
+      131060,
+      130905
+     ]
+    }
+   },
+   "A2": {
+    "8192": {
+     "n": 2,
+     "ttft_s_mean": 0.2069,
+     "tok_s_mean": 39635.2,
+     "prompt_tokens": [
+      8156,
+      8213
+     ]
+    },
+    "16384": {
+     "n": 2,
+     "ttft_s_mean": 0.4014,
+     "tok_s_mean": 40869.6,
+     "prompt_tokens": [
+      16420,
+      16370
+     ]
+    },
+    "65536": {
+     "n": 2,
+     "ttft_s_mean": 1.5789,
+     "tok_s_mean": 41499.3,
+     "prompt_tokens": [
+      65540,
+      65507
+     ]
+    },
+    "131072": {
+     "n": 2,
+     "ttft_s_mean": 3.219,
+     "tok_s_mean": 40692.2,
+     "prompt_tokens": [
+      131060,
+      130905
+     ]
+    }
+   },
+   "S8": {
+    "8192": {
+     "n": 2,
+     "ttft_s_mean": 0.2093,
+     "tok_s_mean": 39192.5,
+     "prompt_tokens": [
+      8156,
+      8213
+     ]
+    },
+    "16384": {
+     "n": 2,
+     "ttft_s_mean": 0.403,
+     "tok_s_mean": 40731.8,
+     "prompt_tokens": [
+      16420,
+      16370
+     ]
+    },
+    "65536": {
+     "n": 2,
+     "ttft_s_mean": 1.5671,
+     "tok_s_mean": 41819.0,
+     "prompt_tokens": [
+      65540,
+      65507
+     ]
+    },
+    "131072": {
+     "n": 2,
+     "ttft_s_mean": 3.2253,
+     "tok_s_mean": 40611.5,
+     "prompt_tokens": [
+      131060,
+      130905
+     ]
+    }
+   },
+   "S4": {
+    "8192": {
+     "n": 2,
+     "ttft_s_mean": 0.2067,
+     "tok_s_mean": 39673.6,
+     "prompt_tokens": [
+      8156,
+      8213
+     ]
+    },
+    "16384": {
+     "n": 2,
+     "ttft_s_mean": 0.3934,
+     "tok_s_mean": 41726.8,
+     "prompt_tokens": [
+      16420,
+      16370
+     ]
+    },
+    "65536": {
+     "n": 2,
+     "ttft_s_mean": 1.5581,
+     "tok_s_mean": 42058.7,
+     "prompt_tokens": [
+      65540,
+      65507
+     ]
+    },
+    "131072": {
+     "n": 2,
+     "ttft_s_mean": 3.2182,
+     "tok_s_mean": 40700.8,
+     "prompt_tokens": [
+      131060,
+      130905
+     ]
+    }
+   }
+  },
+  "gauntlet": {
+   "A": "12/12",
+   "A2": "12/12",
+   "S8": "12/12",
+   "S4": "12/12"
+  },
+  "flips_margin_vs_A": {
+   "A2": {
+    "gate": "PASS",
+    "hi_agent_tool": 0,
+    "hi_prose_pct": 0.005,
+    "W": 2.554,
+    "W_calib": 3.077,
+    "confident_flips_all": 3
+   },
+   "S8": {
+    "gate": "PASS",
+    "hi_agent_tool": 0,
+    "hi_prose_pct": 0.009,
+    "W": 2.751,
+    "W_calib": 2.554,
+    "confident_flips_all": 6
+   },
+   "S4": {
+    "gate": "PASS",
+    "hi_agent_tool": 0,
+    "hi_prose_pct": 0.006,
+    "W": 2.784,
+    "W_calib": 2.554,
+    "confident_flips_all": 4
+   }
+  },
+  "tf_compare_vs_A": {
+   "A2": {
+    "flips": 1722,
+    "pct": 2.165
+   },
+   "S8": {
+    "flips": 1721,
+    "pct": 2.164
+   },
+   "S4": {
+    "flips": 1745,
+    "pct": 2.194
+   }
+  },
+  "greedy_vs_A": {
+   "A2": {
+    "n": 16,
+    "identical": 2
+   },
+   "S8": {
+    "n": 16,
+    "identical": 3
+   },
+   "S4": {
+    "n": 16,
+    "identical": 2
+   }
+  },
+  "probe62417": {
+   "A": {
+    "fails": 1,
+    "cells": 16,
+    "failed": [
+     "P5 synthetic arithmetic acc=0.925 (37/40)"
+    ],
+    "p5": {
+     "acc": 0.925,
+     "ok": 37,
+     "n": 40
+    }
+   },
+   "A2": {
+    "fails": 0,
+    "cells": 16,
+    "failed": [],
+    "p5": {
+     "acc": 0.95,
+     "ok": 38,
+     "n": 40
+    }
+   },
+   "S8": {
+    "fails": 0,
+    "cells": 16,
+    "failed": [],
+    "p5": {
+     "acc": 0.975,
+     "ok": 39,
+     "n": 40
+    }
+   },
+   "S4": {
+    "fails": 0,
+    "cells": 16,
+    "failed": [],
+    "p5": {
+     "acc": 0.975,
+     "ok": 39,
+     "n": 40
+    }
+   }
+  },
+  "soak": {
+   "A": {
+    "n": 4,
+    "n_pass": 4,
+    "n_correct": 4,
+    "n_loop": 0,
+    "n_nonstop": 0,
+    "completion_tokens": {
+     "no_consecutive": 454,
+     "mod_1000": 993,
+     "square_sum": 1313,
+     "pairs_no_zero": 4785
+    }
+   },
+   "A2": {
+    "n": 4,
+    "n_pass": 4,
+    "n_correct": 4,
+    "n_loop": 0,
+    "n_nonstop": 0,
+    "completion_tokens": {
+     "no_consecutive": 623,
+     "mod_1000": 802,
+     "square_sum": 1324,
+     "pairs_no_zero": 4156
+    }
+   },
+   "S8": {
+    "n": 4,
+    "n_pass": 4,
+    "n_correct": 4,
+    "n_loop": 0,
+    "n_nonstop": 0,
+    "completion_tokens": {
+     "no_consecutive": 553,
+     "mod_1000": 1012,
+     "square_sum": 2115,
+     "pairs_no_zero": 4532
+    }
+   },
+   "S4": {
+    "n": 4,
+    "n_pass": 4,
+    "n_correct": 4,
+    "n_loop": 0,
+    "n_nonstop": 0,
+    "completion_tokens": {
+     "no_consecutive": 534,
+     "mod_1000": 926,
+     "square_sum": 1115,
+     "pairs_no_zero": 4636
+    }
+   }
+  },
+  "onem": {
+   "A": {
+    "ok": true,
+    "why": [],
+    "prompt_tokens": 900372,
+    "ttft_s": 31.265,
+    "wall_s": 31.274,
+    "finish": "stop"
+   },
+   "A2": null,
+   "S8": {
+    "ok": true,
+    "why": [],
+    "prompt_tokens": 900372,
+    "ttft_s": 31.182,
+    "wall_s": 31.191,
+    "finish": "stop"
+   },
+   "S4": {
+    "ok": true,
+    "why": [],
+    "prompt_tokens": 900372,
+    "ttft_s": 31.172,
+    "wall_s": 31.182,
+    "finish": "stop"
+   }
+  },
+  "onem_skipped": {
+   "A": null,
+   "A2": "not in ONEM_ARMS=[A S8 S4]",
+   "S8": null,
+   "S4": null
+  }
+ }
+}

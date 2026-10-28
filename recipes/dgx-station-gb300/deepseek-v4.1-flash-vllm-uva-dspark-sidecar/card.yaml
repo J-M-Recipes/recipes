@@ -1,10 +1,11 @@
 # card.yaml — at-a-glance card sidecar. Rendered by scripts/render_card.py; never hand-edit card.html.
-# Every number here traces to recipe.yaml metrics or results/2026-10-22-v25-sidecar/. Unmeasured = pending.
+# h2-REF serving release (2026-10-28). Every number traces to recipe.yaml metrics or results/2026-10-28-h2-splitkv-ap2/
+# (older rows name their own run). Unmeasured = pending. The v27 card is card-v27.yaml.
 title: "DeepSeek-V4.1-Flash · 1× DGX Station GB300 + RTX PRO 6000 sidecar"
-subtitle: "The 89 cold experts per layer don't live in Grace — they live on the second GPU in the chassis, and they are computed there. Full 1M context, 3× the C16 decode of Grace offload."
-version: "v27 = sidecar + kv-host-tier + block verification · live on :30006 since 10-26 04:08"
-run_id: 2026-10-22-v25-sidecar
-handles: "github.com/J-M-Recipes/recipes · al-engr.com · sidecar recipe + kbench harness: RonanLabsAI (dgx-station-frontier) · hook: original-el8 — credited in the README"
+subtitle: "The 89 cold experts per layer are computed on the second GPU in the chassis, not read from Grace. Full 1M context. h2 adds split-KV attention for the one-user verify step and the sampler guard that ended a 32-user crash."
+version: "h2-REF = v27 + L2 + #60945 guard + split-KV ×4 · :30006 since 10-28 17:22"
+run_id: 2026-10-28-h2-splitkv-ap2
+handles: "github.com/J-M-Recipes/recipes · al-engr.com · sidecar recipe + kbench harness: RonanLabsAI (dgx-station-frontier) · hook: original-el8 · split-KV: FlashMLA PR #25 / vLLM #57711 — credited in the README"
 
 model:
   type: MoE
@@ -13,67 +14,66 @@ model:
   active_params: "8B prefill / 16B decode"
   checkpoint_gb: 510.3
   weights_short: "as shipped · MXFP4 experts / FP8 attn+Engram · nothing re-quantized"
-  engine_extra: "nightly-af7f9488 (sha256:3af6a45b) on BOTH GPUs · el8 hook @87af662 · b12x @2cc7f66a · vllm#58132 bounded replay"
-  memory: "206.6 GiB hot experts in HBM + 66.2 GiB cold experts on the card · KV declared 8.5 GiB = 4.40M tok (4.2× one 1M request; 4×1M co-resident at 75%) · host carries Engram only"
+  engine_extra: "nightly-af7f9488 (sha256:3af6a45b) on BOTH GPUs · el8 hook @87af662 + L2 · b12x @2cc7f66a · #58132 + #61161 + #60945 overlays · FlashMLA PR #25 side .so 744a9de8"
+  memory: "206.6 GiB hot experts in HBM + 66.2 GiB cold experts on the card · KV declared 8.5 GiB = 4.40M tok (4.2× one 1M request) · 48 GiB Grace prefix-KV tier · host carries Engram"
 
 hero:
-  c1:      { value: 279.5, unit: tok/s, class: "real text, 8.2K in / 1,024 out", label: "Decode · C1, mean of 2 boots", note: "v25 base launch, 10-22 · 276.8 / 282.2 on two independent boots; incumbent 187.5 · acceptance 2.96 tok/step, TTFT 0.19 s · per-class C1: prose 295 · structured 299 · code 409 · shell 414 · tool-JSON 367" }
-  c16:     { value: 1576.9, unit: tok/s, label: "Decode · C16 aggregate", note: "1,581.0 / 1,572.8 vs incumbent 524.5 · C32 2,400.3 vs 936.9 · 32 seats, k=3 band above 8 sequences" }
-  prefill: { value: 50119, unit: tok/s, label: "Prompt reading · cold 64K prefill", note: "incumbent 23,439 tok/s same window · 1M-token prompt: first token 33.2 s (incumbent 81.4 s) · 128K cold prefill 2.61 s" }
+  c1:      { value: 484.5, unit: tok/s, class: "coding · BRRR padded codegen, 2K in, T=0", label: "Decode · C1, mean of 5 reps", note: "Card AP2 arm S4 vs same-window h1-REF controls 464.9 / 467.5 → 1.036×; 10.67 vs 11.09 / 11.11 ms per step at 5.17 tok/step · temp-1 per-class C1: prose 291 · structured 317 · code 381 · shell 394 · tool-JSON 349 (0.99–1.05× of controls) · the split engages for 1 user only" }
+  c16:     { value: 2583.3, unit: tok/s, label: "Decode · C32 aggregate, synthetic filler, ctx 0", note: "llm-inference-bench 0.6.2, C1/C8/C32 × 0/64K in one process, crash-free · controls 2,578 / 2,587 (1.000×) · C8 1,154 · C32 @64K 2,592 · v25 real-text C16 1,577 / C32 2,400 on kbench (another harness)" }
+  prefill: { value: 42059, unit: tok/s, label: "Prompt reading · cold 64K prefill", note: "AP2 instrument, mean of 2, TTFT 1.56 s; controls 41,913 / 41,499 · 1M needle (900,372 tokens) first token 31.2 s · v25's SC2 harness read 50,119 at 64K — compare within one card only" }
 
 guesser:
   name: DSpark
   source: "in-checkpoint MTP (mtp.0–2), 1017 revision"
-  schedule: "k = 5 at 1–4 seqs, 3 at 5–8 and 9–32 (batch-size schedule) · probabilistic drafting · v27: block verification"
-  notes: "blended 2.96 tokens/verify step on the real-text C1 cell (incumbent 2.955). Per-class, temp 1.0, C1 (Card BR2, v25m-kvtier lane): prose 2.85 · structured 3.03 · code 3.83 · shell 3.98 · tool-JSON 3.63; blended 3.20; +2.0% with block verification (Card BR1). k=9 measured: −8…−21% (per-position acceptance falls past position 6)."
-  accept: { "real-text C1": "2.96", "temp-1.0 C1 per class": "prose 2.85 · structured 3.03 · code 3.83 · shell 3.98 · tool-JSON 3.63 (blend 3.20)", "block verif. (v27)": "+2.0% tok/step", "k=9": "−8…−21% speed" }
+  schedule: "k = 5 at 1–4 seqs, 3 at 5–8 and 9–32 · probabilistic drafting · block verification · h2 unchanged (the k=3 bands are what exposed the #60945 read)"
+  notes: "h2 coding C1 5.17 tok/step (BRRR). Per-class temp-1.0 C1 tokens/step from Card BR2 on v27; block verification +2.0% (BR1); k=9 −8…−21%."
+  accept: { "BRRR codegen C1 (h2)": "5.17 tok/step", "temp-1.0 C1 per class (BR2, v27)": "prose 2.85 · structured 3.03 · code 3.83 · shell 3.98 · tool-JSON 3.63", "real-text C1 (v25)": "2.96", "k=9": "−8…−21% speed" }
 
 secondary:
-  - label: "Guard — a missed sidecar deadline is wrong output, not a slow one"
+  - label: "Guard — two failure modes that look like success"
     items:
-      "bring-up cosine gate": "min 0.99906 · 40/40 layers · ≥32 cold rows · 0 timeouts"
-      "spin limit": "VLLM_EXP_PEER_SPINS=2e9 → a dead sidecar hangs instead of dropping the cold add"
-      "watchdog": "fail-closed, trips in ~3 s on timeout / stall / dead sidecar; fault-tested (rollback bound 260 s)"
-      "live counters (3 h)": "4.26M sidecar calls · 0 timeouts · 0.0048 ms wait per call · 0 trips"
-  - label: "Quality and cost of the win"
+      "sidecar timeout": "VLLM_EXP_PEER_SPINS=2e9 + fail-closed watchdog, enforce, PPID 1 · live 10-28: 0 timeouts, trip null"
+      "#60945 sampler read": "k=3 at 5–32 users read 4 B past a 512 B tensor → CUDA illegal address when it ended a segment · killed 5 card runs · guard 2d43d513, bit-identical"
+      "split-KV quarantine": "1 request, s_q 6, 4 splits · side .so 744a9de8 next to the untouched _flashmla_C · 8 splits = NO"
+      "bring-up cosine": "v25 static min 0.99906 · v25m map R2 PASS (max e 0.0149 vs 0.0465)"
+  - label: "What h2 bought, and what it did not"
     items:
-      "SC2 gates": "12/12 PASS · per-class decode 20/20 cells within −3%"
-      "BFCL": "dev 92.67 vs 92.33 · held-out 77.65 vs 77.88 (our grader)"
-      "GSM8K-1319 / needle / gauntlet": "96.97 = incumbent · 500/500 exact · 12/12"
-      "v27 T1, synthetic filler (10-26)": "C1 262 / 254 / 250 tok/s at 0 / 32K / 128K · C4 661 / 643 / 637 — above the v21 GB300-only band (no regression only) · C8 skipped"
-      "power": "module p99 1,353 W in 64K prefill, sw_power_cap 89.5% of samples (incumbent 65%) — measured under that throttling"
+      "C1 by class, temp 1": "prose 1.047 · structured 1.044 · code 1.043 · shell 1.021 · tool-JSON 0.992×"
+      "8 / 32 users": "0.989–1.011× / 1.000× — the split never engages there"
+      "lib C1 at 0 / 64K": "253.4 / 278.6 tok/s (1.036 / 1.069× of the control mean)"
+      "prefill / TTFT 8K–128K": "1.001–1.021× / 0.980–0.999× of the worse control"
+      "power": "module p99 1,353 W in 64K prefill (v25) — all numbers under the chassis cap"
 
 fidelity:
-  - { status: pass, text: "Weights unchanged: 1017 checkpoint as shipped, 0 re-quantized bits; the sidecar reads the same shards, it does not copy or re-encode them" }
-  - { status: pass, text: "v25 static map: sidecar path verified against the GB300's own cold-expert computation: min cos 0.99906 over 1,341 checks with ≥32 cold rows, all 40 layers, 0 timeouts" }
-  - { status: pass, text: "Speculation is target-verified (DSpark drafts are accepted by the full model at T=0)" }
-  - { status: pass, text: "Teacher-forced margin-weighted flips vs the same-map control inside the control floor (W=3.014 vs floor 1.866); BFCL dev +0.34 pt, held-out −0.23 pt" }
-  - { status: pass, text: "GSM8K-1319 96.97% identical to the incumbent (1,279/1,319); 500/500 exact needle; gauntlet 12/12; image request reads the picture" }
-  - { status: measured, text: "v27 runs the v25m map: cosine R2 PASS (max e 0.0149 vs 0.0465) · R1 min cos 0.99811 reported (1 of 1,439 checks, layer 39, below 0.999); R2 bar from 1 of 3 registered reference boots" }
-  - { status: pass, text: "v27 T2 on the live lane, 10-26 (T=0, C4): needle-checksum 500/500 exact · GSM8K-200 192/200 = baseline (0 vs 0 flips, p 1.0) · BFCL held-out 77.27% (−0.38 pt vs v25m, p 0.46, bar −1 pt)" }
-  - { status: measured, text: "All v27 T2/held-out checks are temperature 0, where block verification is inactive: they cover the target path, not the block key; a temp>0 quality instrument is not yet run · tool-eval 89/100 (v21 92; TC-43, TC-51 new fails)" }
-  - { status: pass, text: "v27 block verification (Card BR1): TF top-1 flips 2.166% / 2.176% vs control floor 2.172%, gauntlet 12/12; re-verified after each of the 5 restores on 10-26 (KV 4,400,013, block in args, watchdog PPID 1)" }
-  - { status: measured, text: "Block verification is lane-specific: a null on the GB300-only sibling with a greedy drafter (BR3, 0.999× tok/step); on top of probabilistic drafting it tripped a parity gate in BR4, BR5 and BR6 there and was retired. This drafter was already probabilistic" }
-  - { status: pass, text: "One public bench we ran: fraserprice's BRRR codegen harness ported stdlib — 2K/C1 466 tok/s at 5.13 tok/step vs their 4× RTX PRO 6000 703; 64K prefill 46,246 vs 17,852 tok/s" }
-  - { status: measured, text: "One temp-0 GSM8K item ran to the token cap on this image (0/32 at a 32K cap on repeat) — attributed to the image's effort-75 tail, not the sidecar" }
+  - { status: pass, text: "Weights unchanged: 1017 checkpoint as shipped, 0 re-quantized bits; the sidecar reads the same shards" }
+  - { status: pass, text: "Crash-free hard gate (Card AP2): 0 new Xid, 0 engine errors, 0 GPU-fault lines, alive at end on all 4 arms under a 2 s watcher — C1/C8/C32 × 0/64K in one process included — and during the promotion" }
+  - { status: pass, text: "1M needle on h2: 900,372 tokens, found, finish stop, first token 31.17 s (31.24 s on the promoted container)" }
+  - { status: pass, text: "#60945 guard is bit-identical: kernel A/B 100/100 cases, the row it stops reading is never consumed; compute-sanitizer 20 → 0 invalid reads (Card W12)" }
+  - { status: measured, text: "Split-KV is NOT bit-identical (summation order): TF vs control W 2.784 (bar 3.192), confident flips 4 = bar 4, agent/tool 0; raw flips 2.194% vs the controls' 2.165%" }
+  - { status: pass, text: "Gauntlet 12/12 · #62417 probe 16/16 cells · long-thinking soak 4/4 correct, 0 loops (h2 arm)" }
+  - { status: pass, text: "Speculation is target-verified (DSpark drafts are accepted by the full model)" }
+  - { status: pass, text: "One public bench we ran: fraserprice's BRRR codegen harness — 2K/C1 484.5 tok/s at 5.17 tok/step (h2) vs their 4× RTX PRO 6000 703" }
+  - { status: pending, text: "T2 (needle-checksum, GSM8K-200), BFCL held-out and tool-eval not re-run on h1/h2 — v27 read 500/500, 192/200 (p 1.0), 77.27%" }
+  - { status: pending, text: "48 h soak — none has completed on any sidecar config" }
+  - { status: pending, text: "Temperature > 0 quality instrument — block verification and #61161 act only there" }
 
 harness:
   protocol:
     file: harness/protocol.yaml
     sha256: 61c2d22b63516502c57ce876cb4a0884fb6f8e043a5707f5479cef95e99c32da
-    summary: "T=0, no thinking, tool_choice auto, 1 retry, C8 BFCL / C16 fund tools, 4-turn fund conversations (same protocol file as the GB300-only sibling; BFCL suite checksums live there)"
+    summary: "T=0, no thinking, tool_choice auto, 1 retry, C8 BFCL / C16 fund tools, 4-turn fund conversations (same protocol file as the GB300-only sibling)"
   dev:
-    name: BFCL dev (simple_python 400 + multiple 200)
+    name: BFCL dev on v25 (simple_python 400 + multiple 200)
     solved: 556
     n: 600
     pct: "92.67%"
     status: pass
-    note: "sidecar arm C, 2026-10-22; incumbent 92.33%. Decides candidacy only"
+    note: "sidecar v25 arm C, 2026-10-22; not re-run on h1/h2. Decides candidacy only"
   heldout:
-    name: BFCL live sibling (live_simple 258 + live_multiple 1,053)
+    name: BFCL live sibling on v27 (live_simple 258 + live_multiple 1,053)
     solved: 1013
     n: 1311
     pct: "77.27%"
     status: pass
-    note: "v27 live lane, 2026-10-26, T=0, C4; v25m 77.65% → −0.38 pt (17 lost / 12 gained, p 0.46), inside the −1 pt bar · v25 arm C 2026-10-22 77.65% (incumbent 77.88%)"
+    note: "v27 live lane, 2026-10-26, T=0, C4 (−0.38 pt vs v25m, p 0.46); NOT re-run on h1/h2"
   # cost: no metered-plug run on this lane, so there is no energy basis and no $/1000-solved number to print.

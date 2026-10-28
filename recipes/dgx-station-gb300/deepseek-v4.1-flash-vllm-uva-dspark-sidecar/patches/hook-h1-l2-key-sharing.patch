@@ -1,0 +1,320 @@
+--- a/mega_peer_hook.py
++++ b/mega_peer_hook.py
+@@ -66,6 +66,10 @@
+ # MEGA_NO_MEGA_MHC=1: never use DeepGEMM's Mega-mHC kernel (vllm#56962) for the shifted mHC post/pre boundary; steps
+ # that would take it (T > 16: prefill, and decode at C3+ with k=5 or C5+ with k=3) run the fused TileLang path instead.
+ NO_MEGA_MHC = os.environ.get("MEGA_NO_MEGA_MHC", "0") == "1"
++# L2 attention/indexer trims (attn_share.py): MEGA_SHARE_TOPK=1|2, MEGA_POS_I32_ONCE=1, MEGA_CAND_COOP=1. All default
++# off; with none set attn_share.py is never imported and nothing below changes.
++L2_ANY = (os.environ.get("MEGA_SHARE_TOPK", "0") in ("1", "2") or os.environ.get("MEGA_POS_I32_ONCE", "0") == "1"
++          or os.environ.get("MEGA_CAND_COOP", "0") == "1")
+ TARGET = "vllm.models.deepseek_v4.nvidia.model"
+ TARGET_V41 = "vllm.models.deepseek_v41.nvidia.model"
+ _PREFIX = re.compile(r"(?:^|\.)model\.layers\.(\d+)\.ffn\.experts$")
+@@ -580,8 +584,18 @@
+     _LOG("vllm.models.deepseek_v41.nvidia.ops.mhc: Mega-mHC off; T > 16 boundaries use the fused TileLang path")
+ 
+ 
++def _l2_targets():
++    spec = importlib.util.spec_from_file_location("attn_share", os.path.join(os.path.dirname(__file__), "attn_share.py"))
++    mod = importlib.util.module_from_spec(spec)
++    sys.modules["attn_share"] = mod
++    spec.loader.exec_module(mod)
++    return mod.targets()
++
++
+ def install():
+     targets = [(TARGET, _patch), (TARGET_V41, _patch_v41)]
++    if L2_ANY:
++        targets.extend(_l2_targets())
+     if LL_GEMM:
+         targets.append(("vllm.model_executor.kernels.linear.mxfp8.flashinfer", _patch_ll_gemm))
+     if FI_TUNE_FILE:
+--- /dev/null
++++ b/attn_share.py
+@@ -0,0 +1,285 @@
++"""L2 attention/indexer decode-step trims for DeepSeek-V4.1-Flash on the MegaAttn backend (vLLM af7f9488).
++
++DRAFT -- desk-built 2026-10-27, never run on a GPU. Installed by mega_peer_hook.install() only when one of the
++env flags below is set; with all three unset (the default) nothing is patched and behaviour is today's.
++
++  MEGA_SHARE_TOPK=1   (i) compute_global_topk_indices_and_lens once per (kv_source, index_source, ratio) key per
++                      forward instead of once per compressed layer. 1.0-1017 config: 8 keys over 38 compressed layers
++                      -> 30 fewer launches/step. Strict mode: reuse only when every input tensor pointer matches.
++  MEGA_SHARE_TOPK=2   same, relaxed: ignore the per-SWA-group token_to_req_indices / is_valid_token pointers
++                      (equal content by construction, different buffers per SWA KV-cache group; see NOTES-L2.md).
++  MEGA_POS_I32_ONCE=1 (ii) positions.to(int32) once per target forward (layer 0) instead of in every layer's
++                      forward_mqa (flash_mla_mega_attn.py:284). Backbone layers only; drafter layers (id >= 40) keep
++                      their own cast. 39 fewer launches/step.
++  MEGA_CAND_COOP=1    (iii) decode candidate-block selection (candidate source layer 20, candidate_write) via
++                      torch.ops._C.cooperative_topk over the valid prefix (port of vLLM main
++                      specialized_decode/attention/candidate_topk.py, #61868) instead of torch.topk over the padded
++                      width. NOT bit-identical at exact score ties -> its own card arm, default off.
++
++(i) and (ii) are bit-identical: the shared kernel is a pure gather/count over identical inputs (proof + CPU test in
++test_attn_share_cpu.py), and an int64->int32 cast of the same tensor is the same tensor.
++
++Graph safety: forward_mqa and the indexer run inside `_sparse_indexer_and_attn` (`@eager_break_during_capture`,
++attention.py:947), so this Python runs at capture time (FULL graphs) or per replay (breakable graphs). Every cached
++tensor is produced by a kernel recorded in the same forward and held by reference until the next layer-0 reset, so it
++is never freed or aliased before its last consumer -- the same lifetime rule as any intermediate activation.
++"""
++from __future__ import annotations
++
++import os
++import sys
++
++import torch
++
++SHARE_TOPK = os.environ.get("MEGA_SHARE_TOPK", "0")          # "0" off, "1" strict, "2" relaxed
++POS_ONCE = os.environ.get("MEGA_POS_I32_ONCE", "0") == "1"
++CAND_COOP = os.environ.get("MEGA_CAND_COOP", "0") == "1"
++NUM_BACKBONE = int(os.environ.get("MEGA_NUM_BACKBONE_LAYERS", "40"))   # 1017 text_config.num_hidden_layers
++STATS_EVERY = int(os.environ.get("MEGA_L2_STATS_EVERY", "0"))           # >0: log hit counters every N forwards
++# MEGA_L2_VERIFY=1 (diagnostic arm only, never production): on every shared-table hit outside graph capture, also run
++# the original computation and torch.equal() it against the shared one (host sync). Mismatch -> logged, original used.
++VERIFY = os.environ.get("MEGA_L2_VERIFY", "0") == "1"
++
++ATTN_TARGET = "vllm.models.deepseek_v41.nvidia.flash_mla_mega_attn"
++INDEXER_TARGET = "vllm.model_executor.layers.sparse_attn_indexer"
++
++_LOG = lambda m: sys.stderr.write(f"MEGA_L2 {m}\n")
++
++
++def enabled() -> bool:
++    return SHARE_TOPK in ("1", "2") or POS_ONCE or CAND_COOP
++
++
++class _State:
++    """Per-process cache; reset by backbone layer 0 at the start of every target forward."""
++
++    def __init__(self):
++        self.gen = 0
++        self.pos_src = None       # the positions tensor object layer 0 saw
++        self.pos_i32 = None
++        self.topk = {}            # key -> (stamp, indices, lens)
++        self.stats = {"forwards": 0, "pos_hit": 0, "pos_miss": 0, "topk_src": 0, "topk_hit": 0,
++                      "topk_miss": 0, "cand_coop": 0, "cand_orig": 0,
++                      "verify_ok": 0, "verify_bad": 0}
++
++    def reset(self):
++        # Log the forward that just ended: per-forward deltas for the first 8 forwards (warm-up / graph capture, so a
++        # card can see the lever engage: expect topk_src 8, topk_hit 30, pos_hit 39 on a decode forward), then
++        # cumulative totals every STATS_EVERY forwards.
++        n = self.stats["forwards"]
++        if STATS_EVERY and n and (n <= 8 or n % STATS_EVERY == 0):
++            last = getattr(self, "_last", {})
++            delta = {k: v - last.get(k, 0) for k, v in self.stats.items() if k != "forwards"}
++            _LOG(f"stats forward={n} this_forward={delta} total={self.stats}")
++        self._last = dict(self.stats)
++        self.gen += 1
++        self.pos_src = None
++        self.pos_i32 = None
++        self.topk = {}
++        self.stats["forwards"] += 1
++
++
++S = _State()
++
++
++def _capturing() -> bool:
++    return torch.cuda.is_available() and torch.cuda.is_current_stream_capturing()
++
++
++def _is_backbone(layer) -> bool:
++    return 0 <= getattr(layer, "layer_id", -1) < NUM_BACKBONE
++
++
++# ---------------------------------------------------------------------------------------------------------------
++# (ii) + forward-generation reset: wrap forward_mqa
++# ---------------------------------------------------------------------------------------------------------------
++
++def _wrap_forward_mqa(orig):
++    def forward_mqa(self, q, kv, positions, output):
++        backbone = _is_backbone(self)
++        if backbone and self.layer_id == 0:
++            S.reset()
++        if POS_ONCE and backbone and positions.dtype != torch.int32:
++            # Match by view identity, not Python object identity: under torch.compile the splitting-op boundary may
++            # hand each layer a different tensor object over the same storage. Nothing writes positions between
++            # layer 0 and layer 39 of one forward, so equal (ptr, offset, shape, stride, dtype) => equal contents.
++            sig = (positions.data_ptr(), positions.storage_offset(), tuple(positions.shape),
++                   tuple(positions.stride()), positions.dtype)
++            if self.layer_id == 0 or S.pos_src != sig or S.pos_i32 is None:
++                if self.layer_id != 0:
++                    S.stats["pos_miss"] += 1
++                S.pos_src = sig
++                S.pos_i32 = positions.to(torch.int32)     # the one cast kernel of the step
++            else:
++                S.stats["pos_hit"] += 1
++            # orig does `positions.to(torch.int32)` (flash_mla_mega_attn.py:284); on an int32 tensor that returns
++            # the same tensor object -- no copy, no kernel -- so the value the kernel sees is unchanged.
++            positions = S.pos_i32
++        return orig(self, q, kv, positions, output)
++
++    forward_mqa._mega_l2 = True
++    return forward_mqa
++
++
++# ---------------------------------------------------------------------------------------------------------------
++# (i) shared global top-k table: wrap _decode_compressed_kv_and_topk (flash_mla_mega_attn.py:321-341)
++# ---------------------------------------------------------------------------------------------------------------
++
++def _stamp(self, flashmla_metadata, swa_metadata, strict: bool):
++    """Everything compute_global_topk_indices_and_lens reads (cache_utils.py:718-750), by identity."""
++    ndt = swa_metadata.num_decode_tokens
++    bt = flashmla_metadata.block_table
++    s = (S.gen, ndt, swa_metadata.num_decodes, self.topk_indices_buffer.data_ptr(),
++         tuple(self.topk_indices_buffer.stride()), bt.data_ptr(), tuple(bt.stride()),
++         flashmla_metadata.block_size // self.compress_ratio)
++    if strict:
++        s += (swa_metadata.token_to_req_indices.data_ptr(), swa_metadata.is_valid_token.data_ptr())
++    return s
++
++
++def _wrap_decode_topk(orig):
++    strict = SHARE_TOPK == "1"
++
++    def _decode_compressed_kv_and_topk(self, flashmla_metadata, swa_metadata):
++        if self.compress_ratio == 0 or not _is_backbone(self):
++            return orig(self, flashmla_metadata, swa_metadata)
++        key = (self.kv_source_layer_id, self.index_source_layer_id, self.compress_ratio)
++        stamp = _stamp(self, flashmla_metadata, swa_metadata, strict)
++        if self.layer_id != self.index_source_layer_id:
++            hit = S.topk.get(key)
++            if hit is not None and hit[0] == stamp:
++                S.stats["topk_hit"] += 1
++                if VERIFY and not _capturing():
++                    ref = orig(self, flashmla_metadata, swa_metadata)
++                    if torch.equal(ref[1], hit[1]) and torch.equal(ref[2], hit[2]):
++                        S.stats["verify_ok"] += 1
++                    else:
++                        S.stats["verify_bad"] += 1
++                        _LOG(f"VERIFY MISMATCH layer {self.layer_id} key {key}; serving the original table")
++                        return ref
++                # Same tuple orig returns: the compressed cache view (no kernel) + the shared indices/lens.
++                return self._compressed_kv_cache().unsqueeze(-2), hit[1], hit[2]
++            S.stats["topk_miss"] += 1
++        else:
++            # The index source runs its indexer right before this (attention.py:956-971): fresh table.
++            S.stats["topk_src"] += 1
++        cache, indices, lens = orig(self, flashmla_metadata, swa_metadata)
++        S.topk[key] = (stamp, indices, lens)
++        return cache, indices, lens
++
++    _decode_compressed_kv_and_topk._mega_l2 = True
++    return _decode_compressed_kv_and_topk
++
++
++def patch_attn(module) -> None:
++    cls = module.DeepseekV4MegaAttnAttention
++    if getattr(cls, "_mega_l2", False):
++        return
++    if SHARE_TOPK in ("1", "2") or POS_ONCE:
++        # forward_mqa is always wrapped when (i) or (ii) is on: it owns the per-forward reset.
++        cls.forward_mqa = _wrap_forward_mqa(cls.forward_mqa)
++    if SHARE_TOPK in ("1", "2"):
++        cls._decode_compressed_kv_and_topk = _wrap_decode_topk(cls._decode_compressed_kv_and_topk)
++    cls._mega_l2 = True
++    _LOG(f"patched {ATTN_TARGET}.DeepseekV4MegaAttnAttention: share_topk={SHARE_TOPK} pos_i32_once={int(POS_ONCE)} "
++         f"backbone<{NUM_BACKBONE}")
++
++
++# ---------------------------------------------------------------------------------------------------------------
++# (iii) cooperative candidate selection (port of main candidate_topk.py:30-156, Apache-2.0, vLLM contributors)
++# ---------------------------------------------------------------------------------------------------------------
++
++_coop = None
++
++
++def _build_coop():
++    global _coop
++    if _coop is not None:
++        return _coop
++    from vllm.model_executor.kernels.attention.dsa.candidate_blocks import _max_with_nan
++    from vllm.model_executor.layers.indexer_topk import AUTO_COOPERATIVE_MAX_ROWS, RADIX_TOPK_WORKSPACE_SIZE
++    from vllm.triton_utils import tl, triton
++    from vllm.v1.worker.workspace import current_workspace_manager
++
++    @triton.jit(do_not_specialize=["width", "nblocks"])
++    def _block_scores_kernel(logits, ends, scores, lengths, out, stride_row, stride_col, width, nblocks,
++                             BLOCK_SIZE: tl.constexpr, K: tl.constexpr, TILE: tl.constexpr):
++        row = tl.program_id(0).to(tl.int64)
++        blocks = tl.program_id(1) * TILE + tl.arange(0, TILE)
++        end = tl.load(ends + row)
++        limit = tl.minimum((tl.maximum(end, 0) + BLOCK_SIZE - 1) // BLOCK_SIZE, nblocks)
++        if tl.program_id(1) == 0:
++            tl.store(lengths + row, limit.to(tl.int32))
++            for tile in range(0, K, TILE):
++                slots = tile + tl.arange(0, TILE)
++                tl.store(out + row * K + slots, -1, slots < K)
++        offsets = tl.arange(0, triton.next_power_of_2(BLOCK_SIZE))
++        cols = blocks[:, None] * BLOCK_SIZE + offsets[None, :]
++        values = tl.load(logits + row * stride_row + cols * stride_col,
++                         (blocks[:, None] < nblocks) & (offsets[None, :] < BLOCK_SIZE) & (cols < end) & (cols < width),
++                         other=-float("inf"))
++        reduced = tl.reduce(values, 1, _max_with_nan)
++        reduced = tl.where((end > 0) & (blocks == (end - 1) // BLOCK_SIZE), float("inf"), reduced)
++        tl.store(scores + row * nblocks + blocks, reduced, blocks < limit)
++
++    @triton.jit(do_not_specialize=["nblocks"])
++    def _finalize_candidates_kernel(out, scores, lengths, nblocks, K: tl.constexpr, TILE: tl.constexpr):
++        row = tl.program_id(0).to(tl.int64)
++        cols = tl.program_id(1) * TILE + tl.arange(0, TILE)
++        index = tl.load(out + row * K + cols, cols < K, other=-1)
++        valid = (index >= 0) & (index < tl.load(lengths + row))
++        value = tl.load(scores + row * nblocks + index, (cols < K) & valid, other=-float("inf"))
++        tl.store(out + row * K + cols, tl.where(valid & (value != -float("inf")), index, -1), cols < K)
++
++    def supports(num_rows: int, num_blocks: int, k: int) -> bool:
++        return 0 < num_rows <= AUTO_COOPERATIVE_MAX_ROWS and k in (512, 1024, 2048) and num_blocks % 4 == 0
++
++    def select(logits, row_ends, block_size, out):
++        rows, width = logits.shape
++        k = out.shape[1]
++        nblocks = triton.cdiv(width, block_size)
++        scores = logits.new_empty((rows, nblocks))
++        lengths = torch.empty(rows, dtype=torch.int32, device=logits.device)
++        _block_scores_kernel[(rows, triton.cdiv(nblocks, 128))](
++            logits, row_ends, scores, lengths, out, *logits.stride(), width, nblocks, block_size, k, 128)
++        (workspace,) = current_workspace_manager().get_simultaneous(((RADIX_TOPK_WORKSPACE_SIZE,), torch.uint8))
++        torch.ops._C.cooperative_topk(scores, lengths, out, workspace, k, nblocks)
++        _finalize_candidates_kernel[(rows, triton.cdiv(k, 1024))](out, scores, lengths, nblocks, k, 1024)
++
++    _coop = (supports, select, triton.cdiv)
++    return _coop
++
++
++def patch_indexer(module) -> None:
++    if getattr(module, "_mega_l2_cand", False):
++        return
++    orig = module._select_candidate_blocks   # sparse_attn_indexer.py:21 import alias, called at :600 and :748
++
++    def _select_candidate_blocks(logits, row_ks, row_ke, topk_blocks, block_size, out, row_repeat=1):
++        # Decode call (sparse_attn_indexer.py:748) only: no row starts, one row per query token.
++        if row_ks is None and row_repeat == 1 and logits.dim() == 2 and logits.dtype == torch.float32:
++            supports, select, cdiv = _build_coop()
++            rows, width = logits.shape
++            if (rows and width and out.dtype == torch.int32 and out.is_contiguous() and out.shape[0] == rows
++                    and out.shape[1] == topk_blocks and row_ke.dtype == torch.int32 and row_ke.dim() == 1
++                    and row_ke.is_contiguous() and row_ke.shape[0] == rows
++                    and supports(rows, cdiv(width, block_size), topk_blocks)):
++                S.stats["cand_coop"] += 1
++                select(logits, row_ke, block_size, out)
++                return None
++        S.stats["cand_orig"] += 1
++        return orig(logits, row_ks, row_ke, topk_blocks, block_size, out, row_repeat)
++
++    module._select_candidate_blocks = _select_candidate_blocks
++    module._mega_l2_cand = True
++    _LOG(f"patched {INDEXER_TARGET}._select_candidate_blocks: decode rows -> cooperative_topk (tie-sensitive)")
++
++
++def targets():
++    """(module name, patch fn) pairs for mega_peer_hook.install()."""
++    t = []
++    if SHARE_TOPK in ("1", "2") or POS_ONCE:
++        t.append((ATTN_TARGET, patch_attn))
++    if CAND_COOP:
++        t.append((INDEXER_TARGET, patch_indexer))
++    return t

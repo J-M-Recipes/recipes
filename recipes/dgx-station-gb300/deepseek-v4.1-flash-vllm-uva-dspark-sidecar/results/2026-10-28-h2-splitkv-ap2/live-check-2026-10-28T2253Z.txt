@@ -1,0 +1,17 @@
+Live h2-REF read, 2026-10-28T22:53:36Z (box date -u), read-only: docker inspect + docker exec sha256sum + watchdog status file.
+
+dsv41-vllm-1017-h2-REF      image sha256:3af6a45b060d681aa6254200f87859d1bb3c1f962afb3d15540b4b31d4a41063  running since 2026-10-28T22:14:27Z
+dsv41-vllm-1017-h2-REF-rtx  image sha256:3af6a45b060d681aa6254200f87859d1bb3c1f962afb3d15540b4b31d4a41063  running since 2026-10-28T22:13:24Z
+
+in-container sha256 (dsv41-vllm-1017-h2-REF):
+2d43d5133c1fb96399e186ed10c5a26b54c12e6a019d9d163cbff1adbcfbcc39  vllm/v1/worker/gpu/spec_decode/rejection_sampler_utils.py   (#61161 overlay + #60945 guard)
+744a9de89060730eecbb7c4c249dedc36f3dbfb3854de17299780b66cb90e983  vllm/_flashmla_splitkv_C.abi3.so                           (side extension)
+df2cdd1c3acfe6546b10a8d6d9b3d8bae3783a4910337d9721d83ff653e4fc13  vllm/_flashmla_C.abi3.so                                   (image's own, untouched)
+9946e6eef6c1f8e342261c7383e4d2ae69a18111c244f5efc7258cfe87d56d14  vllm/models/deepseek_v41/nvidia/flash_mla_mega_attn.py
+97c67176a1b8f036de6d122a6dc2525a3e981e476a9584a13c571b158cbe0b56  vllm/models/deepseek_v41/nvidia/mega_splitkv_combine.py
+e181c58cd56e6ff622999b3f3a10f5df57676d135b01c5eeb9ec906d4ad32366  /w/mega_peer_hook.py   (el8 @87af662 + patches/hook-h1-l2-key-sharing.patch)
+fd44715c75fb0a138b3c11d00e83fde0c17db634d80b4796be3ea51cbdb6a2e7  /w/attn_share.py       (new file in the same patch)
+
+fail-stop watchdog: pid 2638240 (PPID 1 per promote/promote.log), --server dsv41-vllm-1017-h2-REF --mode enforce --interval 1 --stall 2
+status: server_up true, mode enforce, trip null, timeouts_base 0, words[2] (sidecar timeouts) = 0, wait 1.17 ms per wait
+(~31 min after bind; this is a health reading, not a soak)

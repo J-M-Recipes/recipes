@@ -1,0 +1,27 @@
+sha1 98d92af5a674 ~/dsv41/m3/ap2/cardAP2_runner.sh
+sha1 88476d94c340 ~/dsv41/m3/ap2/h2ref-att2b/launch_att2d.sh
+sha1 2b1f9446eab4 ~/dsv41/m3/pr1/launch_pr1.sh
+sha1 06ac81d69350 ~/dsv41/m3/ap2/ap2_verdict.py
+sha1 c0808e555520 ~/dsv41/m3/pr1/c1_decomp.py
+sha1 fff9fea4e855 ~/dsv41/m3/pr1/capture.py
+sha1 f2b95a0191f6 ~/dsv41/m3/br1/perclass_decode_t.py
+sha1 618898aac432 ~/dsv41/bench/perclass_prompts.jsonl
+sha1 7660ccac751c ~/dsv41/m3/p3/lib/llm_decode_bench.py
+sha1 e5f575dcd4a9 ~/pin-hot-experts/round7/gauntlet/run_suite.py
+sha1 b17d9103d58b ~/dsv41/m3/sidecar_watchdog.py
+sha1 3638227d2c6e ~/pin-hot-experts/scripts/tf_logprob.py
+sha1 3672c1a76728 ~/pin-hot-experts/tf_corpus.jsonl
+sha1 affda07d5014 ~/dsv41/1017/flips_margin_p2.py
+sha1 7372102a35c0 ~/dsv41/m3/ap2/e1_greedy.py
+sha1 80724bd16bb5 ~/dsv41/m3/ap2/ap_ttft.py
+sha1 f8d001a7e13a ~/dsv41/m3/ap2/ap_soak.py
+sha1 c2ef62571532 ~/dsv41/m3/ap2/ap_1m.py
+sha1 175938d85697 ~/dsv41/m3/ap2/probe_62417.py
+sha1 5f26b2b1be1d ~/dsv41/m3/ap2/h2ref-att2b/build/out/_flashmla_splitkv_C.abi3.so
+sha1 5588ab54098a ~/dsv41/m3/ap2/h2ref-att2b/overlay/vllm/models/deepseek_v41/nvidia/flash_mla_mega_attn.py
+sha1 4034a0556f27 ~/dsv41/m3/ap2/h2ref-att2b/overlay/vllm/models/deepseek_v41/nvidia/mega_splitkv_combine.py
+sha1 edc8f8f4c425 ~/dsv41/m3/desk-hook/L3/tree/vllm/v1/worker/gpu/spec_decode/rejection_sampler_utils.py
+sha1 0f8f5552f85c ~/dsv41/m3/hook-h1/mega_peer_hook.py
+sha1 fe0e994441b7 ~/dsv41/m3/hook-h1/attn_share.py
+EXTRA=[--kv-cache-memory 9126805504 --kv-offloading-size 48 --kv-offloading-backend native] SPEC_EXTRA=[,"rejection_sample_method":"block"] arms: A/A2 = H1ENV + NOCORE=1 via frozen launch_att2d.sh (ATT2B unset); S8/S4 = + ATT2B=1 B2D=~/dsv41/m3/ap2/h2ref-att2b COREDUMP=0 SPLITKV_MAX_TOKENS=8 SPLITKV_MAX_REQS=1 SPLITKV_SQ=6 SPLITKV_TRACE=1 SPLITKV_GUARD=0 SPLITKV={8,4}
+cells: warm brrr0(2048:0.0:5) greedy(3/class, T0, 192) lib(ONE process C1,8,32 @ 0,64k, 30 s) ttft(8192,16384,65536,131072 x2) pct1(nat + r1 r2, C1+C8, T=1) tf gauntlet probe62417(think, n2, gsm40) soak(4x16384 think) onem(900000 on A, S8, S4 if best) | 2 s fault watcher on every cell; cores OFF
