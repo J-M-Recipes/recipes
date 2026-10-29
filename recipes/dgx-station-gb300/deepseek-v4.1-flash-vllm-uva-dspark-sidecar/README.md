@@ -219,6 +219,62 @@ All boots covered 40/40 layers with 0 timeouts. Caveats, as the re-judge states 
 - **B rests on one check.** SC0's max e is a single outlier check; the next highest is 0.01502.
 - **R2 is a numerics gate only.** It does not clear the cancelled 48 h soak.
 
+## 2026-10-29 — peer audit: a published lane on the same hardware is 1.5× faster per step (no config change)
+
+[Garner McCloud](https://github.com/garnermccloud/dgx-station-recipes) published a one-command recipe
+for **this exact hardware profile** (DGX Station GB300 + RTX PRO 6000, hot experts in HBM, cold experts
+*computed* on the card, Engram pinned in host) at commit `8043a681`, MIT. We read it against this lane.
+Nothing in this recipe changed: every mechanism below is filed as a card and **none has been measured
+on this box yet**. The audit and seven pre-registered specs are in
+`~/hermes/research/dsv41-garner-peer-20261029/`.
+
+Their `--speculative-config` is byte-identical to ours (same k-schedule, `probabilistic`, `block`), so
+this is not a speculation-config gap. On the same prompt family and mode:
+
+| | this recipe (h2-REF) | theirs (release) |
+|---|--:|--:|
+| step, 1 stream, BRRR codegen greedy T=0 | ~11.0 ms (5.13–5.3 tok/step) | **7.39 ms** (5.43 tok/step) |
+| GB300 weights resident | ~233.5 GiB | 198.6 GiB |
+| KV pool | 4,400,013 tok (`--kv-cache-memory` 8.5 GiB) | 11,372,409 tok + 120 GB host KV overflow |
+| max context per request | **1,048,576** | 524,288 |
+
+Matched acceptance, 1.5× step time, and their own accounting puts the floor at 3.6 ms (they are at 2.1×,
+we are at 3.1×). Where it goes, against our nsys budget: `_finish2` 1.33 ms and 82.9–195 µs per sidecar
+call (their peer tier v3 removes the host from the call — a persistent RTX cooperative kernel polling
+the host-mapped segment, plus a PDL-dependent finish — and measures 41–79 µs at 2/4/6 distinct experts
+with next-layer L2 prefetch); mHC 1.80 ms (their `boundary` fuses mHC and the router into one launch);
+and the 1,035 sub-10 µs kernels that cost 4.54 ms/step, which their 29 fused components attack
+(`quant_producer`, `w8oproj`, the `preattn`/`tail_*` family).
+
+| card | what it would take from them | status |
+|---|---|---|
+| GP1 | peer tier v3: host out of the cold path, PDL finish | filed, not booted |
+| GP2 | deterministic seam (no data atomics, fixed reduction order) — removes this lane's "not bit-identical" noise bar | filed, not booted |
+| GP3a/3b | fused epilogues: `quant_producer` (bit-identical), `w8oproj` (changes numerics) | filed, not booted |
+| GP4 | `boundary`: mHC + router in one launch | filed, not booted |
+| GP5 | suffix/copy drafting on top of DSpark | filed, not booted |
+| GP6 | rowmap 255 hot (weights-vs-KV split) | filed, not booted |
+| GP7 | dynamic draft length 5-or-7 by cost model + nested block | blocked until step < 9.5 ms |
+
+**What we deliberately did not take.** Their KV line uses `--kv-cache-dtype nvfp4_ds_mla` and
+`--attention-config {"indexer_kv_dtype":"mxfp4"}`; both are excluded here by policy (no KV
+quantization), so their 11.4M-token pool is not available to us as-is — only the weights-footprint half
+is (GP6). Their `--max-model-len` is 524,288; this recipe keeps 1M. Their quality suite is GSM8K-200,
+three needles at 174K and one tool call — thinner than this recipe's TF-flip bracket, BFCL, gauntlet and
+replay-turns gates — and their stack is deliberately not bit-identical to stock vLLM. Their sampling
+policy forces temperature 1.0 / top_p ≥ 0.95 in thinking mode, which is a policy we have not adopted.
+
+Two of their negative results reproduce ours independently and should not be re-opened: confidence-based
+adaptive verification loses (−20% prose at 16 streams, acceptance collapsing because the batch shares
+the step), and a side-stream prefetch into a cache the next kernel must stream through is a tax.
+
+* **Credit.** Every mechanism in GP1–GP7 is **Garner McCloud's**
+  ([`garnermccloud/dgx-station-recipes`](https://github.com/garnermccloud/dgx-station-recipes), MIT,
+  `deepseek-v4.1-flash/` @ `8043a681`), including peer tier v3's protocol, the fixed-order reduction,
+  the 29 fast-path components, the nested-block dynamic draft length, suffix drafting and the 255-hot
+  map. Our contribution is the comparison to this lane and, if the cards pass, the measurement on this
+  box against this incumbent.
+
 ## 2026-10-26 (pm): what happened on the GB300-only sibling, and why it does not change this recipe
 
 The GB300-only sibling ([`../deepseek-v4.1-flash-vllm-uva-dspark`](../deepseek-v4.1-flash-vllm-uva-dspark/README.md)) tried the same key on its own lane: no sidecar, Grace
@@ -992,6 +1048,18 @@ This recipe is a productionised descendant of someone else's recipe, and the ord
   hot/cold split to give the second GPU.
 * **[b12x](https://github.com/local-inference-lab/b12x)** (Apache-2.0) — the FP4 MoE kernels the sidecar
   replays out of its 560 captured graphs.
+* **[Garner McCloud](https://github.com/garnermccloud/dgx-station-recipes)** (MIT, `deepseek-v4.1-flash/`
+  @ `8043a681`) — the **peer lane this recipe is measured against, not built on**. His published recipe
+  runs the same hardware profile and the same hot/cold-compute split at 7.39 ms/step against our ~11.0, and
+  the mechanisms that explain the gap are his: **peer tier v3** (a persistent cooperative kernel on the RTX
+  that takes the host out of the call, PDL-dependent finish, next-layer L2 prefetch), the **fixed-order
+  no-atomics reduction** that makes the seam bit-identical, the **29 fused components** (`boundary`,
+  `preattn`, `attn`, `w8oproj`, `quant_producer`, the `tail_*` family), the **nested-block dynamic draft
+  length**, **suffix/copy drafting**, and the **255-hot rowmap** result that keeping more experts on the
+  busier GPU is slower. He also root-caused greedy divergence past ~512 tokens to the sparse indexer's
+  atomic top-k ordering, a second determinism source on this lane. Cards GP1–GP7 in
+  `~/hermes/research/dsv41-garner-peer-20261029/`; **none of it is in this recipe yet** — each is a
+  registered card awaiting measurement on this box. See the 2026-10-29 section above for what we did not take.
 * **vLLM** — [#58132](https://github.com/vllm-project/vllm/pull/58132) bounded decoder replay, the
   `deep_gemm_mega_moe` backend, and the UVA offloader the sibling recipe uses.
 * **[Fraser Price](https://huggingface.co/fraserprice/DeepSeek-4.1-Flash-1017-BRRR)** — the BRRR recipe for

@@ -36,6 +36,46 @@ round adds a 48 GiB Grace host prefix-KV tier. This recipe is the reference for 
 **Before v26 — Pin Exact, v23** (serving 2026-10-18 → 2026-10-22; v26 launches from it) (v22 + exact-size pinned host allocations: pinned host 328.0 → 252.8 GiB, boot-guard margin 12 → 198 GiB, decode and greedy non-tool output unchanged; **188.2 tok/s C1 real text, accept 2.99/step**; BFCL held-out 77.65; see the 2026-10-18 round) · rollback **v22** (k=5 band to 8 sequences, 2026-10-17) · **candidate, not promoted:** vLLM nightly-39983a5e "config C" passed all seven pre-registered gates (+6% C1, TTFT 8K 0.43 s, KV +55%; GSM8K exactly at its bar), pending James · previous **Fused Split, v21** (2026-09-27: v18 launch on the 0909 image + hook v21 — `split_ids()` as one Triton kernel; **182.8 tok/s C1 prose, +6.2 % vs v18 bracketing controls 171.8 / 172.5**, C8 687 (+4.6 %), C16 993 (+4.0 %), non-tool greedy 16/16 vs both controls; held-out BFCL on v21 pending; see Round 12) · documented release **Clean Nightly, v20** (2026-09-21: vLLM nightly `2671fedf` — the last before the #56633 mHC-fold drift — + v15 hook + off54 + fp8_ds_mla + v18's 24-seat/cudagraph flags; **181 tok/s C1 prose (+5.1% pair mean vs v18)**, KV 2.55M tokens, C24 warm agent p95 2.4–2.8 s vs 3.4; **held-out BFCL live sibling 78.8% vs v18 78.9%**, dev 92.7–93.5%; tools 64/64 ×3; $0.008 per 1000 solved tasks; see Round 11b) · rollback **Many Seat, v18** (2026-09-18: v15 hook + `--max-num-seqs 24` + token-sized `--cudagraph-capture-sizes`; 172 tok/s C1 prose, KV 2.50M tokens, C24 warm agent turn 0.55 s p50; **BFCL v4 tool-call exact-match 93.3%**) · **v19 "Nightly" was promoted and reverted on 2026-09-20** (see Round 10) · previous **v15 Pin Hot Experts** (retired 2026-09-18) · **v14 Sixty-K Agent** (retired 2026-09-17) · Historical **v13: 90 tok/s single-stream prose · 140–160 tok/s on agent/code text · 429 agg tok/s at C16** (v12: 89 / 140–160 / 311 · v11: 82 / 130–150 / 287) · 972K-token prompt prefilled in 85 s · Hermes tool-calling 10/10
 
 
+## 2026-10-29 — peer audit: what transfers to the Grace-offload lane (no config change)
+
+[Garner McCloud](https://github.com/garnermccloud/dgx-station-recipes) published a one-command recipe for
+the **sibling recipe's** hardware (GB300 + RTX PRO 6000, cold experts *computed* on the card) at
+`8043a681`, MIT. His release runs **7.39 ms/step** (BRRR codegen, greedy, 5.43 tokens/step) against the
+sidecar lane's ~11.0 ms — and the sidecar lane is the one that already beats this recipe on decode. So
+the useful question here is not "can we match 7.39 ms"; it is which of his mechanisms reach a lane whose
+cold tier is **pinned Grace memory read over NVLink-C2C** instead of a second GPU.
+
+What reaches this lane:
+
+| card | mechanism (his) | why it applies here |
+|---|---|---|
+| GP3a | `quant_producer`: the layer-end seam writes the next attention input as MXFP8 so `wq_a` skips its quantize launch (bit-identical) | the quantize launches are in the same place on this lane; nothing about it depends on the cold tier |
+| GP3b | `w8oproj`: `wo_a` + MXFP8 quantize fused into one kernel (changes numerics by design) | same, but it needs this recipe's quality gate before it can be published under `verified` |
+| GP4 | `boundary`: mHC + router in one launch (bit-identical) | mHC is a top-three line item on both lanes |
+| GP5 | `suffix`/copy drafting on top of DSpark, wide verify at batch 1 | this lane runs `draft_sample_method: probabilistic` without block verification (BR3/BR5/BR6 retired it here), so copy drafting is a second, independent source of drafts — worth more here than there |
+
+What does not:
+
+- **GP1 (peer tier v3) and GP2 (deterministic seam) are sidecar-only.** There is no peer process on this
+  lane; its cold tier is a host read, so "take the host out of the call" has no analogue.
+- **GP6 (255-hot rowmap) is context, not a card.** His result — keeping more experts on the busier GPU is
+  1–2% *slower* — is the same argument this recipe already makes in the other direction: a host read per
+  token is the expensive shape, which is why the sibling exists at all. Mapping fewer experts to HBM here
+  means more C2C bytes, not less work.
+- **GP7 (dynamic draft length 5-or-7) stays blocked** on the same trigger as the sibling: it needs a step
+  under ~9.5 ms, and this lane's step is longer than the sidecar's.
+- His KV line (`nvfp4_ds_mla`, `indexer_kv_dtype mxfp4`) is excluded by policy here, and his 524,288
+  max-model-len is below this recipe's context.
+
+Nothing was adopted and nothing was re-baselined by this audit. Specs: GP3/GP4/GP5 in
+`~/hermes/research/dsv41-garner-peer-20261029/`.
+
+* **Credit.** All four mechanisms above are **Garner McCloud's**
+  ([`garnermccloud/dgx-station-recipes`](https://github.com/garnermccloud/dgx-station-recipes), MIT,
+  `deepseek-v4.1-flash/` @ `8043a681`), as are the negative results this lane would otherwise rediscover
+  (confidence-based adaptive verification loses; a side-stream prefetch into a cache the next kernel
+  streams through is a tax).
+
 ## 2026-10-29 — Card TR1 (desk): the sidecar's h2-REF round, audited for what transfers here
 
 The sidecar sibling moved to **h2-REF** on 2026-10-28 with three deltas over v27: the hook's L2 attention/indexer
@@ -1346,6 +1386,14 @@ behaviour on v28 by sending temperature 0.
 v23 → v22: `docker stop dsv41-vllm-1017-v23-pinexact-BOUND-REF && docker start dsv41-vllm-1017-v22-ksched1to8-RETIRED-REF` (~5 min, autotune hash hit). Every bound config is kept as a stopped container `dsv41-vllm-<tag>`. `docker stop` the lane, `docker start` the previous one; ~4 min. Production surfaces on other ports are never part of this lane.
 
 ## Credits
+
+2026-10-29 peer audit (desk, nothing adopted):
+- **The peer lane this recipe is compared against:** [Garner McCloud](https://github.com/garnermccloud/dgx-station-recipes)
+  (MIT, `deepseek-v4.1-flash/` @ `8043a681`) — the fused attention epilogues (`quant_producer`, `w8oproj`),
+  `boundary` (mHC + router in one launch) and suffix/copy drafting are his, and are filed here as cards
+  GP3/GP4/GP5 rather than adopted. His published sidecar lane is also the honest yardstick for how far this
+  recipe's Grace-offload shape is from a card-computed cold tier (7.39 ms/step against the sibling's ~11.0).
+- **Audit, card registration and write-up:** Milo (Hermes). No measurement on this box yet.
 
 2026-10-26 round (Card BR4, v28-prob):
 - **Probabilistic drafting and block verification as a pair:** the config of

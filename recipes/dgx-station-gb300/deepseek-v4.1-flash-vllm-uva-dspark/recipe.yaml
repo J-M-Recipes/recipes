@@ -711,6 +711,17 @@ verification:
 
 
 limits:
+  - "PEER LANE ON THE SIBLING HARDWARE IS 1.5x FASTER PER STEP (2026-10-29 audit, nothing adopted). Garner McCloud's
+    garnermccloud/dgx-station-recipes @ 8043a681 (MIT) runs the sibling profile - GB300 + RTX PRO 6000 with cold
+    experts computed on the card - at 7.39 ms/step (BRRR codegen greedy T=0) against that lane's ~11.0 ms. Only the
+    cold-tier-independent mechanisms reach this recipe, and they are filed as cards, not adopted: GP3a quant_producer
+    (bit-identical epilogue fusion) and GP3b w8oproj (changes numerics, needs this recipe's quality gate), GP4 boundary
+    (mHC + router in one launch), GP5 suffix/copy drafting on top of DSpark. GP1 (peer tier v3) and GP2 (deterministic
+    seam) have no analogue here - this lane's cold tier is a pinned host read, not a peer process. GP6 (his 255-hot
+    rowmap) is context rather than a card: his measurement that keeping more experts on the busier GPU is 1-2% slower
+    argues that a per-token host read is the expensive shape, which is this recipe's own premise. GP7 (dynamic draft
+    length) stays blocked on a step under ~9.5 ms. His KV format (nvfp4_ds_mla, indexer_kv_dtype mxfp4) is excluded by
+    policy and his 524,288 max-model-len is below this recipe's. Specs ~/hermes/research/dsv41-garner-peer-20261029/."
   - "Card TR1 (desk, 2026-10-29) - the v28-prob release runs the unguarded rejection-sampler lookahead that vLLM #60945 fixes. The kernel launches on draft_logits is not None (vllm/v1/worker/gpu/spec_decode/rejection_sampler_utils.py:959 and :1052 in the 0909 image), which v28-prob satisfies via its probabilistic draft-logits cache - block verification is NOT the precondition - and the draft_sampled_ptr + logit_idx + 1 read precedes the temp == 0 early return, so temperature 0 does not shield it. It has not faulted on this lane because the grid is at most 48 logits (max(8x6, 24x2) under [[1,8,5],[9,24,1]] at 24 seqs = 192 B, inside a 512 B allocator block); the sidecar faulted at 128 logits = exactly 512 B. The guard applies to the 0909 tree byte-for-byte (patch -p1 --dry-run, 1/1 hunks). Not applied - Card TR1a (overlay + temperature-0 bit-identity + one compute-sanitizer pass at 24 seqs) closes it. results/2026-10-29-tr1-sidecar-transfer/."
   - "Card TR1 (desk, 2026-10-29) - temperature > 0 output on v28-prob carries a known cross-round sampling bias (vLLM #61161). 0909 keys the cached Gumbel draw on (request seed, position) only (vllm/v1/worker/gpu/sample/gumbel.py:177-183; the DSpark drafter reaches it with logits_cache_col = _step_cols[step]), so a revisited uncommitted position re-draws the same noise, conditioned on the previous round's decision. Upstream measures the third-token marginal at 0.3083 vs 0.3000 expected for probabilistic drafting under STANDARD verification (this recipe's configuration), 0.3055 after the fix. The +10.3% speed result is unaffected in sign; a temperature>0 quality claim on this release is not distribution-clean until the gumbel.py hunk (applies clean on 0909 and covers the DSpark drafter) is ported and re-gated - Card TR1b. All existing v28-prob quality gates are at temperature 0, where the fix is inert."
   - "Card TR1 (desk, 2026-10-29) - two sidecar h2-REF wins do not port to this image: split-KV decode attention (a side extension next to af7f9488's _flashmla_C plus a #57711-derived overlay; the 0909 FlashMLA has no split-KV entry point) and the 48 GiB Grace prefix-KV tier (the OffloadingConnector postdates 0909). Both reopen only on a rebase, which this recipe has declined twice (P2f/P2g are candidates). The h1 L2 attention/indexer trims do have a landing site - vllm/models/deepseek_v4_1/nvidia/flashmla.py:201 calls compute_global_topk_indices_and_lens once per non-SWA-only layer and layers are grouped by compress_ratio - so ~38 calls per step collapse to 3; that is Card TR2 (~+1% C1, bit-identical in principle), unmeasured here."
@@ -779,6 +790,7 @@ rollback:
 links:
   blog: https://al-engr.com/gb300-deepseek-flash-41-testing.html
   sibling_recipe_sidecar: recipes/dgx-station-gb300/deepseek-v4.1-flash-vllm-uva-dspark-sidecar
+  peer_recipe_garnermccloud: https://github.com/garnermccloud/dgx-station-recipes
   vllm_recipe_upstream: https://recipes.vllm.ai/deepseek-ai/DeepSeek-V4.1-Flash
   vllm_pr_partial_prefill: https://github.com/vllm-project/vllm/pull/52084
   vllm_issue_starvation: https://github.com/vllm-project/vllm/issues/51454
