@@ -7,8 +7,10 @@ keep the hot experts in HBM and move the cold ones to the **RTX PRO 6000 Max-Q i
 they are computed**, not read. Only activations cross PCIe.
 
 Same box, same checkpoint, same harness, bracketed controls in one window (2026-10-22, measured on the v25 base
-launch; the serving release v27 adds the v25m map, a Grace prefix-KV tier and block verification, whose deltas are
-Cards GV, KV3 and BR1 below):
+launch). Everything since is a separate bracketed card, not a re-run of this table: the v25m map, the Grace
+prefix-KV tier and block verification (Cards GV, KV3, BR1), then h1 and h2-REF (Cards H1, AP2 — see the status
+block below and [Results](#results)). Read this table as the recipe's founding bracket, not as today's number: on
+2026-10-28 the same lane serves **484.5 tok/s** on the coding cell and **258 tok/s** on a chat reply.
 
 | | GB300 only (sibling recipe, v23) | GB300 + RTX 6000 sidecar (this recipe) |
 |---|--:|--:|
@@ -51,7 +53,16 @@ coding C1 **484.5 tok/s** (BRRR 2K codegen, T=0) against 467.5 for its controls.
 >    built as a *side* extension next to the image's untouched `_flashmla_C`, plus a #57711-derived overlay.
 >
 > Measured against same-window h1-REF controls: coding C1 **484.5 vs 467.5 tok/s (1.036×, −0.43 ms/step)**, and
-> crash-free on all four arms. The whole launch is `scripts/start-h2ref.sh`. Rollback pair:
+> crash-free on all four arms.
+>
+> **What a caller actually gets** (same lane, measured 2026-10-28 20:35–20:45 CDT from a client on the LAN, chat
+> completions, thinking on the default budget): **258 tok/s** single stream on a 400-token reply, **162 ms** for a
+> 40-token turn, **926 tok/s aggregate at 8 concurrent streams** (148 each, three reps 900–943), first token 36 ms
+> when idle. A quiet single stream steps in about 14 ms; while a 33K-token prompt is being read, that stream's worst
+> 10% of inter-token gaps reach **155 ms** and its first token goes from 0.17 s to 0.57 s. The 484.5 above is the
+> coding best case, not a general throughput number.
+>
+> The whole launch is `scripts/start-h2ref.sh`. Rollback pair:
 > `dsv41-vllm-1017-h1-REF` (+`-rtx`, guard, no split), stopped and kept. The v27 pair is also kept.
 > No 48 h soak has completed on any sidecar config, and T2/BFCL were not re-run on h1 or h2.
 >
@@ -804,6 +815,12 @@ in prefill (2,062 incumbent); RTX p99 ≤ 194 W against its 300 W cap. Full tabl
   or in any prefill, the image's shipped `_flashmla_C` runs. The quarantine dates from before the sampler bug was
   found. It was kept for AP2, so it is what was measured; widening it is a new card. 8 splits was measured and is
   **NO** (1.022×, 6 confident TF flips against a bar of 4).
+* **The split engages on a narrow step shape, so the +3.6% rarely reaches production traffic.** The gate wants
+  `num_prefills == 0 and s_q == num_tokens and s_q == 6 and <= 1 decode request`. On the serving boot on 2026-10-28
+  the gate logged **176 distinct step shapes and exactly one of them was eligible** (the two `ok=1` events were
+  driven by our own controlled probes). Agent traffic with chunked prefill on co-schedules a prefill row almost
+  every step, which fails the gate before the shape test matters. Treat the h2 gain as bench-only until the gate
+  is widened. The gate logs with `info_once`, so per-step coverage is **not measured** — instrumenting it is a card.
 * **Split-KV is not bit-identical, and its TF margin is zero.** Splitting the KV changes the floating-point
   summation order. Confident flips came out at 4, which equals the bar of 4. W was 2.784 against a bar of 3.192,
   and agent/tool confident flips were 0.
@@ -1026,8 +1043,16 @@ were done **on v27**. For h2-REF: Card AP2 stamped quality and performance on it
 tool-eval, T3 and a temperature > 0 quality instrument have **not** run on h1 or h2. The 48 h soak clock started
 2026-10-26 16:36 was broken by the H1, E1, AP and W-card dark windows on 10-27 and 10-28, so no soak has completed.
 
+**2026-10-28 (same evening): work on this lane is paused pending upstream.** After the h2 promotion we re-checked the
+engine, the kernel libraries, the checkpoint and eight other operators. The next meaningful step is upstream work, not
+ours: no engine does an in-place pinned-host expert read, the single-GPU low-latency decode path upstream does not exist
+(the merged one needs a four-GPU tray), and adopting a newer vLLM costs 9.5% of KV capacity because the V4.1 KV record
+layout changed. The lane keeps serving h2-REF as-is. Consequence for this checklist: the three remaining rows stay
+**owed**, and the recipe stays `experimental`; expect them to be picked up when the engine moves, not before. Full
+reasoning and restart conditions: the 2026-10-28 roadmap post (`al-engr.com/gb300-c1-roadmap.html`).
+
 What stands between v27 and `status: verified` (the recipe stays `experimental` until every row is done).
-Updated 2026-10-26 evening.
+Updated 2026-10-26 evening; pause recorded 2026-10-28.
 
 | item | state |
 |---|---|
