@@ -13,9 +13,15 @@ docker start dsv41-vllm-1017-h2-REF >/dev/null
 for i in $(seq 1 180); do curl -sf -m 3 http://127.0.0.1:30006/v1/models >/dev/null 2>&1 && { log "server BOUND after $((i*5))s"; break; }; sleep 5; done
 WDARGV=$HOME/dsv41/m3/ap2/promote/wd-argv-dsv41-vllm-1017-h2-REF.txt
 if [[ -s $WDARGV ]]; then
-  ( cd $HOME/dsv41/m3 && setsid nohup bash -c "$(cat $WDARGV)" >/dev/null 2>&1 </dev/null & )
-  sleep 5
+  # The argv file is NEWLINE-SEPARATED, one argument per line (not a shell command line): read it into an array
+  # and exec it. `bash -c "$(cat $WDARGV)"` starts `python3` with no args, dies on the second line, and leaves the
+  # lane serving unguarded — that is exactly how the first restore after Card TR2 came back without a watchdog.
+  mapfile -t WDARGS < "$WDARGV"
+  ( cd $HOME/dsv41/m3 && setsid nohup "${WDARGS[@]}" >/dev/null 2>&1 </dev/null & )
+  sleep 6
   ps -eo pid,ppid,comm,args | awk '$3=="python3" && index($0,"sidecar_watchdog.py"){print "watchdog:", $1, "ppid", $2}' | head -2
+  grep -q '"trip": null' $HOME/dsv41/m3/logs/sidecar_watchdog.status.json && log "watchdog armed, trip null" \
+    || log "WARN: watchdog status file does not read trip null"
 else
   log "WARN: watchdog argv file missing ($WDARGV)"
 fi

@@ -121,3 +121,11 @@ do not put it in the launch line, and settle C8 first.
 - [`raw/`](raw) — runner log, verdict JSON, per-arm facts + L2 counters + per-class tables, TF compare logs.
 
 Lane restored to `dsv41-vllm-1017-h2-REF` (+`-rtx`) with the fail-stop watchdog; `:30006` un-isolated.
+
+**One restore bug found and fixed here.** The watchdog argv file at
+`~/dsv41/m3/ap2/promote/wd-argv-dsv41-vllm-1017-h2-REF.txt` is *newline-separated, one argument per line* — not a
+shell command line. Both restores on this card ran `bash -c "$(cat $WDARGV)"`, which starts `python3` with no
+arguments, dies on line two, and leaves the lane **serving with no watchdog**. The lane came back up, answered
+`/v1/models`, and reported a clean owner line — the only thing wrong was the guard, which is the thing you cannot
+see from the outside. Both scripts now `mapfile -t` the file and exec the array, then assert
+`"trip": null` before declaring the restore done. Keep that assertion in every future restore script on this box.

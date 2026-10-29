@@ -180,8 +180,12 @@ wait_bind dsv41-vllm-1017-h2-REF && log "restore: bound"
 sudo -n iptables -D INPUT -p tcp --dport 30006 ! -i lo -j REJECT --reject-with tcp-reset 2>/dev/null && log "restore: ISOLATE removed"
 WDARGV=$HOME/dsv41/m3/ap2/promote/wd-argv-dsv41-vllm-1017-h2-REF.txt
 if [[ -s $WDARGV ]]; then
-  ( cd $HOME/dsv41/m3 && setsid nohup bash -c "$(cat $WDARGV)" >/dev/null 2>&1 </dev/null & )
-  sleep 4; ps -eo pid,ppid,comm,args | awk '$3=="python3" && index($0,"sidecar_watchdog.py")' | head -2 | tee /dev/stderr
+  # argv file is newline-separated, one argument per line -- read into an array, never `bash -c "$(cat ...)"`
+  mapfile -t WDARGS < "$WDARGV"
+  ( cd $HOME/dsv41/m3 && setsid nohup "${WDARGS[@]}" >/dev/null 2>&1 </dev/null & )
+  sleep 6
+  ps -eo pid,ppid,comm,args | awk '$3=="python3" && index($0,"sidecar_watchdog.py")' | head -2 | tee /dev/stderr
+  grep -q '"trip": null' $HOME/dsv41/m3/logs/sidecar_watchdog.status.json || log "WARN: watchdog status not trip null"
 fi
 own "cardTR2 done; lane restored to dsv41-vllm-1017-h2-REF pair + watchdog; ISOLATE removed (receipts $R)"
 log "===== CARD TR2 END $(date '+%F %T %Z') ====="
