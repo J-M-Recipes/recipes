@@ -11,6 +11,12 @@
 > Card BR6 (the redesigned 8-pass G6 PASSED; shell_ops G2/G2b FAILED) was the third block-on-probabilistic bracket
 > without a clean pass. See the [speculative-decoding series summary](#speculative-decoding-series-summary-2026-102526).
 
+> **2026-10-29 addendum (desk, no launch change):** the sidecar's h2-REF round was audited for what transfers to
+> this lane. Two of its three deltas are **already on this recipe's release** — the [#60945](#2026-10-29--card-tr1-desk-the-sidecars-h2-ref-round-audited-for-what-transfers-here)
+> rejection-sampler lookahead (launched here by probabilistic drafting, not by block) and the #61161 fresh-draw
+> bias (temperature > 0 only). Split-KV does not port, and the Grace prefix-KV tier is unavailable on this image.
+> v28-prob and `:30006` are unchanged; the guard and seed-mix are cards, not edits.
+
 **2026-10-24 ~21:30 CDT — v26 "Seeded Adaptive" promoted** (on `:30006` until 23:16 CDT that night; see the status above).
 v26 is the v23 launch (same image, same flags), plus three changes:
 - **adaptive expert residency** — hook v26ar.2;
@@ -29,6 +35,88 @@ round adds a 48 GiB Grace host prefix-KV tier. This recipe is the reference for 
 
 **Before v26 — Pin Exact, v23** (serving 2026-10-18 → 2026-10-22; v26 launches from it) (v22 + exact-size pinned host allocations: pinned host 328.0 → 252.8 GiB, boot-guard margin 12 → 198 GiB, decode and greedy non-tool output unchanged; **188.2 tok/s C1 real text, accept 2.99/step**; BFCL held-out 77.65; see the 2026-10-18 round) · rollback **v22** (k=5 band to 8 sequences, 2026-10-17) · **candidate, not promoted:** vLLM nightly-39983a5e "config C" passed all seven pre-registered gates (+6% C1, TTFT 8K 0.43 s, KV +55%; GSM8K exactly at its bar), pending James · previous **Fused Split, v21** (2026-09-27: v18 launch on the 0909 image + hook v21 — `split_ids()` as one Triton kernel; **182.8 tok/s C1 prose, +6.2 % vs v18 bracketing controls 171.8 / 172.5**, C8 687 (+4.6 %), C16 993 (+4.0 %), non-tool greedy 16/16 vs both controls; held-out BFCL on v21 pending; see Round 12) · documented release **Clean Nightly, v20** (2026-09-21: vLLM nightly `2671fedf` — the last before the #56633 mHC-fold drift — + v15 hook + off54 + fp8_ds_mla + v18's 24-seat/cudagraph flags; **181 tok/s C1 prose (+5.1% pair mean vs v18)**, KV 2.55M tokens, C24 warm agent p95 2.4–2.8 s vs 3.4; **held-out BFCL live sibling 78.8% vs v18 78.9%**, dev 92.7–93.5%; tools 64/64 ×3; $0.008 per 1000 solved tasks; see Round 11b) · rollback **Many Seat, v18** (2026-09-18: v15 hook + `--max-num-seqs 24` + token-sized `--cudagraph-capture-sizes`; 172 tok/s C1 prose, KV 2.50M tokens, C24 warm agent turn 0.55 s p50; **BFCL v4 tool-call exact-match 93.3%**) · **v19 "Nightly" was promoted and reverted on 2026-09-20** (see Round 10) · previous **v15 Pin Hot Experts** (retired 2026-09-18) · **v14 Sixty-K Agent** (retired 2026-09-17) · Historical **v13: 90 tok/s single-stream prose · 140–160 tok/s on agent/code text · 429 agg tok/s at C16** (v12: 89 / 140–160 / 311 · v11: 82 / 130–150 / 287) · 972K-token prompt prefilled in 85 s · Hermes tool-calling 10/10
 
+
+## 2026-10-29 — Card TR1 (desk): the sidecar's h2-REF round, audited for what transfers here
+
+The sidecar sibling moved to **h2-REF** on 2026-10-28 with three deltas over v27: the hook's L2 attention/indexer
+trims plus vLLM [#61161](https://github.com/vllm-project/vllm/pull/61161) (h1), the
+[#60945](https://github.com/vllm-project/vllm/pull/60945) rejection-sampler guard, and split-KV decode attention at
+4 splits. This card asks which of those this recipe can take. It is a **desk card**: nothing was booted, no launch
+changed, and `:30006` and this recipe's `dsv41-vllm-1017-v28-prob-BOUND-REF` (stopped-and-kept) are untouched.
+Receipts, source excerpts and the full argument: [`results/2026-10-29-tr1-sidecar-transfer/`](results/2026-10-29-tr1-sidecar-transfer/README.md).
+
+Method: read the sidecar's published patches, then read **this lane's image of record**
+(`vllm/vllm-openai:deepseekv41-flash-0909`, `sha256:00d577a6…`, engine `0.1.dev20904+g179dd0fa9`) out of the box at
+`$HOME/dsv41/1017/p2c-desk/O` on the reference box, and apply each patch with `patch -p1 --dry-run` against that tree.
+
+| sidecar h2-REF item | on the 0909 image | on this recipe's release? | action |
+|---|---|---|---|
+| #60945 rejection-sampler guard | **applies clean, 1/1 hunks** | **yes** — launched by probabilistic drafting, not by block | limits entry; optional card TR1a |
+| #61161 fresh per-step draws | 5/6 hunks; only the `rejection_sampler_utils.py` *import* hunk rejects | **yes, at temperature > 0** | limits entry; card TR1b owed before any temperature>0 quality claim |
+| h1 L2 attention/indexer trims | not a patch transfer (written against af7f9488's MegaAttn wrapper) | no | **card TR2** — the call structure exists here (`flashmla.py:201`), so the idea lands |
+| split-KV decode attention (4 splits) | does not apply (side extension next to af7f9488's `_flashmla_C` + a #57711 overlay) | no | record as not-portable |
+| 48 GiB Grace prefix-KV tier | not available (no OffloadingConnector in this image) | no | record; reopen only on a rebase |
+| v25m map | not a mechanism transfer (places *computed* cold experts on the 6000) | no | none |
+
+### #60945 is wider than the sidecar's story: it is on this release too
+
+The sidecar found the out-of-bounds read on the block path and wrote it up as a block-verification defect. On this
+image the kernel is launched by a **different** condition — `has_draft_logits := draft_logits is not None`
+(`rejection_sampler_utils.py:959`, launch at `:1052`; one-hot drafts use a closed-form residual mass instead).
+`draft_logits` is the draft-logits cache, and that cache exists here *because* this release sets
+`draft_sample_method: probabilistic` (the −0.56% KV entry in Known limits is the cache). **So v28-prob runs this
+kernel every decode step with block verification off.**
+
+The unguarded lookahead also sits ahead of the temperature check (`:426-435`): `logit_idx` → `draft_step_idx` →
+`if tl.load(draft_sampled_ptr + logit_idx + 1) < 0: return` → `req_state_idx` → `temp` → `if temp == 0.0: return`.
+A temperature-0 request does not shield the read; the launch is decided at boot by the draft-logits cache.
+
+**Why it has not crashed here.** The grid is `num_logits`, bounded on this lane by `[[1,8,5],[9,24,1]]` at
+`--max-num-seqs 24` to `max(8 × 6, 24 × 2) = 48` logits = 192 B of int32. The caching allocator rounds a 192 B
+request up to a 512 B block, so the read at byte 192 stays inside the allocation and returns a stale value instead
+of faulting. The sidecar hit it at `32 × 4 = 128` logits = exactly 512 B, where the read falls into the next block
+and faults when that block ends a 2 MiB segment (the PR's sanitizer output: *"1 bytes after the nearest allocation
+… of size 512 bytes"*, thread 66 of block 127). That alignment model fits both lanes and is **not** a receipt;
+card TR1a is how it gets one. It is consistent with the block series: every arm in BR3–BR6 ran this kernel and none
+recorded a crash.
+
+This does **not** reopen the block verdicts — the read is silent here, and the BR3–BR6 trips were speed/parity
+cells on shell_ops, not crashes. Block stays retired on this lane.
+
+### #61161: v28-prob's temperature > 0 output carries a known cross-round sampling bias
+
+0909's cached Gumbel draw is keyed on `(request seed, position)` alone (`gumbel.py:177-183`), and the DSpark drafter
+reaches it through the logits cache with a per-step column (`dspark/speculator.py:140-150`:
+`gumbel_sample(..., logits_cache=self.draft_logits, logits_cache_col=self._step_cols[step])`). When the target
+accepts only part of a block, the next round revisits an
+uncommitted position with the **same** draw, so it is conditioned on the previous decision. #61161 mixes the draft
+step into the seed and reports, on a synthetic target where P(third token = 0) should be 0.3000, **0.3083 before /
+0.3055 after** for probabilistic drafting under *standard* verification — the exact configuration this recipe
+ships. The fix changes temperature>0 token sequences by design while retaining the target distribution; at
+temperature 0 it is inert. So the +10.3% speed result keeps its sign (fresh draws do not change the verify shape),
+but **no temperature>0 quality claim on v28-prob is distribution-clean until this is ported.**
+
+The hand-port is small: the `gumbel.py` hunk applies clean and is sufficient for the DSpark drafter. The verifier
+half needs the import line hand-written and only matters if block is ever re-enabled.
+
+### The one speed transfer: h1's L2 attention/indexer trims
+
+h1 is −0.117 ms/step (about +1% C1) on the sidecar because it stops recomputing the same thing 38 times per decode
+step. 0909 has the same shape: `flashmla.py:201` calls `compute_global_topk_indices_and_lens` once per non-SWA-only
+layer inside `_forward_decode`, and the layers are already grouped by `self.compress_ratio` (0/1/2), so the
+sidecar's share key exists here too and the call count collapses from ~38 to 3. It is not a patch transfer —
+`attn_share.py` is installed by the sidecar's `mega_peer_hook`, and its graph-safety argument rests on af7f9488's
+`@eager_break_during_capture`, which this image's capture path does not have. **Card TR2** must re-establish, on
+this image: pointer-share distribution on the real fixture (the sidecar needed its relaxed mode because
+`token_to_req_indices`/`is_valid_token` are per-SWA-group buffers with equal content), graph-capture lifetime and
+replay safety, bit-identity, then the per-class C1/C8 cells.
+
+### What this card changes
+
+Nothing in the launch. It adds the two limits entries below, records why the Grace tier and split-KV are out of
+reach without the rebase this recipe has already declined twice, and queues three cards — TR2 (L2 sharing, the only
+one with a speed upside), TR1a (the guard, to close a defect that is on the release rather than on a candidate) and
+TR1b (fresh draws, a prerequisite for temperature>0 quality claims).
 
 ## 2026-10-26 round — Card BR6: block verification with the redesigned G6 = FAIL on shell_ops (G6 PASS); block verification RETIRED for cause, series closed
 
@@ -1178,6 +1266,30 @@ See `limits:` in [`recipe.yaml`](recipe.yaml).
   to the v28-prob launch. The sidecar sibling's v27 (+ block) is a different lane and passed there (Card BR1).
 - **The G6 2-pass limit below is fixed.** BR6 ran the redesigned G6 (8 passes per arm, mean statistic, pooled-control
   bar ±1, control-agreement check, per-transcript table) and it is now this lane's standard.
+
+2026-10-29 additions (Card TR1, desk — no boot, no launch change):
+- **The release runs the unguarded rejection-sampler lookahead that vLLM #60945 fixes.** The kernel is launched by
+  `draft_logits is not None` (`rejection_sampler_utils.py:959`, `:1052`), which v28-prob satisfies through its
+  `draft_sample_method: probabilistic` draft-logits cache — **block verification is not the precondition**. The
+  `draft_sampled_ptr + logit_idx + 1` read sits ahead of the `temp == 0` early return, so temperature 0 does not
+  shield it either. It has not faulted on this lane because the grid is at most 48 logits (192 B, inside a 512 B
+  allocator block); the sidecar faulted at 128 logits (exactly 512 B). #60945 applies to this image
+  byte-for-byte (`patch -p1 --dry-run`, 1/1 hunks). Not applied: closing it needs Card TR1a — the overlay plus
+  bit-identity at temperature 0 plus one `compute-sanitizer` pass at 24 seqs.
+  results/2026-10-29-tr1-sidecar-transfer/.
+- **Temperature > 0 output on v28-prob carries a known cross-round sampling bias.** 0909 keys the cached Gumbel draw
+  on `(request seed, position)` only, so a revisited uncommitted position re-draws the same noise, conditioned on
+  the previous round's decision (vLLM #61161). Upstream measures the marginal at 0.3083 vs 0.3000 expected for
+  probabilistic drafting under **standard** verification — this recipe's configuration — and 0.3055 after the fix.
+  The +10.3% speed result is unaffected in sign (the verify shape does not change); **a temperature>0 quality claim
+  on this release is not distribution-clean until the fix is ported** (the `gumbel.py` hunk applies clean here and
+  covers the DSpark drafter; Card TR1b). Every existing quality gate on v28-prob is at temperature 0, where the fix
+  is inert.
+- **Two sidecar wins are out of reach without a rebase, and one is owed a card.** Split-KV decode attention (built
+  next to af7f9488's `_flashmla_C` with a #57711 overlay) and the 48 GiB Grace prefix-KV tier (no OffloadingConnector
+  in this image) do not port. The h1 L2 attention/indexer trims *do* have a landing site — `flashmla.py:201` calls
+  `compute_global_topk_indices_and_lens` once per non-SWA-only layer, and the layers are grouped by `compress_ratio`
+  — which is Card TR2, worth about +1% C1 if bit-identity and graph safety hold on this image's capture path.
 
 2026-10-26 addition (Card BR5) — FIXED by the BR6 G6 redesign:
 - **replay_turns G6 with 2 passes is too narrow on this lane (see BR5).** The temperature-0 replay is not
