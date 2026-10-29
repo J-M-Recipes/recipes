@@ -36,6 +36,35 @@ round adds a 48 GiB Grace host prefix-KV tier. This recipe is the reference for 
 **Before v26 — Pin Exact, v23** (serving 2026-10-18 → 2026-10-22; v26 launches from it) (v22 + exact-size pinned host allocations: pinned host 328.0 → 252.8 GiB, boot-guard margin 12 → 198 GiB, decode and greedy non-tool output unchanged; **188.2 tok/s C1 real text, accept 2.99/step**; BFCL held-out 77.65; see the 2026-10-18 round) · rollback **v22** (k=5 band to 8 sequences, 2026-10-17) · **candidate, not promoted:** vLLM nightly-39983a5e "config C" passed all seven pre-registered gates (+6% C1, TTFT 8K 0.43 s, KV +55%; GSM8K exactly at its bar), pending James · previous **Fused Split, v21** (2026-09-27: v18 launch on the 0909 image + hook v21 — `split_ids()` as one Triton kernel; **182.8 tok/s C1 prose, +6.2 % vs v18 bracketing controls 171.8 / 172.5**, C8 687 (+4.6 %), C16 993 (+4.0 %), non-tool greedy 16/16 vs both controls; held-out BFCL on v21 pending; see Round 12) · documented release **Clean Nightly, v20** (2026-09-21: vLLM nightly `2671fedf` — the last before the #56633 mHC-fold drift — + v15 hook + off54 + fp8_ds_mla + v18's 24-seat/cudagraph flags; **181 tok/s C1 prose (+5.1% pair mean vs v18)**, KV 2.55M tokens, C24 warm agent p95 2.4–2.8 s vs 3.4; **held-out BFCL live sibling 78.8% vs v18 78.9%**, dev 92.7–93.5%; tools 64/64 ×3; $0.008 per 1000 solved tasks; see Round 11b) · rollback **Many Seat, v18** (2026-09-18: v15 hook + `--max-num-seqs 24` + token-sized `--cudagraph-capture-sizes`; 172 tok/s C1 prose, KV 2.50M tokens, C24 warm agent turn 0.55 s p50; **BFCL v4 tool-call exact-match 93.3%**) · **v19 "Nightly" was promoted and reverted on 2026-09-20** (see Round 10) · previous **v15 Pin Hot Experts** (retired 2026-09-18) · **v14 Sixty-K Agent** (retired 2026-09-17) · Historical **v13: 90 tok/s single-stream prose · 140–160 tok/s on agent/code text · 429 agg tok/s at C16** (v12: 89 / 140–160 / 311 · v11: 82 / 130–150 / 287) · 972K-token prompt prefilled in 85 s · Hermes tool-calling 10/10
 
 
+## 2026-10-29 — Card TR2: L2 top-k table sharing — the lever is real and exact, C1 +1.1 %, C8 −2.7 %; NOT adopted
+
+Follow-up to Card TR1, which named this as the one speed idea that transfers from the sidecar's h1. One axis:
+memoise `compute_global_topk_indices_and_lens` inside one decode forward, keyed by
+`(kv_source_layer_id, index_source_layer_id, compress_ratio)` for layers that are not their group's index source.
+Image, hook, rowmap, k-schedule, probabilistic drafting and autotune cache unchanged; **A → B → A2**, lane isolated,
+production regime. Bundle: [`results/2026-10-29-tr2-share-topk/`](results/2026-10-29-tr2-share-topk/README.md).
+
+| cell | result |
+|---|---|
+| calls shed | **30 of 38** compressed-layer calls per decode forward (`src 8 · hit 30 · miss 0`; totals 6,024 / 22,590 / 0) |
+| identity, in-process | **2,670 re-computations, 0 mismatches** (`torch.equal` on every hit, temperature 1.0) |
+| identity, teacher-forced | B-vs-A 1.085 % flips vs the A-vs-A2 control floor 1.066 % — at the floor |
+| boot | hash-hit, **189 configs / 0 new**, KV **2,480,774 identical on all three arms** |
+| **C1, temp 1.0** (primary) | **1.0112** mean, per class 1.0004–1.0340 — bar met (≥1.005) |
+| C8, temp 1.0 | **0.9728** mean; below *both* controls in 4 of 5 classes (code 0.958, shell_ops 0.943) — **unexplained** |
+| temp-0 parity | 1.009–1.026, acceptance within 1.5 % |
+
+**Not adopted.** +1.1 % at C1 with a clean identity story is real, but this is a 24-seat agent lane where C8 is the
+cell that matters and −2.7 % there has no mechanism yet (two candidates — a lost scheduling anchor at ≥5 streams, or
+an eager-break interaction at the larger capture sizes — neither tested). The overlay stays published and
+reproducible, out of the launch line. Reopen with a C8-only bracket: ≥4 reps/class, both controls, `hit` counter
+checked per cell; adopt only if C8 ≥0.99 of the control mean with C1 ≥1.005.
+
+Two instrument notes worth keeping: (1) during CUDA-graph **capture** the same stamps miss and only hit at steady
+state — a capture-only instrument would have declared the lever absent; (2) the gauntlet did not run (the runner's
+`cell` helper ate the `cd`; the published runner fixes it, the as-run copy is kept verbatim in the bundle), so G5 is
+owed, not passed.
+
 ## 2026-10-29 — Card TR1 (desk): the sidecar's h2-REF round, audited for what transfers here
 
 The sidecar sibling moved to **h2-REF** on 2026-10-28 with three deltas over v27: the hook's L2 attention/indexer
@@ -117,6 +146,7 @@ Nothing in the launch. It adds the two limits entries below, records why the Gra
 reach without the rebase this recipe has already declined twice, and queues three cards — TR2 (L2 sharing, the only
 one with a speed upside), TR1a (the guard, to close a defect that is on the release rather than on a candidate) and
 TR1b (fresh draws, a prerequisite for temperature>0 quality claims).
+**Update, same day:** TR2 ran, and it is above this section — the lever is real and numerically exact, C1 +1.1 %, C8 −2.7 % unexplained, not adopted. TR1a and TR1b are still queued.
 
 ## 2026-10-26 round — Card BR6: block verification with the redesigned G6 = FAIL on shell_ops (G6 PASS); block verification RETIRED for cause, series closed
 
