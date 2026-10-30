@@ -21,7 +21,7 @@ model:
 hero:
   c1:      { value: 450.6, unit: tok/s, class: "5-class mean, temp 1.0 · prose 367 · structured 397 · code 495 · shell 530 · tool-JSON 464", label: "Decode · C1, mean of 3 seeds", note: "Card G5, same window: h2-REF 343.6 → 1.31× (1.26–1.36× per class) · Pg without the #61161 port 1.012× (the port is free) · his fixed coding prompt, greedy: 648 tok/s at 119.3 steps/s, 5.44 tok/step" }
   c16:     { value: 2604, unit: tok/s, label: "Decode · C32 aggregate, GSM8K T=1, 60 s window", note: "his bench_full.py (Card G3) · C8 1,440 · h2-REF G1 controls C32 1,490 / 1,463 · T1 filler (G4) C8 1,288 vs 1,124 (1.15×) · the C32 step that died unguarded in G1 survives every window" }
-  prefill: { value: 40987, unit: tok/s, label: "Prompt reading · uncached 114K prefill (his bench)", note: "SLOWER than h2-REF: 44,606 same day → −8 % (14K–114K −8 to −10 %) · T1 scouts −10 to −17 % · 1M needle (999,034 tokens) first token 36.5 s · rowmap sweep planned" }
+  prefill: { value: 40987, unit: tok/s, label: "Prompt reading · uncached 114K prefill (his bench)", note: "SLOWER than h2-REF: 44,606 same day → −8 % (14K–114K −8 to −10 %) · T1 scouts −10 to −17 % · 1M needle (999,034 tokens, Pg / G1f) first token 36.5 s · rowmap sweep planned" }
 
 guesser:
   name: "DSpark + Garner's suffix drafting"
@@ -42,7 +42,7 @@ secondary:
       "C1 by class, temp 1": "prose 1.27 · structured 1.26 · code 1.34 · shell 1.36 · tool-JSON 1.30× h2-REF"
       "T1 filler C1 / C4 / C8": "1.21–1.31× / 1.12–1.18× / 1.12–1.15× (0–128K)"
       "KV at 1M": "11.70M tokens vs 4.40M (util 0.95, his h255 map)"
-      "prefill / 1M first token": "−8 to −17 % / 36.5 s — the price of 129 cold experts per layer"
+      "prefill / 1M first token": "−8 to −17 % / 36.5 s (Pg, G1f) — the price of 129 cold experts per layer"
       "policy kept": "stock weights · fp8 KV · 1M ctx · no sampling override · 24 of 29 components"
 
 fidelity:
@@ -54,10 +54,10 @@ fidelity:
   - { status: pass, text: "#61161 port is kernel-exact: w6 30/30 and w5 120/120 per step vs the eager reference (stock: step 0 only); T=0 streams identical" }
   - { status: pass, text: "Fail-closed: sidecar paused under 4 streams → no token after the stall, watchdog trip ~3 s, server killed (G3b); 0 trips through G4, G5 and the cutover" }
   - { status: pass, text: "Speculation is target-verified (DSpark + suffix drafts are accepted by the full model)" }
-  - { status: measured, text: "Prefill is slower than h2-REF: −8 to −10 % (his bench, 3 reps), −10 to −17 % (T1 scouts, N=1); 1M first token 36.5 s" }
+  - { status: measured, text: "Prefill is slower than h2-REF: −8 to −10 % (his bench, 3 reps), −10 to −17 % (T1 scouts, N=1); 1M first token 36.5 s (Pg, G1f; h2-REF 31.17 s at 900K)" }
   - { status: pending, text: "48 h soak — running to Sat 2026-10-31 10:14pm CDT; any restore restarts it" }
   - { status: pending, text: "Temperature > 0 quality instrument — every gate here is T=0 or teacher-forced" }
-  - { status: pending, text: "Per-layer cosine bring-up gate on peer tier v3 — not run; the launcher-built libw6mk.so has no cubin-compare receipt vs the G3 build" }
+  - { status: pending, text: "Per-layer cosine bring-up gate on peer tier v3 — not run (the launcher-built libw6mk.so carries the same device cubins as the G3-tested build: libw6mk-cubin-identity.txt)" }
 
 harness:
   protocol:
