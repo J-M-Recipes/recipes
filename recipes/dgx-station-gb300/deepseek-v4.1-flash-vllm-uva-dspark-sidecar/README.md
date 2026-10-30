@@ -225,7 +225,8 @@ T1 is llm-inference-bench 0.7.7 synthetic filler at the server's default tempera
 - **Prefill is slower than h2-REF.** His `bench_full.py` (uncached, median of 3) reads **−8 to −10 %** at 14K–114K
   (e.g. 114K: 41.0K vs 44.6K tok/s). The G4 T1 scout prefills (N = 1 each) read −10 to −17 % (128K: 39,775 vs
   48,062 tok/s).
-- **1M first token is 36.5 s** on a 999,034-token needle (27.3K tok/s), against **33.2 s** for the v25 base launch
+- **1M first token is 36.5 s** on a 999,034-token needle (27.3K tok/s; measured on Pg in Card G1f, before the
+  #61161 port, which does not touch prefill), against **33.2 s** for the v25 base launch
   (2026-10-22). h2-REF's own 900K needle was 31.17 s (28.9K tok/s).
 - **Probable cause, not measured:** his h255 map leaves 129 cold experts per layer on the RTX (vs 89), and steps
   with T > 64 still use peer tier v2. **A rowmap sweep (h270 / h285 under our policy) is planned after promotion**;
