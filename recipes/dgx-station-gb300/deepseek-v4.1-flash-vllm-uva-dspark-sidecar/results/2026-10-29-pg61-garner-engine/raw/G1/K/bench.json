@@ -1,0 +1,170 @@
+{
+ "schema": "ds41-bench-full-v1",
+ "started": "2026-10-29T14:34:28+0000",
+ "environment": {},
+ "settings": {
+  "base_url": "http://127.0.0.1:30006",
+  "model": "dsv41-flash-uva",
+  "out": "/out/bench.json",
+  "env_file": null,
+  "skip": "coding,prefill,capacity,quality",
+  "reps": 10,
+  "coding_reps": 5,
+  "prefill_reps": 3,
+  "window": 60.0,
+  "warmup": 20.0,
+  "conc": "8,32",
+  "capacity_n": 16,
+  "capacity_tokens": 110000,
+  "capacity_max_tokens": 2500,
+  "min_acc": 95.0
+ },
+ "fixed": {
+  "shape": "fixed prompt, greedy, thinking off, max_tokens 2048, nonce line first",
+  "runs": [
+   {
+    "prompt_tokens": 2670,
+    "completion_tokens": 2048,
+    "ttft_ms": 193.2,
+    "out_tok_s": 779.9,
+    "tokens_per_step": 5.968,
+    "steps_s": 130.7
+   },
+   {
+    "prompt_tokens": 2673,
+    "completion_tokens": 2048,
+    "ttft_ms": 134.8,
+    "out_tok_s": 706.4,
+    "tokens_per_step": 5.418,
+    "steps_s": 130.4
+   },
+   {
+    "prompt_tokens": 2671,
+    "completion_tokens": 2048,
+    "ttft_ms": 131.6,
+    "out_tok_s": 709.1,
+    "tokens_per_step": 5.392,
+    "steps_s": 131.6
+   },
+   {
+    "prompt_tokens": 2675,
+    "completion_tokens": 2048,
+    "ttft_ms": 133.5,
+    "out_tok_s": 716.0,
+    "tokens_per_step": 5.452,
+    "steps_s": 131.5
+   },
+   {
+    "prompt_tokens": 2672,
+    "completion_tokens": 2048,
+    "ttft_ms": 133.3,
+    "out_tok_s": 681.7,
+    "tokens_per_step": 5.214,
+    "steps_s": 130.9
+   },
+   {
+    "prompt_tokens": 2670,
+    "completion_tokens": 2048,
+    "ttft_ms": 132.7,
+    "out_tok_s": 685.6,
+    "tokens_per_step": 5.249,
+    "steps_s": 130.6
+   },
+   {
+    "prompt_tokens": 2676,
+    "completion_tokens": 2048,
+    "ttft_ms": 130.8,
+    "out_tok_s": 674.4,
+    "tokens_per_step": 5.122,
+    "steps_s": 131.8
+   },
+   {
+    "prompt_tokens": 2668,
+    "completion_tokens": 2048,
+    "ttft_ms": 132.1,
+    "out_tok_s": 656.2,
+    "tokens_per_step": 4.993,
+    "steps_s": 131.4
+   },
+   {
+    "prompt_tokens": 2671,
+    "completion_tokens": 2048,
+    "ttft_ms": 132.8,
+    "out_tok_s": 705.9,
+    "tokens_per_step": 5.397,
+    "steps_s": 131.0
+   },
+   {
+    "prompt_tokens": 2672,
+    "completion_tokens": 2048,
+    "ttft_ms": 132.8,
+    "out_tok_s": 722.5,
+    "tokens_per_step": 5.528,
+    "steps_s": 131.0
+   }
+  ],
+  "summary": {
+   "out_tok_s": {
+    "n": 10,
+    "median": 706.15,
+    "q1": 682.675,
+    "q3": 714.275
+   },
+   "ttft_ms": {
+    "n": 10,
+    "median": 132.8,
+    "q1": 132.25,
+    "q3": 133.45
+   },
+   "tokens_per_step": {
+    "n": 10,
+    "median": 5.395,
+    "q1": 5.223,
+    "q3": 5.444
+   },
+   "steps_s": {
+    "n": 10,
+    "median": 131.0,
+    "q1": 130.75,
+    "q3": 131.475
+   },
+   "completion_tokens": {
+    "n": 10,
+    "median": 2048.0,
+    "q1": 2048.0,
+    "q3": 2048.0
+   },
+   "prompt_tokens": {
+    "n": 10,
+    "median": 2671.5,
+    "q1": 2670.25,
+    "q3": 2672.75
+   }
+  }
+ },
+ "gsm8k_c1": {
+  "conc": 1,
+  "greedy": false,
+  "window_s": 60.0,
+  "warmup_s": 20.0,
+  "aggregate_tok_s": 484.9,
+  "per_stream_tok_s": 484.9,
+  "tokens_per_step": 3.766,
+  "preemptions": 0.0,
+  "request_errors": 0
+ },
+ "greedy_c1": {
+  "conc": 1,
+  "greedy": true,
+  "window_s": 60.0,
+  "warmup_s": 20.0,
+  "aggregate_tok_s": 582.3,
+  "per_stream_tok_s": 582.3,
+  "tokens_per_step": 4.708,
+  "preemptions": 0.0,
+  "request_errors": 0
+ },
+ "streams": {
+  "error": "URLError: <urlopen error [Errno 111] Connection refused>"
+ }
+}

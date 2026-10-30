@@ -1,0 +1,97 @@
+<!doctype html>
+<html><head><meta charset="utf-8">
+<style>
+  html,body{margin:0;background:#0b0f14;}
+  .card{width:1200px;box-sizing:border-box;padding:36px 44px;background:linear-gradient(160deg,#0b0f14 0%,#0f1620 100%);color:#e6edf3;font-family:Inter,-apple-system,Segoe UI,Helvetica,Arial,sans-serif;border:1px solid #1e2a38;border-radius:14px;}
+  .mono{font-family:"JetBrains Mono",SFMono-Regular,Menlo,Consolas,monospace;}
+  .top{display:flex;justify-content:space-between;align-items:flex-start;}
+  h1{margin:0;font-size:38px;font-weight:800;letter-spacing:-0.5px;}
+  .sub{margin-top:6px;font-size:15px;color:#9fb0c3;}
+  .brand{text-align:right;font-size:13px;color:#9fb0c3;line-height:1.5;white-space:nowrap}
+  .brand b{color:#6ee7b7;font-size:16px;letter-spacing:1px}
+  .pills{display:flex;flex-wrap:wrap;gap:8px;margin:18px 0 22px}
+  .pill{border:1px solid #2a3a4d;background:#111a25;border-radius:999px;padding:6px 12px;font-size:13px;color:#cfd9e4}
+  .pill b{color:#fff;font-weight:600}
+  .pill.type{border-color:#6ee7b7;color:#6ee7b7}
+  .grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px}
+  .box{background:#111a25;border:1px solid #1e2a38;border-radius:10px;padding:16px 18px}
+  .lbl{font-size:11px;letter-spacing:1.6px;text-transform:uppercase;color:#7f93a8;margin-bottom:6px}
+  .hero{font-size:56px;font-weight:800;line-height:1;color:#fff}
+  .hero small{font-size:18px;font-weight:500;color:#9fb0c3;margin-left:6px}
+  .note{font-size:12px;color:#9fb0c3;margin-top:8px;line-height:1.4}
+  .row2{display:grid;grid-template-columns:1.2fr 1fr 1fr;gap:14px;margin-top:14px}
+  .kv{font-size:14px;line-height:1.75}
+  .kv b{color:#fff;font-weight:600}
+  .acc span{display:inline-block;margin-right:12px}
+  .fid{margin-top:14px;background:#0e1a17;border:1px solid #1f4d3d;border-radius:10px;padding:16px 18px}
+  .fid .lbl{color:#6ee7b7}
+  .fid ul{margin:0;padding-left:0;list-style:none;display:grid;grid-template-columns:1fr 1fr;gap:6px 24px;font-size:14px;line-height:1.5}
+  .ok::before{content:"✓ ";color:#6ee7b7;font-weight:700}
+  .pend::before{content:"◌ ";color:#f59e0b;font-weight:700}
+  .pend{color:#d9c58a}
+  .meas::before{content:"≈ ";color:#93c5fd;font-weight:700}
+  .fail::before{content:"✗ ";color:#f87171;font-weight:700}
+  .fail{color:#fca5a5}
+  .pend-inline{color:#f59e0b;font-size:0.6em;font-weight:600;letter-spacing:1px}
+  .foot{display:flex;justify-content:space-between;margin-top:18px;font-size:12px;color:#7f93a8}
+  .foot .mono{color:#9fb0c3}
+  .fid li.pair { list-style: none; margin: 6px 0 2px -18px; padding: 10px 12px; border: 1px solid rgba(255,255,255,.14); border-radius: 8px; background: rgba(255,255,255,.04); }
+  .fid li.pair .big { font-size: 20px; font-weight: 700; color: #e8f0ff; letter-spacing: -.2px; }
+  .fid li.pair .sep { color: rgba(255,255,255,.35); margin: 0 6px; }
+  .fid li.pair .dim { font-size: 11.5px; color: rgba(255,255,255,.62); }
+</style></head><body>
+<div class="card">
+  <div class="top">
+    <div>
+      <h1>DeepSeek-V4.1-Flash · 1× DGX Station GB300 + RTX PRO 6000 sidecar</h1>
+      <div class="sub">The 89 cold experts per layer are computed on the second GPU in the chassis, not read from Grace. Full 1M context. h2 adds split-KV attention for the one-user verify step and the sampler guard that ended a 32-user crash.</div>
+    </div>
+    <div class="brand"><b>J-M-RECIPES</b><br>h2-REF = v27 + L2 + #60945 guard + split-KV ×4 · :30006 since 10-28 17:22 · 2026-10-28<br>status: experimental</div>
+  </div>
+  <div class="pills">
+<span class="pill type"><b>MoE</b> · 384 routed experts + Engram; 295 hot in HBM, 89 computed on the RTX 6000</span>
+<span class="pill"><b>552B</b> total · <b>8B prefill / 16B decode</b> active</span>
+<span class="pill">checkpoint <b>510.3 GB</b> · rev <span class="mono">1bae0e10</span></span>
+<span class="pill">weights <b>as shipped · MXFP4 experts / FP8 attn+Engram · nothing re-quantized</b></span>
+<span class="pill">engine <b>vLLM <span class="mono">af7f9488c</span> · nightly-af7f9488 (sha256:3af6a45b) on BOTH GPUs · el8 hook @87af662 + L2 · b12x @2cc7f66a · #58132 + #61161 + #60945 overlays · FlashMLA PR #25 side .so 744a9de8</b></span>
+<span class="pill">memory <b>206.6 GiB hot experts in HBM + 66.2 GiB cold experts on the card · KV declared 8.5 GiB = 4.40M tok (4.2× one 1M request) · 48 GiB Grace prefix-KV tier · host carries Engram</b></span>
+  </div>
+  <div class="grid">
+<div class="box"><div class="lbl">Decode · C1, mean of 5 reps (coding · BRRR padded codegen, 2K in, T=0)</div><div class="hero">484.5<small>tok/s</small></div><div class="note">Card AP2 arm S4 vs same-window h1-REF controls 464.9 / 467.5 → 1.036×; 10.67 vs 11.09 / 11.11 ms per step at 5.17 tok/step · temp-1 per-class C1: prose 291 · structured 317 · code 381 · shell 394 · tool-JSON 349 (0.99–1.05× of controls) · the split engages for 1 user only</div></div>
+<div class="box"><div class="lbl">Decode · C32 aggregate, synthetic filler, ctx 0</div><div class="hero">2583.3<small>tok/s</small></div><div class="note">llm-inference-bench 0.6.2, C1/C8/C32 × 0/64K in one process, crash-free · controls 2,578 / 2,587 (1.000×) · C8 1,154 · C32 @64K 2,592 · v25 real-text C16 1,577 / C32 2,400 on kbench (another harness)</div></div>
+<div class="box"><div class="lbl">Prompt reading · cold 64K prefill</div><div class="hero">42059<small>tok/s</small></div><div class="note">AP2 instrument, mean of 2, TTFT 1.56 s; controls 41,913 / 41,499 · 1M needle (900,372 tokens) first token 31.2 s · v25&#x27;s SC2 harness read 50,119 at 64K — compare within one card only</div></div>
+  </div>
+  <div class="row2">
+<div class="box"><div class="lbl">Guesser</div><div class="kv"><b>DSpark</b> · in-checkpoint MTP (mtp.0–2), 1017 revision<br>k = 5 at 1–4 seqs, 3 at 5–8 and 9–32 · probabilistic drafting · block verification · h2 unchanged (the k=3 bands are what exposed the #60945 read)<br><span class="acc">accept: <span>BRRR codegen C1 (h2) <b>5.17 tok/step</b></span> <span>temp-1.0 C1 per class (BR2, v27) <b>prose 2.85 · structured 3.03 · code 3.83 · shell 3.98 · tool-JSON 3.63</b></span> <span>real-text C1 (v25) <b>2.96</b></span> <span>k=9 <b>−8…−21% speed</b></span></span></div></div>
+<div class="box"><div class="lbl">Guard — two failure modes that look like success</div><div class="kv">sidecar timeout: <b>VLLM_EXP_PEER_SPINS=2e9 + fail-closed watchdog, enforce, PPID 1 · live 10-28: 0 timeouts, trip null</b><br>#60945 sampler read: <b>k=3 at 5–32 users read 4 B past a 512 B tensor → CUDA illegal address when it ended a segment · killed 5 card runs · guard 2d43d513, bit-identical</b><br>split-KV quarantine: <b>1 request, s_q 6, 4 splits · side .so 744a9de8 next to the untouched _flashmla_C · 8 splits = NO</b><br>bring-up cosine: <b>v25 static min 0.99906 · v25m map R2 PASS (max e 0.0149 vs 0.0465)</b></div></div>
+<div class="box"><div class="lbl">What h2 bought, and what it did not</div><div class="kv">C1 by class, temp 1: <b>prose 1.047 · structured 1.044 · code 1.043 · shell 1.021 · tool-JSON 0.992×</b><br>8 / 32 users: <b>0.989–1.011× / 1.000× — the split never engages there</b><br>lib C1 at 0 / 64K: <b>253.4 / 278.6 tok/s (1.036 / 1.069× of the control mean)</b><br>prefill / TTFT 8K–128K: <b>1.001–1.021× / 0.980–0.999× of the worse control</b><br>power: <b>module p99 1,353 W in 64K prefill (v25) — all numbers under the chassis cap</b></div></div>
+  </div>
+  <div class="fid"><div class="lbl">Output fidelity — does the recipe change what the model says?</div>
+    <ul>
+<li class="ok">Weights unchanged: 1017 checkpoint as shipped, 0 re-quantized bits; the sidecar reads the same shards</li>
+<li class="ok">Crash-free hard gate (Card AP2): 0 new Xid, 0 engine errors, 0 GPU-fault lines, alive at end on all 4 arms under a 2 s watcher — C1/C8/C32 × 0/64K in one process included — and during the promotion</li>
+<li class="ok">1M needle on h2: 900,372 tokens, found, finish stop, first token 31.17 s (31.24 s on the promoted container)</li>
+<li class="ok">#60945 guard is bit-identical: kernel A/B 100/100 cases, the row it stops reading is never consumed; compute-sanitizer 20 → 0 invalid reads (Card W12)</li>
+<li class="meas">Split-KV is NOT bit-identical (summation order): TF vs control W 2.784 (bar 3.192), confident flips 4 = bar 4, agent/tool 0; raw flips 2.194% vs the controls&#x27; 2.165%</li>
+<li class="ok">Gauntlet 12/12 · #62417 probe 16/16 cells · long-thinking soak 4/4 correct, 0 loops (h2 arm)</li>
+<li class="ok">Speculation is target-verified (DSpark drafts are accepted by the full model)</li>
+<li class="ok">One public bench we ran: fraserprice&#x27;s BRRR codegen harness — 2K/C1 484.5 tok/s at 5.17 tok/step (h2) vs their 4× RTX PRO 6000 703</li>
+<li class="pend">T2 (needle-checksum, GSM8K-200), BFCL held-out and tool-eval not re-run on h1/h2 — v27 read 500/500, 192/200 (p 1.0), 77.27%</li>
+<li class="pend">48 h soak — none has completed on any sidecar config</li>
+<li class="pend">Temperature &gt; 0 quality instrument — block verification and #61161 act only there</li>
+    </ul>
+  </div>
+  <div class="fid"><div class="lbl">Agent claim card — fixed protocol, held-out sibling, cost per solved task</div>
+    <ul>
+<li class="ok">protocol <span class="mono">harness/protocol.yaml</span> sha256 <span class="mono">61c2d22b6351</span> · T=0, no thinking, tool_choice auto, 1 retry, C8 BFCL / C16 fund tools, 4-turn fund conversations (same protocol file as the GB300-only sibling)</li>
+<li class="ok">dev suite (decides candidacy): <b>BFCL dev on v25 (simple_python 400 + multiple 200)</b> 556/600 solved (92.67%) · sidecar v25 arm C, 2026-10-22; not re-run on h1/h2. Decides candidacy only</li>
+<li class="ok">held-out sibling (decides promotion): <b>BFCL live sibling on v27 (live_simple 258 + live_multiple 1,053)</b> 1013/1311 solved (77.27%)</li>
+<li class="pend">Pass@1 · $ / solved pair: pending (needs held-out run + priced cost)</li>
+    </ul>
+  </div>
+  <div class="foot">
+    <span>recipe <span class="mono">recipes/dgx-station-gb300/deepseek-v4.1-flash-vllm-uva-dspark-sidecar</span> · run <span class="mono">2026-10-28-h2-splitkv-ap2</span></span>
+    <span>github.com/J-M-Recipes/recipes · al-engr.com · sidecar recipe + kbench harness: RonanLabsAI (dgx-station-frontier) · hook: original-el8 · split-KV: FlashMLA PR #25 / vLLM #57711 — credited in the README</span>
+  </div>
+</div>
+</body></html>

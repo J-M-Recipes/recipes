@@ -1,0 +1,31 @@
+2026-10-29 12:38:38 CDT [G1f] ===== CARD G1f START =====
+2026-10-29 12:38:38 CDT [G1f] ISOLATE on
+2026-10-29 12:39:48 CDT [G1f] h2-REF pair stopped (kept)
+2026-10-29 12:39:48 CDT [G1f] ---- ARM V1 env: DS41_MAXLEN=1048576 DS41_ATTN_CFG={"indexer_kv_dtype": "mxfp4", "indexer_sparse_logits": true} DS41_GEN_OVERRIDE={"temperature": 1.0, "top_p": 0.95} DS41_FASTPATH_COMPONENTS_OVERRIDE=tail_markov_fused,tail_swa_meta,tail_dflash_prep,tail_ctxkv,tail_replay_skip,tail_embed,tail_drafthead_mxfp8,attn,preattn,preattn_cand,preattn_index,preattn_compress,tail_draft_embed,boundary,suffix,ds41_sampling,ds41_stop,topp_fast,w8oproj,tail_proj_side,engram_side,fastload,coldskip,peer3,megamoe,quant_producer,a12_retire,a12_memory_guard
+2026-10-29 12:46:11 CDT [G1f] BOUND ds41-V1 after 5s
+2026-10-29 12:46:11 CDT [G1f] guard in container: 4c6250af032a (want 4c6250af032a)
+2026-10-29 12:46:11 CDT [G1f] boot V1: ACTIVE=[a12_memory_guard,a12_retire,attn,boundary,coldskip,ds41_sampling,ds41_stop,engram_side,fastload,megamoe,peer3,preattn,preattn_cand,preattn_compress,preattn_index,quant_producer,suffix,tail_ctxkv,tail_dflash_prep,tail_draft_embed,tail_drafthead_mxfp8,tail_embed,tail_markov_fused,tail_proj_side,tail_replay_skip,tail_swa_meta,topp_fast,w8oproj,] fallback=0 GPU KV cache size: 11,853,018 tokens captured decode attention calls, W1/stock per width: 3:6/0 4:40/0 5:6/0 6:46/0 7:6/0 8:80/0 9:6/0 10:6/0 12:86/0 14:6/0 15:6/0 16:40/0 18:46/0 20:46/0 21:12/0 24:86/0 25:0/6 28:38/8 30:38/14 32:76/4 33:0/6 35:0/12
+2026-10-29 12:49:07 CDT [G1f] CELL V1 gbench rc=0 176s: [bench] PASS: /out/bench.json (+ .md)
+2026-10-29 12:50:27 CDT [G1f] CELL V1 c32r2 rc=0 80s: [bench] PASS: /out/c32r2.json (+ .md)
+2026-10-29 12:51:48 CDT [G1f] CELL V1 c32r3 rc=0 81s: [bench] PASS: /out/c32r3.json (+ .md)
+2026-10-29 12:51:48 CDT [G1f] SURVIVED V1: all C32 windows done, server up
+2026-10-29 12:52:58 CDT [G1f] garner containers down, peer shm removed
+2026-10-29 12:52:58 CDT [G1f] ---- ARM Pg env: DS41_MAXLEN=1048576 DS41_KV=fp8_ds_mla DS41_OFFLOAD_GB=48 DS41_EFFORT_DEFAULT=0 DS41_FASTPATH_COMPONENTS_OVERRIDE=tail_markov_fused,tail_swa_meta,tail_dflash_prep,tail_ctxkv,tail_replay_skip,tail_embed,attn,preattn,preattn_cand,preattn_index,preattn_compress,tail_draft_embed,boundary,suffix,topp_fast,tail_proj_side,engram_side,fastload,coldskip,peer3,megamoe,quant_producer,a12_retire,a12_memory_guard
+2026-10-29 12:59:16 CDT [G1f] BOUND ds41-Pg after 5s
+2026-10-29 12:59:16 CDT [G1f] guard in container: 4c6250af032a (want 4c6250af032a)
+2026-10-29 12:59:16 CDT [G1f] boot Pg: ACTIVE=[a12_memory_guard,a12_retire,attn,boundary,coldskip,engram_side,fastload,megamoe,peer3,preattn,preattn_cand,preattn_compress,preattn_index,quant_producer,suffix,tail_ctxkv,tail_dflash_prep,tail_draft_embed,tail_embed,tail_markov_fused,tail_proj_side,tail_replay_skip,tail_swa_meta,topp_fast,] fallback=0 GPU KV cache size: 11,696,582 tokens captured decode attention calls, W1/stock per width: 3:6/0 4:2/0 5:6/0 6:8/0 7:6/0 8:4/0 9:6/0 10:6/0 12:10/0 14:6/0 15:6/0 16:2/0 18:8/0 20:8/0 21:12/0 24:10/0 25:0/6 28:0/8 30:0/14 32:0/4 33:0/6 35:0/12 36:0/10 
+2026-10-29 13:05:17 CDT [G1f] CELL Pg gbench rc=0 361s: [bench] PASS: /out/bench.json (+ .md)
+2026-10-29 13:13:39 CDT [G1f] CELL Pg pct1 rc=0 502s: 
+2026-10-29 13:13:45 CDT [G1f] CELL Pg tf rc=0 6s: [G1-Pg] wrote tf-G1-Pg.jsonl: docs=39 errors=0 positions=79544 wall=7s
+2026-10-29 13:13:53 CDT [G1f] CELL Pg gauntlet rc=0 8s: {"tag": "g1-Pg", "task": "code-totals", "success": true, "done": 12, "expected": 12}
+2026-10-29 13:14:35 CDT [G1f] CELL Pg fit rc=0 42s: FIT g1-Pg: needle http=200 pt=999034 ttft=36.54s prefill=27340 tok/s recall=PASS finish=stop post_probe=PASS depth_decode=38026.7 tok/s (ttft 2.89s)
+2026-10-29 13:15:56 CDT [G1f] CELL Pg c32r2 rc=0 81s: [bench] PASS: /out/c32r2.json (+ .md)
+2026-10-29 13:15:56 CDT [G1f] SURVIVED Pg: full cells + extra C32 done, server up
+2026-10-29 13:17:05 CDT [G1f] garner containers down, peer shm removed
+2026-10-29 13:17:05 CDT [G1f] restore: h2-REF pair (rtx first, fresh 'serving'), watchdog
+2026-10-29 13:18:29 CDT [G1f] rtx serving
+2026-10-29 13:25:26 CDT [G1f] BOUND dsv41-vllm-1017-h2-REF after 420s
+2026-10-29 13:25:26 CDT [G1f] smoke OK
+2026-10-29 13:25:34 CDT [G1f] watchdog armed pid=3729811 
+2026-10-29 13:25:34 CDT [G1f] ISOLATE off
+2026-10-29 13:25:34 CDT [G1f] ===== CARD G1f END (lane = dsv41-vllm-1017-h2-REF) =====

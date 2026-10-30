@@ -1,0 +1,6 @@
+LLM_BENCH_NO_UPDATE_CHECK=1 run.sh --host <gb300> --port 30006 --model dsv41-flash-uva --test-profile needle-checksum --profile-concurrency 4 --output t3-needle.json
+LLM_BENCH_NO_UPDATE_CHECK=1 run.sh --host <gb300> --port 30006 --model dsv41-flash-uva --test-profile gsm8k --profile-runs 1319 --profile-concurrency 4 --compare-baseline ~/.hermes/profiles/milo/work/v27-t2/baseline-gsm8k1319-V-v25m.json --output t3-gsm8k1319.json
+LLM_BENCH_NO_UPDATE_CHECK=1 run.sh --host <gb300> --port 30006 --model dsv41-flash-uva --test-profile mmlu-pro --profile-runs 1000 --profile-concurrency 4 --output t3-mmlupro1000.json
+LLM_BENCH_NO_UPDATE_CHECK=1 run.sh --host <gb300> --port 30006 --model dsv41-flash-uva --concurrency 1,4,8 --contexts 0,32768,131072 --duration 30 --output t3-t1.json
+LLM_BENCH_NO_UPDATE_CHECK=1 run.sh --host <gb300> --port 30006 --model dsv41-flash-uva --tool-eval --tool-eval-parallel 4 --output t3-tooleval-r1.json
+LLM_BENCH_NO_UPDATE_CHECK=1 run.sh --host <gb300> --port 30006 --model dsv41-flash-uva --tool-eval --tool-eval-parallel 4 --output t3-tooleval-r2.json

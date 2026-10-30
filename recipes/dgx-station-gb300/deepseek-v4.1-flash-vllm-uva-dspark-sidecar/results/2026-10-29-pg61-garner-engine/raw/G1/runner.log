@@ -1,0 +1,38 @@
+2026-10-29 08:55:33 CDT [G1] ===== CARD G1 START (components P/K: tail_markov_fused,tail_swa_meta,tail_dflash_prep,tail_ctxkv,tail_replay_skip,tail_embed,attn,preattn,preattn_cand,preattn_index,preattn_compress,tail_draft_embed,boundary,suffix,topp_fast,tail_proj_side,engram_side,fastload,coldskip,peer3,megamoe,quant_producer,a12_retire,a12_memory_guard) =====
+2026-10-29 08:55:33 CDT [G1] ISOLATE on
+2026-10-29 08:55:33 CDT [G1] ---- ARM A (h2-REF control, live, isolated)
+2026-10-29 09:01:46 CDT [G1] CELL A gbench rc=0 373s: [bench] PASS: /out/bench.json (+ .md)
+2026-10-29 09:11:37 CDT [G1] CELL A pct1 rc=0 591s: 
+2026-10-29 09:11:44 CDT [G1] CELL A tf rc=0 7s: [G1-A] wrote tf-G1-A.jsonl: docs=39 errors=0 positions=79544 wall=7s
+2026-10-29 09:11:53 CDT [G1] CELL A gauntlet rc=0 9s: {"tag": "g1-A", "task": "code-totals", "success": true, "done": 12, "expected": 12}
+2026-10-29 09:13:03 CDT [G1] h2-REF pair stopped (kept)
+2026-10-29 09:13:03 CDT [G1] ---- ARM P (garner pol: kv=fp8_ds_mla attn_cfg=default)
+2026-10-29 09:20:49 CDT [G1] BOUND ds41-P after 5s
+2026-10-29 09:20:49 CDT [G1] boot P: ACTIVE=[a12_memory_guard,a12_retire,attn,boundary,coldskip,engram_side,fastload,megamoe,peer3,preattn,preattn_cand,preattn_compress,preattn_index,quant_producer,suffix,tail_ctxkv,tail_dflash_prep,tail_draft_embed,tail_embed,tail_markov_fused,tail_proj_side,tail_replay_skip,tail_swa_meta,topp_fast,] fallback=0 GPU KV cache size: 11,696,582 tokens captured decode attention calls, W1/stock per width: 3:6/0 4:2/0 5:6/0 6:8/0 7:6/0 8:4/0 9:6/0 10:6/0 12:10/0 14:6/0 15:6/0 16:2/0 18:8/0 20:8/0 21:12/0 24:10/0 25:0/6 28:0/8 30:0/14 32:0/4 33:0/6 35:0/12 36:0/10 
+2026-10-29 09:27:01 CDT [G1] CELL P gbench rc=1 372s: TypeError: string indices must be integers, not 'str'
+2026-10-29 09:27:01 CDT [G1] SERVER DOWN before pct1
+2026-10-29 09:27:01 CDT [G1] SERVER DOWN before tf
+2026-10-29 09:27:01 CDT [G1] SERVER DOWN before gauntlet
+2026-10-29 09:27:01 CDT [G1] SERVER DOWN before fit
+2026-10-29 09:28:06 CDT [G1] garner containers down, peer shm removed
+2026-10-29 09:28:06 CDT [G1] ---- ARM K (garner pol: kv=nvfp4_ds_mla attn_cfg={"indexer_kv_dtype": "mxfp4", "indexer_sparse_logits": true})
+2026-10-29 09:34:28 CDT [G1] BOUND ds41-K after 5s
+2026-10-29 09:34:28 CDT [G1] boot K: ACTIVE=[a12_memory_guard,a12_retire,attn,boundary,coldskip,engram_side,fastload,megamoe,peer3,preattn,preattn_cand,preattn_compress,preattn_index,quant_producer,suffix,tail_ctxkv,tail_dflash_prep,tail_draft_embed,tail_embed,tail_markov_fused,tail_proj_side,tail_replay_skip,tail_swa_meta,topp_fast,] fallback=0 GPU KV cache size: 12,155,993 tokens captured decode attention calls, W1/stock per width: 3:6/0 4:40/0 5:6/0 6:46/0 7:6/0 8:80/0 9:6/0 10:6/0 12:86/0 14:6/0 15:6/0 16:40/0 18:46/0 20:46/0 21:12/0 24:86/0 25:0/6 28:38/8 30:38/14 32:76/4 33:0/6 35:0/12
+2026-10-29 09:39:25 CDT [G1] CELL K gbench rc=1 297s: TypeError: string indices must be integers, not 'str'
+2026-10-29 09:39:25 CDT [G1] SERVER DOWN before pct1
+2026-10-29 09:39:25 CDT [G1] SERVER DOWN before tf
+2026-10-29 09:39:25 CDT [G1] SERVER DOWN before gauntlet
+2026-10-29 09:39:25 CDT [G1] SERVER DOWN before fit
+2026-10-29 09:40:29 CDT [G1] garner containers down, peer shm removed
+2026-10-29 09:40:29 CDT [G1] restore: h2-REF pair (rtx first, fresh 'serving'), watchdog
+2026-10-29 09:41:53 CDT [G1] rtx serving
+2026-10-29 09:48:49 CDT [G1] BOUND dsv41-vllm-1017-h2-REF after 420s
+2026-10-29 09:48:49 CDT [G1] smoke OK
+2026-10-29 09:48:57 CDT [G1] watchdog armed pid=3635008 
+2026-10-29 09:48:57 CDT [G1] ---- ARM A2 (h2-REF control, restored)
+2026-10-29 09:56:12 CDT [G1] CELL A2 gbench rc=0 374s: [bench] PASS: /out/bench.json (+ .md)
+2026-10-29 10:05:52 CDT [G1] CELL A2 pct1 rc=0 580s: 
+2026-10-29 10:05:59 CDT [G1] CELL A2 tf rc=0 7s: [G1-A2] wrote tf-G1-A2.jsonl: docs=39 errors=0 positions=79544 wall=7s
+2026-10-29 10:06:06 CDT [G1] CELL A2 gauntlet rc=0 7s: {"tag": "g1-A2", "task": "struct-readings", "success": true, "done": 12, "expected": 12}
+2026-10-29 10:06:06 CDT [G1] ISOLATE off
+2026-10-29 10:06:06 CDT [G1] ===== CARD G1 END (lane = dsv41-vllm-1017-h2-REF) =====

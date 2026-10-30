@@ -1,0 +1,34 @@
+2026-10-29 17:12:48 CDT [G3] ===== CARD G3 START =====
+2026-10-29 17:12:48 CDT [G3] ISOLATE on
+2026-10-29 17:13:57 CDT [G3] h2-REF pair stopped (kept)
+2026-10-29 17:14:30 CDT [G3] CELL U unit-stock rc=0 33s: w5 T=1 match/step [13, 0, 0, 0, 0] of [120, 120, 120, 120, 120] d25cd2a0879d w6 T=0 match/step [1, 1, 1, 1, 1] of [30, 30, 30, 30, 30] e188cb2d90e0 w5 T=0 match/step [13, 13, 13, 13, 13] of [120, 120, 120, 120, 120] 9bde6666540f 
+2026-10-29 17:14:52 CDT [G3] CELL U unit-patched rc=0 22s: w5 T=1 match/step [13, 13, 13, 13, 13] of [120, 120, 120, 120, 120] 3a1161eed07f w6 T=0 match/step [1, 1, 1, 1, 1] of [30, 30, 30, 30, 30] e188cb2d90e0 w5 T=0 match/step [13, 13, 13, 13, 13] of [120, 120, 120, 120, 120] 9bde6666540f 
+2026-10-29 17:14:52 CDT [G3] ---- ARM Pg61 env: DS41_MAXLEN=1048576 DS41_KV=fp8_ds_mla DS41_OFFLOAD_GB=48 DS41_EFFORT_DEFAULT=0 DS41_FASTPATH_COMPONENTS_OVERRIDE=tail_markov_fused,tail_swa_meta,tail_dflash_prep,tail_ctxkv,tail_replay_skip,tail_embed,attn,preattn,preattn_cand,preattn_index,preattn_compress,tail_draft_embed,boundary,suffix,topp_fast,tail_proj_side,engram_side,fastload,coldskip,peer3,megamoe,quant_producer,a12_retire,a12_memory_guard DS41_OVERLAY_58132_DIR=$HOME/dsv41/garner/ovl-61161 DS41_FASTPATH_DIR=$HOME/dsv41/garner/fastpath-61161 DS41_PEER3_SPINS=1000000000000
+2026-10-29 17:21:09 CDT [G3] BOUND ds41-Pg61 after 5s
+2026-10-29 17:21:09 CDT [G3] in container: rsu edc8f8f4c425 (want edc8f8f4c425) gumbel 6eac3e134833 (want 6eac3e134833) libw6mk b072ee0906338c29 (want b072ee0906338c29) w5 mix 1 PEER3_SPINS=1000000000000
+2026-10-29 17:21:09 CDT [G3] boot Pg61: ACTIVE=[a12_memory_guard,a12_retire,attn,boundary,coldskip,engram_side,fastload,megamoe,peer3,preattn,preattn_cand,preattn_compress,preattn_index,quant_producer,suffix,tail_ctxkv,tail_dflash_prep,tail_draft_embed,tail_embed,tail_markov_fused,tail_proj_side,tail_replay_skip,tail_swa_meta,topp_fast,] fallback=0 GPU KV cache size: 11,696,582 tokens captured decode attention calls, W1/stock per width: 3:6/0 4:2/0 5:6/0 6:8/0 7:6/0 8:4/0 9:6/0 10:6/0 12:10/0 14:6/0 15:6/0 16:2/0 18:8/0 20:8/0 21:12/0 24:10/0 25:0/6 28:0/8 30:0/14 32:0/4 33:0/6 35:0/12 36:0/10 
+2026-10-29 17:21:09 CDT [G3] p3 --once rc=0: {"t": 1793312469.7176914, "server_up": true, "v2": [1440, 1440, 0], "v3": [2, 43459, 43459, 0], "timeouts_base": 0, "mode": "report", "trip": null, "stall_s": 2.0, "v": "p3"}
+2026-10-29 17:21:14 CDT [G3] p3 ENFORCE armed pid=4004778  status={"t": 1793312473.853077, "server_up": true, "v2": [1440, 1440, 0], "v3": [2, 43459, 43459, 0], "timeouts_base": 0, "mode": "enforce", "trip": null, "stall_s": 2.0, "v": "p3"}
+2026-10-29 17:27:15 CDT [G3] CELL Pg61 gbench rc=0 361s: [bench] PASS: /out/bench.json (+ .md)
+2026-10-29 17:28:36 CDT [G3] CELL Pg61 c32r2 rc=0 81s: [bench] PASS: /out/c32r2.json (+ .md)
+2026-10-29 17:28:43 CDT [G3] CELL Pg61 gauntlet rc=0 7s: {"tag": "g3-Pg61", "task": "code-totals", "success": true, "done": 12, "expected": 12}
+2026-10-29 17:28:43 CDT [G3] M4 allowed through isolate; READY for the LAN suite
+2026-10-29 17:34:33 CDT [G3] M4-DONE: 2026-10-29 17:34:31 CDT
+2026-10-29 17:34:33 CDT [G3] p3 status before fault: {"t": 1793313273.6420906, "server_up": true, "v2": [272160, 272160, 0], "v3": [2, 22983, 22983, 0], "timeouts_base": 0, "mode": "enforce", "trip": null, "stall_s": 2.0, "v": "p3"}; TRIPs so far: 0
+2026-10-29 17:34:33 CDT [G3] SURVIVED Pg61: all G3 cells, server up, p3 never tripped
+2026-10-29 17:34:33 CDT [G3] FAULT: C4 streams, then ctrl=1 -> RTX persistent kernel exits
+2026-10-29 17:34:53 CDT [G3] FAULT injected at t=1793313293.876
+2026-10-29 17:35:23 CDT [G3] watchdog: 
+2026-10-29 17:35:23 CDT [G3] fault client: 3 2713 last 1793313309.735 finish length err None max_last 1793313309.7353873 
+2026-10-29 17:35:23 CDT [G3] containers after fault: ds41 ds41-sidecar 
+2026-10-29 17:36:33 CDT [G3] garner containers down, peer shm removed
+2026-10-29 17:36:33 CDT [G3] ---- unit rerun (v1 harness read draft rows by req state; fixed to batch rows)
+2026-10-29 17:37:00 CDT [G3] CELL U unit-stock rc=0 27s: w5 T=1 match/step [120, 0, 1, 0, 0] of [120, 120, 120, 120, 120] 0a64ad766900 w6 T=0 match/step [30, 30, 30, 30, 30] of [30, 30, 30, 30, 30] 55312583765c w5 T=0 match/step [120, 120, 120, 120, 120] of [120, 120, 120, 120, 120] 72b69f3c1a1f 
+2026-10-29 17:37:23 CDT [G3] CELL U unit-patched rc=0 23s: w5 T=1 match/step [120, 120, 120, 120, 120] of [120, 120, 120, 120, 120] 3114cff89d2d w6 T=0 match/step [30, 30, 30, 30, 30] of [30, 30, 30, 30, 30] 55312583765c w5 T=0 match/step [120, 120, 120, 120, 120] of [120, 120, 120, 120, 120] 72b69f3c1a1f 
+2026-10-29 17:37:23 CDT [G3] restore: h2-REF pair (rtx first, fresh 'serving'), watchdog
+2026-10-29 17:38:47 CDT [G3] rtx serving
+2026-10-29 17:45:48 CDT [G3] BOUND dsv41-vllm-1017-h2-REF after 425s
+2026-10-29 17:45:48 CDT [G3] smoke OK
+2026-10-29 17:45:57 CDT [G3] watchdog armed pid=4028558 
+2026-10-29 17:45:57 CDT [G3] ISOLATE off
+2026-10-29 17:45:57 CDT [G3] ===== CARD G3 END (lane = dsv41-vllm-1017-h2-REF) =====

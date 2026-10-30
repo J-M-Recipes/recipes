@@ -26,9 +26,15 @@ Cards GV, KV3 and BR1 below):
 Both recipes serve the same weights and stay published; this one is the faster lane on this hardware, the
 sibling is the one that needs nothing but the GB300.
 
-The table above is the v25 base launch on 2026-10-22. The serving release since 2026-10-28 is **h2-REF**; its own
-bracket (Card AP2, controls = h1-REF) is in [the 2026-10-28 section](#2026-10-28-h2-ref--the-60945-guard-and-split-kv-attention-card-ap2-promoted):
-coding C1 **484.5 tok/s** (BRRR 2K codegen, T=0) against 467.5 for its controls.
+The table above is the v25 base launch on 2026-10-22. **Since 2026-10-29 10:14pm CDT the lane serves Pg61.** Pg61 is
+[Garner McCloud's DS4.1 engine](https://github.com/garnermccloud/dgx-station-recipes/tree/8043a6811a5feda70fdfb6e827eebb2ec25c65d1/deepseek-v4.1-flash)
+under our policy and patch set. It reads **1.31× h2-REF at C1** (per-class, temperature 1.0, mean of 3 seeds), and it
+is **still being tested**: a 48 h soak runs to 2026-10-31 10:14pm CDT. Its bracket is in
+[the 2026-10-29 section](#2026-10-29-pg61--garners-ds41-engine-under-our-policy-promoted-soak-in-progress).
+*(Corrected 2026-10-29: this paragraph said h2-REF was the serving release. That was true 2026-10-28 5:22pm →
+2026-10-29 10:07pm CDT, and h2-REF is now the rollback lane.)* h2-REF's own bracket (Card AP2, controls = h1-REF) is in
+[the 2026-10-28 section](#2026-10-28-h2-ref--the-60945-guard-and-split-kv-attention-card-ap2-promoted): coding C1
+**484.5 tok/s** (BRRR 2K codegen, T=0) against 467.5 for its controls.
 
 > **Lineage, stated up front.** The production shape of this recipe — two-step `sidecar` → `server` launch, the
 > b12x peer tier-2 protocol, the `rowmap-mix-v1` calibration, the published same-chassis numbers, and the
@@ -37,8 +43,20 @@ coding C1 **484.5 tok/s** (BRRR 2K codegen, T=0) against 467.5 for its controls.
 > `recipes/dsv41-flash-sidecar`, Apache-2.0), built on **original-el8's** hook. What is ours is the delta:
 > the 295/89 map, the agreement gate run on real prompts, the ack-before-bookkeeping sidecar fix, the
 > fail-closed watchdog and the bracketed measurement discipline. See [Credits](#credits).
+>
+> **Since 2026-10-29 the serving config (Pg61) runs Garner McCloud's engine.** It is
+> [`garnermccloud/dgx-station-recipes`](https://github.com/garnermccloud/dgx-station-recipes) @ `8043a681`
+> (`deepseek-v4.1-flash/`, MIT): his `serve.sh`, his 29-component fast-path layer, peer tier v3, the MegaMoE
+> scheduling fork and his rowmap. That engine is itself built on original-el8's hook. Ours is the policy, five
+> small patches, a two-file vLLM overlay, a fail-closed watchdog for his peer tier v3, and the gates. The
+> RonanLabsAI-shaped launch described above is what h2-REF (the rollback lane) and every earlier release run.
 
-> **Status, 2026-10-28 17:23 CDT (recipe stays experimental): h2-REF is the serving release.** Lane `:30006` on the
+> **Status, 2026-10-29 10:14pm CDT: Pg61 serves `:30006`, still being tested (48 h soak to Saturday 2026-10-31
+> 10:14pm CDT; the recipe stays experimental).** Details, cards and rollback are in
+> [the 2026-10-29 section](#2026-10-29-pg61--garners-ds41-engine-under-our-policy-promoted-soak-in-progress).
+>
+> **Previous status, 2026-10-28 17:23 CDT (superseded by Pg61 on 2026-10-29 10:14pm CDT; h2-REF is now the
+> stopped-and-kept rollback pair): h2-REF is the serving release.** Lane `:30006` on the
 > reference box serves **`dsv41-vllm-1017-h2-REF` + `-rtx`**, promoted 2026-10-28 17:22:58 CDT (James's call) after
 > Card AP2 (S4 = PROMOTE-READY). It is v27 plus three things:
 >
@@ -79,6 +97,167 @@ coding C1 **484.5 tok/s** (BRRR 2K codegen, T=0) against 467.5 for its controls.
 > [Adaptive Residency Part 3, the seed map](https://al-engr.com/gb300-adaptive-residency-seed-map.html) and
 > [Part 1, with its convergence correction](https://al-engr.com/gb300-adaptive-expert-residency.html). Peer recipe:
 > [fraserprice/DeepSeek-4.1-Flash-1017-BRRR](https://huggingface.co/fraserprice/DeepSeek-4.1-Flash-1017-BRRR).
+
+## 2026-10-29: Pg61 — Garner's DS4.1 engine under our policy, PROMOTED (soak in progress)
+
+> **Serving config = Pg61 since 2026-10-29 10:14pm CDT** (containers `ds41` + `ds41-sidecar` on
+> `vllm/vllm-openai:v0.31.0` = `sha256:c1c9f6fd…`). **Still being tested:** a 48 h soak runs to **Saturday
+> 2026-10-31 10:14pm CDT** and the recipe stays `experimental`. Any restore or card restarts the soak clock.
+> **Rollback = h2-REF, one command:** `bash scripts/rollback-pg61-to-h2ref.sh` (the h2-REF pair is stopped and kept;
+> see [Rollback](#rollback)). James approved the promotion on 2026-10-29.
+
+Bundle: [`results/2026-10-29-pg61-garner-engine/`](results/2026-10-29-pg61-garner-engine/README.md) (card write-ups,
+pre-registrations, raw receipts, `throughput.csv`, the cutover log).
+
+### What Pg61 is
+
+**The engine is Garner McCloud's**:
+[`garnermccloud/dgx-station-recipes`](https://github.com/garnermccloud/dgx-station-recipes) pinned at
+[`8043a6811a5feda70fdfb6e827eebb2ec25c65d1`](https://github.com/garnermccloud/dgx-station-recipes/tree/8043a6811a5feda70fdfb6e827eebb2ec25c65d1/deepseek-v4.1-flash)
+(MIT). It runs on the stock, pullable `vllm/vllm-openai:v0.31.0` and is launched by his `serve/serve.sh`. The speed
+is his:
+
+- **the `DS41_FASTPATH` component layer.** 29 components: fused drafter tails, decode-attention and pre-attention
+  paths, copy/suffix drafting, `topp_fast`, Engram side-streams, fast load, cold-skip and more;
+- **peer tier v3.** SM120 block-scaled QMMA on the RTX for steps with T ≤ 64 tokens; v2/b12x above that;
+- **his DeepGEMM MegaMoE scheduling fork**;
+- **the `rowmap-mix-v1-h255.json` split** (255 hot / 129 cold experts per layer);
+- **his FlashInfer tune file and his #58132 / 1017 overlays.**
+
+His release, as shipped, reproduces on our RTX PRO 6000 **Max-Q (300 W)**: 135.9 steps/s on his fixed coding
+prompt against his published 135.4 (Card G0).
+
+**Ours is the layer on top**, published in full:
+
+| piece | what | file |
+|---|---|---|
+| policy hooks (patches 01–02) | six hooks in his `serve.sh` / `recipe.env`, each a no-op unless set: no API key, no `--attention-config`, no `--override-generation-config`, no reasoning-effort default, a component-list override, `PEER3_SPINS` forwarded | [`patches/garner-8043a681/`](patches/garner-8043a681/README.md) |
+| #61161 port (patches 03–05) | `seed ^ (step << 32)` in his three fused draft samplers (`w5_markov.py`, `w5_markov_gemv.py`, `w6mk.cu` → rebuilt `libw6mk.so`) | same |
+| vLLM overlay (2 files) | `gumbel.py` (#61161) and `rejection_sampler_utils.py` (#61161 + **#60945 guard**), byte-identical to what h2-REF mounts, built from [`patches/vllm-61161-…`](patches/vllm-61161-block-verification-fresh-draws.patch) + [`patches/vllm-60945-…`](patches/vllm-60945-rejection-sampler-guard.patch) | same, README |
+| fail-closed watchdog | [`scripts/sidecar_watchdog_p3.py`](scripts/sidecar_watchdog_p3.py) (v2 + peer tier v3); refuses to arm unless the server runs `PEER3_SPINS` ≥ 1e12 | Card G3-desk / G3 |
+| launcher, cutover, rollback, lane check | [`scripts/launch-pg61.sh`](scripts/launch-pg61.sh), [`cutover-h2ref-to-pg61.sh`](scripts/cutover-h2ref-to-pg61.sh), [`rollback-pg61-to-h2ref.sh`](scripts/rollback-pg61-to-h2ref.sh), [`pg61_lane_check.sh`](scripts/pg61_lane_check.sh) | — |
+
+**Policy** (where Pg61 differs from his release on purpose):
+
+- **Weights and KV.** Stock weights only. KV is `fp8_ds_mla`; his release uses `nvfp4_ds_mla`, and KV
+  quantization is ruled out here because it changes numerics. The indexer is the default (his: MXFP4 indexer K +
+  sparse logits).
+- **Context and memory.** `--max-model-len 1048576` (his: 524,288), a 48 GB host KV tier, util 0.95.
+- **Requests.** No forced T = 1.0 / top_p 0.95, no reasoning-effort default, no API key.
+- **Components.** 24 of his 29. `ds41_sampling` and `ds41_stop` are dropped as sampling policy. `w8oproj`,
+  `lowb_aux` and `tail_drafthead_mxfp8` are dropped because each changes numerics by design; the last is also a
+  requantized draft-head copy.
+- **Unchanged from his release:** the spec config (DSpark k = 5/3/3 `[[1,4,5],[5,8,3],[9,32,3]]`, probabilistic
+  drafting, block verification) and 32 seats.
+
+The KV pool is **11,696,582 tokens** at 1M (11.15× one 1M request; h2-REF: 4,400,013).
+
+### Why each patch exists
+
+- **The #60945 guard (Cards G1 → G1f).** G1 ran his tree under our policy, and both of its arms died with
+  `CUDA error: an illegal memory access` on a 32-request × 4-token decode step. The bisect (G1b–G1e, six deaths
+  in four configs) found the death to be **layout-dependent**: removing `lowb_aux`, which is inert at T = 128,
+  flipped it. The cause is vLLM #60945, unguarded in stock v0.31.0. The block-verification kernel reads one
+  `int32` past `draft_sampled`, and at 32 × 4 = 128 logits that tensor is exactly one 512 B allocator block. The
+  same read killed five card runs on this lane before h2 (see the 2026-10-28 section). The 3-line guard, with
+  nothing else changed, made the config that died survive 3 × 60 s C32 (G1f V1). Reported to Garner as
+  [issue #1](https://github.com/garnermccloud/dgx-station-recipes/issues/1).
+- **The #61161 port (Cards G3-desk → G3).** v0.31.0 ships the pre-#61161 sampler, and his fused drafters
+  reimplement the same unmixed draw. With block verification and probabilistic drafting, a re-drafted position
+  reuses the draw that was just rejected, which biases every temperature > 0 sample. The ported kernels equal
+  production's eager reference at every step on a GPU (w6 30/30, w5 120/120 per step; stock matches only step 0).
+  At T = 0 the token streams are identical. G5 shows the port costs no C1 at T = 1 (Pg61/Pg = 1.012).
+- **`PEER3_SPINS=1e12` + `sidecar_watchdog_p3.py` (Cards G3-desk → G3b).** On a peer tier v3 wait timeout (his
+  default is 20,000,000 polls), all three v3 wait sites **skip the cold-expert add and keep going**, so tokens keep
+  streaming and they are wrong. The timeout count lives only in GB300 device memory. With effectively infinite
+  spins, a dead or late RTX hangs the GB300 instead, and the watchdog turns the hang into a fail-stop. G3b paused
+  the sidecar under 4 streams. The last tokens arrived 0.10 s after the pause, and none after the stall. The
+  watchdog tripped ~3 s later (`v3 stalled: GB300 published tag 0xa257, RTX done 0x9217`) and killed the server.
+  The clients saw their streams end with no `finish_reason` and no HTTP error.
+
+### Cards G0 → G5
+
+| card | what | verdict | receipts |
+|---|---|---|---|
+| G0 | his release as shipped, on our box (measurement only) | **REPRODUCES**: 135.9 vs his 135.4 steps/s; 731.3 tok/s fixed prompt; 1.43× h2-REF steps/s | [`G0`](results/2026-10-29-pg61-garner-engine/cards/G0/README.md) |
+| G1 | his tree under our policy (P) and + his KV config (K), bracketed by h2-REF | **CRASH** at C32 on both (illegal address); P 1.26× steps/s before it | [`G1`](results/2026-10-29-pg61-garner-engine/cards/G1/README.md) |
+| G1b–G1f | bisect → cause → fix; **Pg** = P + #60945 guard | cause = unguarded #60945, layout-dependent; guard fixes it; **Pg passes every owed cell**: per-class C1 mean 1.33×, C8 1.10×, TF at the floor, gauntlet 12/12, 1M needle PASS | [`G1f`](results/2026-10-29-pg61-garner-engine/cards/G1f/README.md) |
+| G2 | promotion-tier gates on Pg | **PASS** every quality gate (needle 500/500; GSM8K-200 193/200, p = 1.0; tool-eval 91/100; BFCL held-out 78.26 % vs v27 77.27 %, p = 0.011); **prefill −8 to −10 %** | [`G2`](results/2026-10-29-pg61-garner-engine/cards/G2/README.md) |
+| G3-desk | #61161 on v0.31.0? does peer tier v3 fail closed? | **#61161 absent**; **v3 timeout = silent wrong tokens** → spins + watchdog built (13/13 unit tests) | [`G3-desk`](results/2026-10-29-pg61-garner-engine/cards/G3-desk/README.md) |
+| G3 / G3b | port exactness on GPU; Pg61 cells; fault injection | **PASS**: exact at every step; Pg61 cells = Pg's (119.3 steps/s, gauntlet 12/12, BFCL 1026/1311); watchdog trip ~3 s, server killed, no token after the stall | [`G3`](results/2026-10-29-pg61-garner-engine/cards/G3/README.md) |
+| G4 | T3 promotion bench, Pg61 **booted by the launcher**, vs h2-REF same window | **PASS all 6 pre-registered bars** | [`G4`](results/2026-10-29-pg61-garner-engine/cards/G4/README.md), [PREREG](results/2026-10-29-pg61-garner-engine/cards/G4/PREREG.md) |
+| G5 | per-class C1 at T = 1: Pg vs Pg61 vs h2-REF | **port: no effect** (1.012); **headline 1.31× h2-REF** | [`G5`](results/2026-10-29-pg61-garner-engine/cards/G5/README.md), [PREREG](results/2026-10-29-pg61-garner-engine/cards/G5/PREREG.md) |
+
+### Headline (Card G5): Pg61 vs h2-REF, per-class C1, temperature 1.0, mean of 3 seeds
+
+| class | Pg61 tok/s (3 seeds) | h2-REF tok/s (3 seeds) | **Pg61 / h2-REF** | acceptance_len Pg61 / h2-REF |
+|---|--:|--:|--:|---|
+| prose | 367.2 (356–377) | 289.7 (283–296) | **1.27×** | 3.02 / 2.96 |
+| structured | 396.9 (393–404) | 314.0 (311–316) | **1.26×** | 3.27 / 3.21 |
+| code | 494.9 (480–504) | 368.8 (357–386) | **1.34×** | 4.30 / 3.82 |
+| shell_ops | 530.4 (525–536) | 388.9 (386–393) | **1.36×** | 4.65 / 4.03 |
+| tool_json | 463.8 (456–471) | 356.5 (349–369) | **1.30×** | 3.97 / 3.68 |
+| **mean** | | | **1.31×** | |
+
+These are 40 private Hermes-transcript prompts per class, 256 forced tokens, `--temperature 1.0 --top-p 1.0`, seeds
+42/43/44, one boot per arm in the same window, with 0 errors and 0 foreign tokens. acceptance_len = 1 + accepted per
+draft step, pooled over the three seeds from the spec-decode counter deltas. Most of the gain is step time, not acceptance: acceptance_len rises 2–15 % by class while tok/s rises
+26–36 %.
+
+### T3 promotion bench (Card G4): Pg61 vs h2-REF, same window
+
+| bar | Pg61 | h2-REF | verdict |
+|---|---|---|---|
+| launcher reproduces G3 | `docker inspect` Args identical, hashes OK, 24 ACTIVE | — | PASS |
+| needle-checksum 500 | EXACT 500/500 | EXACT 500/500 | PASS |
+| GSM8K-1319 | 96.97 % (1279); vs v25m p = 0.73 | 96.89 % (1278); paired p = 1.0 | PASS |
+| MMLU-Pro-1000 | **87.7 %** | 85.3 %; paired 10 lost / 34 gained, p < 0.001 | PASS (better) |
+| T1 C1 @ 0 / 32K / 128K | 324.7 / 322.1 / 320.5 | 247.3 / 266.4 / 250.4 | 1.31× / 1.21× / 1.28× |
+| T1 C4 @ 0 / 32K / 128K | 773.7 / 757.4 / 803.8 | 689.7 / 678.8 / 678.5 | 1.12× / 1.12× / 1.18× |
+| T1 C8 (no bar) | 1,288 / 1,259 / 1,262 | 1,124 / 1,127 / 1,124 | 1.12–1.15× |
+| watchdog / survival | 0 trips, server up | — | PASS |
+| tool-eval ×2 (no bar) | 89 · 91 | 89 · 93 | same band |
+
+T1 is llm-inference-bench 0.7.7 synthetic filler at the server's default temperature, C ≤ 8 from the M4.
+
+### Known costs
+
+- **Prefill is slower than h2-REF.** His `bench_full.py` (uncached, median of 3) reads **−8 to −10 %** at 14K–114K
+  (e.g. 114K: 41.0K vs 44.6K tok/s). The G4 T1 scout prefills (N = 1 each) read −10 to −17 % (128K: 39,775 vs
+  48,062 tok/s).
+- **1M first token is 36.5 s** on a 999,034-token needle (27.3K tok/s), against **33.2 s** for the v25 base launch
+  (2026-10-22). h2-REF's own 900K needle was 31.17 s (28.9K tok/s).
+- **Probable cause, not measured:** his h255 map leaves 129 cold experts per layer on the RTX (vs 89), and steps
+  with T > 64 still use peer tier v2. **A rowmap sweep (h270 / h285 under our policy) is planned after promotion**;
+  it trades KV tokens for prefill.
+
+### Not exercised
+
+- **Temperature > 0 quality.** Every quality gate is T = 0 or teacher-forced. The port is exact at the kernel level
+  and costs no C1, but no T > 0 quality score has run: no full-vocabulary KLD over forced tokens and no seeded
+  GSM8K at T = 1.
+- **The 48 h soak.** It is running now, to 2026-10-31 10:14pm CDT.
+- **Decode beyond 128K**, except the one G1f 1M needle (on Pg, before the #61161 port).
+- **The final watchdog file under fault injection.** G3b tripped the watchdog version from before a log-ordering
+  fix. The fixed file has 13/13 unit tests and ran armed through G4, G5 and the cutover with 0 trips, but has not
+  itself been fault-injected on a GPU.
+
+### Promotion (2026-10-29)
+
+[`scripts/cutover-h2ref-to-pg61.sh`](scripts/cutover-h2ref-to-pg61.sh)
+([log](results/2026-10-29-pg61-garner-engine/promote/cutover-20261029.log)) ran these steps:
+
+1. Preconditions: h2-REF serving, no card runner, the frozen build matching `BUILD-SHA256SUMS`. Then MAINTENANCE.
+2. **h2-REF pair stopped and kept at 10:07:54pm CDT.**
+3. `launch-pg61.sh up`: the sidecar prepared 40 layers in 58 s; the server reported KV 11,696,582. In-container
+   `verify OK` at 10:14:12pm (gumbel `6eac3e13`, rsu `edc8f8f4`, libw6mk `b5416822`, `PEER3_SPINS=1000000000000`).
+   **p3 watchdog ENFORCE armed at 10:14:15pm.**
+4. **Smoke OK; Pg61 serving since 10:14:16pm CDT.** Then the build freeze, MAINTENANCE cleared and an owner line.
+
+A read-only snapshot at 10:20pm showed both containers on `sha256:c1c9f6fd…`, watchdog `trip: null` with 0 v2/v3
+timeouts, `BUILD-SHA256SUMS` OK and 0 Xid since the cutover
+([`live-check`](results/2026-10-29-pg61-garner-engine/promote/live-check-2026-10-30T0320Z.txt)). An M4 cron runs
+[`scripts/pg61_lane_check.sh`](scripts/pg61_lane_check.sh) every 10 min; it is silent when healthy.
 
 ## 2026-10-28: h2-REF — the #60945 guard and split-KV attention (Card AP2), PROMOTED
 
@@ -461,6 +640,30 @@ Known limits.)* Receipts: [`results/2026-10-24-gv-v25m-gates/`](results/2026-10-
 
 ## What this runs
 
+**As served (Pg61, since 2026-10-29 10:14pm CDT; soak in progress).** It is Garner McCloud's DS4.1 engine,
+[`garnermccloud/dgx-station-recipes`](https://github.com/garnermccloud/dgx-station-recipes) @ `8043a681`, on stock
+`vllm/vllm-openai:v0.31.0` (`sha256:c1c9f6fd…`) for both GPUs, under our policy:
+
+* **GB300.** Container `ds41`: `vllm serve` started by his `serve/serve.sh`, TP1, `--moe-backend
+  deep_gemm_mega_moe`, `fp8_ds_mla` KV, 1,048,576 context, 32 seats, util 0.95, a 48 GB host KV tier. His
+  `DS41_FASTPATH` layer runs 24 of its 29 components, plus his MegaMoE scheduling fork and **255 hot experts per
+  layer** (`rowmap-mix-v1-h255.json`). KV pool: **11,696,582 tokens**.
+* **RTX PRO 6000 Max-Q.** Container `ds41-sidecar`: his sidecar holds the other **129 experts per layer** (98.5 GB
+  allocated). It serves **peer tier v3** (SM120 block-scaled QMMA, for steps of ≤ 64 tokens) and peer tier v2/b12x
+  above that.
+* **Drafting.** DSpark k = 5/3/3 by batch size, probabilistic drafting, block verification. This is unchanged from
+  h2-REF and from his release.
+* **Our layer.** Five patches on his tree (policy hooks, and the #61161 seed mix in his fused drafters). A two-file
+  vLLM overlay with #61161 and the #60945 guard. `PEER3_SPINS=1000000000000`. And
+  [`scripts/sidecar_watchdog_p3.py`](scripts/sidecar_watchdog_p3.py), in enforce mode. See the
+  [2026-10-29 section](#2026-10-29-pg61--garners-ds41-engine-under-our-policy-promoted-soak-in-progress).
+
+The correctness trap below applies to Pg61 in a new form. A peer tier v3 wait timeout **skips the cold-expert add
+silently**; peer tier v2 traps instead. Infinite spins plus the p3 watchdog cover it.
+
+**As served 2026-10-28 5:22pm → 2026-10-29 10:07pm CDT (h2-REF, now the rollback lane), and every release before
+it,** ran the launch described in the rest of this section:
+
 DeepSeek-V4.1-Flash-1017 (MXFP4 routed experts, FP8 attention/Engram, in-checkpoint DSpark drafter) at the
 full **1,048,576-token** context, on:
 
@@ -471,7 +674,7 @@ full **1,048,576-token** context, on:
   per layer** and computing their contribution on demand. The two processes share one `/dev/shm` buffer with
   a device-side sequence counter: the GB300 publishes a step, the card answers, the GB300 adds the result.
 
-**As served (h2-REF, since 2026-10-28 17:22:58 CDT):** v27 (next paragraph) plus h1's hook-side L2
+**h2-REF (served 2026-10-28 17:22:58 CDT → 2026-10-29 10:07pm CDT; now the stopped-and-kept rollback pair):** v27 (next paragraph) plus h1's hook-side L2
 attention/indexer key-sharing and vLLM #61161 backport, the vLLM #60945 rejection-sampler guard, and split-KV decode
 attention. That last piece is a FlashMLA PR #25 build loaded as a **side** extension `_flashmla_splitkv_C` next to
 the image's own `_flashmla_C`. It is used only when exactly one request is decoding a 6-token (k=5) verify step;
@@ -519,6 +722,19 @@ Two settings that are not optional:
 
 ## Software
 
+**Pg61 (serving since 2026-10-29 10:14pm CDT):**
+
+| piece | pin |
+|---|---|
+| image (both GPUs) | `vllm/vllm-openai:v0.31.0` = `sha256:c1c9f6fd5c109ba7f0546a59f5b2f15fb87f64c77782e90a27b648b42a8e67c3` (a pullable release; repo digest = image id on the box; `VLLM_BUILD_COMMIT` db9527a4). [`results/2026-10-29-pg61-garner-engine/image.txt`](results/2026-10-29-pg61-garner-engine/image.txt) |
+| engine | **Garner McCloud**, [`garnermccloud/dgx-station-recipes`](https://github.com/garnermccloud/dgx-station-recipes/tree/8043a6811a5feda70fdfb6e827eebb2ec25c65d1/deepseek-v4.1-flash) @ `8043a6811a5feda70fdfb6e827eebb2ec25c65d1`, `deepseek-v4.1-flash/` (MIT). Not vendored; `launch-pg61.sh build` refuses any other HEAD |
+| our patches on his tree | [`patches/garner-8043a681/01…05`](patches/garner-8043a681/README.md) → `serve/serve.sh` 212d2a03, `config/recipe.env` 71d39119, `fastpath/w5_markov.py` 62357c0b, `fastpath/w5_markov_gemv.py` ede5fd52, `kernels/w6-moe/markov/w6mk.cu` a17b2ba2 (sha1; equal to the serving build tree) |
+| `libw6mk.so` | rebuilt by `build` (`nvcc -gencode=arch=compute_103a,code=sm_103a` inside the image) → sha256 `b54168223847560b…` in the serving container |
+| vLLM overlay | his `docker/overlay-58132/vllm` + `gumbel.py` (sha1 6eac3e13 = sha256 ee5072d2) and `spec_decode/rejection_sampler_utils.py` (sha1 edc8f8f4 = sha256 2d43d513), the same bytes h2-REF mounts, built from the #61161 and #60945 patches below ([desk check](results/2026-10-29-pg61-garner-engine/overlay-desk-check.txt)) |
+| watchdog | [`scripts/sidecar_watchdog_p3.py`](scripts/sidecar_watchdog_p3.py) (box sha1 812c47c0; the published copy differs only in its default log paths) |
+
+**h2-REF (the rollback lane) and every release before it:**
+
 | piece | pin |
 |---|---|
 | image (both GPUs) | `vllm/vllm-openai@sha256:3af6a45b060d681aa6254200f87859d1bb3c1f962afb3d15540b4b31d4a41063` = nightly `af7f9488`, vLLM `0.30.1rc1.dev245+gaf7f9488c`; torch 2.13.0+cu130, FlashInfer 0.7.0, triton 3.7.1. The Hub tag has been rotated off — pull by digest or keep a `docker save` copy |
@@ -544,7 +760,38 @@ Checkpoint identity (revision, 49 shards, 510,311,114,235 B, config/index hashes
 
 ## Launch
 
-Two steps, in this order — the server refuses to start unless the sidecar log says `serving`.
+**The serving config, Pg61.** You need Garner's checkout at the pin, the overlay files built from this recipe's
+patches (once, see [`patches/garner-8043a681/README.md`](patches/garner-8043a681/README.md)), the 1017 checkpoint on
+local NVMe and the CDI spec for the RTX (see Hardware). Then:
+
+```bash
+git clone https://github.com/garnermccloud/dgx-station-recipes.git ~/dsv41/garner/src
+git -C ~/dsv41/garner/src checkout 8043a6811a5feda70fdfb6e827eebb2ec25c65d1
+# 1. build (CPU only): copy his deepseek-v4.1-flash/, apply patches 01-05, rebuild libw6mk.so (sm_103a) in the
+#    image, layer overlay-vllm over his overlay-58132, write policy.env and BUILD-SHA256SUMS
+GARNER_SRC=~/dsv41/garner/src WORK=~/dsv41/garner/pg61-work bash scripts/launch-pg61.sh build
+# 2. up: his serve.sh start with policy.env (sidecar first, then server), wait for /v1/models, check the in-container
+#    hashes + PEER3_SPINS, run the watchdog --once, then arm it in ENFORCE (setsid nohup, PPID 1)
+WORK=~/dsv41/garner/pg61-work MODEL_DIR=/models/DeepSeek-V4.1-Flash-1017-<rev> DS41_HOME=~/dsv41/garner/home \
+  bash scripts/launch-pg61.sh up
+WORK=~/dsv41/garner/pg61-work bash scripts/launch-pg61.sh render   # print the policy env + the serve.sh call
+WORK=~/dsv41/garner/pg61-work DS41_HOME=~/dsv41/garner/home bash scripts/launch-pg61.sh down
+```
+
+`policy.env` is the whole policy. It sets `DS41_PORT=30006`, `DS41_SERVED=dsv41-flash-uva`,
+`DS41_ALIASES=deepseek-v4.1-flash`, `DS41_GPU_MODE=cdi`, `DS41_NO_KEY=1`, `DS41_MAXLEN=1048576`,
+`DS41_KV=fp8_ds_mla`, `DS41_OFFLOAD_GB=48`, `DS41_EFFORT_DEFAULT=0`, the 24-component
+`DS41_FASTPATH_COMPONENTS_OVERRIDE`, `DS41_OVERLAY_58132_DIR=$WORK/overlay-vllm` and
+`DS41_PEER3_SPINS=1000000000000`. In Card G4, the launcher-booted container's `docker inspect` Args equalled the G3
+container's element for element
+([`args-diff.txt`](results/2026-10-29-pg61-garner-engine/raw/G4/box/Pg61/args-diff.txt)). Container names are his:
+`ds41` and `ds41-sidecar`. The published launcher differs from the box copy in two defaults only: `PATCHES` points at
+`patches/garner-8043a681/` and `WATCHDOG` at `scripts/`. Moving the reference box from h2-REF to Pg61 is
+[`scripts/cutover-h2ref-to-pg61.sh`](scripts/cutover-h2ref-to-pg61.sh) (`--dry-run` checks preconditions only). It
+falls back to the rollback script on any failure after the stop.
+
+**The previous serving release, h2-REF (now the rollback lane), and the base launch** are below, unchanged. Two
+steps, in this order: the server refuses to start unless the sidecar log says `serving`.
 
 ```bash
 export GB300_UUID=$(nvidia-smi -L | awk -F'[( )]' '/GB300/{print $2}')
@@ -650,13 +897,17 @@ bash scripts/soak_check.sh <ssh-host> "$NAME"     # one health sample from anoth
 
 | gate | how | bar |
 |---|---|---|
-| bring-up numerics | `scripts/gate_cosine.py` on a check-mode boot | 40/40 layers, ≥32 rows, min cos ≥ 0.999, 0 timeouts — measured **0.99906** |
-| lane health | both containers up, `/v1/models`, watchdog `trip=null`, `words[2]=0`, boot KV line 4,400,013 tokens | `scripts/soak_check.sh` prints `OK` |
+| **Pg61 launcher verify** | `WORK=… bash scripts/launch-pg61.sh verify` reads, inside `ds41`: `sample/gumbel.py` sha1, `spec_decode/rejection_sampler_utils.py` sha1, `/fastpath/libw6mk.so` sha256 and `PEER3_SPINS` | gumbel `6eac3e13…`, rsu `edc8f8f4…` (the #60945 guard), libw6mk equal to the build tree's, `PEER3_SPINS=1000000000000`. Passed at the cutover (10:14:12pm CDT) and in Cards G4 and G5 |
+| **Pg61 p3 watchdog** | `$WORK/wdp3.status.json` and `$WORK/wdp3.log`; one `sidecar_watchdog_p3.py --mode enforce` process (PPID 1) | `"mode": "enforce"`, `"trip": null`, `server_up: true`, v2 `[pub, done, 0]` with pub = done, v3 `[2, tag, tag, 0]`, status age < 60 s, no `TRIP` line. It refuses to arm (exit 3) without `PEER3_SPINS` ≥ 1e12 |
+| **Pg61 lane check** | [`scripts/pg61_lane_check.sh`](scripts/pg61_lane_check.sh) (`GB300_SSH=user@host`; an M4 cron every 10 min) | silent when `UP` is exactly `ds41 ds41-sidecar`, `BOUND=1`, the p3 watchdog is alive, `trip None`, status age < 60 s, `BUILD-SHA256SUMS -c` OK and no TRIP lines. Anything else prints and names the rollback |
+| Pg61 boot facts | server log | 24 components ACTIVE, 0 fallback lines, `GPU KV cache size: 11,696,582 tokens … 11.15x`; sidecar `prepared 40 layers` + `serving` |
+| bring-up numerics | `scripts/gate_cosine.py` on a check-mode boot | 40/40 layers, ≥32 rows, min cos ≥ 0.999, 0 timeouts — measured **0.99906** (v25 static map; not run on Pg61's peer tier v3, see Known limits) |
+| lane health (h2-REF and earlier) | both containers up, `/v1/models`, watchdog `trip=null`, `words[2]=0`, boot KV line 4,400,013 tokens | `scripts/soak_check.sh` prints `OK` |
 | KV capacity | four ~1M contexts resident at once, 16K tokens decoded each (`results/2026-10-22-kv85/scripts/kv2_coresident.py`) | 4 running / 0 waiting, 0 preemptions, 0 errors, 0 trips, 0 timeouts — measured KV peak **75.3%** |
 | output quality | teacher-forced flips vs a same-map floor, BFCL dev+held-out, GSM8K-1319, 500-needle, gauntlet, reasoning-effort vocabulary, one image request | SC2's 12 pre-registered gates |
 | drafter | per-class decode wall-clock, 20 cells × {C1, C8} | no cell worse than −3% vs both controls |
 | speed | bracketed ladders with a control on each side | knee C1 ≥ 198, knee C16 ≥ 974, sidecar C16 ≥ Grace-only +3% |
-| soak | 48 h, sampled every 5 min — restarted with the KV change: 2026-10-22 18:52 → 2026-10-24 18:52 CDT. *(Corrected 2026-10-26: that window was cut at ~25 h and the v25m window was cancelled; no 48 h soak has completed on any sidecar config, v27 included.)* | no timeout, no trip, no stall |
+| soak | 48 h, sampled every 5 min — restarted with the KV change: 2026-10-22 18:52 → 2026-10-24 18:52 CDT. *(Corrected 2026-10-26: that window was cut at ~25 h and the v25m window was cancelled; no 48 h soak has completed on any sidecar config, v27 included.)* **Pg61: running 2026-10-29 10:14pm → 2026-10-31 10:14pm CDT, sampled by `scripts/pg61_lane_check.sh` every 10 min.** | no timeout, no trip, no stall; lane check silent throughout |
 | **h2-REF serving release** | in-container sha256: `rejection_sampler_utils.py` **2d43d513** (guard; 42c5e8a0 = unguarded), `_flashmla_splitkv_C.abi3.so` 744a9de8 mapped by the engine, `_flashmla_C.abi3.so` df2cdd1c untouched. Log: split-KV `ENABLED cap=4 max_reqs=1`, the only decode gate line `s_q=6 splits=4 … op=_flashmla_splitkv_C`, `TRACE ok=1` only at (6, 6, 1 decode, 0 prefills), 0 GUARD lines, 2 `MEGA_L2` patched lines, `Loaded 117 configs`. KV 4,400,013; `journalctl -k` shows no new Xid since boot; watchdog enforce, PPID 1 | all checked at promotion ([`promote/promote.log`](results/2026-10-28-h2-splitkv-ap2/promote/promote.log)) and re-read at 22:53Z |
 | crash-free (any lane change) | the C32 lib cells in one process (C1/C8/C32 × 0/64K) under a 2 s Xid/fault watcher | 0 new Xid, 0 engine errors, 0 GPU-fault lines, alive at end — Card AP2 all four arms |
 | v27 serving release | boot log KV line 4,400,013; `docker inspect` args contain `"rejection_sample_method":"block"`; watchdog in enforce mode with PPID 1, `trip=null` | checked at promotion (2026-10-26 04:08) and after each of the day's five restores |
@@ -667,7 +918,19 @@ timeout is treated as a correctness bug rather than a slow request.
 
 ## Results
 
-### h2-REF = the serving release (promoted 2026-10-28 17:22:58 CDT, `results/2026-10-28-h2-splitkv-ap2/`)
+### Pg61 = the serving config (promoted 2026-10-29 10:14pm CDT, soak in progress, `results/2026-10-29-pg61-garner-engine/`)
+
+Bundle: [`results/2026-10-29-pg61-garner-engine/`](results/2026-10-29-pg61-garner-engine/README.md). It holds
+`throughput.csv` (every `bench_full`, prefill, T1 and per-class cell × arm × card), the card write-ups and
+pre-registrations for G0–G5, raw receipts per card (per-class rows withheld), the desk checks and the cutover log.
+Headline: **per-class C1 at temperature 1.0, mean of 3 seeds: Pg61 1.31× h2-REF** (prose 367.2 / structured 396.9 /
+code 494.9 / shell_ops 530.4 / tool_json 463.8 tok/s against 289.7 / 314.0 / 368.8 / 388.9 / 356.5). T3: all six
+pre-registered bars PASS. Prefill is −8 to −10 % (his bench) to −17 % (T1 scouts). Full tables are in the
+[2026-10-29 section](#2026-10-29-pg61--garners-ds41-engine-under-our-policy-promoted-soak-in-progress).
+
+### h2-REF (served 2026-10-28 17:22:58 CDT → 2026-10-29 10:07pm CDT; now the rollback lane; `results/2026-10-28-h2-splitkv-ap2/`)
+
+*(Corrected 2026-10-29: this heading said "h2-REF = the serving release". Pg61 replaced it on 2026-10-29.)*
 
 Bundle: [`results/2026-10-28-h2-splitkv-ap2/`](results/2026-10-28-h2-splitkv-ap2/README.md) — `throughput.csv` (every BRRR, lib, per-class, prefill and 1M cell for A / S8 / S4
 / A2), the frozen verdict and its script, per-arm `raw/<arm>/` (facts, engagement, faults, Xid, lib/ttft/onem/probe/soak
@@ -676,7 +939,7 @@ guard verdict and W11 fault forensics, the h1 card verdicts, the side-extension 
 launchers. Headline: **coding C1 484.5 tok/s (BRRR padded codegen 2K, T=0) vs 467.5 for h1-REF controls = 1.036×,
 10.67 vs 11.09/11.11 ms per step**; full table in the [2026-10-28 section](#2026-10-28-h2-ref--the-60945-guard-and-split-kv-attention-card-ap2-promoted).
 
-### h1-REF (served 2026-10-27 16:46 → 2026-10-28 17:13 CDT; now the rollback pair)
+### h1-REF (served 2026-10-27 16:46 → 2026-10-28 17:13 CDT; the rollback pair until 2026-10-29, now second-line behind h2-REF)
 
 Card H1 (2026-10-27): L2 attention/indexer key-sharing + #61161 on v27, A → C → A2. BRRR 2K C1 T=0 step C 11.066 ms vs
 A 11.208 / A2 11.157 (−0.117 ms vs mean, −0.091 vs min against a −0.100 bar → `SUBBAR`), 150/150 shared tables
@@ -788,6 +1051,48 @@ in prefill (2,062 incumbent); RTX p99 ≤ 194 W against its 300 W cap. Full tabl
 
 ## Known limits
 
+**Pg61 (the serving config since 2026-10-29):**
+
+* **Still being tested.** The 48 h soak runs to Saturday 2026-10-31 10:14pm CDT, and the recipe stays
+  `experimental`. Any restore or card restarts the clock.
+* **v3 timeout semantics, and the `PEER3_SPINS=1e12` requirement.** On a peer tier v3 wait timeout, all three v3
+  wait sites (peer3 `finish_kernel`, the boundary fold, the MegaMoE fork's W6 fold) skip the call's cold-expert adds
+  and keep streaming tokens. Those tokens are wrong. The timeout count lives only in GB300 device memory, and his
+  default is 20,000,000 polls. Pg61 therefore runs `PEER3_SPINS=1000000000000`, as plain digits because
+  `fastpath_peer3` parses it with `int()` and `1e12` would crash the boot. A dead or late RTX then hangs the GB300
+  instead, and `sidecar_watchdog_p3.py` turns the hang into a fail-stop in ~3 s. **The watchdog refuses to arm (exit 3)
+  unless the server env carries it.** Do not serve his engine with the default spins. Peer tier v2 traps on a timeout,
+  so it already fails loud.
+* **Clients killed by a trip see no `finish_reason`.** In G3b the streams simply ended, with no `finish_reason` and
+  no HTTP error, because the server was killed mid-stream. Callers must treat a missing `finish_reason` as a failure,
+  not as a short answer.
+* **The final watchdog file has not fired under fault injection.** The G3b trip ran the version from before a
+  log-ordering fix (log the server kill, unpause, then stop the sidecar). The fixed file passes 13/13 unit tests and
+  ran armed through G4, G5 and the cutover with 0 trips.
+* **MMLU-Pro +2.4 pt is unexplained.** In T3 Pg61 read 87.7 % against h2-REF's 85.3 % (paired 10 lost / 34 gained,
+  p < 0.001). It is not answer length: median completions were 313 vs 310 tokens, and neither container sets a
+  reasoning-effort default. Runaways to the 131K cap (14 vs 20) explain at most 6 of the net +24 items. The cause was
+  not investigated. Read it as "no loss", not as a quality gain we understand.
+* **Tool-eval moves ±2 run to run at T=0 / C4.** In T3, Pg61 read 89 and 91 and h2-REF 89 and 93; in G2/G3, Pg read
+  91 and Pg61 89. One run cannot rank two configs.
+* **Prefill is slower than h2-REF.** His bench reads −8 to −10 % at 14K–114K, and the T1 scouts (N = 1) read −10 to
+  −17 % at 8K–128K. The 1M first token is 36.5 s (999,034 tokens) vs the v25 launch's 33.2 s. The probable cause is
+  129 cold experts per layer on the RTX (h255 map, vs our 89), with T > 64 on peer tier v2. A rowmap sweep
+  (h270/h285 under our policy) is planned after promotion; it costs KV tokens.
+* **No temperature > 0 quality instrument.** Every quality gate is T = 0 or teacher-forced. The #61161 port is
+  kernel-exact (G3) and costs no C1 (G5), but no T > 0 quality score has run.
+* **Decode beyond 128K** is covered only by one 1M needle on Pg (G1f, before the port).
+* **No per-layer cosine bring-up gate on peer tier v3.** `gate_cosine.py` was not run on Pg61. The end-to-end
+  evidence that the sidecar path is numerically right is the TF check against h2-REF at the control floor (Pg,
+  G1f), plus the T2/T3 gates.
+* **The launcher-built `libw6mk.so` (sha256 `b5416822…`) is not byte-identical to the hand build G3 tested
+  (`b072ee09…`)** — nvcc embeds build paths. Its device code is identical (both sm_103a cubins match,
+  `results/2026-10-29-pg61-garner-engine/libw6mk-cubin-identity.txt`). G4 and G5 measured the `b5416822` build.
+* **Garner's engine is not ours to support.** His tree is pinned at `8043a681`, and a newer commit is a new card. Our
+  patches touch only the five files listed in `patches/garner-8043a681/`.
+
+**h2-REF and earlier (the rollback lane):**
+
 * **v27 and every launch before h1-REF's 2026-10-28 14:42 restart carry a latent out-of-bounds read** in
   vLLM af7f9488's block-verification sampler.
   - **The read.** `_compute_local_residual_mass_kernel` reads `draft_sampled[logit_idx + 1]`. Its guard is sized
@@ -890,7 +1195,8 @@ in prefill (2,062 incumbent); RTX p99 ≤ 194 W against its 300 W cap. Full tabl
   reports some `mxfp8_gemm` shapes falling back to `tactic=-1`.
 * **Replay ON vs OFF is one rep**: agent replay r2 612.1 OFF vs 480.3 ON, but TTFT is better ON (0.19 vs 0.29 s).
   The lane runs ON. The +27% is not a law until repeated.
-* **vLLM v0.31.0 was NOT adopted** — quality identical, but knee C8 read −3.8% and the runaway cell tripped.
+* **vLLM v0.31.0 was NOT adopted** — quality identical, but knee C8 read −3.8% and the runaway cell tripped. *(Updated 2026-10-29: that SC5 verdict was for this recipe's own launch on v0.31.0 and stands. Pg61 serves on
+  v0.31.0 with Garner's engine, which is a different launch with its own gates; see the 2026-10-29 section.)*
 * **KV is declared, so vLLM no longer checks activation headroom at boot.** Measured margin: 1,395 MiB free on
   the GB300 at the stressed peak. Vision requests and C32 prefill bursts were not in that stress. 9.5 GiB was
   declined (~370 MiB would remain).
@@ -905,6 +1211,35 @@ in prefill (2,062 incumbent); RTX p99 ≤ 194 W against its 300 W cap. Full tabl
 * **The Docker Hub tag is gone**; the digest is the only reliable pull.
 
 ## Rollback
+
+**Pg61 → h2-REF (one command, on the Station):**
+
+```bash
+bash scripts/rollback-pg61-to-h2ref.sh --dry-run   # plan + preconditions; no docker changes
+bash scripts/rollback-pg61-to-h2ref.sh
+```
+
+[`scripts/rollback-pg61-to-h2ref.sh`](scripts/rollback-pg61-to-h2ref.sh) runs these steps:
+
+1. Refuses while a card runner is live, if the h2-REF pair (`dsv41-vllm-1017-h2-REF` + `-rtx`, stopped and kept since
+   the cutover) is missing, or if its watchdog argv file is missing.
+2. Sets MAINTENANCE and runs `launch-pg61.sh down`, which kills the p3 watchdog, stops `ds41` / `ds41-sidecar` and
+   removes the peer shm segments. Then it drops caches.
+3. Starts the h2-REF RTX container, waits for a **fresh** `serving` line, then starts the server and waits for
+   `/v1/models`.
+4. **Re-arms the v2 fail-stop watchdog from its argv file before judging the smoke**, so a bound lane is never left
+   unguarded.
+5. Runs one smoke, then clears MAINTENANCE and writes an owner line. A failed smoke leaves the lane in MAINTENANCE,
+   with the watchdog armed.
+
+The **cutover** in the other direction exercised the `launch-pg61.sh up` path. **The rollback script has not run
+end to end on the box**; the cutover calls its `--dry-run`. The same restore sequence, in the card runners' own
+code, brought h2-REF back after G3, G3b, G4 and G5: bound in 420–425 s, smoke OK, watchdog armed. On a fresh box,
+h2-REF is `scripts/start-h2ref.sh` (below). **Before any
+rollback after a p3 watchdog trip,** read `$WORK/wdp3.log`, `docker logs ds41-sidecar` and `journalctl -k | grep Xid`.
+The trip leaves the lane down on purpose.
+
+**h2-REF → h1-REF and older pairs** (unchanged from the 2026-10-28 round):
 
 **h2-REF → h1-REF (guard, no split)**: the same script with an explicit pair and h1-REF's watchdog argv. h1-REF
 mounts the same guarded overlay file, so this rollback keeps the #60945 fix:
@@ -974,9 +1309,33 @@ running the rollback by hand; nothing auto-starts the incumbent behind a wrong-t
 
 ## Credits
 
-This recipe is a productionised descendant of someone else's recipe, and the ordering here is deliberate.
+This recipe is a productionised descendant of other people's recipes, and the ordering here is deliberate.
 
-* **[RonanLabsAI](https://github.com/RonanLabsAI/dgx-station-frontier) — the sidecar recipe this lane runs.**
+**Engines this recipe runs:**
+
+* **[Garner McCloud](https://github.com/garnermccloud/dgx-station-recipes): the engine the serving config (Pg61)
+  runs, since 2026-10-29.**
+  - **Pin.** [`garnermccloud/dgx-station-recipes`](https://github.com/garnermccloud/dgx-station-recipes) @
+    [`8043a6811a5feda70fdfb6e827eebb2ec25c65d1`](https://github.com/garnermccloud/dgx-station-recipes/tree/8043a6811a5feda70fdfb6e827eebb2ec25c65d1/deepseek-v4.1-flash),
+    `deepseek-v4.1-flash/`, MIT.
+  - **What is his:** the `serve/serve.sh` launcher, the 29-component `DS41_FASTPATH` layer (fused drafter tails,
+    decode/pre-attention paths, suffix drafting, `topp_fast`, Engram side-streams, fast load, cold-skip,
+    `a12_*`), peer tier v3 (SM120 block-scaled QMMA on the RTX), the DeepGEMM MegaMoE scheduling fork, the
+    `rowmap-mix-v1-h255.json` split, the FlashInfer tune file, his overlays and his `verify/bench_full.py`.
+    Cards G0–G5 used that bench, and it is the instrument for every "fixed coding prompt" number here.
+  - **The speed is his.** His release, as shipped, reproduces on our Max-Q card within 0.4 % of his published
+    step rate (Card G0). Of its 1.43× over h2-REF, our policy keeps 1.26× steps/s (G1); the per-class C1 headline
+    is 1.31×.
+  - **What is ours on top:** policy hooks, the #61161 port into his fused drafters, the #60945 guard overlay, the
+    p3 watchdog and `PEER3_SPINS`, the gates, and the launcher/cutover/rollback scripts
+    ([`patches/garner-8043a681/`](patches/garner-8043a681/README.md)).
+  - **Upstream.** We reported the #60945 crash and the missing #61161 seed mix to him in
+    [issue #1](https://github.com/garnermccloud/dgx-station-recipes/issues/1) (opened by jmeadlock, with two
+    follow-up comments). His tree is not vendored here.
+  - *(He was never listed here as a measured-against peer, so there is no earlier credit to reconcile. He appears
+    only as the engine we run.)*
+* **[RonanLabsAI](https://github.com/RonanLabsAI/dgx-station-frontier): the sidecar recipe h2-REF (the rollback
+  lane) and every release before Pg61 run.**
   The two-step `sidecar` → `server` deployment shape, the launcher we adapted line by line, the b12x peer
   tier-2 protocol in production form, the `rowmap-mix-v1` calibration and its Stage-0 variants, the
   `MEGA_PEER_CHECK` agreement gate as a bring-up requirement, the 1M long-context work, and the
@@ -989,18 +1348,24 @@ This recipe is a productionised descendant of someone else's recipe, and the ord
 * **[original-el8](https://github.com/original-el8/dgx-station-gb300-research)** — the M3 hook (hot/cold split
   inside DeepGEMM MegaMoE, cold path on the FlashInfer TRT-LLM kernel), `peer_tier2`/`peer_fused2`, and the
   `rowmap-static-v1.json` map this recipe ships unmodified, @87af662, Apache-2.0. Without the hook there is no
-  hot/cold split to give the second GPU.
+  hot/cold split to give the second GPU. Garner's engine (Pg61) is built on the same hook lineage; his
+  ACKNOWLEDGEMENTS name original-el8 as where his recipe started.
 * **[b12x](https://github.com/local-inference-lab/b12x)** (Apache-2.0) — the FP4 MoE kernels the sidecar
   replays out of its 560 captured graphs.
 * **vLLM** — [#58132](https://github.com/vllm-project/vllm/pull/58132) bounded decoder replay, the
   `deep_gemm_mega_moe` backend, and the UVA offloader the sibling recipe uses.
+**Measured against, not run** (peer lanes and harnesses whose numbers we quote beside ours):
+
 * **[Fraser Price](https://huggingface.co/fraserprice/DeepSeek-4.1-Flash-1017-BRRR)** — the BRRR recipe for
   DeepSeek-V4.1-Flash-1017 on 4× RTX PRO 6000 (fused decode kernels, `decoder.cu`), its published results table, and
   `bench.py`, which our `peerbench.py` ports with his credit header (Apache-2.0). His table is the "theirs" column in
   the 2026-10-26 side-by-side.
+**Upstream fixes and algorithms we run:**
+
 * **vLLM** — [#60945](https://github.com/vllm-project/vllm/pull/60945) (the out-of-bounds lookahead fix we
-  backported verbatim; its compute-sanitizer report matched our fault byte for byte),
-  [#61161](https://github.com/vllm-project/vllm/pull/61161) (fresh block-verification draws) and
+  backported verbatim, into h1/h2-REF and into the Pg61 overlay on v0.31.0; its compute-sanitizer report matched our fault byte for byte),
+  [#61161](https://github.com/vllm-project/vllm/pull/61161) (fresh block-verification draws; for Pg61 we also
+  ported its `spec_step_seed` into Garner's three fused draft samplers) and
   [#57711](https://github.com/vllm-project/vllm/pull/57711) (split-KV MegaAttn decode, closed unmerged; our overlay
   is derived from it). **vllm-project/FlashMLA** — [PR #25](https://github.com/vllm-project/FlashMLA/pull/25), the
   split-KV mega decode kernel the h2 side extension is built from. Our part: building it as a side extension under
@@ -1015,11 +1380,27 @@ measurement that 285/99 fails its pre-registered cosine bar; running the agreeme
 publishing the check distribution; the ack-before-bookkeeping patch to `peer_server2.py`
 ([`patches/peer-server2-local.patch`](patches/peer-server2-local.patch)); the fail-closed watchdog and the
 fail-stop serving policy; the bracketed control→candidate→control discipline on every speed cell; and the
-quality gates (teacher-forced flips, BFCL, per-class decode) applied to a sidecar lane at all. Measurements,
+quality gates (teacher-forced flips, BFCL, per-class decode) applied to a sidecar lane at all. For Pg61:
+the crash bisect that tied his C32 deaths to the unguarded #60945 read, the #61161 port into his fused drafters, the
+finding that a peer tier v3 timeout fails open and the `PEER3_SPINS` + p3 watchdog that close it, the policy hooks,
+and the G0–G5 gates. Measurements,
 gate design and the write-up: **J&M Recipes** (James Meadlock, Milo). Session note: the numbers were produced
 with a Claude Opus 5.5 orchestrator on the research side; the recipe was written from the receipts.
 
-## Finalisation checklist (2026-10-26; updated 2026-10-28 for h2-REF)
+## Finalisation checklist (2026-10-26; updated 2026-10-28 for h2-REF and 2026-10-29 for Pg61)
+
+**2026-10-29 (Pg61, the serving config).** What stands between Pg61 and `status: verified`:
+
+| item | state |
+|---|---|
+| T0 + T2 (needle-checksum, GSM8K-200 paired) + held-out BFCL | **DONE on Pg** (G2) and **re-run on Pg61** (G3: GSM8K-200 192/200, BFCL held-out 1026/1311 = 78.26 %) |
+| **T3 promotion bench** | **DONE 2026-10-29** (Card G4): all six pre-registered bars PASS vs h2-REF in the same window, with Pg61 booted by the published launcher. This is the first T3 recorded in this recipe |
+| fail-closed guard + trip path under fault injection | **DONE** (G3b: trip in ~3 s, server killed). The post-G3b fixed watchdog file has not itself been fault-injected |
+| rollback script | **written** ([`scripts/rollback-pg61-to-h2ref.sh`](scripts/rollback-pg61-to-h2ref.sh)); `--dry-run` is called by the cutover; not run end to end on the box |
+| gate stamps | **not re-stamped for Pg61** in this PR. h2-REF's stamps moved to `notes:` in `recipe.yaml`, so `verified` cannot pass on the wrong config |
+| **remaining: 48 h soak** | **running**: clock started at the cutover, 2026-10-29 10:14pm CDT (Thursday); ends **2026-10-31 10:14pm CDT (Saturday)** if no restore or card takes the lane, with the M4 lane check silent throughout |
+| **remaining: temperature > 0 quality** | not run. The #61161 port is kernel-exact and costs no C1, but there is no T > 0 quality score. Candidates: full-vocabulary KLD over forced tokens, or seeded GSM8K at T = 1, Pg61 vs h2-REF |
+| follow-up (not a gate) | rowmap sweep h270 / h285 under our policy, to buy back prefill (−8 to −17 %) at a KV-token cost |
 
 **2026-10-28:** the serving release moved from v27 to h1-REF (10-27) and then to h2-REF (10-28). Rows below marked DONE
 were done **on v27**. For h2-REF: Card AP2 stamped quality and performance on its own gates; T2, BFCL held-out,

@@ -1,0 +1,19 @@
+# read-only snapshot over ssh after the cutover (docker ps/inspect, watchdog status file, BUILD-SHA256SUMS -c,
+# /v1/models, journalctl -k). Nothing was started, stopped or exec'd.
+date: 2026-10-29 22:20:03 CDT (2026-10-30T03:20:03Z)
+containers:
+ds41	Up 10 minutes	vllm/vllm-openai:v0.31.0
+ds41-sidecar	Up 11 minutes	vllm/vllm-openai:v0.31.0
+stopped-and-kept rollback pair:
+dsv41-vllm-1017-h2-REF	Exited (0) 13 minutes ago
+dsv41-vllm-1017-h2-REF-rtx	Exited (137) 12 minutes ago
+ds41 .Image: sha256:c1c9f6fd5c109ba7f0546a59f5b2f15fb87f64c77782e90a27b648b42a8e67c3
+ds41-sidecar .Image: sha256:c1c9f6fd5c109ba7f0546a59f5b2f15fb87f64c77782e90a27b648b42a8e67c3
+vllm/vllm-openai:v0.31.0 RepoDigests: [vllm/vllm-openai@sha256:c1c9f6fd5c109ba7f0546a59f5b2f15fb87f64c77782e90a27b648b42a8e67c3]
+PEER3_SPINS in server env: PEER3_SPINS=1000000000000
+p3 watchdog procs: 1
+wdp3.status.json: {"t": 1793330404.4583752, "server_up": true, "v2": [1440, 1440, 0], "v3": [2, 43461, 43461, 0], "timeouts_base": 0, "mode": "enforce", "trip": null, "stall_s": 2.0, "v": "p3"}
+BUILD-SHA256SUMS check: OK (114 files)
+TRIP lines in wdp3.log: 0
+/v1/models bound: 1
+new Xid since cutover (journalctl -k --since 22:07): 0

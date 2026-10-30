@@ -1,0 +1,200 @@
+{
+ "schema": "ds41-bench-full-v1",
+ "started": "2026-10-29T22:21:15+0000",
+ "environment": {},
+ "settings": {
+  "base_url": "http://127.0.0.1:30006",
+  "model": "dsv41-flash-uva",
+  "out": "/out/bench.json",
+  "env_file": null,
+  "skip": "coding,prefill,capacity,quality",
+  "reps": 10,
+  "coding_reps": 5,
+  "prefill_reps": 3,
+  "window": 60.0,
+  "warmup": 20.0,
+  "conc": "8,32",
+  "capacity_n": 16,
+  "capacity_tokens": 110000,
+  "capacity_max_tokens": 2500,
+  "min_acc": 95.0
+ },
+ "fixed": {
+  "shape": "fixed prompt, greedy, thinking off, max_tokens 2048, nonce line first",
+  "runs": [
+   {
+    "prompt_tokens": 2671,
+    "completion_tokens": 2048,
+    "ttft_ms": 133.2,
+    "out_tok_s": 655.5,
+    "tokens_per_step": 5.491,
+    "steps_s": 119.4
+   },
+   {
+    "prompt_tokens": 2669,
+    "completion_tokens": 2048,
+    "ttft_ms": 131.9,
+    "out_tok_s": 645.5,
+    "tokens_per_step": 5.426,
+    "steps_s": 119.2
+   },
+   {
+    "prompt_tokens": 2669,
+    "completion_tokens": 2048,
+    "ttft_ms": 131.3,
+    "out_tok_s": 650.5,
+    "tokens_per_step": 5.459,
+    "steps_s": 119.2
+   },
+   {
+    "prompt_tokens": 2666,
+    "completion_tokens": 2048,
+    "ttft_ms": 132.6,
+    "out_tok_s": 666.3,
+    "tokens_per_step": 5.625,
+    "steps_s": 118.8
+   },
+   {
+    "prompt_tokens": 2672,
+    "completion_tokens": 2048,
+    "ttft_ms": 135.7,
+    "out_tok_s": 640.3,
+    "tokens_per_step": 5.364,
+    "steps_s": 119.5
+   },
+   {
+    "prompt_tokens": 2671,
+    "completion_tokens": 2048,
+    "ttft_ms": 130.0,
+    "out_tok_s": 614.6,
+    "tokens_per_step": 5.153,
+    "steps_s": 119.5
+   },
+   {
+    "prompt_tokens": 2670,
+    "completion_tokens": 2048,
+    "ttft_ms": 132.7,
+    "out_tok_s": 675.5,
+    "tokens_per_step": 5.681,
+    "steps_s": 119.1
+   },
+   {
+    "prompt_tokens": 2675,
+    "completion_tokens": 2048,
+    "ttft_ms": 134.1,
+    "out_tok_s": 644.8,
+    "tokens_per_step": 5.414,
+    "steps_s": 119.4
+   },
+   {
+    "prompt_tokens": 2674,
+    "completion_tokens": 2048,
+    "ttft_ms": 128.6,
+    "out_tok_s": 662.4,
+    "tokens_per_step": 5.571,
+    "steps_s": 119.1
+   },
+   {
+    "prompt_tokens": 2668,
+    "completion_tokens": 2048,
+    "ttft_ms": 131.7,
+    "out_tok_s": 582.0,
+    "tokens_per_step": 4.849,
+    "steps_s": 120.3
+   }
+  ],
+  "summary": {
+   "out_tok_s": {
+    "n": 10,
+    "median": 648.0,
+    "q1": 641.425,
+    "q3": 660.675
+   },
+   "ttft_ms": {
+    "n": 10,
+    "median": 132.25,
+    "q1": 131.4,
+    "q3": 133.075
+   },
+   "tokens_per_step": {
+    "n": 10,
+    "median": 5.442,
+    "q1": 5.377,
+    "q3": 5.551
+   },
+   "steps_s": {
+    "n": 10,
+    "median": 119.3,
+    "q1": 119.125,
+    "q3": 119.475
+   },
+   "completion_tokens": {
+    "n": 10,
+    "median": 2048.0,
+    "q1": 2048.0,
+    "q3": 2048.0
+   },
+   "prompt_tokens": {
+    "n": 10,
+    "median": 2670.5,
+    "q1": 2669.0,
+    "q3": 2671.75
+   }
+  }
+ },
+ "gsm8k_c1": {
+  "conc": 1,
+  "greedy": false,
+  "window_s": 60.0,
+  "warmup_s": 20.0,
+  "aggregate_tok_s": 459.5,
+  "per_stream_tok_s": 459.5,
+  "tokens_per_step": 3.85,
+  "preemptions": 0.0,
+  "request_errors": 0
+ },
+ "greedy_c1": {
+  "conc": 1,
+  "greedy": true,
+  "window_s": 60.0,
+  "warmup_s": 20.0,
+  "aggregate_tok_s": 545.1,
+  "per_stream_tok_s": 545.1,
+  "tokens_per_step": 4.651,
+  "preemptions": 0.0,
+  "request_errors": 0
+ },
+ "streams": [
+  {
+   "conc": 8,
+   "greedy": false,
+   "window_s": 60.0,
+   "warmup_s": 20.0,
+   "aggregate_tok_s": 1439.5,
+   "per_stream_tok_s": 179.9,
+   "tokens_per_step": 3.045,
+   "preemptions": 0.0,
+   "request_errors": 0
+  },
+  {
+   "conc": 32,
+   "greedy": false,
+   "window_s": 60.0,
+   "warmup_s": 20.0,
+   "aggregate_tok_s": 2604.1,
+   "per_stream_tok_s": 81.4,
+   "tokens_per_step": 3.054,
+   "preemptions": 0.0,
+   "request_errors": 0
+  }
+ ],
+ "gates": {
+  "tool_call": null,
+  "needles": null,
+  "gsm8k": null,
+  "capacity": null
+ },
+ "finished": "2026-10-29T22:27:13+0000",
+ "status": "PASS",
+ "failed_stages": []
+}

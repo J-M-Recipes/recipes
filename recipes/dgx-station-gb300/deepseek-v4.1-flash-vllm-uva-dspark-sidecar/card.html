@@ -44,54 +44,55 @@
   <div class="top">
     <div>
       <h1>DeepSeek-V4.1-Flash · 1× DGX Station GB300 + RTX PRO 6000 sidecar</h1>
-      <div class="sub">The 89 cold experts per layer are computed on the second GPU in the chassis, not read from Grace. Full 1M context. h2 adds split-KV attention for the one-user verify step and the sampler guard that ended a 32-user crash.</div>
+      <div class="sub">Garner McCloud&#x27;s DS4.1 engine (dgx-station-recipes @ 8043a681) under our policy: stock weights, fp8 KV, the full 1M context. 129 cold experts per layer are computed on the RTX 6000 through his peer tier v3, behind a fail-closed watchdog. Still being tested: 48 h soak to Sat 10-31 10:14pm CDT.</div>
     </div>
-    <div class="brand"><b>J-M-RECIPES</b><br>h2-REF = v27 + L2 + #60945 guard + split-KV ×4 · :30006 since 10-28 17:22 · 2026-10-28<br>status: experimental</div>
+    <div class="brand"><b>J-M-RECIPES</b><br>Pg61 · experimental · soak · 2026-10-29<br>status: experimental</div>
   </div>
   <div class="pills">
-<span class="pill type"><b>MoE</b> · 384 routed experts + Engram; 295 hot in HBM, 89 computed on the RTX 6000</span>
+<span class="pill type"><b>MoE</b> · 384 routed experts + Engram; 255 hot in HBM, 129 computed on the RTX 6000 (Garner&#x27;s h255 map)</span>
 <span class="pill"><b>552B</b> total · <b>8B prefill / 16B decode</b> active</span>
 <span class="pill">checkpoint <b>510.3 GB</b> · rev <span class="mono">1bae0e10</span></span>
-<span class="pill">weights <b>as shipped · MXFP4 experts / FP8 attn+Engram · nothing re-quantized</b></span>
-<span class="pill">engine <b>vLLM <span class="mono">af7f9488c</span> · nightly-af7f9488 (sha256:3af6a45b) on BOTH GPUs · el8 hook @87af662 + L2 · b12x @2cc7f66a · #58132 + #61161 + #60945 overlays · FlashMLA PR #25 side .so 744a9de8</b></span>
-<span class="pill">memory <b>206.6 GiB hot experts in HBM + 66.2 GiB cold experts on the card · KV declared 8.5 GiB = 4.40M tok (4.2× one 1M request) · 48 GiB Grace prefix-KV tier · host carries Engram</b></span>
+<span class="pill">weights <b>as shipped · MXFP4 experts / FP8 attn+Engram · nothing re-quantized · fp8_ds_mla KV</b></span>
+<span class="pill">engine <b>vLLM <span class="mono">db9527a46873454610df6dbedf79a36d6bf1a7f6</span> · vllm/vllm-openai:v0.31.0 (sha256:c1c9f6fd) on BOTH GPUs · Garner engine @8043a681 (24 of 29 fast-path components, peer tier v3, MegaMoE fork) + 5 patches · #61161 + #60945 overlay</b></span>
+<span class="pill">memory <b>255 hot experts/layer in HBM + 129 cold on the card (98.5 GB allocated) · KV 11.70M tok at 1M (11.15× one 1M request; h2-REF 4.40M) · 48 GB host KV tier · host carries Engram</b></span>
   </div>
   <div class="grid">
-<div class="box"><div class="lbl">Decode · C1, mean of 5 reps (coding · BRRR padded codegen, 2K in, T=0)</div><div class="hero">484.5<small>tok/s</small></div><div class="note">Card AP2 arm S4 vs same-window h1-REF controls 464.9 / 467.5 → 1.036×; 10.67 vs 11.09 / 11.11 ms per step at 5.17 tok/step · temp-1 per-class C1: prose 291 · structured 317 · code 381 · shell 394 · tool-JSON 349 (0.99–1.05× of controls) · the split engages for 1 user only</div></div>
-<div class="box"><div class="lbl">Decode · C32 aggregate, synthetic filler, ctx 0</div><div class="hero">2583.3<small>tok/s</small></div><div class="note">llm-inference-bench 0.6.2, C1/C8/C32 × 0/64K in one process, crash-free · controls 2,578 / 2,587 (1.000×) · C8 1,154 · C32 @64K 2,592 · v25 real-text C16 1,577 / C32 2,400 on kbench (another harness)</div></div>
-<div class="box"><div class="lbl">Prompt reading · cold 64K prefill</div><div class="hero">42059<small>tok/s</small></div><div class="note">AP2 instrument, mean of 2, TTFT 1.56 s; controls 41,913 / 41,499 · 1M needle (900,372 tokens) first token 31.2 s · v25&#x27;s SC2 harness read 50,119 at 64K — compare within one card only</div></div>
+<div class="box"><div class="lbl">Decode · C1, mean of 3 seeds (5-class mean, temp 1.0 · prose 367 · structured 397 · code 495 · shell 530 · tool-JSON 464)</div><div class="hero">450.6<small>tok/s</small></div><div class="note">Card G5, same window: h2-REF 343.6 → 1.31× (1.26–1.36× per class) · Pg without the #61161 port 1.012× (the port is free) · his fixed coding prompt, greedy: 648 tok/s at 119.3 steps/s, 5.44 tok/step</div></div>
+<div class="box"><div class="lbl">Decode · C32 aggregate, GSM8K T=1, 60 s window</div><div class="hero">2604<small>tok/s</small></div><div class="note">his bench_full.py (Card G3) · C8 1,440 · h2-REF G1 controls C32 1,490 / 1,463 · T1 filler (G4) C8 1,288 vs 1,124 (1.15×) · the C32 step that died unguarded in G1 survives every window</div></div>
+<div class="box"><div class="lbl">Prompt reading · uncached 114K prefill (his bench)</div><div class="hero">40987<small>tok/s</small></div><div class="note">SLOWER than h2-REF: 44,606 same day → −8 % (14K–114K −8 to −10 %) · T1 scouts −10 to −17 % · 1M needle (999,034 tokens) first token 36.5 s · rowmap sweep planned</div></div>
   </div>
   <div class="row2">
-<div class="box"><div class="lbl">Guesser</div><div class="kv"><b>DSpark</b> · in-checkpoint MTP (mtp.0–2), 1017 revision<br>k = 5 at 1–4 seqs, 3 at 5–8 and 9–32 · probabilistic drafting · block verification · h2 unchanged (the k=3 bands are what exposed the #60945 read)<br><span class="acc">accept: <span>BRRR codegen C1 (h2) <b>5.17 tok/step</b></span> <span>temp-1.0 C1 per class (BR2, v27) <b>prose 2.85 · structured 3.03 · code 3.83 · shell 3.98 · tool-JSON 3.63</b></span> <span>real-text C1 (v25) <b>2.96</b></span> <span>k=9 <b>−8…−21% speed</b></span></span></div></div>
-<div class="box"><div class="lbl">Guard — two failure modes that look like success</div><div class="kv">sidecar timeout: <b>VLLM_EXP_PEER_SPINS=2e9 + fail-closed watchdog, enforce, PPID 1 · live 10-28: 0 timeouts, trip null</b><br>#60945 sampler read: <b>k=3 at 5–32 users read 4 B past a 512 B tensor → CUDA illegal address when it ended a segment · killed 5 card runs · guard 2d43d513, bit-identical</b><br>split-KV quarantine: <b>1 request, s_q 6, 4 splits · side .so 744a9de8 next to the untouched _flashmla_C · 8 splits = NO</b><br>bring-up cosine: <b>v25 static min 0.99906 · v25m map R2 PASS (max e 0.0149 vs 0.0465)</b></div></div>
-<div class="box"><div class="lbl">What h2 bought, and what it did not</div><div class="kv">C1 by class, temp 1: <b>prose 1.047 · structured 1.044 · code 1.043 · shell 1.021 · tool-JSON 0.992×</b><br>8 / 32 users: <b>0.989–1.011× / 1.000× — the split never engages there</b><br>lib C1 at 0 / 64K: <b>253.4 / 278.6 tok/s (1.036 / 1.069× of the control mean)</b><br>prefill / TTFT 8K–128K: <b>1.001–1.021× / 0.980–0.999× of the worse control</b><br>power: <b>module p99 1,353 W in 64K prefill (v25) — all numbers under the chassis cap</b></div></div>
+<div class="box"><div class="lbl">Guesser</div><div class="kv"><b>DSpark + Garner&#x27;s suffix drafting</b> · in-checkpoint MTP (mtp.0–2), 1017 revision · his fused drafter tails with the vLLM #61161 seed mix ported in<br>k = 5 at 1–4 seqs, 3 at 5–8 and 9–32 · probabilistic drafting · block verification · same spec config as h2-REF and as his release<br><span class="acc">accept: <span>temp-1.0 C1 per class (G5, Pg61) <b>prose 3.02 · structured 3.27 · code 4.30 · shell 4.65 · tool-JSON 3.97</b></span> <span>h2-REF, same window <b>2.96 · 3.21 · 3.82 · 4.03 · 3.68</b></span> <span>fixed coding prompt, greedy (G3) <b>5.44 tok/step</b></span></span></div></div>
+<div class="box"><div class="lbl">Guard — three failure modes that look like success</div><div class="kv">peer tier v3 timeout: <b>skips the cold-expert add silently → PEER3_SPINS=1e12 + p3 watchdog (fail-stop) · G3b: sidecar paused → trip in ~3 s · live: trip null, 0 timeouts</b><br>#60945 sampler read: <b>unguarded in v0.31.0 · killed both G1 arms + 4 bisect arms at C32 · layout-dependent · the 3-line guard (edc8f8f4) fixes it</b><br>#61161 draws: <b>absent in v0.31.0 and his fused drafters (T&gt;0 bias) · ported: exact at every step on GPU · costs 0 C1 (1.012×)</b><br>48 h soak: <b>running since 10-29 10:14pm → Sat 10-31 10:14pm CDT · lane check every 10 min · rollback = h2-REF, one command</b></div></div>
+<div class="box"><div class="lbl">What Pg61 bought, and what it costs</div><div class="kv">C1 by class, temp 1: <b>prose 1.27 · structured 1.26 · code 1.34 · shell 1.36 · tool-JSON 1.30× h2-REF</b><br>T1 filler C1 / C4 / C8: <b>1.21–1.31× / 1.12–1.18× / 1.12–1.15× (0–128K)</b><br>KV at 1M: <b>11.70M tokens vs 4.40M (util 0.95, his h255 map)</b><br>prefill / 1M first token: <b>−8 to −17 % / 36.5 s — the price of 129 cold experts per layer</b><br>policy kept: <b>stock weights · fp8 KV · 1M ctx · no sampling override · 24 of 29 components</b></div></div>
   </div>
   <div class="fid"><div class="lbl">Output fidelity — does the recipe change what the model says?</div>
     <ul>
-<li class="ok">Weights unchanged: 1017 checkpoint as shipped, 0 re-quantized bits; the sidecar reads the same shards</li>
-<li class="ok">Crash-free hard gate (Card AP2): 0 new Xid, 0 engine errors, 0 GPU-fault lines, alive at end on all 4 arms under a 2 s watcher — C1/C8/C32 × 0/64K in one process included — and during the promotion</li>
-<li class="ok">1M needle on h2: 900,372 tokens, found, finish stop, first token 31.17 s (31.24 s on the promoted container)</li>
-<li class="ok">#60945 guard is bit-identical: kernel A/B 100/100 cases, the row it stops reading is never consumed; compute-sanitizer 20 → 0 invalid reads (Card W12)</li>
-<li class="meas">Split-KV is NOT bit-identical (summation order): TF vs control W 2.784 (bar 3.192), confident flips 4 = bar 4, agent/tool 0; raw flips 2.194% vs the controls&#x27; 2.165%</li>
-<li class="ok">Gauntlet 12/12 · #62417 probe 16/16 cells · long-thinking soak 4/4 correct, 0 loops (h2 arm)</li>
-<li class="ok">Speculation is target-verified (DSpark drafts are accepted by the full model)</li>
-<li class="ok">One public bench we ran: fraserprice&#x27;s BRRR codegen harness — 2K/C1 484.5 tok/s at 5.17 tok/step (h2) vs their 4× RTX PRO 6000 703</li>
-<li class="pend">T2 (needle-checksum, GSM8K-200), BFCL held-out and tool-eval not re-run on h1/h2 — v27 read 500/500, 192/200 (p 1.0), 77.27%</li>
-<li class="pend">48 h soak — none has completed on any sidecar config</li>
-<li class="pend">Temperature &gt; 0 quality instrument — block verification and #61161 act only there</li>
+<li class="ok">Weights unchanged: 1017 checkpoint as shipped; fp8_ds_mla KV (his nvfp4 KV off); his three numerics-changing components (w8oproj, lowb_aux, MXFP8 draft head) off</li>
+<li class="ok">T3 (Card G4), launcher-booted, vs h2-REF same window: 6/6 pre-registered bars — needle-checksum 500/500, GSM8K-1319 1279 vs 1278 (p 1.0), MMLU-Pro-1000 87.7 vs 85.3 % (no loss; +2.4 pt unexplained)</li>
+<li class="ok">BFCL held-out (live_simple + live_multiple): 1026/1311 = 78.26 % on Pg and on Pg61 vs v27 77.27 % (+0.99 pt, paired p 0.011)</li>
+<li class="ok">Teacher-forced vs h2-REF (Pg, G1f): agent/tool confident flips 0; prose 0.011 % (bar 0.05 %); W 2.91 inside the 1.25 × calib bar; ppl 1.5185 = control</li>
+<li class="ok">Gauntlet 12/12 · 1M needle (999,034 tokens) found + post-probe · C32 windows survived on every guarded arm</li>
+<li class="ok">#61161 port is kernel-exact: w6 30/30 and w5 120/120 per step vs the eager reference (stock: step 0 only); T=0 streams identical</li>
+<li class="ok">Fail-closed: sidecar paused under 4 streams → no token after the stall, watchdog trip ~3 s, server killed (G3b); 0 trips through G4, G5 and the cutover</li>
+<li class="ok">Speculation is target-verified (DSpark + suffix drafts are accepted by the full model)</li>
+<li class="meas">Prefill is slower than h2-REF: −8 to −10 % (his bench, 3 reps), −10 to −17 % (T1 scouts, N=1); 1M first token 36.5 s</li>
+<li class="pend">48 h soak — running to Sat 2026-10-31 10:14pm CDT; any restore restarts it</li>
+<li class="pend">Temperature &gt; 0 quality instrument — every gate here is T=0 or teacher-forced</li>
+<li class="pend">Per-layer cosine bring-up gate on peer tier v3 — not run; the launcher-built libw6mk.so has no cubin-compare receipt vs the G3 build</li>
     </ul>
   </div>
   <div class="fid"><div class="lbl">Agent claim card — fixed protocol, held-out sibling, cost per solved task</div>
     <ul>
 <li class="ok">protocol <span class="mono">harness/protocol.yaml</span> sha256 <span class="mono">61c2d22b6351</span> · T=0, no thinking, tool_choice auto, 1 retry, C8 BFCL / C16 fund tools, 4-turn fund conversations (same protocol file as the GB300-only sibling)</li>
-<li class="ok">dev suite (decides candidacy): <b>BFCL dev on v25 (simple_python 400 + multiple 200)</b> 556/600 solved (92.67%) · sidecar v25 arm C, 2026-10-22; not re-run on h1/h2. Decides candidacy only</li>
-<li class="ok">held-out sibling (decides promotion): <b>BFCL live sibling on v27 (live_simple 258 + live_multiple 1,053)</b> 1013/1311 solved (77.27%)</li>
+<li class="ok">dev suite (decides candidacy): <b>BFCL dev on v25 (simple_python 400 + multiple 200)</b> 556/600 solved (92.67%) · sidecar v25 arm C, 2026-10-22; not re-run on Pg61. Decides candidacy only</li>
+<li class="ok">held-out sibling (decides promotion): <b>BFCL live sibling on Pg61 (live_simple 258 + live_multiple 1,053)</b> 1026/1311 solved (78.26%)</li>
 <li class="pend">Pass@1 · $ / solved pair: pending (needs held-out run + priced cost)</li>
     </ul>
   </div>
   <div class="foot">
-    <span>recipe <span class="mono">recipes/dgx-station-gb300/deepseek-v4.1-flash-vllm-uva-dspark-sidecar</span> · run <span class="mono">2026-10-28-h2-splitkv-ap2</span></span>
-    <span>github.com/J-M-Recipes/recipes · al-engr.com · sidecar recipe + kbench harness: RonanLabsAI (dgx-station-frontier) · hook: original-el8 · split-KV: FlashMLA PR #25 / vLLM #57711 — credited in the README</span>
+    <span>recipe <span class="mono">recipes/dgx-station-gb300/deepseek-v4.1-flash-vllm-uva-dspark-sidecar</span> · run <span class="mono">2026-10-29-pg61-garner-engine</span></span>
+    <span>github.com/J-M-Recipes/recipes · al-engr.com · engine: Garner McCloud (garnermccloud/dgx-station-recipes @ 8043a681, MIT) · hook lineage: original-el8 · sidecar shape: RonanLabsAI — credited in the README</span>
   </div>
 </div>
 </body></html>
