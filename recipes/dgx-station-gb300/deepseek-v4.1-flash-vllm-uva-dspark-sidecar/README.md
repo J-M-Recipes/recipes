@@ -220,6 +220,30 @@ draft step, pooled over the three seeds from the spec-decode counter deltas. Mos
 
 T1 is llm-inference-bench 0.7.7 synthetic filler at the server's default temperature, C ≤ 8 from the M4.
 
+### What a caller sees (live lane, 2026-10-30)
+
+The headline and T1 cells are bench instruments. This is what one request gets, measured on the serving Pg61 lane
+2026-10-30 7:02–7:12am CDT from a LAN client during the soak (light load, the lane stayed up): chat completions,
+streaming, thinking on the server's default budget, temperature 0. Instrument and raw JSON:
+[`results/2026-10-29-pg61-garner-engine/caller-2026-10-30/`](results/2026-10-29-pg61-garner-engine/caller-2026-10-30/).
+
+| measure | Pg61 | h2-REF, 2026-10-28 (closed PR #100) |
+|---|---:|---:|
+| single stream, 400-token reply | **343 tok/s** (median of 3; 303 / 343 / 346) | 258 tok/s |
+| 40-token turn, complete | **91 ms** (median of 5) | 162 ms |
+| 8 concurrent streams × 400 tokens | **1,088 tok/s** aggregate (median of 3; 858 / 1,088 / 1,107) | 926 (900–943) |
+| first token, idle | 35 ms | 36 ms |
+| quiet single-stream step (median inter-chunk gap) | 7.5 ms | ~14 ms |
+| worst-10 % gap while a 33K prompt is read | **132 ms** (median of 3; 131–135; max 623 ms once) | 155 ms |
+| that 33K prompt's first token | 0.87 s (median of 3; 0.9 / 0.9 / 1.4) | 0.57 s |
+
+The h2-REF column is a different, ad-hoc script on 2026-10-28; h2-REF is the stopped rollback and was not re-run
+against this instrument (doing so would end the soak). Read the column as context, not as a paired ratio. A chunk is
+one engine step (speculative decoding emits several tokens per step), so "step" is the inter-chunk gap. The 33K row
+counts only gaps inside the window in which the long prompt is being read; outside it the same stream's p90 is 8.5 ms.
+The long prompt's first token is slower than h2-REF's, consistent with the prefill cost below; a decoding stream
+stalls about as long per read chunk on either lane.
+
 ### Known costs
 
 - **Prefill is slower than h2-REF.** His `bench_full.py` (uncached, median of 3) reads **−8 to −10 %** at 14K–114K
