@@ -1,0 +1,23 @@
+2026-10-29 17:46:26 CDT [G3b] ===== CARD G3b START =====
+2026-10-29 17:46:26 CDT [G3b] ISOLATE on
+2026-10-29 17:47:36 CDT [G3b] h2-REF pair stopped (kept)
+2026-10-29 17:47:36 CDT [G3b] ---- ARM Pg61 env: DS41_MAXLEN=1048576 DS41_KV=fp8_ds_mla DS41_OFFLOAD_GB=48 DS41_EFFORT_DEFAULT=0 DS41_FASTPATH_COMPONENTS_OVERRIDE=tail_markov_fused,tail_swa_meta,tail_dflash_prep,tail_ctxkv,tail_replay_skip,tail_embed,attn,preattn,preattn_cand,preattn_index,preattn_compress,tail_draft_embed,boundary,suffix,topp_fast,tail_proj_side,engram_side,fastload,coldskip,peer3,megamoe,quant_producer,a12_retire,a12_memory_guard DS41_OVERLAY_58132_DIR=$HOME/dsv41/garner/ovl-61161 DS41_FASTPATH_DIR=$HOME/dsv41/garner/fastpath-61161 DS41_PEER3_SPINS=1000000000000
+2026-10-29 17:53:55 CDT [G3b] BOUND ds41-Pg61 after 5s
+2026-10-29 17:53:56 CDT [G3b] in container: rsu edc8f8f4c425 (want edc8f8f4c425) gumbel 6eac3e134833 (want 6eac3e134833) libw6mk b072ee0906338c29 (want b072ee0906338c29) w5 mix 1 PEER3_SPINS=1000000000000
+2026-10-29 17:53:56 CDT [G3b] boot Pg61: ACTIVE=[a12_memory_guard,a12_retire,attn,boundary,coldskip,engram_side,fastload,megamoe,peer3,preattn,preattn_cand,preattn_compress,preattn_index,quant_producer,suffix,tail_ctxkv,tail_dflash_prep,tail_draft_embed,tail_embed,tail_markov_fused,tail_proj_side,tail_replay_skip,tail_swa_meta,topp_fast,] fallback=0 GPU KV cache size: 11,696,582 tokens captured decode attention calls, W1/stock per width: 3:6/0 4:2/0 5:6/0 6:8/0 7:6/0 8:4/0 9:6/0 10:6/0 12:10/0 14:6/0 15:6/0 16:2/0 18:8/0 20:8/0 21:12/0 24:10/0 25:0/6 28:0/8 30:0/14 32:0/4 33:0/6 35:0/12 36:0/10 
+2026-10-29 17:53:56 CDT [G3b] p3 --once rc=0: {"t": 1793314436.2615774, "server_up": true, "v2": [1440, 1440, 0], "v3": [2, 43459, 43459, 0], "timeouts_base": 0, "mode": "report", "trip": null, "stall_s": 2.0, "v": "p3"}
+2026-10-29 17:54:01 CDT [G3b] p3 ENFORCE armed pid=4032995  status={"t": 1793314440.412602, "server_up": true, "v2": [1440, 1440, 0], "v3": [2, 43459, 43459, 0], "timeouts_base": 0, "mode": "enforce", "trip": null, "stall_s": 2.0, "v": "p3"}
+2026-10-29 17:54:01 CDT [G3b] FAULT: C4 streams; docker pause ds41-sidecar (host frozen) then ctrl=1 (RTX persistent kernel exits, cannot relaunch)
+2026-10-29 17:54:21 CDT [G3b] paused at 1793314461.378, ctrl=1 at 1793314461.483
+2026-10-29 17:54:25 CDT [G3b] watchdog: 2026-10-29 17:54:24 CDT TRIP v3 stalled: GB300 published tag 0xa257, RTX done 0x9217, rtx calls 0, frozen for >2.0s 
+2026-10-29 17:54:30 CDT [G3b] fault client: 0 1460 last 1793314461.481 finish None err None 1 1459 last 1793314461.481 finish None err None 2 1460 last 1793314461.481 finish None err None 3 1459 last 1793314461.481 finish None err None max_last 1793314461.4807272 
+2026-10-29 17:54:31 CDT [G3b] containers after fault: ds41=exited ds41-sidecar=running 
+2026-10-29 17:54:31 CDT [G3b] GB300 memory after fault: 22 MiB
+2026-10-29 17:54:43 CDT [G3b] garner containers down, peer shm removed
+2026-10-29 17:54:43 CDT [G3b] restore: h2-REF pair (rtx first, fresh 'serving'), watchdog
+2026-10-29 17:56:07 CDT [G3b] rtx serving
+2026-10-29 18:03:08 CDT [G3b] BOUND dsv41-vllm-1017-h2-REF after 425s
+2026-10-29 18:03:09 CDT [G3b] smoke OK
+2026-10-29 18:03:17 CDT [G3b] watchdog armed pid=4036282 
+2026-10-29 18:03:17 CDT [G3b] ISOLATE off
+2026-10-29 18:03:17 CDT [G3b] ===== CARD G3b END (lane = dsv41-vllm-1017-h2-REF) =====

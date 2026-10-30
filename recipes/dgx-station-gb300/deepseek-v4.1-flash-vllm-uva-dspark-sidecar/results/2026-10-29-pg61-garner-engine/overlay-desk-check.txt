@@ -1,0 +1,9 @@
+# Desk check, 2026-10-29: rebuild the Pg61 vLLM overlay from the stock files + this recipe's published patches.
+# Stock inputs = the af7f9488 originals, which G3-desk (cards/G3-desk/README.md) shows are sha1-identical to v0.31.0's.
+
+stock vllm/v1/worker/gpu/sample/gumbel.py sha1 70ae04f245f2166df4ed9f070b1dc1f8a7341a17
+stock vllm/v1/worker/gpu/spec_decode/rejection_sampler_utils.py sha1 fb99972e662e8d8187282e3cb951cee874a907a9
+patch -p1 < patches/vllm-61161-block-verification-fresh-draws.patch: rc=0
+patch -p1 < patches/vllm-60945-rejection-sampler-guard.patch: rc=0
+result vllm/v1/worker/gpu/sample/gumbel.py sha1 6eac3e1348339d157ba0e2184114859aca207df1 sha256 ee5072d245ea850ff4efa60ec548c172484019415f5d687b805d2d6af650ade1 == file the Pg61 launcher mounts: True
+result vllm/v1/worker/gpu/spec_decode/rejection_sampler_utils.py sha1 edc8f8f4c425f51a962840fc2e0e7aa32059f57a sha256 2d43d5133c1fb96399e186ed10c5a26b54c12e6a019d9d163cbff1adbcfbcc39 == file the Pg61 launcher mounts: True

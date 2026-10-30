@@ -1,0 +1,39 @@
+{
+ "schema": "ds41-bench-full-v1",
+ "started": "2026-10-29T20:02:29+0000",
+ "environment": {},
+ "settings": {
+  "base_url": "http://127.0.0.1:30006",
+  "model": "dsv41-flash-uva",
+  "out": "/out/prefill.json",
+  "env_file": null,
+  "skip": "fixed,gsm8k_c1,greedy_c1,coding,streams,capacity,quality",
+  "reps": 10,
+  "coding_reps": 5,
+  "prefill_reps": 3,
+  "window": 60,
+  "warmup": 20,
+  "conc": "4,8,16,32",
+  "capacity_n": 16,
+  "capacity_tokens": 110000,
+  "capacity_max_tokens": 2500,
+  "min_acc": 95.0
+ },
+ "prefill": {
+  "shape": "distinct random-word filler + per-request cache_salt (no prefix-cache hit), max_tokens 1",
+  "rows": null,
+  "rows_withheld": {
+   "note": "per-request rows carry output heads of private Hermes-transcript prompts; aggregates are complete (private-prompt rule)",
+   "counts": 3
+  }
+ },
+ "gates": {
+  "tool_call": null,
+  "needles": null,
+  "gsm8k": null,
+  "capacity": null
+ },
+ "finished": "2026-10-29T20:02:41+0000",
+ "status": "PASS",
+ "failed_stages": []
+}

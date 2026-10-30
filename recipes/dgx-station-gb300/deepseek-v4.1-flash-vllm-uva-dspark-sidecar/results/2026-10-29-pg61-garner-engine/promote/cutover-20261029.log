@@ -1,0 +1,18 @@
+2026-10-29 22:06:45 CDT [cutover-pg61] plan: stop dsv41-vllm-1017-h2-REF/dsv41-vllm-1017-h2-REF-rtx (kept); launch-pg61.sh up; smoke; freeze build
+2026-10-29 22:07:54 CDT [cutover-pg61] h2-REF pair stopped (kept)
+[ds41] starting RTX sidecar on NVIDIA RTX PRO 6000 Blackwell Max-Q Workstation Edition (GPU-d07eb6e6-7053-42a7-6811-7bb833266182)
+prepared 40 layers in 58s; 98.5 GB allocated
+serving; v3 call statistics -> /var/lib/ds41/sidecar/peer3_stats.json
+[ds41] starting GB300 vLLM on NVIDIA GB300 (GPU-1c1855c8-dd10-0247-583e-3c3880ddbf55); util=0.95, reserve=0 MiB, rowmap=rowmap-mix-v1-h255.json, maxlen=1048576
+MEGA_PEER finalize layer 39: done
+(EngineCore pid=403) INFO 10-30 03:12:41 [interface.py:692] Setting kv cache block size to 128 for FLASHMLA_MEGA_ATTN_DSV41/DEEPSEEK_SPARSE_SWA/DEEPSEEK_V41_INDEXER/CompressorBackend backend(s).
+MEGA_PEER ACTIVE peer tier v2: max_rows=8192, small-row routing <= 64
+(EngineCore pid=403) INFO 10-30 03:13:04 [kv_cache_utils.py:2464] GPU KV cache size: 11,696,582 tokens, Maximum concurrency for 1,048,576 tokens per request: 11.15x
+A12_INSTALL_MEMORY {"phase": "after_capture_warmup_gc", "reason": null, "retirement": {"alternate_graphs_retained": 0, "candidate_allocated_bytes": 11752439808, "checked_graph_managers": [{"full_count": 36, "manager": "ModelCudaGraphManager
+[ds41] ready: http://127.0.0.1:30006/v1  (model dsv41-flash-uva)
+2026-10-29 22:14:12 CDT [pg61] verify OK: gumbel 6eac3e134833 rsu edc8f8f4c425 libw6mk b54168223847560b PEER3_SPINS=1000000000000
+2026-10-29 22:14:15 CDT [pg61] UP on :30006; watchdog ENFORCE armed (status $HOME/dsv41/garner/pg61-work/wdp3.status.json)
+2026-10-29 22:14:16 CDT [cutover-pg61] smoke OK
+chmod: changing permissions of '$HOME/dsv41/garner/pg61-work/tree/fastpath/libw6mk.so': Operation not permitted
+2026-10-29 22:14:16 CDT [cutover-pg61] build frozen (chmod a-w)
+2026-10-29 22:14:16 CDT [cutover-pg61] DONE: Pg61 serving
