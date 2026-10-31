@@ -1,0 +1,148 @@
+schema: jm-recipe/v1
+id: dgx-station-gb300-spark-8x/kimi-k3-nvfp4-vllm-four-tier-pod
+title: Kimi-K3 NVFP4 (2.8T MoE) across four memory tiers - DGX Station GB300 + RTX PRO 6000 + 8x DGX Spark
+summary: >
+  NVIDIA's NVFP4 Kimi-K3 (1.61 TB checkpoint, 82,432 routed experts) does not fit any one machine here, so each
+  expert stays where it was loaded and only 7 KiB activations move. The GB300 runs stock vLLM 0.31.0 with all
+  attention, routing and shared experts plus 344 of each layer's 896 experts (HBM and pinned Grace); 62 per layer
+  live on each of eight DGX Sparks and 56 on the Station's RTX PRO 6000, which compute them on request over 200G
+  RoCE. A vLLM hook (no fork) sends each layer's routed share from inside the CUDA graph through a C proxy thread and
+  waits in-graph (idea - Javier, @javierbits), and each worker replays one CUDA graph per (layer, expert count).
+  Batch 1 decode is 54.1 ms/token = 18.5 tok/s, flat from 16 to 512 tokens. Every one of the 92 MoE layers was
+  checked on the full model's own inputs against an fp32 reference built from the checkpoint (87 at cosine >= 0.99;
+  the low-magnitude outliers match stock vLLM, layers 1-12 at cosine >= 0.9993 on identical inputs). A dead worker
+  kills the engine within seconds (fault-injected). Experimental - batch 1 only, 4K context, no model-level quality
+  gate yet.
+status: experimental     # 2026-10-30. Speed (K3-3) and per-layer parity (K3-2) pass; no teacher-forced/tool-call/task gate (no machine can run a stock reference of the whole model); batch 1, max-model-len 4096; no soak.
+owners: [jmeadlock, milo]
+updated: "2026-10-30"
+tags: [kimi-k3, nvfp4, vllm, moe, expert-parallel, rdma, roce, dgx-spark, gb300, rtx-pro-6000, grace-offload, cuda-graphs, four-tier]
+
+model:
+  name: Kimi-K3-NVFP4 (NVIDIA)
+  params: "2.8T total (MoE; 93 layers = 1 dense + 92 MoE, 69 KDA + 24 MLA attention); 896 routed experts per MoE layer, 16 active + 2 shared; latent expert width 3584"
+  repo: https://huggingface.co/nvidia/Kimi-K3-NVFP4
+  revision: b2428a0b83a8b712ff2e1a8448a103d4175341f1
+  quantization: "as shipped by NVIDIA (Model Optimizer) - routed experts NVFP4 (conversion_report.json - the MXFP4 experts were cast to NVFP4 losslessly, 85,085,650,944 of 85,085,650,944 blocks; input_scale 1.0), attention FP8 per-block. Nothing re-quantized. Checkpoint payload 1,609,777,087,808 bytes in 96 shards; expert record 18,579,480 bytes. Spark/RTX banks are byte re-layouts of the same NVFP4 tensors (scales swizzled for the B12x kernel), SHA-256 verified on both ends."
+
+hardware:
+  profile: hardware/dgx-station-gb300-spark-8x.yaml
+  nominal: { gpu_memory_gb: 288, host_memory_gb: 496 }
+  observed:
+    gpu: NVIDIA GB300 (engine) + NVIDIA RTX PRO 6000 Blackwell Max-Q (expert worker) + 8x NVIDIA GB10 (expert workers)
+    driver: "595.99.02 (Station), 595.84 (Sparks)"
+    cuda: "13.2"
+    gpu_memory_visible_gib: 250.7
+    host_memory_gib: 494.5
+    os: Ubuntu 24.04.5 LTS (Station), 24.04.4 LTS (Sparks)
+    kernel: 7.0.0-1019-nvidia-64k (Station), 6.17.0-1031-nvidia (Sparks)
+    snapshot: results/2026-10-30-k3-four-tier/system.json
+  required_settings:
+    - "Fabric - every worker reachable by RoCEv2 from the Station (here Sparks 10.0.0.1-8, Station 10.0.0.9 and 10.0.1.9, GID index 3, MTU 4096). Addresses are set in scripts/engine/k3pod.py (_Plan.workers) and scripts/start-workers.sh."
+    - "A CDI spec exposing the RTX PRO 6000 to containers (DGX OS hides it from --gpus); pin both Station GPUs by UUID."
+    - "Pinned host memory - the engine pins 401 GB of Grace (--cpu-offload-gb 401); Grace runs at 493 of 494 GiB with the model up. Nothing else large may run on the Station."
+    - "Each Spark holds a 98.7 GiB bank resident; drop caches and compact memory before a worker loads (kcompactd stall on fragmented GB10 memory)."
+    - "Checkpoint and banks on local NVMe. Persistent caches - vLLM/FlashInfer autotune (K3_CACHE_DIR) and the workers' JIT cache - or every boot re-tunes."
+    - "A host that can ssh to all nine workers to run start-workers.sh (the Station could not reach the Sparks over ssh here)."
+    - "Station on a dedicated 20 A circuit (estimated 1,685 W at full load; no input-power sensor)."
+
+runtime:
+  engine: vLLM
+  engine_version: 0.31.0
+  engine_commit: db9527a46873454610df6dbedf79a36d6bf1a7f6
+  container:
+    image: vllm/vllm-openai:v0.31.0
+    digest: sha256:c1c9f6fd5c109ba7f0546a59f5b2f15fb87f64c77782e90a27b648b42a8e67c3
+    base_image: "Engine - stock pullable vllm/vllm-openai:v0.31.0 (repo digest == image id on the reference box), nothing built; the hook is bind-mounted and loaded by sitecustomize. Workers (8 Sparks + RTX) - stock nvcr.io/nvidia/pytorch:26.07-py3@sha256:3b0a5c3aa754aff7c86bc0ced07cb064ebce1048f6c12d717e2fa55766276521 with a venv (scripts/setup-worker-venv.sh) holding flashinfer-python 0.7.0.post1 + patches/b12x-situ.patch."
+  key_libraries:
+    flashinfer_engine: "0.7.0.post1 as shipped in the vLLM image (TRT-LLM NVFP4 routed-MoE path, forced modular)"
+    flashinfer_workers: "flashinfer-python 0.7.0.post1 + SiTU patch (B12x CuTe-DSL MoE micro kernel, sm_121 Sparks / sm_120 RTX); nvidia_cutlass_dsl 4.8.0, cuda_python 13.4.1"
+    libk3hop: "scripts/worker/k3hop.c (ibverbs RC, zero-copy registered ring; k3pod_send/k3pod_collect fast path; k3proxy graph-resident proxy) - built on each host with gcc -O2 -shared -fPIC -libverbs -lpthread"
+  patches:
+    - { path: patches/b12x-situ.patch, sha256: 5250f9d00de6dfef082585bdff3fa32ee0a63e3e8f5ac8b363eb3b3331b428b7, purpose: "SiTU-GLU activation (Kimi-K3) in FlashInfer 0.7.0.post1 B12x MoE kernels, workers only" }
+    - { path: scripts/engine/k3pod.py, sha256: 3ba587031e63a481115ffb9330dc6066bcb77e08b44f1ed46f6a5e4134e6188f, purpose: "vLLM hook - Station expert subset, global->local id remap, remote share via eager breaks or the graph-resident proxy, shadow/record modes; hash = the file the reference box ran" }
+    - { path: scripts/engine/sitecustomize.py, sha256: 318f1d4449aa76981b8e58bab523fd80b7775779cbe91829c10d08d7e7cb118f, purpose: "import hook that installs k3pod and the truncated-layer loader filter in every vLLM process" }
+    - { path: scripts/worker/k3hop.c, sha256: 456468728ffe72c851e3a7585ed47573f9a09fdf04939c321169fdd2e8f086fd, purpose: "RDMA transport + C fast path + graph-resident proxy (fails closed by SIGKILL of the engine core)" }
+    - { path: scripts/worker/worker.py, sha256: 59a9d683392a842def5b07f219c7fe1b3fcfcc38d51465f378277a3ada7898e0, purpose: "expert worker - bank resident, one CUDA graph per (k, layer), distributional graph-vs-eager boot check" }
+
+launch:
+  script: scripts/launch-engine.sh
+  command: "SPARK_HOSTS='s1 s2 s3 s4 s5 s6 s7 s8' STATION=station bash scripts/start-workers.sh && GB300_UUID=GPU-... MODEL_DIR=/models/kimi-k3/nvidia-nvfp4-b2428a0b bash scripts/launch-engine.sh"
+  health: "start-workers.sh waits for 9/9 K3HOP_LISTEN; engine ready at 'Application startup complete' (~7 min load + ~12 min FlashInfer autotune at N=93) and logs 'proxy started - 9 workers'; then GET /health and scripts/check/k3pod_probe.py (3 greedy prompts)."
+  warmup: "scripts/check/bench.py PORT 64 3 once after startup; the first graph replays are slower."
+  notable_flags:
+    - "--cpu-offload-gb 401 --cpu-offload-params w13_weight w2_weight (Station's packed expert weights beyond HBM in pinned Grace, read in place over C2C)"
+    - "-cc cudagraph_mode PIECEWISE, capture sizes 1 2 4 8, with VLLM_USE_BREAKABLE_CUDAGRAPH=1 and VLLM_DISABLE_SHARED_EXPERTS_STREAM=1 (an eager break on the aux shared-expert stream ends capture unjoined)"
+    - "K3POD_PROXY=1 - one-token decode runs the expert step inside the graph (cuStreamWriteValue32 ready flag, C proxy thread, cuStreamWaitValue32 done flag); prefill and batch 2-8 keep eager breaks"
+    - "--max-model-len 4096 --max-num-seqs 1 --max-num-batched-tokens 256 - the configuration measured; nothing larger has been run"
+    - "K3_WGRAPH=1 on workers (default) - one CUDA graph per (expert count, layer), 1,472 per worker, captured in ~1 s"
+    - "VARIANT shadow parity - K3POD_SHADOW=1 N=13 K3_GPU_UTIL=0.95 (every expert of layers 1-12 in HBM; per-layer pod vs stock on identical inputs)"
+    - "VARIANT record mode - EAGER=1 K3POD_DUMP_DIR=/pod/dump then scripts/check/pod_ref_check.py and pod_emu_check.py"
+
+metrics:
+  - name: single-stream decode
+    value: 18.48
+    unit: tok/s
+    workload: "C1, batch 1, 512 tokens streamed, prompt 'Write a long, detailed history of the transistor.', temperature 0, ignore_eos, 4K max context"
+    aggregation: mean of 3 streamed runs (54.11 / 54.13 / 54.13 ms per token, worst gap 56.1 ms)
+    provenance: { run_id: 2026-10-30-k3-four-tier, method: "inline streaming client on the Station, inter-token gaps; transcribed from session output", raw: raw/speed-transcribed.txt }
+  - name: single-stream decode after reboot
+    value: 54.36
+    unit: ms/token
+    workload: "C1, 128 tokens, bench.py A (3 reps); fresh boot of the same config at 23:05 CDT"
+    aggregation: median of 3
+    provenance: { run_id: 2026-10-30-k3-four-tier, method: "scripts/check/bench.py 30023 128 3; transcribed", raw: raw/speed-transcribed.txt }
+  - name: decode - eager expert step, no worker graphs (superseded)
+    value: 79.85
+    unit: ms/token
+    workload: "C1, 64 tokens x3, bench.py A"
+    aggregation: median of 3
+    label: before the graph-resident expert step and graphed workers
+    provenance: { run_id: 2026-10-30-k3-four-tier, method: "scripts/check/bench.py; transcribed", raw: raw/speed-transcribed.txt }
+  - name: per-layer parity vs stock vLLM (layers 1-12, identical inputs)
+    value: 0.99931
+    unit: cosine (worst layer mean)
+    workload: "13-layer cut, every expert in HBM, shadow mode through the proxy and graphed workers; 5 prompts x 64 tokens"
+    aggregation: per-layer mean over 605-940 token-layers; worst layer (12) shown; layers 1-11 0.99979-0.99984
+    provenance: { run_id: 2026-10-30-k3-four-tier, method: "K3POD_SHADOW=1 (k3pod.py)", raw: raw/parity/shadow-n13-proxy.json }
+  - name: all-layer check vs fp32 checkpoint reference
+    value: 87
+    unit: of 92 MoE layers at cosine >= 0.99
+    workload: "full model, record mode, 5 prompts x 64 decode tokens = 29,440 layer-tokens; each tier's share vs its own experts"
+    aggregation: per-layer mean; median 0.996; zero cross-tier leaks
+    provenance: { run_id: 2026-10-30-k3-four-tier, method: "scripts/check/pod_ref_check.py + pod_emu_check.py", raw: raw/parity/refcheck-n93.json }
+  - name: Spark worker round trip, one expert
+    value: 150.4
+    unit: us
+    workload: "Station -> spark1, forced k=1, 300 requests, graphed worker (v1 eager worker 243.5)"
+    aggregation: p50
+    provenance: { run_id: 2026-10-30-k3-four-tier, method: "scripts/check/client_g3.py", raw: raw/worker/g3-spark0-wgraph.json }
+
+verification:
+  gates:
+    schema:      { how: "scripts/check_recipe.py passes" }
+    digest:      { how: "engine image vllm/vllm-openai:v0.31.0 repo digest == image id sha256:c1c9f6fd...; workers nvcr.io/nvidia/pytorch:26.07-py3 sha256:3b0a5c3a...; checkpoint revision b2428a0b; banks SHA-256 equal on Station and each Spark; published k3pod.py and k3hop.c byte-identical to the files the box ran" }
+    health:      { how: "9/9 workers K3HOP_LISTEN with WGRAPH boot check passed; engine 'proxy started - 9 workers'; k3pod_probe.py 3 greedy prompts coherent; fault injection - killing a worker mid-decode kills the engine (container exits, /health stops answering, stream gets an error chunk) - results/2026-10-30-k3-four-tier/raw/fault-injection/" }
+    quality:     { how: "PER-LAYER ONLY - shadow parity vs stock vLLM layers 1-12 (cos >= 0.9993 worst layer mean) and all 92 layers vs an fp32 checkpoint reference on full-model inputs (87/92 >= 0.99, outliers matched by a kernel-faithful NVFP4 emulation and by stock). No teacher-forced divergence, tool-call or task benchmark - pending; no reference engine can hold the whole model." }
+    performance: { how: "18.5 tok/s C1 decode reproduced after two reboots within 1% (54.57, 54.36 ms/token)" }
+
+limits:
+  - "Batch 1 only. --max-num-seqs 1, --max-model-len 4096, --max-num-batched-tokens 256. Batch 2-8 decode and prefill take the eager-break path (one worker round trip per token per layer) and were not measured; long context is untested."
+  - "No model-level quality gate. Correctness evidence is per layer (shadow vs stock on layers 1-12, fp32 reference on all 92 with real inputs). There is no teacher-forced comparison against a reference engine, no tool-call gate and no task benchmark, because no machine here can run a stock copy of the whole 1.5 TB of experts."
+  - "Four of 92 layers (24, 25, 36, 48) have small MoE inputs where NVFP4 activation quantization loses precision vs fp32 (cosine 0.84-0.99); both tiers match an exact emulation of that quantization at 0.992-0.997 and stock vLLM's kernel shows the same loss. Layer 12's routed MoE output is ~0.2% of its input; pod and stock agree at cosine 0.9993 there, both ~0.05 vs fp32."
+  - "The workers' B12x expert kernel is not run-to-run deterministic - 0.8-2% repeat difference on GB10 and a timing-dependent heavy tail up to ~5-6% on the RTX's sm_120 build, with or without CUDA graphs. Two boots give logprobs ~0.12-0.14 apart (median) and greedy text can flip at near-ties. Upstream repro - scripts/check/rtx_tail_check.py."
+  - "Every worker is on the critical path. If one dies or stalls past 2 s the proxy SIGKILLs the engine core; vLLM then exits and in-flight streams get an error chunk. Recovery is start-workers.sh plus a ~20 min engine boot. Workers accept one engine connection per start."
+  - "An earlier proxy build failed with abort(), which left the engine core writing a ~480 GB core dump while /health stayed 200 and requests hung (fault injection run 1). The published build uses SIGKILL; do not change it back."
+  - "Grace is full (493 of 494 GiB) - the Station cannot take more experts and nothing else large can run on it."
+  - "Placement is uniform (seeded random), not heat-aware. Simulated with the measured costs, hot/cold placement saves only 1-6 ms/token - the busiest Spark's 75 us per expert sets the floor and a hotter Station reads more from Grace at ~48 us per expert."
+  - "Speed numbers were printed by the bench scripts, not saved as files; they are transcribed in raw/speed-transcribed.txt (labelled). The parity, fault-injection and worker receipts are the original files."
+  - "Fabric addresses and the Spark-to-plan-target map are fixed in k3pod.py and start-workers.sh for this topology; another fabric needs those two edits."
+
+rollback:
+  script: scripts/stop-pod.sh
+  summary: "Stops the engine container on the Station and the nine workers; nothing is installed system-wide. The reference box's previous lane (DeepSeek-V4.1-Flash, sibling recipe dgx-station-gb300/deepseek-v4.1-flash-vllm-uva-dspark-sidecar) is restored with that recipe's own launcher after this pod is stopped - the two cannot share the GB300."
+
+links:
+  blog: https://al-engr.com/kimi-k3-nvfp4-station-eight-sparks.html
+  companion: https://al-engr.com/ghettorak-second-switch.html
+  idea_graph_resident_step: https://x.com/javierbits/status/2116280163637854396

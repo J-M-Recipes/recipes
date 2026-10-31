@@ -1,0 +1,14 @@
+time_cdt,config,metric,value,unit,workload,source
+13:09,eager (no graphs),decode,273.43,ms/token,"C1, 64 tok, bench.py A",raw/speed-transcribed.txt
+14:47,breakable CUDA graphs + eager-break network steps,decode,86.07,ms/token,"C1, 64 tok, bench.py A",raw/speed-transcribed.txt
+16:00,+ one pinned D2H per layer,decode,81.9,ms/token,"C1, 64 tok, bench.py A",raw/speed-transcribed.txt
+16:43,+ C send/collect,decode,79.85,ms/token,"C1, 64 tok x3, bench.py A",raw/speed-transcribed.txt
+20:11,+ graph-resident expert step (proxy),decode,63.74,ms/token,"C1, 64 tok x3, mean of two runs",raw/speed-transcribed.txt
+20:53,+ graphed workers (serving config),decode,54.12,ms/token,"C1, 64 tok x3, mean of two runs",raw/speed-transcribed.txt
+21:10,serving config,decode,54.12,ms/token,"C1, 512 tok streamed, mean of 3 runs (max gap 56.1)",raw/speed-transcribed.txt
+21:10,serving config,decode,18.48,tok/s,"C1, 512 tok streamed, mean of 3 runs",raw/speed-transcribed.txt
+22:29,serving config (reboot),decode,54.57,ms/token,"C1, 128 tok x3, bench.py A",raw/speed-transcribed.txt
+23:05,serving config (reboot),decode,54.36,ms/token,"C1, 128 tok x3, bench.py A",raw/speed-transcribed.txt
+20:53,serving config,proxy send->last reply,305,us/layer,decode,raw/server-logs/podw-n93.server.log
+,graphed Spark worker,round trip k=1,150.4,us,"forced k, 300 req, p50",raw/worker/g3-spark0-wgraph.json
+,graphed Spark worker,round trip k=4,385.1,us,"forced k, 300 req, p50",raw/worker/g3-spark0-wgraph.json

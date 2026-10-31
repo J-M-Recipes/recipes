@@ -1,0 +1,71 @@
+--- a/blackwell_sm12x/moe_activation.py	2026-10-03 21:06:06.319246778 +0000
++++ b/blackwell_sm12x/moe_activation.py	2026-10-03 21:06:06.319858720 +0000
+@@ -17,9 +17,9 @@
+ SWIGLUOAI_DEFAULT_BETA = 1.0
+ 
+ SUPPORTED_MOE_ACTIVATIONS = frozenset(
+-    {"silu", "gelu_tanh", "relu2", SWIGLUOAI_UNINTERLEAVE}
++    {"silu", "situ", "gelu_tanh", "relu2", SWIGLUOAI_UNINTERLEAVE}
+ )
+-GATED_MOE_ACTIVATIONS = frozenset({"silu", "gelu_tanh", SWIGLUOAI_UNINTERLEAVE})
++GATED_MOE_ACTIVATIONS = frozenset({"silu", "situ", "gelu_tanh", SWIGLUOAI_UNINTERLEAVE})
+ 
+ 
+ def normalize_moe_activation(activation: str) -> str:
+@@ -107,6 +107,7 @@
+     """Return ``act(gate) * up_term`` (Float32) for a gated MoE activation.
+ 
+     - silu: ``g*sigmoid(g)*u``
++    - situ: ``4*tanh(g/4)*sigmoid(g) * 25*tanh(u/25)`` (Kimi-K3)
+     - gelu_tanh: ``g*sigmoid(2z)*u`` (tanh-approx GELU, sigmoid(2z) == 0.5*(1+tanh(z)),
+       z = 0.7978845608*(g + 0.044715*g^3))
+     - swigluoai: ``g*sigmoid(alpha*g)*(u+beta)``, clamped when ``limit`` is set
+@@ -124,6 +125,15 @@
+             g + Float32(0.044715) * g * g * g
+         )
+         up_term = u
++    elif cutlass.const_expr(activation == "situ"):
++        # Kimi-K3 SiTU-GLU. beta=4, linear_beta=25, both compile-time.
++        # gate: 4*tanh(g/4)*sigmoid(g); up: 25*tanh(u/25). Not silu(g)*u.
++        sig = cute.arch.rcp_approx(
++            Float32(1.0) + cute.math.exp(-g, fastmath=fast_math)
++        )
++        gate_term = Float32(4.0) * cute.math.tanh(g * Float32(0.25)) * sig
++        up_term_situ = Float32(25.0) * cute.math.tanh(u * Float32(0.04))
++        return gate_term * up_term_situ
+     else:
+         sig_arg = g
+         up_term = u
+--- a/blackwell_sm12x/moe_micro_kernel.py	2026-10-03 21:06:06.319574557 +0000
++++ b/blackwell_sm12x/moe_micro_kernel.py	2026-10-03 21:06:06.320257939 +0000
+@@ -375,7 +375,7 @@
+         share_expert_scales: bool = False,
+         single_token: bool = False,
+     ):
+-        if activation not in {"silu", "relu2", "gelu_tanh", "swigluoai_uninterleave"}:
++        if activation not in {"silu", "situ", "relu2", "gelu_tanh", "swigluoai_uninterleave"}:
+             raise ValueError(f"unsupported activation {activation!r}")
+         self._dense_cls = DenseGemmKernel
+         self.acc_dtype = cutlass.Float32
+--- a/blackwell_sm12x/moe_static_kernel.py	2026-10-03 21:06:06.319675806 +0000
++++ b/blackwell_sm12x/moe_static_kernel.py	2026-10-03 21:06:06.320627735 +0000
+@@ -469,7 +469,7 @@
+     ):
+         if sf_vec_size not in (16, 32):
+             raise ValueError(f"unsupported FP4 scale vector size {sf_vec_size}")
+-        if activation not in {"silu", "relu2", "gelu_tanh", "swigluoai_uninterleave"}:
++        if activation not in {"silu", "situ", "relu2", "gelu_tanh", "swigluoai_uninterleave"}:
+             raise ValueError(f"unsupported activation {activation!r}")
+         self._dense_cls = DenseGemmKernel
+         self.acc_dtype = cutlass.Float32
+--- a/blackwell_sm12x/_moe_dynamic/generic.py	2026-10-03 21:06:06.319759663 +0000
++++ b/blackwell_sm12x/_moe_dynamic/generic.py	2026-10-03 21:06:06.320974970 +0000
+@@ -274,7 +274,7 @@
+         swiglu_limit: float | None = None,
+         share_input_across_experts: bool = False,
+     ):
+-        if activation not in {"silu", "relu2", "gelu_tanh", "swigluoai_uninterleave"}:
++        if activation not in {"silu", "situ", "relu2", "gelu_tanh", "swigluoai_uninterleave"}:
+             raise ValueError(f"unsupported activation {activation!r}")
+         self._dense_cls = DenseGemmKernel
+         self.acc_dtype = cutlass.Float32

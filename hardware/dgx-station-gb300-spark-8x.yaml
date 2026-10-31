@@ -1,0 +1,41 @@
+# Hardware profile: DGX Station GB300 (+ RTX PRO 6000 Max-Q) and 8x DGX Spark on two CRS804 switches, 200G RoCE
+# Values under `observed` come from scripts/collect_system_snapshot.sh on every node (2026-10-30; kept in
+# recipes/dgx-station-gb300-spark-8x/kimi-k3-nvfp4-vllm-four-tier-pod/results/2026-10-30-k3-four-tier/system/).
+slug: dgx-station-gb300-spark-8x
+name: DGX Station GB300 + RTX PRO 6000 Max-Q + 8x DGX Spark (GB10), two CRS804-4DDQ, 200G RoCE ("GhettoRak")
+vendor: NVIDIA (nodes), MikroTik (switches)
+form_factor: one desktop workstation plus a desk cluster of eight; one fabric
+nominal:
+  station_gpu: NVIDIA GB300 Blackwell Ultra (288 GB HBM3e spec)
+  station_sidecar_gpu: NVIDIA RTX PRO 6000 Blackwell Max-Q (96 GB)
+  station_host_memory_gb: 496            # Grace LPDDR5X, NVLink-C2C coherent with the GB300
+  station_nic: ConnectX-8 (two 200G ports used)
+  spark_gpu: NVIDIA GB10 (SM121) x8, 128 GB unified LPDDR5X each, 273 GB/s
+  spark_nic: ConnectX-7, one QSFP56 cage per node (200G)
+  switches: 2x MikroTik CRS804-4DDQ (Sparks 1-4 + Station on switch B, Sparks 5-8 on switch A), 400G inter-switch link
+observed:                                # 2026-10-30
+  station_gpu: NVIDIA GB300
+  station_gpu_memory_visible_gib: 250.7
+  station_gpu_power_cap_w: 1300
+  station_sidecar_gpu: NVIDIA RTX PRO 6000 Blackwell Max-Q Workstation Edition
+  station_sidecar_gpu_memory_visible_gib: 95.6
+  station_host_memory_gib: 494.5
+  station_driver: "595.99.02"
+  station_kernel: 7.0.0-1019-nvidia-64k
+  station_os: Ubuntu 24.04.5 LTS
+  spark_gpu: NVIDIA GB10
+  spark_memory_total_gib: 121.7          # nvidia-smi memory.total reads [N/A] on GB10
+  spark_driver: "595.84"
+  spark_kernel: 6.17.0-1031-nvidia
+  spark_os: Ubuntu 24.04.4 LTS
+  cuda: "13.2"
+  docker: "29.1.3 (Station), 29.2.1 (Sparks)"
+  fabric: Sparks 10.0.0.1-8 (rocep1s0f0), Station 10.0.0.9 (mlx5_0) + 10.0.1.9 (mlx5_1), MTU 4096 RoCEv2 (GID index 3)
+  rdma_half_rtt_us_7168B: "4.64-4.72 Station to Sparks 1-4 (same switch); 5.92-5.95 to Sparks 5-8 (across the ISL); fan-out to all 8 adds ~0.2"
+  station_power_feed: dedicated 20 A / 120 V circuit (1,920 W continuous)
+notes:
+  - "Both Station ports land on switch B (CRS804-b cage 4); Sparks 5-8 are reached across the 400G inter-switch link (+1.25 us one way). The fabric moves 7 KiB activations per expert call, so it is not the bottleneck: one Station-Spark round trip is ~12 us of a ~150-400 us call."
+  - "The RTX PRO 6000 is VGA-class and hidden from --gpus by DGX OS (/usr/libexec/dgx-desktop-docker-gpus.sh); expose it with a CDI spec (nvidia-ctk cdi generate) and pin it by UUID. Pin the GB300 by UUID too: device=1 was not the GB300 on this box."
+  - "The Station cannot ssh to the Sparks on this network; worker start, bank staging and fault injection are driven from a third host that reaches all of them."
+  - "Spark unified memory: a fragmented pool can stall a ~99 GiB load with kcompactd at 100%; drop caches and compact before loading a bank (sync; echo 3 > /proc/sys/vm/drop_caches; echo 1 > /proc/sys/vm/compact_memory)."
+  - "Power: the Station at full K3 load is estimated at 1,685 W (no input-power sensor), 88% of a dedicated 20 A circuit; a 15 A circuit cannot carry it. Sparks: ~170-190 W each under load, split across feeds."
