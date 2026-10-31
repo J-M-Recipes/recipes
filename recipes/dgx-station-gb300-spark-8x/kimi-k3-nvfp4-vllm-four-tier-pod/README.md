@@ -177,7 +177,10 @@ transcribed from session output, labelled; `raw/parity/`, `raw/fault-injection/`
   replay to be > 0.10 off; it rejected a deliberately wrong-layer graph (1.42 vs a 7.95e-3 limit) and passes all nine
   workers (3.2–3.5e-3). The old rule rejected correct RTX graphs on and off: against an fp32 reference they are unbiased
   and as accurate as eager (0/640 bad runs) but scatter ~2.3× more. The first eager call after a graph capture on the
-  same layer can return garbage (2/640, up to 49× off) — a FlashInfer B12x artifact serving never triggers. From 06:04
+  same layer can return garbage (2/640, up to 49× off). The all-zeros case is a FlashInfer bug, filed as
+  [flashinfer-ai/flashinfer#8119](https://github.com/flashinfer-ai/flashinfer/issues/8119) (≤ 0.7.2.post1; `main`
+  raises instead; standalone repro `scripts/check/b12x_eager_after_capture_repro.py`); the 49× case is not explained
+  by it. Serving never makes that call. From 06:04
   to 09:14 the RTX ran small batches eagerly while this was sorted out. Receipts: `results/…/raw/rtx-graph-check/`.
 - **No model-level quality gate.** No teacher-forced comparison with a reference engine, no tool-call gate, no task
   benchmark: no machine here can hold a stock copy of the whole model. Evidence is per layer (above).
