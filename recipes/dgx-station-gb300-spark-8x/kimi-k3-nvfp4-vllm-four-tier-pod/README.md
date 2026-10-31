@@ -172,9 +172,12 @@ transcribed from session output, labelled; `raw/parity/`, `raw/fault-injection/`
   235–305 ms per step. Part of the 172 ms is measured: the workers' micro kernel costs ~80 µs per distinct expert up
   to 8 rows and jumps at 9 (640 → 1,013 µs), and a Spark usually gets 9–10 pairs at 8 streams. `--max-model-len 4096`;
   long context is untested.
-- **RTX small batches run without CUDA graphs.** The RTX's 2–8-token graphs fail `worker.py`'s graph-vs-eager boot
-  check intermittently (sm_120 kernel noise: 1.1–2.0e-2 vs ~7.3e-3), so `run-worker-rtx.sh` sets `K3_SMALLB=0`. Costs
-  ~12 ms per step at 2 streams (88 vs 76), nothing measurable at 4–8. Parity re-checked for this configuration.
+- **RTX small batches run without CUDA graphs** (`K3_SMALLB=0` in `run-worker-rtx.sh`) because the RTX's graphs fail
+  `worker.py`'s boot check now and then. An offline test against an fp32 reference shows the graphs are correct
+  (0/640 bad runs; same mean as eager) — they just scatter ~2.3× more than eager runs, which the check's 1.5× rule
+  reads as an error. Separately, the first eager call after a graph capture on the same layer sometimes returns garbage
+  (2/640, up to 49× off): a FlashInfer B12x artifact that serving never triggers. Cost of running eager: ~12 ms per
+  step at 2 streams. Receipts: `results/…/raw/rtx-graph-check/`, scripts `rtx_sb_check.py`, `rtx_check_bias.py`.
 - **No model-level quality gate.** No teacher-forced comparison with a reference engine, no tool-call gate, no task
   benchmark: no machine here can hold a stock copy of the whole model. Evidence is per layer (above).
 - **NVFP4 precision at low-magnitude layers** (24, 25, 36, 48; layer 12 carries ~0.2 % of its input) — matched by an
