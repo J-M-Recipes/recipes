@@ -132,7 +132,7 @@ Run `2026-10-30-k3-four-tier`, reference box, `--max-num-seqs 8`, `--max-model-l
 |---|---:|
 | 512-token streamed decode, 3 runs | 54.11 / 54.13 / 54.13 ms per token → **18.5 tok/s**, worst gap 56.1 ms |
 | length sweep 16 / 64 / 128 / 256 / 512 tokens (gap p90) | 54.65 / 54.96 / 54.87 / 54.93 / 54.96 ms |
-| concurrent decode, 1 / 2 / 4 / 8 streams (ms per step → total tok/s) | 54.4 / 76.1 / 114.9 / 172.1 → 18.4 / 26.3 / 34.8 / **46.5** (was 235–305 ms per step at 2–8 before the multi-token proxy) |
+| concurrent decode, 1 / 2 / 4 / 8 streams (ms per step → total tok/s) | 54.2 / 88.4 / 113.1 / 172.5 → 18.5 / 22.6 / 35.4 / **46.4** (RTX small batches eager; was 235–305 ms per step at 2–8 before the multi-token proxy) |
 | fresh boots (22:29, 23:05) | 54.57, 54.36 ms per token |
 | per layer: proxy send → last worker reply | 305 µs |
 | prompt reading, 1,024-token chunks (serving), 32 / 284 / 1,124 / 3,364-token prompts (time to first token, median of 3) | 0.69 / 1.08 / 2.71 / 5.84 s → 46 / 263 / 414 / **576 tok/s** |
@@ -167,11 +167,14 @@ transcribed from session output, labelled; `raw/parity/`, `raw/fault-injection/`
 - **Batch kernels are compiled per padded row count.** `worker.py` builds every bucket at boot and must warm the
   dynamic kernel first; otherwise the first real chunk compiles for ~3 s.
 - **Up to 8 requests, and each slows as more join.** `--max-num-seqs 8`: 1 / 2 / 4 / 8 streams run at
-  54.4 / 76.1 / 114.9 / 172.1 ms per step — 18.4 / 26.3 / 34.8 / 46.5 tok/s in total, ~5.8 tok/s each at 8.
-  Multi-token decode steps stay inside the CUDA graph (proxy batch path + per-(bucket, layer) worker graphs); before,
-  they broke the graph and ran 235–305 ms per step. The 172 ms at 8 streams is not yet explained by measurement
-  (likely the Station's own experts — 8 tokens touch ~45 of them per layer, mostly in Grace — plus the workers'
-  slower 16-pair kernel bucket). `--max-model-len 4096`; long context is untested.
+  54.2 / 88.4 / 113.1 / 172.5 ms per step — 18.5 / 22.6 / 35.4 / 46.4 tok/s in total, ~5.8 tok/s each at 8.
+  Multi-token steps stay inside the Station's CUDA graph (proxy batch path); before, they broke it and ran
+  235–305 ms per step. Part of the 172 ms is measured: the workers' micro kernel costs ~80 µs per distinct expert up
+  to 8 rows and jumps at 9 (640 → 1,013 µs), and a Spark usually gets 9–10 pairs at 8 streams. `--max-model-len 4096`;
+  long context is untested.
+- **RTX small batches run without CUDA graphs.** The RTX's 2–8-token graphs fail `worker.py`'s graph-vs-eager boot
+  check intermittently (sm_120 kernel noise: 1.1–2.0e-2 vs ~7.3e-3), so `run-worker-rtx.sh` sets `K3_SMALLB=0`. Costs
+  ~12 ms per step at 2 streams (88 vs 76), nothing measurable at 4–8. Parity re-checked for this configuration.
 - **No model-level quality gate.** No teacher-forced comparison with a reference engine, no tool-call gate, no task
   benchmark: no machine here can hold a stock copy of the whole model. Evidence is per layer (above).
 - **NVFP4 precision at low-magnitude layers** (24, 25, 36, 48; layer 12 carries ~0.2 % of its input) — matched by an
