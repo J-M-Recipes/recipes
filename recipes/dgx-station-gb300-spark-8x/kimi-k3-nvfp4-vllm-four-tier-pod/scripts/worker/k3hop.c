@@ -373,6 +373,7 @@ int k3pod_collect(k3conn **conns, int nconn, long long mask, const int8_t *k_exp
 #include <sched.h>
 
 #define K3P_FLAG_STRIDE 32   /* int32 words per layer: ready at [0], done at [16] -> separate 64 B lines */
+#define K3P_MAXM 8           /* multi-token decode: up to 8 tokens per step through the proxy (ready = M) */
 
 typedef struct {
     k3conn **conns; int nconn; int nlayers; int hidden;
@@ -382,6 +383,11 @@ typedef struct {
     const int32_t *ids;            /* [nlayers][16] */
     const float *w;                /* [nlayers][16] */
     uint16_t *rows;                /* [nlayers][max(nconn,1)][hidden] bf16 */
+    /* K3-5 multi-token decode (ready flag value M = 2..K3P_MAXM): */
+    const uint16_t *xb;            /* [nlayers][K3P_MAXM][hidden] bf16 */
+    const int32_t *idsb;           /* [nlayers][K3P_MAXM][16] */
+    const float *wb;               /* [nlayers][K3P_MAXM][16] */
+    float *outb;                   /* [nlayers][K3P_MAXM][hidden] f32: sum over workers */
     int timeout_us;
     volatile int stop;
     volatile long long served;
@@ -401,6 +407,87 @@ static int g_px_running = 0;
 
 static double k3p_now(void) { struct timespec t; clock_gettime(CLOCK_MONOTONIC, &t); return t.tv_sec + t.tv_nsec * 1e-9; }
 
+/* Multi-token step for layer L with M tokens: one FLAG_BATCH message per worker carrying the tokens it serves (same
+ * wire format as k3proto.py batch_*), collect, check k_used per token and Station + workers == 16 per token, and sum
+ * the replies into outb[L][t] (f32). Returns 0, or <0 with g_err set. */
+static int k3proxy_batch(k3proxy *p, int L, int M, uint32_t rid) {
+    int nconn = p->nconn, H = p->hidden;
+    if (nconn > 64 || M < 1 || M > K3P_MAXM) { snprintf(g_err, sizeof(g_err), "batch bad nconn %d / M %d", nconn, M); return -1; }
+    const int8_t *own = p->owner + (size_t)L * 896;
+    const int32_t *ids = p->idsb + (size_t)L * K3P_MAXM * 16;
+    const float *w = p->wb + (size_t)L * K3P_MAXM * 16;
+    const uint16_t *x = p->xb + (size_t)L * K3P_MAXM * H;
+    float *out = p->outb + (size_t)L * K3P_MAXM * H;
+    int8_t cnt[64][K3P_MAXM]; int nst[K3P_MAXM], got[K3P_MAXM], rows[64][K3P_MAXM], m[64];
+    memset(cnt, 0, sizeof(cnt));
+    for (int t = 0; t < M; t++) {
+        nst[t] = 0; got[t] = 0;
+        for (int j = 0; j < 16; j++) {
+            int g = ids[t * 16 + j];
+            int o = (g >= 0 && g < 896) ? own[g] : -2;
+            if (o >= 0 && o < nconn) cnt[o][t]++; else nst[t]++;
+        }
+    }
+    size_t xbytes = (size_t)H * 2;
+    for (int wi = 0; wi < nconn; wi++) {
+        m[wi] = 0;
+        for (int t = 0; t < M; t++) if (cnt[wi][t]) rows[wi][m[wi]++] = t;
+        if (!m[wi]) continue;
+        int mm = m[wi];
+        size_t len = 256 + (size_t)128 * mm + xbytes * mm;
+        if (len > K3_SLOT) { snprintf(g_err, sizeof(g_err), "batch too large"); return -2; }
+        k3conn *c = p->conns[wi];
+        struct timespec t0, now; clock_gettime(CLOCK_MONOTONIC, &t0);
+        while (c->send_busy[0]) {
+            if (poll_once(c) < 0) return -3;
+            clock_gettime(CLOCK_MONOTONIC, &now);
+            if ((now.tv_sec - t0.tv_sec) * 1e3 + (now.tv_nsec - t0.tv_nsec) / 1e6 > 2000.0) {
+                snprintf(g_err, sizeof(g_err), "slot 0 busy on conn %d", wi); return -4;
+            }
+        }
+        uint8_t *b = k3_buf(c, 0);
+        uint32_t r = rid + (uint32_t)wi; uint16_t LL = (uint16_t)L, M16 = (uint16_t)mm; uint32_t tag = 0;
+        memcpy(b + 0, &r, 4); memcpy(b + 4, &LL, 2); b[6] = 0; b[7] = 2 /* FLAG_BATCH */; memcpy(b + 8, &tag, 4);
+        memset(b + 12, 0xff, 64); memset(b + 76, 0, 64);           /* unused per-token header fields */
+        memcpy(b + 140, &M16, 2);
+        for (int k = 0; k < mm; k++) {
+            int t = rows[wi][k];
+            memcpy(b + 256 + 64 * k, ids + t * 16, 64);
+            memcpy(b + 256 + 64 * mm + 64 * k, w + t * 16, 64);
+            memcpy(b + 256 + 128 * mm + xbytes * k, x + (size_t)t * H, xbytes);
+        }
+        if (k3_send(c, 0, (int)len) != 0) return -5;
+    }
+    memset(out, 0, sizeof(float) * (size_t)M * H);
+    for (int wi = 0; wi < nconn; wi++) {
+        if (!m[wi]) continue;
+        int mm = m[wi];
+        k3conn *c = p->conns[wi];
+        int s = k3_poll_recv(c, p->timeout_us);
+        if (s < 0) { if (!g_err[0]) snprintf(g_err, sizeof(g_err), "batch timeout on conn %d", wi); return -6; }
+        uint8_t *rv = k3_buf(c, s);
+        uint32_t rq, st; memcpy(&rq, rv, 4); memcpy(&st, rv + 4, 4);
+        if (rq != rid + (uint32_t)wi) { snprintf(g_err, sizeof(g_err), "batch conn %d req_id %u != %u", wi, rq, rid + wi); return -7; }
+        if (st != 0) { snprintf(g_err, sizeof(g_err), "batch conn %d status %u", wi, st); return -8; }
+        const uint16_t *ku = (const uint16_t *)(rv + 256);
+        size_t yoff = 256 + ((size_t)(2 * mm + 127) / 128) * 128;
+        for (int k = 0; k < mm; k++) {
+            int t = rows[wi][k];
+            if ((int)ku[k] != cnt[wi][t]) {
+                snprintf(g_err, sizeof(g_err), "batch conn %d token %d k_used %u != %d", wi, t, ku[k], cnt[wi][t]); return -9;
+            }
+            got[t] += ku[k];
+            const uint16_t *y = (const uint16_t *)(rv + yoff + xbytes * k);
+            float *o = out + (size_t)t * H;
+            for (int h = 0; h < H; h++) { union { uint32_t u; float f; } v; v.u = (uint32_t)y[h] << 16; o[h] += v.f; }
+        }
+        if (k3_post_recv(c, s) != 0) return -10;
+    }
+    for (int t = 0; t < M; t++)
+        if (got[t] + nst[t] != 16) { snprintf(g_err, sizeof(g_err), "batch partition token %d: %d + %d != 16", t, got[t], nst[t]); return -11; }
+    return 0;
+}
+
 static void *k3proxy_main(void *arg) {
     k3proxy *p = (k3proxy *)arg;
     int8_t kexp[64];
@@ -413,14 +500,21 @@ static void *k3proxy_main(void *arg) {
         int found = -1;
         for (int i = 0; i < p->nlayers; i++) {
             int l = (L + i) % p->nlayers;
-            if (__atomic_load_n(&p->flags[l * K3P_FLAG_STRIDE], __ATOMIC_ACQUIRE) == 1) { found = l; break; }
+            if (__atomic_load_n(&p->flags[l * K3P_FLAG_STRIDE], __ATOMIC_ACQUIRE) > 0) { found = l; break; }
         }
         if (found < 0) { __asm__ volatile("yield" ::: "memory"); continue; }
         L = found;
         double t0 = k3p_now();
+        int Mtok = __atomic_load_n(&p->flags[L * K3P_FLAG_STRIDE], __ATOMIC_ACQUIRE);
         __atomic_store_n(&p->flags[L * K3P_FLAG_STRIDE], 0, __ATOMIC_RELAXED);
         uint16_t *out = p->rows + (size_t)L * nrows * p->hidden;
-        if (p->nconn == 0) {
+        if (Mtok > 1) {
+            if (!p->outb || p->nconn == 0) { fprintf(stderr, "k3proxy FATAL: M=%d but no batch regions\n", Mtok); fflush(stderr); k3proxy_die(); }
+            rid += (uint32_t)p->nconn;
+            if (k3proxy_batch(p, L, Mtok, rid) != 0) {
+                fprintf(stderr, "k3proxy FATAL: batch layer %d M=%d: %s\n", L, Mtok, g_err); fflush(stderr); k3proxy_die();
+            }
+        } else if (p->nconn == 0) {
             memcpy(out, p->x + (size_t)L * p->hidden, hb);
         } else {
             int nst = 0;
@@ -455,6 +549,13 @@ int k3proxy_start(k3conn **conns, int nconn, int nlayers, int hidden, const int8
     }
     g_px_running = 1;
     return 0;
+}
+
+/* K3-5: register the multi-token regions (call after k3proxy_start, before any ready flag > 1 is raised). */
+int k3proxy_set_batch(const uint16_t *xb, const int32_t *idsb, const float *wb, float *outb) {
+    g_px.xb = xb; g_px.idsb = idsb; g_px.wb = wb;
+    __atomic_store_n(&g_px.outb, outb, __ATOMIC_RELEASE);
+    return K3P_MAXM;
 }
 
 long long k3proxy_served(void) { return g_px.served; }

@@ -303,7 +303,80 @@ def main():
         x_t[1].zero_()
         log(f"BATCH path ready: buckets {BATCH_BUCKETS} + dynamic, built in {time.perf_counter() - t1:.1f} s; "
             f"pairs-vs-M=1 rel {r:.2e}")
+    # K3-5: small batches (multi-token decode, <= SB_MAXM tokens and <= SB_BUCKETS[-1] pairs) replay one CUDA graph per
+    # (pair bucket, layer): gather x rows -> top_k=1 B12x call -> per-token index_add -> bf16 out + finite flag.
+    # Padding pairs repeat a real (token, expert) pair at weight 0 into a dummy row, so they read no extra weights.
+    SB = BATCH and WG and os.environ.get("K3_SMALLB", "1") == "1"
+    SB_BUCKETS, SB_MAXM = (2, 4, 8, 16, 32), 8
+    sgraphs = {}
+    if SB:
+        t1 = time.perf_counter()
+        swr = {b: B12xMoEWrapper(num_experts=E, top_k=1, hidden_size=HIDDEN, intermediate_size=INTER,
+                                 use_cuda_graph=True, max_num_tokens=b, num_local_experts=E,
+                                 output_dtype=torch.bfloat16, activation="situ", quant_mode="nvfp4")
+               for b in SB_BUCKETS}
+        sx8 = torch.zeros((SB_MAXM, HIDDEN), dtype=torch.bfloat16, device="cuda")
+        sgat = {b: torch.zeros((b,), dtype=torch.int64, device="cuda") for b in SB_BUCKETS}
+        sid = {b: torch.zeros((b, 1), dtype=torch.int32, device="cuda") for b in SB_BUCKETS}
+        swt = {b: torch.zeros((b, 1), dtype=torch.float32, device="cuda") for b in SB_BUCKETS}
+        stix = {b: torch.zeros((b,), dtype=torch.int64, device="cuda") for b in SB_BUCKETS}
+        sacc = torch.zeros((SB_MAXM + 1, HIDDEN), dtype=torch.float32, device="cuda")
+        sout = torch.zeros((SB_MAXM, HIDDEN), dtype=torch.bfloat16, device="cuda")
+        h_sg = torch.zeros((32,), dtype=torch.int64, pin_memory=True)
+        h_si = torch.zeros((32,), dtype=torch.int32, pin_memory=True)
+        h_sw = torch.zeros((32,), dtype=torch.float32, pin_memory=True)
+        h_st = torch.zeros((32,), dtype=torch.int64, pin_memory=True)
+
+        def sbody(b, L):
+            Lr = layers[L]
+            xr = sx8.index_select(0, sgat[b])
+            y = swr[b].run(xr, Lr["w13"], Lr["w13_sf"], Lr["w2"], Lr["w2_sf"], sid[b], swt[b],
+                           w1_alpha=Lr["w1_alpha"], w2_alpha=Lr["w2_alpha"], fc2_input_scale=one,
+                           input_global_scale=one)
+            sacc.zero_()
+            sacc.index_add_(0, stix[b], y.float())
+            sout.copy_(sacc[:SB_MAXM].to(torch.bfloat16))
+            fin_t.copy_(torch.isfinite(sout).all().to(torch.int32).view(1))
+
+        sx8.normal_()
+        gsb = torch.cuda.Stream()
+        with torch.cuda.stream(gsb):
+            for b in SB_BUCKETS:
+                sid[b][:, 0] = torch.arange(b, device="cuda", dtype=torch.int32) % E
+                swt[b].fill_(0.5); sgat[b].copy_(torch.arange(b, device="cuda") % SB_MAXM)
+                stix[b].copy_(torch.arange(b, device="cuda") % SB_MAXM)
+                sbody(b, 0)
+            torch.cuda.synchronize()
+            for L in range(n_layers):
+                for b in SB_BUCKETS:
+                    g = torch.cuda.CUDAGraph()
+                    with torch.cuda.graph(g, pool=pool, stream=gsb):
+                        sbody(b, L)
+                    sgraphs[(b, L)] = g
+        torch.cuda.synchronize()
+        # graph vs eager on sampled (bucket, layer), distributional like the M=1 check
+        rs = np.random.default_rng(5)
+        ge_, ee_ = [], []
+        for _ in range(24):
+            b = int(rs.choice(SB_BUCKETS)); L = int(rs.integers(0, n_layers))
+            sx8.normal_()
+            sid[b][:, 0] = torch.tensor(rs.integers(0, E, b), dtype=torch.int32, device="cuda")
+            swt[b][:, 0] = torch.tensor(rs.random(b), dtype=torch.float32, device="cuda")
+            sgat[b].copy_(torch.tensor(rs.integers(0, SB_MAXM, b), device="cuda"))
+            stix[b].copy_(sgat[b]); torch.cuda.synchronize()
+            sgraphs[(b, L)].replay(); torch.cuda.synchronize(); yg = sout.float().clone()
+            sbody(b, L); torch.cuda.synchronize(); ye = sout.float().clone()
+            sbody(b, L); torch.cuda.synchronize(); ye2 = sout.float().clone()
+            nrm = ye.norm().clamp_min(1e-12)
+            ge_.append(float((yg - ye).norm() / nrm)); ee_.append(float((ye2 - ye).norm() / nrm))
+        ge_, ee_ = np.array(ge_), np.array(ee_)
+        assert np.median(ge_) < 1.5 * np.median(ee_) + 1e-3 and ge_.max() < max(1.5 * ee_.max() + 1e-2, 0.10), \
+            f"small-batch graph differs from eager beyond kernel noise: median {np.median(ge_):.2e} vs {np.median(ee_):.2e}"
+        log(f"SMALLB {len(sgraphs)} graphs (buckets {SB_BUCKETS}, <= {SB_MAXM} tokens) in "
+            f"{time.perf_counter() - t1:.1f} s; graph-vs-eager rel median {np.median(ge_):.2e} "
+            f"(eager-vs-eager {np.median(ee_):.2e})")
     b_served = b_tokens = b_pairs = 0
+    s_served = 0
     b_us = 0.0
 
     conn = Conn.listen(BIND, PORT, DEV, GID, ring=ring_ptr, timeout_s=3600)
@@ -356,7 +429,20 @@ def main():
             yoff = batch_yoff(Mb)
             ydst = dev_tensor(ring_ptr + yoff, (Mb, HIDDEN), "<i2", torch.bfloat16)   # reply slot 0
             t_k = time.monotonic_ns()
-            if P:
+            if P and SB and Mb <= SB_MAXM and P <= SB_BUCKETS[-1]:
+                n = next(v for v in SB_BUCKETS if v >= P)
+                sg, si, sw_, st = h_sg.numpy(), h_si.numpy(), h_sw.numpy(), h_st.numpy()
+                sg[:n] = tix[0]; si[:n] = loc[tix[0], col[0]]; sw_[:n] = 0.0; st[:n] = SB_MAXM
+                sg[:P] = tix; si[:P] = loc[tix, col]; sw_[:P] = gw[tix, col]; st[:P] = tix
+                sx8[:Mb].copy_(bx[:Mb])
+                sgat[n].copy_(h_sg[:n], non_blocking=True); sid[n][:, 0].copy_(h_si[:n], non_blocking=True)
+                swt[n][:, 0].copy_(h_sw[:n], non_blocking=True); stix[n].copy_(h_st[:n], non_blocking=True)
+                sgraphs[(n, L)].replay()
+                ydst.copy_(sout[:Mb])
+                torch.cuda.current_stream().synchronize()
+                ok = bool(fin_np[0] == 1)
+                s_served += 1
+            elif P:
                 n = bucket(P)
                 hi, hw, ht = h_ids.numpy(), h_w.numpy(), h_tix.numpy()
                 hi[:n] = 0; hw[:n] = 0.0; ht[:n] = Mb          # padding rows: weight 0, summed into a dummy row

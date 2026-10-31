@@ -124,7 +124,7 @@ cut short but still ends with `[DONE]`, so check `finish_reason` / length client
 
 ## Results
 
-Run `2026-10-30-k3-four-tier`, reference box, `--max-num-seqs 1`, `--max-model-len 4096`.
+Run `2026-10-30-k3-four-tier`, reference box, `--max-num-seqs 8`, `--max-model-len 4096`.
 
 **Speed** (C1, temperature 0):
 
@@ -132,6 +132,7 @@ Run `2026-10-30-k3-four-tier`, reference box, `--max-num-seqs 1`, `--max-model-l
 |---|---:|
 | 512-token streamed decode, 3 runs | 54.11 / 54.13 / 54.13 ms per token → **18.5 tok/s**, worst gap 56.1 ms |
 | length sweep 16 / 64 / 128 / 256 / 512 tokens (gap p90) | 54.65 / 54.96 / 54.87 / 54.93 / 54.96 ms |
+| concurrent decode, 1 / 2 / 4 / 8 streams (ms per step → total tok/s) | 54.4 / 76.1 / 114.9 / 172.1 → 18.4 / 26.3 / 34.8 / **46.5** (was 235–305 ms per step at 2–8 before the multi-token proxy) |
 | fresh boots (22:29, 23:05) | 54.57, 54.36 ms per token |
 | per layer: proxy send → last worker reply | 305 µs |
 | prompt reading, 1,024-token chunks (serving), 32 / 284 / 1,124 / 3,364-token prompts (time to first token, median of 3) | 0.69 / 1.08 / 2.71 / 5.84 s → 46 / 263 / 414 / **576 tok/s** |
@@ -149,6 +150,7 @@ Run `2026-10-30-k3-four-tier`, reference box, `--max-num-seqs 1`, `--max-model-l
 | outlier layers 24/25/36/48 vs a kernel-faithful NVFP4 emulation | both tiers 0.992–0.997 (vs fp32 0.84–0.99 — the recipe, also seen in stock) |
 | greedy text, 5 prompts (EN, FR, code, arithmetic) | coherent; arithmetic correct |
 | batched prompt path vs stock vLLM, ~15,000 prompt token-layers per layer (shadow, 13-layer cut) | layers 1–11 cosine mean 0.99980–0.99994; layer 12 flags only tokens whose stock output is ~0 |
+| multi-token decode path vs stock vLLM, real traffic only (1–8 streams + prompts, 13-layer shadow) | layers 1–11 cosine mean 0.99980–0.99993, worst token 0.9973 |
 | fault injection (kill a Spark worker mid-decode) | proxy trips in ~2 s, engine exits (SIGKILL build); open stream cut at 578/2,000 tokens, closed with `[DONE]` |
 
 Receipts: `results/2026-10-30-k3-four-tier/` (`throughput.csv`, `raw/speed-transcribed.txt` — speed lines
@@ -164,11 +166,12 @@ transcribed from session output, labelled; `raw/parity/`, `raw/fault-injection/`
   ~4–5 s vLLM FlashAttention JIT compile.
 - **Batch kernels are compiled per padded row count.** `worker.py` builds every bucket at boot and must warm the
   dynamic kernel first; otherwise the first real chunk compiles for ~3 s.
-- **One request at a time.** Serve with `--max-num-seqs 1`. With 8 allowed, 1 / 2 / 4 / 8 concurrent streams ran at
-  54.4 / 235 / 266 / 305 ms per step (13.3* / 8.3 / 14.7 / 25.9 tok/s total; *includes time to first token):
-  multi-token decode steps leave the CUDA graph for the eager batched path (~2.5–3 ms per layer vs 0.3 ms), so two
-  users at once get less than one alone. Fix (not done): graph-resident step and worker graphs for 2–8 tokens.
-  `--max-model-len 4096`; long context is untested.
+- **Up to 8 requests, and each slows as more join.** `--max-num-seqs 8`: 1 / 2 / 4 / 8 streams run at
+  54.4 / 76.1 / 114.9 / 172.1 ms per step — 18.4 / 26.3 / 34.8 / 46.5 tok/s in total, ~5.8 tok/s each at 8.
+  Multi-token decode steps stay inside the CUDA graph (proxy batch path + per-(bucket, layer) worker graphs); before,
+  they broke the graph and ran 235–305 ms per step. The 172 ms at 8 streams is not yet explained by measurement
+  (likely the Station's own experts — 8 tokens touch ~45 of them per layer, mostly in Grace — plus the workers'
+  slower 16-pair kernel bucket). `--max-model-len 4096`; long context is untested.
 - **No model-level quality gate.** No teacher-forced comparison with a reference engine, no tool-call gate, no task
   benchmark: no machine here can hold a stock copy of the whole model. Evidence is per layer (above).
 - **NVFP4 precision at low-magnitude layers** (24, 25, 36, 48; layer 12 carries ~0.2 % of its input) — matched by an
