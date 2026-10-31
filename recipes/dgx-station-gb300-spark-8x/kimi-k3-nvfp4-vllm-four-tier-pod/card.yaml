@@ -1,0 +1,50 @@
+# card.yaml — at-a-glance card sidecar. Rendered by scripts/render_card.py; never hand-edit card.html.
+# Every number traces to recipe.yaml metrics or results/2026-10-30-k3-four-tier/. Unmeasured = pending.
+title: "Kimi-K3 NVFP4 (2.8T) · DGX Station GB300 + RTX PRO 6000 + 8× DGX Spark"
+subtitle: "Every expert stays where it was loaded; only the token's 7 KiB latent moves. The GB300 runs stock vLLM plus 344 experts per layer, eight Sparks hold 62 each and the RTX 56, computed on request over 200G RoCE. Batch 1, 4K context, experimental."
+version: "2026-10-30 · experimental"
+run_id: 2026-10-30-k3-four-tier
+handles: "github.com/J-M-Recipes/recipes · al-engr.com · graph-resident expert step: Javier (@javierbits) — credited in the README"
+
+model:
+  type: MoE
+  type_detail: "896 routed experts per layer × 92 MoE layers + 2 shared; 16 active; latent width 3584"
+  total_params: 2.8T
+  active_params: pending
+  checkpoint_gb: 1609.8
+  weights_short: "as shipped · NVIDIA NVFP4 experts (lossless MXFP4 cast) / FP8 attention · nothing re-quantized"
+  engine_extra: "vllm/vllm-openai:v0.31.0 (sha256:c1c9f6fd) + k3pod hook (no fork) · workers NGC PyTorch 26.07 + FlashInfer 0.7.0.post1 B12x + SiTU patch · libk3hop RoCE"
+  memory: "GB300 HBM 250.7 GiB + 401 GB pinned Grace (Station: 31,648 experts) · RTX 89.2 GiB (5,152) · 8 × 98.7 GiB Spark banks (45,632)"
+
+hero:
+  c1:      { value: 18.5, unit: tok/s, class: "512-token streamed, temperature 0", label: "Decode · C1, batch 1", note: "54.1 ms/token, mean of 3 runs, worst gap 56.1 ms · flat 16→512 tokens · fresh boots 54.6 / 54.4 ms · 273 ms at first tokens" }
+  c16:     { value: 305, unit: µs/layer, label: "Expert step · send → last worker reply", note: "inside the CUDA graph (proxy) · Spark round trip 150 µs for 1 expert, +77 µs per extra (bandwidth) · batch > 1 not measured" }
+  prefill: { value: pending, unit: tok/s, label: "Prompt reading", note: "not measured — prefill uses the eager-break path; --max-num-batched-tokens 256, 4K context" }
+
+guesser:
+  name: "none"
+  source: "no speculative decoding"
+  schedule: "plain autoregressive decode"
+  accept: { "n/a": "no drafter" }
+
+secondary:
+  - label: "Where the 273 → 54 ms went"
+    items:
+      "breakable CUDA graphs": "273 → 86 ms (network steps as eager breaks; workers start before the Station's experts)"
+      "C send/collect": "86 → 80 ms"
+      "graph-resident expert step (@javierbits)": "80 → 64 ms · GPU flag → C proxy → in-graph wait, 37 µs/layer round trip"
+      "graphed workers": "64 → 54 ms · the workers' 'fixed cost' was ~100 µs of wrapper launches; the kernel is ~91 µs + ~75 µs per extra expert"
+  - label: "Guard"
+    items:
+      "dead or stalled worker": "proxy SIGKILLs the engine core after 2 s → vLLM exits, stream gets an error chunk (fault-injected)"
+      "abort() build": "left /health 200 while a 480 GB core dump hung every request — replaced"
+      "partition": "Station ids + Σ k_used == 16 asserted every layer and token"
+
+fidelity:
+  - { status: pass, text: "Weights unchanged: NVIDIA's NVFP4 checkpoint as shipped; Spark/RTX banks are byte re-layouts, SHA-256 equal on both ends" }
+  - { status: pass, text: "Layers 1–12 vs stock vLLM on identical inputs (shadow, graphs + proxy + graphed workers): cosine mean 0.99979–0.99984, layer 12 0.99931" }
+  - { status: pass, text: "All 92 layers on full-model inputs (29,440 layer-tokens) vs an fp32 checkpoint reference: 87 ≥ 0.99, median 0.996, no cross-tier leaks" }
+  - { status: measured, text: "Layers 24/25/36/48 lose precision to NVFP4 activation quantization (0.84–0.99 vs fp32); both tiers match an exact emulation at 0.992–0.997, as does stock" }
+  - { status: measured, text: "Worker kernel non-deterministic: 0.8–2 % repeat spread (GB10), heavy tail to ~5–6 % (RTX sm_120); boot-to-boot logprob Δ median ~0.13" }
+  - { status: pending, text: "Teacher-forced divergence vs a reference engine — no machine here can hold the whole model" }
+  - { status: pending, text: "Tool-call gate · task benchmark (GSM8K / needle) · long context · batch > 1 · soak" }

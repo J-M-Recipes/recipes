@@ -1,0 +1,36 @@
+TRANSCRIBED — speed measurements of 2026-10-30, copied verbatim from the session's stored tool output (the bench
+scripts printed to stdout; most runs did not write a file). Each value below was re-checked against that stored
+output on 2026-10-30 23:3x CDT; values that could not be found there are left out. Times are CDT on the Station. Instrument: scripts/check/bench.py
+(A = (t(1+D) - t(1)) / D from non-streaming requests, median of REPS; B = streamed inter-token gaps), and an inline
+streaming client for the 512-token runs (prompt 'Write a long, detailed history of the
+transistor.', max_tokens 512). Model name k3, temperature 0,
+ignore_eos, batch 1, --max-num-seqs 1.
+
+13:09  eager (no CUDA graphs), first tokens                           A 273.43 ms/token [272.30, 273.83, 273.43]
+14:47  breakable CUDA graphs, network steps as eager breaks            A 86.07 ms/token, gap p50 85.80 p90 86.67
+~16:00 one pinned D2H + one sync per layer                            81.9 ms/token (12.2 tok/s); wait 0.48 ms/layer
+16:43  C send/collect (k3pod_send / k3pod_collect)                     A 79.85 ms/token, B p90 80.90
+       proxy-less per layer: d2h 0.153 ms, send 0.020 ms, wait+collect 0.410 ms
+20:11  graph-resident expert step (K3POD_PROXY=1)                      A 63.83 / 63.65 ms/token (64 tok x3, two runs),
+       p90 gap 64.38 / 64.30; 256 tokens, REPS=1: A 72.30 (single sample; see 21:07-21:10)
+       proxy work (send -> last reply) 436-442 us/layer
+20:53  workers: one CUDA graph per (k, layer)                          A 54.00 / 54.23 ms/token (64 tok x3, two runs),
+       p90 gap 54.88 / 54.85
+       256 tokens, REPS=1: A 62.57 (single sample; NOT reproduced, see below)
+       proxy work 305 us/layer
+21:07  length sweep, REPS=1:  D=16 53.53 | 64 54.29 | 128 54.17 | 256 54.22 | 512 58.28 (A, ms/token)
+       B gap p90 54.65 / 54.96 / 54.87 / 54.93 / 54.96
+21:10  streamed 512-token decode, 3 runs: mean 54.11 / 54.13 / 54.13 ms; median 54.11 / 54.15 / 54.14;
+       p99 55.6 / 55.4 / 55.6; max 55.8 / 55.9 / 56.1; gaps > 80 ms: 0 / 0 / 0
+22:29  after a reboot (128 tok x3)                                     A 54.57, B median 54.51, p90 55.26
+23:05  after a reboot (128 tok x3)                                     A 54.36, B median 54.37, p90 55.13
+
+Spark worker round trip (scripts/check/client_g3.py, spark1, forced k, 300 per k; p50 us):
+  v1 (eager worker, 400 per k) k=1 243.5  k=2 312.0  k=3 398.0  k=4 468.8   (raw/worker/g3-spark0.json)
+  graphed worker          k=1 150.4  k=2 224.9  k=3 310.9  k=4 385.1   fit ~73 + 77 k   (raw/worker/g3-spark0-wgraph.json)
+Fused B12x MoE kernel alone (nsys, spark1, M=1): ~91 us at k=1, ~75 us per extra expert; host-synchronous eager call
+k=1/2/4 190.0 / 255.9 / 415.0 us.
+GB300 stock NVFP4 routed-MoE kernel at M=1 (scripts/check/grace_vs_hbm_moe.py), us:
+  HBM   k=1 18.8  2 19.4  4 25.2  6 31.2  8 38.4  12 50.1  16 61.8     (~3 us per extra expert)
+  Grace k=1 65.5  2 115.1 4 207.6 6 296.3 8 389.3 12 581.0 16 771.3    (~47 us per extra expert, pinned, over C2C)
+Graph-resident step loopback (scripts/check/proxy_loopback_test.py): 37 us/layer GPU -> proxy -> GPU.
