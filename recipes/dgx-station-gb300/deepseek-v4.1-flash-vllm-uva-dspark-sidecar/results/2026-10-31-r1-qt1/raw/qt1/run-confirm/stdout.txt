@@ -1,0 +1,36 @@
+QT1 VERDICT — temperature>0 sampler calibration (PIT), DSV4.1-Flash Pg61 :30006
+overall: PASS
+
+QT1-A primary (pooled ['C1', 'C2']) N=60073 positions
+  PIT KS      D=0.00433  p=0.2097
+  chi2 10-bin p=0.4971
+  dependence  z(autocorr1)=-0.01  z(runs)=-0.17
+  top-1 rate  obs=0.8614  exp(max p)=0.8612  z=0.19
+  NLL 0.4342 nats vs H_partition 0.4144 -> gap +0.0199 (tail bound 0.0514)
+  per class:
+    prose       n=12672  KS D=0.00722 p=0.521
+    structured  n=16292  KS D=0.00964 p=0.0961
+    code        n=10895  KS D=0.00542 p=0.906
+    shell_ops   n=11578  KS D=0.00825 p=0.409
+    tool_json   n= 8636  KS D=0.00518 p=0.974
+
+positive controls (a real distribution change must be caught):
+  K95@T1.00(control)     KS D=0.0103 p=0.00364  N=29535
+  K105@T1.00(control)    KS D=0.0074 p=0.0707  N=30269
+
+arms:
+  C1     N= 29848  KS p=0.183  autocorr_z=-0.44  runs_z=0.38  mean_u=0.5026  mass_top20=0.9956  ptail=0.0044  flags=0
+  C2     N= 30225  KS p=0.614  autocorr_z=0.42  runs_z=-0.61  mean_u=0.5004  mass_top20=0.9957  ptail=0.0043  flags=0
+  K95    N= 29535  KS p=0.126  autocorr_z=-0.77  runs_z=1.20  mean_u=0.5018  mass_top20=1.0000  ptail=0.0000  flags=90
+  K105   N= 30269  KS p=0.047  autocorr_z=0.32  runs_z=0.20  mean_u=0.5034  mass_top20=1.0000  ptail=0.0000  flags=198
+
+pre-registered bars:
+  [PASS] P1 pooled PIT KS p >= 0.01                                     got=0.20972 want=>= 0.01
+  [PASS] P2 no per-class KS rejects after Holm (FWER 5%)                got={"min_holm_p": 0.48056, "class": "structured"} want=>= 0.05
+  [PASS] P3 dependence: |z(autocorr1)|, |z(runs)| < 3                   got={"autocorr_z": -0.00897, "runs_z": -0.17064} want=< 3
+  [PASS] P4 top-1 calibration |z| < 3                                   got=0.1934 want=< 3
+  [PASS] P5 mean NLL - H_partition in [-0.02, tail_bound+0.02]          got={"gap": 0.01985, "bound": 0.0514} want=in band
+
+Do not read this as: the accept/reject arithmetic is correct (G3 GPU unit test), the
+distribution is right at temperatures not sampled here, or anything about speed.
+

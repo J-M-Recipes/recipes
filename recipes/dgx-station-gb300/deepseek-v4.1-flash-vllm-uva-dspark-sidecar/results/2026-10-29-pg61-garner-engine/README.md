@@ -1,8 +1,9 @@
 # 2026-10-29 — Pg61: Garner McCloud's DS4.1 engine under our policy, and its promotion to `:30006`
 
 **Result:** Pg61 has served `:30006` on the reference box **since 2026-10-29 10:14pm CDT**. James approved the
-promotion and asked that it stay **marked as still being tested**: a 48 h soak runs to **Saturday 2026-10-31 10:14pm CDT**,
-and the recipe stays `experimental`. Rollback is one command back to h2-REF (stopped and kept).
+promotion and asked that it stay **marked as still being tested**: a 48 h soak was started, and the recipe stays
+`experimental`. *(At promotion time the soak was due to end Saturday 2026-10-31 10:14pm CDT; **Corrected
+2026-10-31:** soak broken 2026-10-30 04:57 (reboot) and ~10:07 (Kimi-K3 window, to 2026-10-31 09:44); restarted 2026-10-31 12:44:08 CDT after Card R1 (receipt: launcher soak-start.json); ends Monday 2026-11-02 11:44 AM CST (17:44Z).)* Rollback is one command back to h2-REF (stopped and kept).
 
 **Pg61 is Garner McCloud's engine.** It runs [`garnermccloud/dgx-station-recipes`](https://github.com/garnermccloud/dgx-station-recipes)
 @ [`8043a6811a5feda70fdfb6e827eebb2ec25c65d1`](https://github.com/garnermccloud/dgx-station-recipes/tree/8043a6811a5feda70fdfb6e827eebb2ec25c65d1/deepseek-v4.1-flash)
@@ -31,7 +32,7 @@ replay transcripts, and any key file.
 | **G1** | His tree under our policy (P), and P + his KV/indexer config (K), bracketed by h2-REF (A → P/K → A2) | **INCOMPLETE, CRASH**: both P and K died with `CUDA error: an illegal memory access` on a 32-request × 4-token step. Single-stream cells before the crash: P 1.26× h2-REF steps/s | [`cards/G1/`](cards/G1/README.md) | [`raw/G1/`](raw/G1/) |
 | **G1b–G1e** | Bisect the crash: context length, component list, numerics-changing components | 6 deaths in 4 configs; turning off an inert component (`lowb_aux`) was enough to flip survival → **layout-dependent** | [`cards/G1f/`](cards/G1f/README.md) | [`raw/G1-bisect/`](raw/G1-bisect/) (runner logs, crash excerpts) |
 | **G1f** | Cause and fix | **Cause = vLLM #60945, unguarded in stock v0.31.0.** The 3-line guard alone fixes the config that died (V1: 3 × 60 s C32 clean). **Pg** = P + guard passes every cell G1 owed: per-class C1 mean 1.33× and C8 1.10× h2-REF; TF at the floor; gauntlet 12/12; 1M needle PASS | [`cards/G1f/`](cards/G1f/README.md) | [`raw/G1f/`](raw/G1f/) |
-| **G2** | Promotion-tier gates on Pg (T0/T2/T1, BFCL held-out, replay, prefill) | **PASS on every quality gate**; BFCL held-out 78.26 % vs v27 77.27 % (p = 0.011, better). **One speed regression: prefill −8 to −10 %** | [`cards/G2/`](cards/G2/README.md) | [`raw/G2/`](raw/G2/) |
+| **G2** | Promotion-tier gates on Pg (T0/T2/T1, BFCL held-out, replay, prefill) | **PASS on every quality gate**; BFCL held-out 78.26 % vs v27 77.27 % (p = 0.011, better). **One speed regression: prefill −6.3 to −9.3 %** *(Corrected 2026-10-31: this row said −8 to −10 %; the 57K point sits outside that band.)* | [`cards/G2/`](cards/G2/README.md) | [`raw/G2/`](raw/G2/) |
 | **G3-desk** | Does v0.31.0 carry #61161? Does his peer tier v3 fail closed? | **#61161 absent** in v0.31.0 and in his fused drafters (every T > 0 draw is biased). **A v3 wait timeout skips the cold-expert add silently** (wrong tokens). Fix = `PEER3_SPINS` ≥ 1e12 + a watchdog that refuses to arm without it. Desk-built, 13/13 unit tests | [`cards/G3-desk/`](cards/G3-desk/README.md) | — (desk) |
 | **G3 / G3b** | #61161 port exactness on a GPU; the watchdog's trip path under fault injection | **Both PASS.** Patched kernels equal the eager reference at every step (w6 30/30, w5 120/120 per step; stock matches only step 0). G3b paused the sidecar under 4 streams: the last tokens came 0.10 s after the pause and none after the stall, the watchdog **TRIPPED after ~3 s** and the server was killed. Pg61 = Pg + port + spins + watchdog becomes the candidate | [`cards/G3/`](cards/G3/README.md) | [`raw/G3/`](raw/G3/) |
 | **G4** | T3 promotion bench, Pg61 **booted by the published launcher** vs h2-REF in the same window | **PASS on all six pre-registered bars** ([PREREG](cards/G4/PREREG.md)). `docker inspect` args identical to G3; needle 500/500; GSM8K-1319 and MMLU-Pro-1000 no paired loss (MMLU-Pro +2.4 pt, p < 0.001); T1 C1 1.21–1.31×, C4 1.12–1.18× (the card README rounds 757.4/678.8 to 1.11×); 0 trips | [`cards/G4/`](cards/G4/README.md) | [`raw/G4/`](raw/G4/) |
@@ -78,7 +79,7 @@ rule, it never replaces the per-class headline.
 
 | cost | evidence |
 |---|---|
-| **Prefill is slower.** His `bench_full.py` prefill, uncached, median of 3: 14K / 57K / 114K = 39.9K / 41.6K / 41.0K tok/s vs h2-REF same day 44.0K / 44.4K / 44.6K → **−8 to −10 %**. The G4 T1 scout prefills (N = 1 each) read **−10 to −17 %** (8K 38,865 vs 42,968; 32K 39,954 vs 47,218; 64K 40,399 vs 47,054; 128K 39,775 vs 48,062) | [`raw/G2/box/*/prefill.md`](raw/G2/box/), [`raw/G4/m4/*/t3-t1.stdout.txt`](raw/G4/m4/) |
+| **Prefill is slower.** His `bench_full.py` prefill, uncached, median of 3: 14K / 57K / 114K = 39.9K / 41.6K / 41.0K tok/s vs h2-REF same day 44.0K / 44.4K / 44.6K → **−9.3 / −6.3 / −8.1 %** *(Corrected 2026-10-31: this row read "−8 to −10 %", a band the 57K point is outside.)* The G4 T1 scout prefills (N = 1 each) read **−10 to −17 %** (8K 38,865 vs 42,968; 32K 39,954 vs 47,218; 64K 40,399 vs 47,054; 128K 39,775 vs 48,062) | [`raw/G2/box/*/prefill.md`](raw/G2/box/), [`raw/G4/m4/*/t3-t1.stdout.txt`](raw/G4/m4/) |
 | **1M first token 36.54 s** on 999,034 tokens (27.3K tok/s), vs **33.2 s** for the v25 base launch (2026-10-22, a different day and launch). h2-REF's own AP2 needle was 900,372 tokens in 31.17 s (28.9K tok/s) | [`raw/G1f/Pg/onem-needle.json`](raw/G1f/Pg/onem-needle.json) |
 | Probable cause (not measured): his h255 rowmap puts **129 cold experts per layer** on the RTX (vs our 89), and T > 64 still uses peer tier v2. A rowmap sweep (h270 / h285 under our policy) is planned after promotion, at a KV-token cost | [`cards/G2/`](cards/G2/README.md) |
 
@@ -87,8 +88,8 @@ rule, it never replaces the per-class headline.
 - **Temperature > 0 quality.** Every quality gate here is T = 0 or teacher-forced. The #61161 port is proven exact
   at the kernel level (G3) and costs no C1 (G5). There is still no T > 0 quality score: no full-vocabulary KLD over
   forced tokens and no seeded GSM8K at T = 1.
-- **The 48 h soak.** It is running now, from 10:14pm CDT Thursday 2026-10-29 to 10:14pm CDT Saturday 2026-10-31. Any
-  restore or card resets the clock.
+- **The 48 h soak.** It started at 10:14pm CDT Thursday 2026-10-29 with a nominal end of 10:14pm CDT Saturday
+  2026-10-31. *(Corrected 2026-10-31: soak broken 2026-10-30 04:57 (reboot) and ~10:07 (Kimi-K3 window, to 2026-10-31 09:44); restarted 2026-10-31 12:44:08 CDT after Card R1 (receipt: launcher soak-start.json); ends Monday 2026-11-02 11:44 AM CST (17:44Z). Any restore or card resets the clock.)*
 - **Decode beyond 128K**, except the one G1f 1M needle (on Pg, before the port; found, post-probe OK).
 - **The watchdog fix after G3b.** G3b's trip ran the watchdog *before* a log-ordering fix (log the server kill first,
   unpause, then stop the sidecar). The fixed file (`812c47c0`, published as `scripts/sidecar_watchdog_p3.py` with
@@ -132,6 +133,8 @@ nothing while the lane is healthy.
 | `image.txt` | image of record: `vllm/vllm-openai:v0.31.0@sha256:c1c9f6fd5c109ba7f0546a59f5b2f15fb87f64c77782e90a27b648b42a8e67c3` (pullable release; repo digest = image id on the box) |
 | `cards/` | scrubbed copies of PLAN.md and the G0, G1, G1f (covers G1b–G1f), G2, G3-desk, G3, G4 (+PREREG) and G5 (+PREREG) READMEs, plus the issue drafts sent to Garner ([issue #1](https://github.com/garnermccloud/dgx-station-recipes/issues/1) and two comments, filed as jmeadlock) |
 | `overlay-desk-check.txt` | the published #61161 + #60945 patches applied to the stock files reproduce the two overlay files byte for byte |
+| `BUILD-SHA256SUMS.expected` | the lane's own 114-line build manifest, scrubbed, byte-identical to `~/dsv41/garner/pg61-work/BUILD-SHA256SUMS` on the box — `sha256sum -c` against a fresh `build` tree should print exactly one FAILED line, `tree/fastpath/libw6mk.so` |
+| `DESK-FIXES-2026-10-31.md` | the 2026-10-31 desk pass: every corrected claim on every shipped surface, what it said, what it says, and the receipt |
 | `patch-desk-check.txt` | the five Garner-tree patches applied to a clean checkout at 8043a681 reproduce the frozen build tree on the box (5/5 sha1) |
 | `raw/G0/`, `raw/G1/`, `raw/G1-bisect/`, `raw/G1f/` | `bench_full` md/json per arm, per-class tables, TF compares, gauntlet summaries, 1M needle, C32 windows, runner logs, crash excerpts |
 | `raw/G2/` | box: prefill per arm, replay **per-pass counts only** (`replay-counts.log`; the transcript turns are withheld). m4: T0, T1, T2 (gsm8k/needle/tool-eval `.json.gz`), BFCL held-out summary + log (per-item rows not published), engine-load |

@@ -1,0 +1,33 @@
+{
+ "gates": {
+  "B1_trip_latency": [
+   "PASS",
+   "2.86s <= 6.0s"
+  ],
+  "B2_server_killed": [
+   "PASS",
+   "ds41=exited ds41-sidecar=running"
+  ],
+  "B3_log_order": [
+   "FAIL",
+   "server kill logged before sidecar stop"
+  ],
+  "B4_no_finish_reason": [
+   "PASS",
+   "[{\"chunks\": 1497, \"finish\": null, \"error\": null}, {\"chunks\": 1497, \"finish\": null, \"error\": null}, {\"chunks\": 1497, \"finish\": null, \"error\": null}, {\"chunks\": 1496, \"finish\": null, \"error\": null}]"
+  ],
+  "B5_no_tokens_after_stall": [
+   "PASS",
+   "max_last - t_pause = 0.004s <= 0.5s"
+  ],
+  "B6_gb300_freed_wd_exited": [
+   "FAIL",
+   "GB300 22 MiB; watchdog after: 604630 1"
+  ],
+  "B7_sidecar_stopped": [
+   "FAIL",
+   "stopped, not merely paused"
+  ]
+ },
+ "pass": false
+}

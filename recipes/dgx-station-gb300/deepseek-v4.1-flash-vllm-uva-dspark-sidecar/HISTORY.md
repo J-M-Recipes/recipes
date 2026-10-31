@@ -62,7 +62,7 @@ sibling is the one that needs nothing but the GB300.
 The table above is the v25 base launch on 2026-10-22. **Since 2026-10-29 10:14pm CDT the lane serves Pg61.** Pg61 is
 [Garner McCloud's DS4.1 engine](https://github.com/garnermccloud/dgx-station-recipes/tree/8043a6811a5feda70fdfb6e827eebb2ec25c65d1/deepseek-v4.1-flash)
 under our policy and patch set. It reads **1.31× h2-REF at C1** (per-class, temperature 1.0, mean of 3 seeds), and it
-is **still being tested**: a 48 h soak runs to 2026-10-31 10:14pm CDT. Its bracket is in
+is **still being tested**: 48 h window — the soak was broken twice on 2026-10-30 (04:57 reboot, ~10:07 Kimi-K3 window) and restarted 2026-10-31 12:44:08 CDT after Card R1 (receipt: launcher soak-start.json); it ends Monday 2026-11-02 11:44 AM CST (17:44Z). Its bracket is in
 [the 2026-10-29 section](#2026-10-29-pg61--garners-ds41-engine-under-our-policy-promoted-soak-in-progress).
 *(Corrected 2026-10-29: this paragraph said h2-REF was the serving release. That was true 2026-10-28 5:22pm →
 2026-10-29 10:07pm CDT, and h2-REF is now the rollback lane.)* h2-REF's own bracket (Card AP2, controls = h1-REF) is in
@@ -85,7 +85,7 @@ is **still being tested**: a 48 h soak runs to 2026-10-31 10:14pm CDT. Its brack
 > RonanLabsAI-shaped launch described above is what h2-REF (the rollback lane) and every earlier release run.
 
 > **Status, 2026-10-29 10:14pm CDT: Pg61 serves `:30006`, still being tested (48 h soak to Saturday 2026-10-31
-> 10:14pm CDT; the recipe stays experimental).** Details, cards and rollback are in
+> 10:14pm CDT; the recipe stays experimental).** *(Corrected 2026-10-31: that end date is dead — soak broken 2026-10-30 04:57 (reboot) and ~10:07 (Kimi-K3 window, to 2026-10-31 09:44); restarted 2026-10-31 12:44:08 CDT after Card R1 (receipt: launcher soak-start.json); ends Monday 2026-11-02 11:44 AM CST (17:44Z).)* Details, cards and rollback are in
 > [the 2026-10-29 section](#2026-10-29-pg61--garners-ds41-engine-under-our-policy-promoted-soak-in-progress).
 >
 > **Previous status, 2026-10-28 17:23 CDT (superseded by Pg61 on 2026-10-29 10:14pm CDT; h2-REF is now the
@@ -134,8 +134,9 @@ is **still being tested**: a 48 h soak runs to 2026-10-31 10:14pm CDT. Its brack
 ## 2026-10-29: Pg61 — Garner's DS4.1 engine under our policy, PROMOTED (soak in progress)
 
 > **Serving config = Pg61 since 2026-10-29 10:14pm CDT** (containers `ds41` + `ds41-sidecar` on
-> `vllm/vllm-openai:v0.31.0` = `sha256:c1c9f6fd…`). **Still being tested:** a 48 h soak runs to **Saturday
-> 2026-10-31 10:14pm CDT** and the recipe stays `experimental`. Any restore or card restarts the soak clock.
+> `vllm/vllm-openai:v0.31.0` = `sha256:c1c9f6fd…`). **Still being tested:** a 48 h soak runs to **Monday 2026-11-02 11:44 AM CST, 17:44Z** and the recipe stays `experimental`. Any restore or card restarts the soak clock.
+> *(Corrected 2026-10-31: this banner said the soak ran to Saturday 2026-10-31 10:14pm CDT. soak broken 2026-10-30 04:57 (reboot) and ~10:07 (Kimi-K3 window, to 2026-10-31 09:44); restarted 2026-10-31 12:44:08 CDT after Card R1 (receipt: launcher soak-start.json); ends Monday 2026-11-02 11:44 AM CST (17:44Z). It also
+> predates the two Kimi-K3 / reboot breaks it does not mention.)*
 > **Rollback = h2-REF, one command:** `bash scripts/rollback-pg61-to-h2ref.sh` (the h2-REF pair is stopped and kept;
 > see [Rollback](README.md#rollback)). James approved the promotion on 2026-10-29.
 
@@ -215,7 +216,7 @@ The KV pool is **11,696,582 tokens** at 1M (11.15× one 1M request; h2-REF: 4,40
 | G0 | his release as shipped, on our box (measurement only) | **REPRODUCES**: 135.9 vs his 135.4 steps/s; 731.3 tok/s fixed prompt; 1.43× h2-REF steps/s | [`G0`](results/2026-10-29-pg61-garner-engine/cards/G0/README.md) |
 | G1 | his tree under our policy (P) and + his KV config (K), bracketed by h2-REF | **CRASH** at C32 on both (illegal address); P 1.26× steps/s before it | [`G1`](results/2026-10-29-pg61-garner-engine/cards/G1/README.md) |
 | G1b–G1f | bisect → cause → fix; **Pg** = P + #60945 guard | cause = unguarded #60945, layout-dependent; guard fixes it; **Pg passes every owed cell**: per-class C1 mean 1.33×, C8 1.10×, TF at the floor, gauntlet 12/12, 1M needle PASS | [`G1f`](results/2026-10-29-pg61-garner-engine/cards/G1f/README.md) |
-| G2 | promotion-tier gates on Pg | **PASS** every quality gate (needle 500/500; GSM8K-200 193/200, p = 1.0; tool-eval 91/100; BFCL held-out 78.26 % vs v27 77.27 %, p = 0.011); **prefill −8 to −10 %** | [`G2`](results/2026-10-29-pg61-garner-engine/cards/G2/README.md) |
+| G2 | promotion-tier gates on Pg | **PASS** every quality gate (needle 500/500; GSM8K-200 193/200, p = 1.0; tool-eval 91 (168/184 items); BFCL held-out 78.26 % vs v27 77.27 %, p = 0.011); **prefill −6.3 to −9.3 %** *(Corrected 2026-10-31: this row said −8 to −10 %; the 57K point (41.6 vs 44.4) sits outside that band.)* | [`G2`](results/2026-10-29-pg61-garner-engine/cards/G2/README.md) |
 | G3-desk | #61161 on v0.31.0? does peer tier v3 fail closed? | **#61161 absent**; **v3 timeout = silent wrong tokens** → spins + watchdog built (13/13 unit tests) | [`G3-desk`](results/2026-10-29-pg61-garner-engine/cards/G3-desk/README.md) |
 | G3 / G3b | port exactness on GPU; Pg61 cells; fault injection | **PASS**: exact at every step; Pg61 cells = Pg's (119.3 steps/s, gauntlet 12/12, BFCL 1026/1311); watchdog trip ~3 s, server killed, no token after the stall | [`G3`](results/2026-10-29-pg61-garner-engine/cards/G3/README.md) |
 | G4 | T3 promotion bench, Pg61 **booted by the launcher**, vs h2-REF same window | **PASS all 6 pre-registered bars** | [`G4`](results/2026-10-29-pg61-garner-engine/cards/G4/README.md), [PREREG](results/2026-10-29-pg61-garner-engine/cards/G4/PREREG.md) |
@@ -279,8 +280,9 @@ stalls about as long per read chunk on either lane.
 
 ### Known costs
 
-- **Prefill is slower than h2-REF.** His `bench_full.py` (uncached, median of 3) reads **−8 to −10 %** at 14K–114K
-  (e.g. 114K: 41.0K vs 44.6K tok/s). The G4 T1 scout prefills (N = 1 each) read −10 to −17 % (128K: 39,775 vs
+- **Prefill is slower than h2-REF.** His `bench_full.py` (uncached, median of 3) reads **−6.3 to −9.3 %** at
+  14K–114K (14K 39.9 vs 44.0, 57K 41.6 vs 44.4, 114K 41.0 vs 44.6 K tok/s — so the 57K point is outside a −8 to
+  −10 % band). *(Corrected 2026-10-31: this read "−8 to −10 %".)* The G4 T1 scout prefills (N = 1 each) read −10 to −17 % (128K: 39,775 vs
   48,062 tok/s).
 - **1M first token is 36.5 s** on a 999,034-token needle (27.3K tok/s; measured on Pg in Card G1f, before the
   #61161 port, which does not touch prefill), against **33.2 s** for the v25 base launch
@@ -294,7 +296,8 @@ stalls about as long per read chunk on either lane.
 - **Temperature > 0 quality.** Every quality gate is T = 0 or teacher-forced. The port is exact at the kernel level
   and costs no C1, but no T > 0 quality score has run: no full-vocabulary KLD over forced tokens and no seeded
   GSM8K at T = 1.
-- **The 48 h soak.** It is running now, to 2026-10-31 10:14pm CDT.
+- **The 48 h soak.** It was running, to 2026-10-31 10:14pm CDT, when this round was written. *(Corrected
+  2026-10-31: soak broken 2026-10-30 04:57 (reboot) and ~10:07 (Kimi-K3 window, to 2026-10-31 09:44); restarted 2026-10-31 12:44:08 CDT after Card R1 (receipt: launcher soak-start.json); ends Monday 2026-11-02 11:44 AM CST (17:44Z).)*
 - **Decode beyond 128K**, except the one G1f 1M needle (on Pg, before the #61161 port).
 - **The final watchdog file under fault injection.** G3b tripped the watchdog version from before a log-ordering
   fix. The fixed file has 13/13 unit tests and ran armed through G4, G5 and the cutover with 0 trips, but has not
@@ -761,7 +764,9 @@ adds are in [`results/2026-10-28-h2-splitkv-ap2/component-shas.txt`](results/202
 ([`live-check-…`](results/2026-10-28-h2-splitkv-ap2/live-check-2026-10-28T2253Z.txt)). Every patch above was re-applied on the desk to the af7f9488 /
 el8 @87af662 originals and reproduces those hashes byte for byte (the side `.so` is a build output, so only its
 inputs are reproducible from here).
-Checkpoint identity (revision, 49 shards, 510,311,114,235 B, config/index hashes) is in
+Checkpoint identity (revision, 49 safetensors shards — the 48 `model-0000N-of-00048` files plus the Engram shard
+set; his `setup_model.sh` verifies the 48 model shards, which is where the 48-vs-49 confusion comes from —
+510,311,114,235 B, config/index hashes) is in
 [`raw/weights-1017-receipt.txt`](results/2026-10-22-v25-sidecar/raw/weights-1017-receipt.txt).
 
 ## Launching h2-REF and earlier releases
@@ -1105,7 +1110,11 @@ full text as it stood on 2026-10-29, moved verbatim (minus the two limits in the
   and pinned efforts 0/8). Attributed to the image's effort-75 tail, not the sidecar; a client `max_tokens` is
   the only real guard.
 * **Live FlashInfer autotune**, no pinned tune file: a few percent of C1 varies boot to boot, and the autotuner
-  reports some `mxfp8_gemm` shapes falling back to `tactic=-1`.
+  reports some `mxfp8_gemm` shapes falling back to `tactic=-1`. *(Corrected 2026-10-31: true of h2-REF and the v27
+  lanes only. **Pg61 runs a pinned tune file** — `MEGA_FI_TUNE_FILE=/w/fi-tune/fiset-w6pf-post1-c7483c4a.json` from
+  Garner's tree — and `VLLM_FLASHINFER_AUTOTUNE_SKIP_OPS=mxfp8_gemm` (`serve/serve.sh:317`) excludes the mxfp8 GEMM
+  from autotune by design, so the `tactic=-1` lines are that exclusion, not a defect. Two prefill-sized
+  `mxfp8_gemm` shapes have no tuned entry and fall back to CuteDSL; cost unmeasured.)*
 * **Replay ON vs OFF is one rep**: agent replay r2 612.1 OFF vs 480.3 ON, but TTFT is better ON (0.19 vs 0.29 s).
   The lane runs ON. The +27% is not a law until repeated.
 * **vLLM v0.31.0 was NOT adopted** — quality identical, but knee C8 read −3.8% and the runaway cell tripped. *(Updated 2026-10-29: that SC5 verdict was for this recipe's own launch on v0.31.0 and stands. Pg61 serves on
@@ -1120,8 +1129,12 @@ full text as it stood on 2026-10-29, moved verbatim (minus the two limits in the
 * **KV routes not taken:** KV quantization (`nvfp4_ds_mla`) changes numerics; more cold experts on the card
   (89 → 99/109 per layer, +3.6M/+7.3M tokens) is modeled at −5 to −11% C1; HiSparse host-resident KV exists in
   this image but is not wired for DeepSeek-V4.1 or the MegaAttn backend.
-* **Boot 527 s warm**; 46–50 s of it is the sidecar. Cold JIT caches are ~30 min.
-* **The Docker Hub tag is gone**; the digest is the only reliable pull.
+* **Boot 527 s warm**; 46–50 s of it is the sidecar. Cold JIT caches are ~30 min. *(Corrected 2026-10-31: 527 s is
+  v27's warm boot. Pg61 bound in **378 s from stop to `verify OK`** at its cutover — 22:07:54 → 22:14:12 CDT,
+  including `drop_caches` and a 45 s sleep, i.e. ≈332 s launch→ready.)*
+* **The Docker Hub tag is gone**; the digest is the only reliable pull. *(Corrected 2026-10-31: only the `af7f9488`
+  nightly — i.e. h2-REF and earlier — rotated off. Pg61 runs `vllm/vllm-openai:v0.31.0`, a pullable tag; pull it by
+  tag and check the digest `sha256:c1c9f6fd…`.)*
 
 ## Superseded limits
 

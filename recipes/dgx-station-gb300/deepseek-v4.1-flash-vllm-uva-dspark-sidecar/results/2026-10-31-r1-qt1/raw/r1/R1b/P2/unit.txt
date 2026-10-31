@@ -1,0 +1,14 @@
+PASS idle never trips
+PASS moving v3/v2 traffic never trips
+PASS v3 stall: no trip at <= stall
+PASS v3 stall: trips after > stall
+PASS v2 timeout trips immediately
+PASS v2 stall trips after > stall
+PASS fresh segment never trips
+PASS cleared stall resets the timer
+PASS env: PEER3_SPINS=1e12 digits -> arm
+PASS env: unset (his default) -> refuse
+PASS env: 20M -> refuse
+PASS env: '1e15' (int() would crash boot) -> refuse
+PASS env: unreadable -> refuse
+ALL PASS

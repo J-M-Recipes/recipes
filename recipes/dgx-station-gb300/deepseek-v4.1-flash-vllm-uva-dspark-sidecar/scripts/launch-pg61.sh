@@ -78,6 +78,15 @@ cmd_up(){
   [ -f "$WORK/policy.env" ] || die "run build first"
   : "${MODEL_DIR:?set MODEL_DIR}" "${DS41_HOME:?set DS41_HOME}"
   docker ps --format '{{.Names}}' | grep -qx ds41 && die "ds41 already running"
+  # 2026-10-31 (H1): a killed server or a watchdog trip leaves /dev/shm/vllm_peer_tier{2,3} with published != done;
+  # the --once check below would then read a stale-tag trip and refuse. With no ds41/ds41-sidecar running the
+  # segments are dead state, so remove them here exactly as cmd_down does (and say so).
+  if ls /dev/shm/vllm_peer_tier2 /dev/shm/vllm_peer_tier3 >/dev/null 2>&1; then
+    docker ps --format '{{.Names}}' | grep -qx ds41-sidecar && die "stale peer segment with ds41-sidecar running: run 'launch-pg61.sh down' first"
+    docker run --rm -v /dev/shm:/dev/shm --entrypoint /bin/rm "$IMAGE" -f /dev/shm/vllm_peer_tier2 /dev/shm/vllm_peer_tier3
+    ls /dev/shm/vllm_peer_tier2 /dev/shm/vllm_peer_tier3 >/dev/null 2>&1 && die "could not remove stale peer segments"
+    log "removed stale peer segments left by a previous run (nothing was running)"
+  fi
   local envs; mapfile -t envs < "$WORK/policy.env"
   ( cd "$TREE" && env "${envs[@]}" DS41_HOME="$DS41_HOME" DS41_MODEL_DIR="$MODEL_DIR" bash serve/serve.sh start )
   for c in ds41 ds41-sidecar; do docker update --restart no "$c" >/dev/null; done
@@ -92,6 +101,9 @@ cmd_up(){
       --status "$WORK/wdp3.status.json" --log "$WORK/wdp3.log" >/dev/null 2>&1 </dev/null & )
   sleep 3; grep -q '"trip": null' "$WORK/wdp3.status.json" || die "watchdog not armed"
   log "UP on :$PORT; watchdog ENFORCE armed (status $WORK/wdp3.status.json)"
+  # 2026-10-31 (A8): soak clock. Every up starts a new soak; the file is the receipt the recipe quotes.
+  printf '{"soak_start_utc": "%s", "soak_start_local": "%s", "epoch": %s}\n' "$(date -u +%FT%TZ)" "$(date '+%F %T %Z')" "$(date +%s)" > "$WORK/soak-start.json"
+  log "soak clock started: $(cat "$WORK/soak-start.json")"
 }
 
 cmd_verify(){
@@ -110,7 +122,11 @@ cmd_down(){
   docker unpause ds41-sidecar >/dev/null 2>&1 || true
   ( cd "$TREE" && DS41_HOME="${DS41_HOME:?set DS41_HOME}" bash serve/serve.sh down ) || true
   docker run --rm -v /dev/shm:/dev/shm --entrypoint /bin/rm "$IMAGE" -f /dev/shm/vllm_peer_tier2 /dev/shm/vllm_peer_tier3
-  log "down; peer shm removed"
+  # 2026-10-31 (H1/H3): verify, do not assume.
+  ls /dev/shm/vllm_peer_tier2 /dev/shm/vllm_peer_tier3 >/dev/null 2>&1 && die "down: peer segments still present"
+  docker ps --format '{{.Names}}' | grep -qxE 'ds41|ds41-sidecar' && die "down: ds41 containers still running"
+  pgrep -f "sidecar_watchdog_p3.py --server ds41" >/dev/null && die "down: p3 watchdog still running"
+  log "down; peer shm removed (verified absent), containers stopped, watchdog stopped"
 }
 
 case "${1:-}" in

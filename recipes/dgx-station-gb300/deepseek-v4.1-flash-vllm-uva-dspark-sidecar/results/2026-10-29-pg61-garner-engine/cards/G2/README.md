@@ -18,7 +18,7 @@ single-host ACCEPT in the isolate rule.
 | BFCL held-out (live_simple + live_multiple) | **1026/1311 = 78.26 %** (simple 80.23, multiple 77.78), 0 errors | v27 1013/1311 = 77.27 % → **+0.99 pt; paired 5 lost / 18 gained, McNemar exact p = 0.011** | PASS (significantly better) |
 | replay_turns ×6 (24-turn Hermes transcript, C1, T=0) | tool turns emitted 7.67/12 mean (7,7,10,8,6,8); text-turn false emits 3.83/12 | h2-REF same window: 8.00/12 (9,8,7,7,9,8); 3.50/12 | within the pass-to-pass spread (6–10); direction slightly negative |
 | T1 C1 / C4 × 0 / 32K / 128K (lib synthetic, 30 s) | C1 373.6 / 328.3 / 334.5 · C4 769.1 / 775.8 / 755.7, 0 errors | v27 C1 262.1 / 254.1 / 249.7 · C4 661.1 / 642.5 / 636.7 | **1.29–1.43× C1, 1.16–1.21× C4** |
-| prefill, his bench (uncached, 3 reps) | 14K 356 ms (39.9K tok/s) · 57K 1,366 ms (41.6K) · 114K 2,774 ms (41.0K) | h2-REF same day: 324 ms (44.0K) · 1,280 ms (44.4K) · 2,548 ms (44.6K) | **REGRESSION −8 to −10 %** TTFT; matches the 1M needle (36.5 s vs 33.2 s) |
+| prefill, his bench (uncached, 3 reps) | 14K 356 ms (39.9K tok/s) · 57K 1,366 ms (41.6K) · 114K 2,774 ms (41.0K) | h2-REF same day: 324 ms (44.0K) · 1,280 ms (44.4K) · 2,548 ms (44.6K) | **REGRESSION −8 to −10 %** TTFT *(Corrected 2026-10-31: the three points read −9.3 / −6.3 / −8.1 %; the 57K point is outside a −8 to −10 % band, so publish −6.3 to −9.3 %.)*; matches the 1M needle (36.5 s vs 33.2 s) |
 
 Notes
 - T1/BFCL/tool-eval references are v27's promotion run (2026-10-26), the last full T2/BFCL on this lane; h1-REF and

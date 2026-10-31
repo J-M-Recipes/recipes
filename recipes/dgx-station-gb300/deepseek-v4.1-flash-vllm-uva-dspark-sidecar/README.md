@@ -12,11 +12,16 @@ other road: it reads cold experts from Grace memory, which puts a serial read on
 - **Serving:** Pg61 on `:30006` of the reference box, since 2026-10-29 10:14pm CDT. Pg61 is
   [Garner McCloud's DS4.1 engine](https://github.com/garnermccloud/dgx-station-recipes/tree/8043a6811a5feda70fdfb6e827eebb2ec25c65d1/deepseek-v4.1-flash)
   run under our policy and patch set.
-- **Status:** `experimental`. Pg61 is **still being tested**.
-- **Soak:** 48 h, ending **Saturday 2026-10-31 10:14pm CDT**. Any restore or card restarts the clock.
-- **Rollback:** h2-REF, one command: `bash scripts/rollback-pg61-to-h2ref.sh`. The script is dry-run tested only
-  (see [Rollback](#rollback)).
-- **Bundle:** [`results/2026-10-29-pg61-garner-engine/`](results/2026-10-29-pg61-garner-engine/README.md).
+- **Status:** `experimental`. Pg61 is **still being tested**: every release gate except the soak closed on 2026-10-31
+  ([Card R1 + QT1](results/2026-10-31-r1-qt1/README.md)), and the five gate stamps follow the soak.
+- **Soak:** 48 h — restarted 2026-10-31 12:44:08 CDT, at the end of Card R1 (receipt: launcher `soak-start.json`);
+  it ends **Monday 2026-11-02 11:44 AM CST (17:44Z)**. Any restore or card restarts the clock.
+  *(Corrected 2026-10-31: this said "ending Saturday 2026-10-31 10:14pm CDT". Two breaks on 2026-10-30 (04:57
+  reboot, ~10:07 Kimi-K3 window) falsified that, and Card R1 restarted the clock from the top.)*
+- **Rollback:** h2-REF, one command: `bash scripts/rollback-pg61-to-h2ref.sh`. Drilled end to end on 2026-10-31
+  (rc 0 in 551 s, h2-REF bound after 420 s, v2 watchdog re-armed) and cut back (rc 0 in 452 s, KV line exact).
+- **Bundle:** [`results/2026-10-29-pg61-garner-engine/`](results/2026-10-29-pg61-garner-engine/README.md), and the
+  release-gate round in [`results/2026-10-31-r1-qt1/`](results/2026-10-31-r1-qt1/README.md).
 - **Related:** blogs
   [GB300 + sidecar vs 4× RTX PRO 6000 (BRRR)](https://al-engr.com/gb300-vs-4x-rtx6000-dsv41-flash-brrr.html),
   [Adaptive Residency Part 3, the seed map](https://al-engr.com/gb300-adaptive-residency-seed-map.html) and
@@ -118,9 +123,28 @@ shipped, reproduces on our RTX PRO 6000 **Max-Q (300 W)**: 135.9 steps/s against
   **11,696,582 tokens** at 1M (11.15× one 1M request; h2-REF: 4,400,013).
 * **RTX PRO 6000 Max-Q.** Container `ds41-sidecar` holds the other **129 experts per layer** (98.5 GB allocated).
   It serves **peer tier v3** (SM120 block-scaled QMMA) for steps of ≤ 64 tokens, and peer tier v2/b12x above that.
+  **Determinism ends at ≤ 512 compressed KV entries per row, not at a token count.** The sparse indexer's top-k
+  places its indices by `atomicAdd` arrival (`cooperative_topk.cuh:201`, compiled unchanged with `-DW8TG_SORT=0`),
+  so any row longer than `index_topk` can reorder its selected list run to run, and a score tie at the cutoff can
+  change the set. The v3 path below T = 64 has no data atomics at all (`peer3_rtx.cuh:15-19`: the only atomics are
+  shared-memory bitmaps, and the GB300 half keeps statistics counters only), so a 6-token step at 4K context is
+*outside* the boundary; above T = 64 the cold-expert add runs on the v2/b12x path, which accumulates in bf16
+  (`peer3_gb300.cuh:9-15` is one writer per row, i.e. order-fixed; the RTX side above 64 rows is not established).
+  *(Corrected 2026-10-31: this bullet used to read as though T ≤ 64 v3 were the lane's determinism boundary.)*
 * **His speed layer.** 24 of the 29 `DS41_FASTPATH` components (fused drafter tails, decode-attention and
   pre-attention paths, copy/suffix drafting, `topp_fast`, Engram side-streams, fast load, cold-skip and more), his
   DeepGEMM MegaMoE scheduling fork, his FlashInfer tune file and his #58132 / 1017 overlays.
+* **His prompt-format overlay (`docker/overlay-1017`, revision r2).** Pg61 bind-mounts four of his files over the
+  image's: `vllm/tokenizers/deepseek_v41_encoding.py` (the checkpoint's own `encoding/encoding.py`, verbatim, plus
+  the `xhigh` effort mapping), `vllm/tokenizers/deepseek_v41.py` (the OpenAI-style frontend wrapper),
+  `vllm/entrypoints/anthropic/serving.py` and `vllm/renderers/deepseek_v4.py`. r2 aligns the frontend with
+  DeepSeek's `deepseek-recipe` 0.2.0, and it escapes special-token spellings in client text (U+E000 after the first
+  character) so that `</think>`, `<｜User｜>` or `<｜DSML｜ invoke` inside a prompt encode as plain text instead of
+  becoming control tokens. **The served prompt encoder is therefore the 1017 checkpoint's reference encoder, not
+  vLLM's**, which is material to anyone reproducing a quality number; **h2-REF mounts none of it.** His README:
+  [`docker/overlay-1017/README.md`](https://github.com/garnermccloud/dgx-station-recipes/blob/8043a6811a5feda70fdfb6e827eebb2ec25c65d1/deepseek-v4.1-flash/docker/overlay-1017/README.md).
+  Measured on our box 2026-10-31: nine MMLU-Pro-shaped conversations render byte-identically with and without it,
+  so the overlay is not the cause of the +2.4 pt below.
 * **Drafting.** DSpark k = 5/3/3 by batch size (`[[1,4,5],[5,8,3],[9,32,3]]`), probabilistic drafting, block
   verification. Unchanged from his release and from h2-REF.
 
@@ -219,27 +243,34 @@ Two settings that are not optional:
 in-container hash receipts are in
 [HISTORY.md → Software pins for h2-REF and earlier releases](HISTORY.md#software-pins-for-h2-ref-and-earlier-releases).
 
-Checkpoint identity (revision, 49 shards, 510,311,114,235 B, config/index hashes) is in
+Checkpoint identity (revision, 49 safetensors shards — the 48 `model-0000N-of-00048` files plus the Engram shard
+set — 510,311,114,235 B, 253 files, config/index hashes) is in
 [`raw/weights-1017-receipt.txt`](results/2026-10-22-v25-sidecar/raw/weights-1017-receipt.txt).
 
 ## Launch
 
-**The serving config, Pg61.** You need Garner's checkout at the pin, the overlay files built from this recipe's
-patches (once, see [`patches/garner-8043a681/README.md`](patches/garner-8043a681/README.md)), the 1017 checkpoint on
-local NVMe and the CDI spec for the RTX (see Hardware). Then:
+**The serving config, Pg61.** You need Garner's checkout at the pin, this recipe (which ships the vLLM overlay
+[`patches/garner-8043a681/overlay-vllm/`](patches/garner-8043a681/overlay-vllm/README.md), so there is nothing to
+build by hand), the 1017 checkpoint on local NVMe and the CDI spec for the RTX (see Hardware). Then:
 
 ```bash
+R=recipes/dgx-station-gb300/deepseek-v4.1-flash-vllm-uva-dspark-sidecar   # from the repo root
 git clone https://github.com/garnermccloud/dgx-station-recipes.git ~/dsv41/garner/src
 git -C ~/dsv41/garner/src checkout 8043a6811a5feda70fdfb6e827eebb2ec25c65d1
+git -C ~/dsv41/garner/src rev-parse HEAD   # must be 8043a6811a5feda70fdfb6e827eebb2ec25c65d1; build refuses any other HEAD
 # 1. build (CPU only): copy his deepseek-v4.1-flash/, apply patches 01-05, rebuild libw6mk.so (sm_103a) in the
-#    image, layer overlay-vllm over his overlay-58132, write policy.env and BUILD-SHA256SUMS
-GARNER_SRC=~/dsv41/garner/src WORK=~/dsv41/garner/pg61-work bash scripts/launch-pg61.sh build
+#    image, layer our overlay-vllm (shipped, sha1-gated) over his overlay-58132, write policy.env and BUILD-SHA256SUMS
+GARNER_SRC=~/dsv41/garner/src WORK=~/dsv41/garner/pg61-work bash $R/scripts/launch-pg61.sh build
+# 1b. prove the build tree against the shipped manifest: expect exactly ONE FAILED line, for
+#     tree/fastpath/libw6mk.so (nvcc embeds build paths; compare its cubins instead). Anything else = stop.
+M=$(realpath $R/results/2026-10-29-pg61-garner-engine/BUILD-SHA256SUMS.expected)
+( cd ~/dsv41/garner/pg61-work && sha256sum -c --quiet "$M" )
 # 2. up: his serve.sh start with policy.env (sidecar first, then server), wait for /v1/models, check the in-container
 #    hashes + PEER3_SPINS, run the watchdog --once, then arm it in ENFORCE (setsid nohup, PPID 1)
 WORK=~/dsv41/garner/pg61-work MODEL_DIR=/models/DeepSeek-V4.1-Flash-1017-<rev> DS41_HOME=~/dsv41/garner/home \
-  bash scripts/launch-pg61.sh up
-WORK=~/dsv41/garner/pg61-work bash scripts/launch-pg61.sh render   # print the policy env + the serve.sh call
-WORK=~/dsv41/garner/pg61-work DS41_HOME=~/dsv41/garner/home bash scripts/launch-pg61.sh down
+  bash $R/scripts/launch-pg61.sh up
+WORK=~/dsv41/garner/pg61-work bash $R/scripts/launch-pg61.sh render   # print the policy env + the serve.sh call
+WORK=~/dsv41/garner/pg61-work DS41_HOME=~/dsv41/garner/home bash $R/scripts/launch-pg61.sh down
 ```
 
 `policy.env` is the whole policy. It sets `DS41_PORT=30006`, `DS41_SERVED=dsv41-flash-uva`,
@@ -254,6 +285,62 @@ In Card G4 the launcher-booted container's `docker inspect` Args equalled the G3
 `WATCHDOG`). The h2-REF → Pg61 move is [`scripts/cutover-h2ref-to-pg61.sh`](scripts/cutover-h2ref-to-pg61.sh)
 (`--dry-run` checks preconditions only); it falls back to the rollback script on any failure after the stop.
 
+### Cold-clone checklist (a stranger with a DGX Station GB300 + RTX PRO 6000 Max-Q)
+
+Every step is pass/fail. Run it in order on a clean box; step 2 is the one that used to stop `build` dead.
+
+**Prerequisites, each a gate** — DGX OS with driver 595.91.07 / CUDA 13.2 · `nvidia-container-toolkit` **with CDI**
+(`nvidia-ctk` present, `/etc/cdi/nvidia.yaml` generated) · ≥600 GiB free local NVMe · ≥450 GiB RAM (189 GiB Engram
+tables + a 48 GB host KV tier + host) · `/dev/shm` ≥ 128 GiB (our box runs 237 GiB; nothing in the launcher checks
+this, and a smaller `/dev/shm` fails at `prep`, not at launch) · outbound HTTPS to GitHub, Docker Hub and Hugging Face ·
+the RTX card showing <2,048 MiB of foreign use (the launcher refuses otherwise — it also drives the display).
+
+1. **Recipe at a pinned commit**, then `cd` to the repo root and set
+   `R=recipes/dgx-station-gb300/deepseek-v4.1-flash-vllm-uva-dspark-sidecar`.
+2. **Garner's engine at the pin.** `git clone https://github.com/garnermccloud/dgx-station-recipes.git
+   ~/dsv41/garner/src`, `git -C ~/dsv41/garner/src checkout 8043a6811a5feda70fdfb6e827eebb2ec25c65d1`, then
+   `rev-parse HEAD` must print that sha or stop. The recipe does not vendor his tree, and `build` refuses any other HEAD.
+3. **The vLLM overlay ships with the recipe** (`$R/patches/garner-8043a681/overlay-vllm/`, two files, with a README and
+   the sha1 the launcher checks). Nothing to build by hand; `build` sha1-gates both (`WANT_GUMBEL`, `WANT_RSU`). To
+   re-derive or audit the bytes, the snippet in
+   [`patches/garner-8043a681/README.md`](patches/garner-8043a681/README.md#the-vllm-overlay-overlay-vllm) pulls the two
+   stock files out of the pinned image and applies the two committed patches; it needs the image locally, which `build`
+   needs anyway.
+4. **Image.** `docker pull vllm/vllm-openai:v0.31.0` must resolve to
+   `sha256:c1c9f6fd5c109ba7f0546a59f5b2f15fb87f64c77782e90a27b648b42a8e67c3`; the inventory is
+   `results/2026-10-29-pg61-garner-engine/image.txt`.
+5. **Weights.** `hf download deepseek-ai/DeepSeek-V4.1-Flash-1017 --revision 1bae0e10…` into local NVMe (`HF_TOKEN`
+   if the repo is gated); verify 510,311,114,235 B and 253 files against
+   `results/2026-10-22-v25-sidecar/raw/weights-1017-receipt.txt`. Acquisition is not scripted in this recipe.
+6. **CDI.** `sudo nvidia-ctk cdi generate --output=/etc/cdi/nvidia.yaml`, then
+   `nvidia-smi --query-gpu=uuid,name --format=csv,noheader` — the launcher auto-detects the RTX UUID.
+7. **Build** (CPU only, ~2 min plus the image pull):
+   `GARNER_SRC=~/dsv41/garner/src WORK=~/dsv41/garner/pg61-work bash $R/scripts/launch-pg61.sh build`.
+   Pass = `applied 01…05`, a `libw6mk.so` sha256, and an `<N> files hashed` line.
+8. **Prove the build tree** — this is the step that turns "trust the pin" into a check:
+
+   ```bash
+   M=$(realpath $R/results/2026-10-29-pg61-garner-engine/BUILD-SHA256SUMS.expected)
+   ( cd ~/dsv41/garner/pg61-work && sha256sum -c --quiet "$M" )
+   ```
+
+   114 lines. **Expect exactly one `FAILED` line, `tree/fastpath/libw6mk.so`** — `nvcc` embeds build paths, so the
+   `.so` is not byte-reproducible; its device code is (compare cubins:
+   `results/2026-10-29-pg61-garner-engine/libw6mk-cubin-identity.txt`). Any *other* mismatch is a real difference:
+   stop and read it. A second FAILED on `sidecar_watchdog_p3.py` means your recipe copy is not the lane's bytes.
+   A desk re-patch of the pin reproduces 104 of the 105 `tree/` files in this manifest (2026-10-31 audit); the one
+   that differs is that `.so`.
+9. **Up** (`MODEL_DIR`, `DS41_HOME`, `WORK` as in the block above). Pass = `verify OK: gumbel 6eac3e13 rsu edc8f8f4
+   libw6mk <sha> PEER3_SPINS=1000000000000`, then `UP on :30006; watchdog ENFORCE armed`, and the boot KV line
+   `GPU KV cache size: 11,696,582 tokens … 11.15x`. First boot on cold JIT caches: budget tens of minutes (no
+   published bar for this lane; the GB300-only sibling's ~30 min is a different lane).
+10. **Prove it** — `launch-pg61.sh verify` (in-container hashes + spins), `curl -s localhost:30006/v1/models`, and
+    `docker inspect -f '{{.Image}}' ds41 ds41-sidecar` = `c1c9f6fd…` twice.
+
+Known gaps in this checklist, stated rather than hidden: `/dev/shm` and the RAM floor are numbers from our box, not
+launcher gates; `DS41_HOME` cold-cache time has no bar for this lane; and the `nvcc` rebuild has not been repeated on
+a second box (that is the real reproducibility test and it cannot run on ours while the lane serves).
+
 **h2-REF and earlier releases** (`scripts/start-h2ref.sh`, `scripts/launch-sidecar.sh`, the bring-up cosine gate and
 the v2 watchdog) are in [HISTORY.md → Launching h2-REF and earlier releases](HISTORY.md#launching-h2-ref-and-earlier-releases).
 
@@ -265,13 +352,13 @@ the v2 watchdog) are in [HISTORY.md → Launching h2-REF and earlier releases](H
 | **Pg61 p3 watchdog** | `$WORK/wdp3.status.json` and `$WORK/wdp3.log`; one `sidecar_watchdog_p3.py --mode enforce` process (PPID 1) | `"mode": "enforce"`, `"trip": null`, `server_up: true`, v2 `[pub, done, 0]` with pub = done, v3 `[2, tag, tag, 0]`, status age < 60 s, no `TRIP` line. It refuses to arm (exit 3) without `PEER3_SPINS` ≥ 1e12 |
 | **Pg61 lane check** | [`scripts/pg61_lane_check.sh`](scripts/pg61_lane_check.sh) (`GB300_SSH=user@host`; an M4 cron every 10 min) | silent when `UP` is exactly `ds41 ds41-sidecar`, `BOUND=1`, the p3 watchdog is alive, `trip None`, status age < 60 s, `BUILD-SHA256SUMS -c` OK and no TRIP lines. Anything else prints and names the rollback |
 | Pg61 boot facts | server log | 24 components ACTIVE, 0 fallback lines, `GPU KV cache size: 11,696,582 tokens … 11.15x`; sidecar `prepared 40 layers` + `serving` |
-| bring-up numerics | `scripts/gate_cosine.py` on a check-mode boot | 40/40 layers, ≥32 rows, min cos ≥ 0.999, 0 timeouts — measured **0.99906** (v25 static map; not run on Pg61's peer tier v3, see Known limits) |
+| bring-up numerics | `scripts/gate_cosine.py` on a check-mode boot (v25 static map), and — for peer tier v3 — the read-only tap + offline fp64 reference in [`results/2026-10-31-r1-qt1/`](results/2026-10-31-r1-qt1/README.md) (`scripts/peer3_cos_tap.py`, `scripts/peer3_cos_ref.py`) | 40/40 layers, ≥32 rows, min cos ≥ 0.999, 0 timeouts. v25 check-mode boot: **0.99906**. Peer tier v3, live lane 2026-10-31: **40/40 layers, 4,299 cold pairs, min cos 1.000000, max \|Δ\| 3.906e-3** (bar 2e-2), and again on the R1 bring-up boot (40/40, 4,343 pairs) |
 | lane health (h2-REF and earlier) | both containers up, `/v1/models`, watchdog `trip=null`, `words[2]=0`, boot KV line 4,400,013 tokens | `scripts/soak_check.sh` prints `OK` |
 | KV capacity | four ~1M contexts resident at once, 16K tokens decoded each (`results/2026-10-22-kv85/scripts/kv2_coresident.py`) | 4 running / 0 waiting, 0 preemptions, 0 errors, 0 trips, 0 timeouts — measured KV peak **75.3%** |
 | output quality | teacher-forced flips vs a same-map floor, BFCL dev+held-out, GSM8K-1319, 500-needle, gauntlet, reasoning-effort vocabulary, one image request | SC2's 12 pre-registered gates |
 | drafter | per-class decode wall-clock, 20 cells × {C1, C8} | no cell worse than −3% vs both controls |
 | speed | bracketed ladders with a control on each side | knee C1 ≥ 198, knee C16 ≥ 974, sidecar C16 ≥ Grace-only +3% |
-| soak | 48 h, sampled every 5 min — restarted with the KV change: 2026-10-22 18:52 → 2026-10-24 18:52 CDT. *(Corrected 2026-10-26: that window was cut at ~25 h and the v25m window was cancelled; no 48 h soak has completed on any sidecar config, v27 included.)* **Pg61: running 2026-10-29 10:14pm → 2026-10-31 10:14pm CDT, sampled by `scripts/pg61_lane_check.sh` every 10 min.** | no timeout, no trip, no stall; lane check silent throughout |
+| soak | 48 h, sampled every 5 min — restarted with the KV change: 2026-10-22 18:52 → 2026-10-24 18:52 CDT. *(Corrected 2026-10-26: that window was cut at ~25 h and the v25m window was cancelled; no 48 h soak has completed on any sidecar config, v27 included.)* **Pg61 — the soak was broken twice on 2026-10-30 (04:57 reboot, ~10:07 Kimi-K3 window) and restarted 2026-10-31 12:44:08 CDT after Card R1 (receipt: launcher soak-start.json); it ends Monday 2026-11-02 11:44 AM CST (17:44Z), sampled by `scripts/pg61_lane_check.sh` every 10 min.** | no timeout, no trip, no stall; lane check silent throughout |
 | **h2-REF serving release** | in-container sha256: `rejection_sampler_utils.py` **2d43d513** (guard; 42c5e8a0 = unguarded), `_flashmla_splitkv_C.abi3.so` 744a9de8 mapped by the engine, `_flashmla_C.abi3.so` df2cdd1c untouched. Log: split-KV `ENABLED cap=4 max_reqs=1`, the only decode gate line `s_q=6 splits=4 … op=_flashmla_splitkv_C`, `TRACE ok=1` only at (6, 6, 1 decode, 0 prefills), 0 GUARD lines, 2 `MEGA_L2` patched lines, `Loaded 117 configs`. KV 4,400,013; `journalctl -k` shows no new Xid since boot; watchdog enforce, PPID 1 | all checked at promotion ([`promote/promote.log`](results/2026-10-28-h2-splitkv-ap2/promote/promote.log)) and re-read at 22:53Z |
 | crash-free (any lane change) | the C32 lib cells in one process (C1/C8/C32 × 0/64K) under a 2 s Xid/fault watcher | 0 new Xid, 0 engine errors, 0 GPU-fault lines, alive at end — Card AP2 all four arms |
 | kv-host-tier (variant) | boot log `Creating v1 connector with name: OffloadingConnector` + `Created mmap file /dev/shm/vllm_offload_….mmap (51.54 GB)`, GPU KV line still 4,400,013; evict-replay probe in `results/2026-10-24-kv3-host-prefix-tier/scripts/kv3_cells.py` (needs dev mode, test boots only) | host-tier hit + load, identical output; Card KV3's 10 gates |
@@ -282,16 +369,37 @@ timeout is treated as a correctness bug rather than a slow request. The v27 row 
 
 ## Results
 
+### Release gates, 2026-10-31 (Cards R1 + QT1): [`results/2026-10-31-r1-qt1/`](results/2026-10-31-r1-qt1/README.md)
+
+One dark window closed every gate that was open at promotion. **2026-10-31 12:05:52 → 12:44:08 CDT (38 min 16 s)**,
+non-loopback `:30006` rejected by `iptables` for the dark phases, three boots, Pg61 serving at both ends.
+
+| gate | instrument | result |
+|---|---|---|
+| peer tier v3 per-layer numerics | read-only live tap + offline fp64 reference (`peer3_cos_tap.py`, `peer3_cos_ref.py`) | **PASS** — 40/40 layers, 4,299 cold pairs, min cos 1.000000, max \|Δ\| 3.906e-3 (bar 2e-2), 3,381/3,449 rows bf16 bit-identical; repeated on the R1 bring-up boot (40/40, 4,343 pairs, 3,410/3,475) |
+| shipped watchdog under fault injection | `docker pause ds41-sidecar` under 4 streams, `ctrl=1` at `kOffCtrl=384` | **PASS** on the re-run (R1b): 7/7 bars, trip **3.11 s**, last chunk 0.006 s after the pause, GB300 22 MiB, watchdog exited, sidecar stopped. Run 1 is on file as **FAIL** (instrument timing, amendment A4) |
+| rollback script, end to end | `rollback-pg61-to-h2ref.sh` then `cutover-h2ref-to-pg61.sh` | **PASS** — rc 0 in 551 s, h2-REF BOUND after 420 s, v2 watchdog re-armed; cutover rc 0 in 452 s, `BUILD=OK`, KV 11,696,582 exact |
+| restore boot | `launch-pg61.sh up` inside the window | bind **302 s** (R1) / **318 s** (R1b), KV line exact both times |
+| forward fidelity vs h2-REF | `qt1_tf.py` + `qt1_analyze.tf_compare`, 79,505 forced positions | **PASS** — 0.0574 mean \|Δlp\| / 1.664 % flips vs bars 0.0684 / 2.066 % (floors 0.0547 / 0.0531) |
+| temperature > 0 quality | Card QT1, fresh pre-registered run, 60,073 positions | **PASS** — six bars, both ±5 % temperature controls detected. Discovery run FAILED its registered P4 and stays on file; the cause was a tie artefact in the statistic (untied positions −0.07 pp, z −0.11) |
+
+Full tables, verdicts, the instrument-defect narrative and the rows-withheld note are in the bundle README.
+
 ### Pg61 = the serving config (promoted 2026-10-29 10:14pm CDT, soak in progress, `results/2026-10-29-pg61-garner-engine/`)
+
+**Reading the metrics table:** `provenance.run_id` names the lane for every row. A row whose `run_id` is not
+`2026-10-29-pg61-garner-engine` is an older lane's number, whether or not it also carries a `label:`.
 
 Bundle: [`results/2026-10-29-pg61-garner-engine/`](results/2026-10-29-pg61-garner-engine/README.md). It holds
 `throughput.csv` (every `bench_full`, prefill, T1 and per-class cell × arm × card), the card write-ups and
 pre-registrations for G0–G5, raw receipts per card (per-class rows withheld), the desk checks and the cutover log.
 
 - **Speed:** **1.31× h2-REF** per-class C1 (T = 1, 3 seeds); T3 all six bars PASS. Tables: [At a glance](#at-a-glance).
-- **Quality on Pg (Card G2):** needle 500/500; GSM8K-200 193/200, p = 1.0; tool-eval 91/100; BFCL held-out 78.26 %
+- **Quality on Pg (Card G2):** needle 500/500; GSM8K-200 193/200, p = 1.0; tool-eval 91 (168/184 items, scored 0–100); BFCL held-out 78.26 %
   vs v27 77.27 %, p = 0.011. On Pg61 (Card G3): GSM8K-200 192/200, BFCL held-out 1026/1311 = 78.26 %.
-- **Cost:** prefill is −8 to −10 % (his bench) to −17 % (T1 scouts) against h2-REF.
+- **Cost:** prefill is −6.3 to −9.3 % on his bench (14K/57K/114K: 39.9/41.6/41.0 vs 44.0/44.4/44.6 K tok/s) and
+  −10 to −17 % on the T1 scouts, against h2-REF. *(Corrected 2026-10-31: this said "−8 to −10 %", a band the
+  57K point (41.6 vs 44.4 = −6.3 %) sits outside.)*
 
 ### Releases
 
@@ -320,8 +428,9 @@ The long write-up for each release is in [HISTORY.md → Superseded Results subs
 
 **Pg61 (the serving config since 2026-10-29):**
 
-* **Still being tested.** The 48 h soak runs to Saturday 2026-10-31 10:14pm CDT, and the recipe stays
-  `experimental`. Any restore or card restarts the clock.
+* **Still being tested.** 48 h window — the soak was broken twice on 2026-10-30 (04:57 reboot, ~10:07 Kimi-K3 window) and restarted 2026-10-31 12:44:08 CDT after Card R1 (receipt: launcher soak-start.json); it ends Monday 2026-11-02 11:44 AM CST (17:44Z), and the recipe stays `experimental`. Any restore or
+  card restarts the clock. *(Corrected 2026-10-31: this said the soak ran to Saturday 2026-10-31 10:14pm CDT; it
+  was broken twice and Card R1 restarts it.)*
 * **`PEER3_SPINS=1000000000000` is required.** On a peer tier v3 wait timeout (his default: 20,000,000 polls), all
   three v3 wait sites (peer3 `finish_kernel`, the boundary fold, the MegaMoE fork's W6 fold) skip the cold-expert adds
   and stream wrong tokens; the count lives only in GB300 device memory. Write the spins as plain digits:
@@ -330,28 +439,67 @@ The long write-up for each release is in [HISTORY.md → Superseded Results subs
 * **Clients killed by a trip see no `finish_reason`.** In G3b the streams simply ended, with no `finish_reason` and
   no HTTP error, because the server was killed mid-stream. Callers must treat a missing `finish_reason` as a failure,
   not as a short answer.
-* **The final watchdog file has not fired under fault injection.** The G3b trip ran the version from before a
-  log-ordering fix (log the server kill, unpause, then stop the sidecar). The fixed file passes 13/13 unit tests and
-  ran armed through G4, G5 and the cutover with 0 trips.
-* **MMLU-Pro +2.4 pt is unexplained.** In T3 Pg61 read 87.7 % against h2-REF's 85.3 % (paired 10 lost / 34 gained,
-  p < 0.001). It is not answer length: median completions were 313 vs 310 tokens, and neither container sets a
-  reasoning-effort default. Runaways to the 131K cap (14 vs 20) explain at most 6 of the net +24 items. The cause was
-  not investigated. Read it as "no loss", not as a quality gain we understand.
+* **The watchdog that ships HAS now fired under fault injection — twice, and the first attempt is on file.**
+  2026-10-31 Card R1 paused `ds41-sidecar` under four streams: trip in **2.86 s**, server killed, no stream got a
+  `finish_reason`, no chunk after the stall. Three bars (log order, GB300 freed, sidecar stopped) read FAIL because
+  the instrument judged the verdict 5 s after the trip while the watchdog was still inside `docker stop -t 5`; the
+  scheduled `down` then killed the watchdog. Amendment A4 waits for the watchdog process to exit and changes no bar;
+  the R1b re-run on the **same bytes** is **7/7 PASS** (trip 3.11 s, last chunk 0.006 s after the pause, GB300 22 MiB,
+  watchdog exited, sidecar stopped). Both runs are in [the R1 bundle](results/2026-10-31-r1-qt1/README.md).
+  **Bytes note:** the lane ran `ba8373e9…` and the recipe ships `c97d149d…`; the only difference is two argparse
+  default paths that both launcher invocations override with explicit `--status`/`--log`, and
+  `BUILD-SHA256SUMS.expected` carries the shipped hash.
+* **MMLU-Pro +2.4 pt is not a quality gain.** In T3 Pg61 read 87.7 % against h2-REF's 85.3 % (paired 10 lost / 34
+  gained, p < 0.001), on byte-identical command lines at temperature 0, with equal median lengths (313 vs 310). The
+  best-supported reading is a *deterministic near-tie branch divergence with an arbitrary sign*: both arms change
+  numerics (Pg61 carries peer tier v3, h2-REF carries split-KV), greedy output is only reproducible below ~512-token
+  rows, and 44 flips netting +24 over 1,000 items is what tie-flipping looks like. **It is a hypothesis, not a
+  measurement** — no same-arm repeat of MMLU-Pro has ever run, so the p-value has no noise model behind it. The
+  overlay was tested and eliminated as the cause (nine MMLU-Pro-shaped conversations render byte-identical, W1 §(f));
+  runaways explain at most 6 of the net +24. Settle it with two Pg61 repeats of the same 1,000 items before quoting
+  the delta anywhere. Read the row as "no measured loss", not as a win.
 * **Tool-eval moves ±2 run to run at T=0 / C4.** In T3, Pg61 read 89 and 91 and h2-REF 89 and 93; in G2/G3, Pg read
   91 and Pg61 89. One run cannot rank two configs.
-* **Prefill is slower than h2-REF.** His bench reads −8 to −10 % at 14K–114K (e.g. 114K: 41.0K vs 44.6K tok/s), and
+* **Prefill is slower than h2-REF.** His bench reads −6.3 to −9.3 % at 14K–114K (39.9/41.6/41.0 vs
+  44.0/44.4/44.6 K tok/s), and
   the T1 scouts (N = 1) read −10 to −17 % at 8K–128K (128K: 39,775 vs 48,062 tok/s). The 1M first token is 36.5 s
   (999,034 tokens, 27.3K tok/s, measured on Pg in G1f) vs the v25 launch's 33.2 s; h2-REF's own 900K needle was
   31.17 s. The probable cause, not measured, is 129 cold experts per layer on the RTX (h255 map, vs our 89), with
   T > 64 on peer tier v2. A rowmap sweep (h270/h285 under our policy) is planned after promotion; it costs KV tokens.
-* **Not exercised:** a temperature > 0 quality score (every quality gate is T = 0 or teacher-forced; the #61161 port
-  is kernel-exact in G3 and costs no C1 in G5), and decode beyond 128K except one 1M needle on Pg (G1f, before the port).
-* **No per-layer cosine bring-up gate on peer tier v3.** `gate_cosine.py` was not run on Pg61. The end-to-end
-  evidence that the sidecar path is numerically right is the TF check against h2-REF at the control floor (Pg,
-  G1f), plus the T2/T3 gates.
+* **Temperature > 0 quality is covered at T = 1.0 only.** Card QT1 ran 60,073 positions of a fresh pre-registered
+  run on 2026-10-31 and **PASSED** all six bars: mid-PIT z −0.211, rank-calibration χ² p 0.7355, per-class Holm min
+  0.7446, tie-fair top-1 z 0.193, dependence z −0.009 / −0.171, NLL − H +0.0199 nats, with both temperature controls
+  detected (0.95 → M z −5.31, 1.05 → z +5.33). **What it does not cover:** any temperature other than 1.0, top_p/top_k
+  truncation, and the accept/reject arithmetic in isolation (that stays Card G3's GPU unit test).
+* **A 5 % error of the temperature class is the detection floor.** The confirmatory controls are ±5 % in temperature
+  and they are the smallest moves the instrument can see; an argmax substitution below ~2 % per token is also not
+  excluded. Do not quote this gate as "sampling is exact". Full-vocab KLD is still not obtainable on this lane
+  (`max_logprobs` default 20), which is why the tail atom is coarse.
+* **Decode beyond 128K** is exercised only by the one 1M needle on Pg (G1f, before the #61161 port).
+* **Per-layer cosine on peer tier v3 is measured, with two caveats.** The 2026-10-31 read-only tap passed (40/40
+  layers, min cos 1.000000, max |Δ| 3.906e-3 against an offline fp64 re-run of the same rows), live and again on the
+  R1 bring-up boot. It is a **sampled** read (10 snapshots per layer, 4,299 and 4,343 cold pairs) over the rows the
+  serving lane happened to route cold, not an exhaustive per-layer dump, and it validates the cold-expert *compute*,
+  not the full forward. The end-to-end evidence stays the P7 forced-token compare against h2-REF (0.0574 mean |Δlp| /
+  1.664 % flips, inside 0.0684 / 2.066 %) plus the T2/T3 gates.
 * **The launcher-built `libw6mk.so` (sha256 `b5416822…`) is not byte-identical to the hand build G3 tested
   (`b072ee09…`)** — nvcc embeds build paths. Its device code is identical (both sm_103a cubins match,
   `results/2026-10-29-pg61-garner-engine/libw6mk-cubin-identity.txt`). G4 and G5 measured the `b5416822` build.
+* **The prompt encoder is not stock vLLM.** Pg61 mounts Garner's `overlay-1017` r2 (four files, `deepseek-recipe`
+  0.2.0 alignment, escaping of special-token spellings in client text); h2-REF mounts none of it. A quality number
+  from this lane is not a stock-vLLM number on prompts that carry special-token spellings, and the overlay is his
+  "temporary bridge": an image that ships the 1017 encoder replaces it.
+* **Determinism ends at ≤ 512 compressed entries per row** (the indexer's atomic top-k), not at T ≤ 64: a 6-token
+  decode step at 4K context is outside it, and the v2/b12x path used above T = 64 accumulates in bf16. So run-to-run
+  identical output is not a property of this lane; only the kernel-level A/B checks (G3 `61161`, G1f `60945`) and
+  the teacher-forced floors are repeatable evidence. See "What this runs" for the receipts.
+* **After a watchdog trip, `launch-pg61.sh up` refuses to start** while the trip is recorded: the p3 watchdog's
+  `--once` precondition reads the status file, and the v3 shm segment the killed server left behind still shows
+  `published != completed`. **Recovery is `launch-pg61.sh down` first, then `up`** — `down` is what kills the
+  watchdog, stops both containers and removes `/dev/shm/vllm_peer_tier2` and `..._tier3` (it fails if a segment
+  survives). The shipped `up` was hardened on 2026-10-31 to remove a stale segment itself **only when nothing is
+  running** (it refuses if `ds41-sidecar` is alive), and `down` → `up` is what the R1 re-run actually did.
+  *(Documented 2026-10-31; the trip path itself is Card G3b's and now Card R1's.)*
 * **Garner's engine is not ours to support.** His tree is pinned at `8043a681`, and a newer commit is a new card. Our
   patches touch only the five files listed in `patches/garner-8043a681/`.
 
@@ -399,14 +547,26 @@ The long write-up for each release is in [HISTORY.md → Superseded Results subs
   image maps `low`→25, `high`→50.
 * **One runaway is possible at temp 0** (GSM8K item 1304 hit the 131,072 cap once). A client `max_tokens` is the only
   real guard.
-* **Live FlashInfer autotune**, no pinned tune file: a few percent of C1 varies boot to boot.
+* **FlashInfer is tuned from his pinned file, not live-tuned.** That bullet described h2-REF and the v27 lanes.
+  Pg61 runs `MEGA_FI_TUNE_FILE=/w/fi-tune/fiset-w6pf-post1-c7483c4a.json` (his tree, copied by `build`), and
+  `VLLM_FLASHINFER_AUTOTUNE_SKIP_OPS=mxfp8_gemm` (`serve/serve.sh:317`) excludes the mxfp8 GEMM from autotune **by
+  design** — the `tactic=-1` warnings are that exclusion, not a defect. Two prefill-sized `mxfp8_gemm` shapes have
+  no tuned entry and fall back to CuteDSL; their cost is unmeasured. *(Corrected 2026-10-31: the earlier text, in
+  this file and in `HISTORY.md`, said "no pinned tune file — a few percent of C1 varies boot to boot".)*
 * **Replay ON vs OFF is one rep.** The lane runs ON.
 * **vLLM v0.31.0 was not adopted for this launch** (knee C8 −3.8%). Pg61 is a different launch on v0.31.0, with its
   own gates.
-* **KV is declared**, so vLLM does not check activation headroom at boot (1,395 MiB free at the stressed peak).
-  **`EXTRA` defaults to empty:** a fresh launch without `EXTRA="--kv-cache-memory 9126805504"` silently serves
-  2,537,081 tokens.
-* **Boot 527 s warm**; cold JIT caches are ~30 min. **The Docker Hub tag is gone**; pull by digest.
+* **KV is declared on h2-REF and every earlier launch**, so vLLM does not check activation headroom at boot
+  (1,395 MiB free at the stressed peak); on those launches `EXTRA` defaults to empty and a fresh start without
+  `EXTRA="--kv-cache-memory 9126805504"` silently serves 2,537,081 tokens. **Pg61 does not use that path:** it
+  sizes KV from `--gpu-memory-utilization 0.95` with `EXTRA` empty, declared 11,696,582 tokens, so the failure
+  mode described here does not exist on this launch. *(Corrected 2026-10-31.)*
+* **Boot times are per-lane.** Pg61 bound in **378 s from stop to `verify OK`** at the cutover (22:07:54 →
+  22:14:12 CDT, and that includes `drop_caches` and a 45 s sleep — so ≈332 s launch→ready); the 527 s this bullet
+  used to quote is v27's warm boot, 46–50 s of which is the sidecar. Cold JIT caches are ~30 min. **The Docker Hub
+  tag that is gone is the `af7f9488` nightly** (h2-REF and earlier); Pg61 runs `vllm/vllm-openai:v0.31.0`, a
+  pullable tag — pull it by tag **and** check the digest. *(Corrected 2026-10-31: both halves of this bullet
+  described the rollback lane and were being read as Pg61 statements.)*
 
 Limits that described only superseded configs are in [HISTORY.md → Superseded limits](HISTORY.md#superseded-limits).
 
@@ -432,12 +592,18 @@ bash scripts/rollback-pg61-to-h2ref.sh
 5. Runs one smoke, then clears MAINTENANCE and writes an owner line. A failed smoke leaves the lane in MAINTENANCE,
    with the watchdog armed.
 
-**Dry-run tested only:** the script has not run end to end on the box; the cutover calls its `--dry-run`. The same
-restore sequence, in the card runners' own code, brought h2-REF back after G3, G3b, G4 and G5 (bound in 420–425 s,
-smoke OK, watchdog armed). On a fresh box, h2-REF is `scripts/start-h2ref.sh`
+**Drilled end to end on 2026-10-31 (Card R1 P4/P5):** Pg61 → h2-REF rc 0 in **551 s**, h2-REF `BOUND` after **420 s**,
+the v2 fail-stop watchdog re-armed (pid logged, PPID 1, status age 0 s) and the smoke OK; then the cutover back rc 0 in
+**452 s** with `BUILD=OK`, `verify` rc 0 and the KV line exact. Receipts:
+[`results/2026-10-31-r1-qt1/raw/r1/P4/`](results/2026-10-31-r1-qt1/raw/r1/P4/trace.log) and
+[`.../P5/`](results/2026-10-31-r1-qt1/raw/r1/P5/trace.log). On a fresh box, h2-REF is `scripts/start-h2ref.sh`
 ([HISTORY.md](HISTORY.md#launching-h2-ref-and-earlier-releases)). **After a p3 watchdog trip,** read
 `$WORK/wdp3.log`, `docker logs ds41-sidecar` and `journalctl -k | grep Xid` before any rollback; the trip leaves the
-lane down on purpose.
+lane down on purpose. **Coming back up after a trip needs one extra step:** a stale peer tier v3 segment in
+`/dev/shm` makes `launch-pg61.sh up` refuse (its `--once` reports the recorded trip). The shipped `up` removes a stale
+segment itself only when nothing is running, so the documented order is still **`down` first, then `up`**, or roll back
+with the script above, which calls `down` for you. *(Corrected 2026-10-31: this said `up` never cleans a stale
+segment; the hardened `up` does, but only when `ds41-sidecar` is not running.)*
 
 **Rolling back further** (h2-REF → h1-REF, v27 → v25m-kvtier, and the older kept pairs) uses
 [`scripts/rollback-v27.sh`](scripts/rollback-v27.sh); the steps and manual fallbacks are in
@@ -447,6 +613,12 @@ out-of-bounds read** (see Known limits).
 ## Credits
 
 This recipe is a productionised descendant of other people's recipes, and the ordering here is deliberate.
+
+Garner's MIT copyright **and permission notice**, which the five patch files and the two vLLM overlay files inherit
+(patch context lines and derived source are copies), is in
+[`patches/garner-8043a681/NOTICE`](patches/garner-8043a681/NOTICE). It also records the Apache-2.0 material our
+overlay carries — the vLLM files keep their `SPDX-License-Identifier: Apache-2.0` headers — and the original-el8
+and b12x notices his tree requires us to pass on.
 
 **Engines this recipe runs:**
 
@@ -521,13 +693,15 @@ the crash bisect that tied his C32 deaths to the unguarded #60945 read, the #611
 finding that a peer tier v3 timeout fails open and the `PEER3_SPINS` + p3 watchdog that close it, the policy hooks,
 and the G0–G5 gates. Measurements, gate design and the write-up: **J&M Recipes** (James Meadlock, Milo). Session
 note: the numbers were produced with a Claude Opus 5.5 orchestrator on the research side; the recipe was written
-from the receipts.
+from the receipts. The 2026-10-31 release gates (Cards R1 and QT1) were orchestrated by Claude Opus 5.5, with
+Fable 5.1 as advisor.
 
 ## History
 
 One line per dated round, newest first. The full text of each is in [HISTORY.md](HISTORY.md). The anchors on each
 line keep old links into this README working.
 
+- <a id="2026-10-31-cards-r1-and-qt1--release-gates-closed"></a><a id="release-gates-closed-2026-10-31"></a>**2026-10-31** — Cards R1 + QT1 closed the release gates in one 38-minute dark window: peer tier v3 cosine PASS (40/40 layers, min cos 1.000000), shipped watchdog fault-injected 7/7 (run 1's FAIL kept as an instrument defect), rollback drilled and cut back, P7 forward fidelity PASS, T>0 sampler calibration PASS on a fresh pre-registered run; soak restarted 12:44:08 CDT, ends Monday 2026-11-02 11:44 AM CST. [Round](results/2026-10-31-r1-qt1/README.md)
 - <a id="2026-10-29-pg61--garners-ds41-engine-under-our-policy-promoted-soak-in-progress"></a><a id="what-pg61-is"></a><a id="cards-g0--g5"></a><a id="known-costs"></a><a id="not-exercised"></a><a id="promotion-2026-10-29"></a>**2026-10-29** — Pg61 (Garner's engine under our policy) promoted after Cards G0–G5: T3 all six bars PASS, 1.31× h2-REF. [Round](HISTORY.md#2026-10-29-pg61--garners-ds41-engine-under-our-policy-promoted-soak-in-progress)
 - <a id="2026-10-28-h2-ref--the-60945-guard-and-split-kv-attention-card-ap2-promoted"></a><a id="why-the-guard-came-first"></a><a id="card-ap2--a--s8--s4--a2-2026-10-28-15101708-cdt"></a><a id="h2-ref-served-2026-10-28-172258-cdt--2026-10-29-1007pm-cdt-now-the-rollback-lane-results2026-10-28-h2-splitkv-ap2"></a>**2026-10-28** — h2-REF promoted on Card AP2 (S4 = PROMOTE-READY, 1.036× coding C1); the #60945 sampler read found. [Round](HISTORY.md#2026-10-28-h2-ref--the-60945-guard-and-split-kv-attention-card-ap2-promoted) · [results](HISTORY.md#h2-ref-served-2026-10-28-172258-cdt--2026-10-29-1007pm-cdt-now-the-rollback-lane-results2026-10-28-h2-splitkv-ap2)
 - <a id="h1-ref-served-2026-10-27-1646--2026-10-28-1713-cdt-the-rollback-pair-until-2026-10-29-now-second-line-behind-h2-ref"></a>**2026-10-27** — h1-REF (L2 key-sharing + #61161) promoted by James on Card H1 (`SUBBAR`, bit-identical). [Results](HISTORY.md#h1-ref-served-2026-10-27-1646--2026-10-28-1713-cdt-the-rollback-pair-until-2026-10-29-now-second-line-behind-h2-ref)
@@ -550,9 +724,26 @@ What stands between Pg61 and `status: verified` (2026-10-29):
 |---|---|
 | T0 + T2 (needle-checksum, GSM8K-200 paired) + held-out BFCL | **DONE on Pg** (G2) and **re-run on Pg61** (G3: GSM8K-200 192/200, BFCL held-out 1026/1311 = 78.26 %) |
 | **T3 promotion bench** | **DONE 2026-10-29** (Card G4): all six pre-registered bars PASS vs h2-REF in the same window, with Pg61 booted by the published launcher. This is the first T3 recorded in this recipe |
-| fail-closed guard + trip path under fault injection | **DONE** (G3b: trip in ~3 s, server killed). The post-G3b fixed watchdog file has not itself been fault-injected |
-| rollback script | **written** ([`scripts/rollback-pg61-to-h2ref.sh`](scripts/rollback-pg61-to-h2ref.sh)); `--dry-run` is called by the cutover; not run end to end on the box |
-| gate stamps | **not re-stamped for Pg61** in this PR. h2-REF's stamps moved to `notes:` in `recipe.yaml`, so `verified` cannot pass on the wrong config |
-| **remaining: 48 h soak** | **running**: clock started at the cutover, 2026-10-29 10:14pm CDT (Thursday); ends **2026-10-31 10:14pm CDT (Saturday)** if no restore or card takes the lane, with the M4 lane check silent throughout |
-| **remaining: temperature > 0 quality** | not run. The #61161 port is kernel-exact and costs no C1, but there is no T > 0 quality score. Candidates: full-vocabulary KLD over forced tokens, or seeded GSM8K at T = 1, Pg61 vs h2-REF |
-| follow-up (not a gate) | rowmap sweep h270 / h285 under our policy, to buy back prefill (−8 to −17 %) at a KV-token cost |
+| fail-closed guard + trip path under fault injection | **DONE 2026-10-31, on the shipped file** (Cards R1/R1b): sidecar paused under 4 streams → TRIP 3.11 s, server killed, no stream got a `finish_reason`, last chunk 0.006 s after the pause, GB300 22 MiB, watchdog exited, sidecar stopped — 7/7 bars. Run 1 read FAIL on three log-order/cleanup bars because the instrument judged 5 s after the trip (amendment A4); it stays on file |
+| rollback script | **DRILLED END TO END 2026-10-31** (Card R1 P4/P5, [`traces`](results/2026-10-31-r1-qt1/raw/r1/P4/trace.log)): rc 0 in 551 s → h2-REF `BOUND` after 420 s with the v2 fail-stop watchdog re-armed and the smoke OK; cut back rc 0 in 452 s, `BUILD=OK`, `verify` rc 0, KV 11,696,582 exact |
+| gate stamps | **not stamped — deliberately.** `schema` / `digest` / `health` / `quality` / `performance` are stamped *after* the soak completes, from this round's run ids. h2-REF's stamps stay in `notes:`, so `verified` cannot pass on the wrong config |
+| **remaining: 48 h soak** | restarted 2026-10-31 12:44:08 CDT at the end of Card R1 (receipt: launcher `soak-start.json`); it ends **Monday 2026-11-02 11:44 AM CST (17:44Z)**, with the M4 lane check silent throughout. The clock first started at the 2026-10-29 cutover and was broken twice on 2026-10-30 (04:57 reboot, ~10:07 Kimi-K3 window). *(Corrected 2026-10-31: the row promised 2026-10-31 10:14pm (Saturday) "if no restore or card takes the lane" — a restore and a card both did.)* |
+| temperature > 0 quality | **DONE 2026-10-31** (Card QT1): fresh pre-registered confirmatory run, 60,073 positions, **PASS** on all six bars with both ±5 % temperature controls detected. Scope: T = 1.0, top_p = 1, speculative-decode path, top-20 reported distribution. The discovery run's registered P4 FAIL and its diagnosis are on file; full-vocab KLD is still not obtainable (`max_logprobs` 20) |
+| follow-up (not a gate) | rowmap sweep h270 / h285 under our policy, to buy back prefill (−6.3 to −9.3 %) at a KV-token cost — that is Pg62 work, not a release item |
+
+### Release gates closed 2026-10-31
+
+Cards **R1** (one dark window) and **QT1** (no dark window) closed every open gate. Everything below is in
+[`results/2026-10-31-r1-qt1/`](results/2026-10-31-r1-qt1/README.md), with the box receipts and the instruments.
+
+| gate | outcome |
+|---|---|
+| peer tier v3 per-layer numerics (live tap + offline fp64 reference) | **PASS** — 40/40 layers, 4,299 cold pairs, min cos 1.000000, max \|Δ\| 3.906e-3 (bar 2e-2); repeated on the R1 bring-up boot (40/40, 4,343 pairs) |
+| shipped watchdog under fault injection | **PASS** — 7/7 on the re-run (trip 3.11 s); run 1's FAIL kept as the instrument-timing record |
+| rollback + cutover, end to end | **PASS** — 551 s out, `BOUND` after 420 s, watchdog re-armed; 452 s back, `BUILD=OK`, KV exact |
+| restore boots inside the window | **PASS** — bind 302 s (R1) and 318 s (R1b), KV line 11,696,582 exact both times |
+| temperature > 0 sampler calibration | **PASS** — six pre-registered bars, controls at ±5 % detected; MDE stated (argmax substitution <~2 %/token not excluded) |
+| forward fidelity, Pg61 vs h2-REF | **PASS** — 79,505 forced positions, 0.0574 mean \|Δlp\| / 1.664 % flips vs bars 0.0684 / 2.066 % |
+| T0 tool-call smoke (`tool_calls[]` parses) | **PASS** — live lane 2026-10-31 11:19:47 CDT, `finish_reason: tool_calls`, `get_weather` with a parsed `city` ([receipt](results/2026-10-31-r1-qt1/raw/t0/toolcall.json)) |
+| **48 h soak** | **pending** — ends Monday 2026-11-02 11:44 AM CST (17:44Z) |
+| gate stamps + `experimental → verified` | **pending** — after the soak, from this round's run ids |
