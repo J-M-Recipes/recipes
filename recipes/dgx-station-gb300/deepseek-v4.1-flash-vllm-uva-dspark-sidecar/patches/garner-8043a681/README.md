@@ -39,8 +39,8 @@ from patches this recipe already publishes:
 
 The stock files in `vllm/vllm-openai:v0.31.0` are sha1-identical to af7f9488's (`gumbel.py` 70ae04f2,
 `rejection_sampler_utils.py` fb99972e; Card G3-desk), so the h2-REF patches apply unchanged. Desk check:
-[`overlay-desk-check.txt`](../../results/2026-10-29-pg61-garner-engine/overlay-desk-check.txt). To populate the overlay
-before `build`:
+[`overlay-desk-check.txt`](../../results/2026-10-29-pg61-garner-engine/overlay-desk-check.txt). The two files **ship in
+`overlay-vllm/`** (launcher sha1-gates them); to re-derive or audit the bytes:
 
 ```bash
 P=patches/garner-8043a681; IMG=vllm/vllm-openai@sha256:c1c9f6fd5c109ba7f0546a59f5b2f15fb87f64c77782e90a27b648b42a8e67c3

@@ -1,0 +1,38 @@
+QT1 VERDICT — temperature>0 sampler calibration (PIT), DSV4.1-Flash Pg61 :30006
+overall: FAIL
+
+QT1-A primary (pooled ['T1.0a', 'T1.0b']) N=41705 positions
+  PIT KS      D=0.00483  p=0.2843
+  chi2 10-bin p=0.8467
+  dependence  z(autocorr1)=-1.35  z(runs)=1.52
+  top-1 rate  obs=0.8792  exp(max p)=0.8728  z=5.07
+  NLL 0.3972 nats vs H_partition 0.3780 -> gap +0.0191 (tail bound 0.0496)
+  per class:
+    prose       n= 8848  KS D=0.01218 p=0.144
+    structured  n= 9088  KS D=0.00721 p=0.73
+    code        n= 8545  KS D=0.01059 p=0.292
+    shell_ops   n= 8128  KS D=0.00606 p=0.926
+    tool_json   n= 7096  KS D=0.00823 p=0.721
+  QT1-B decode-vs-prefill: n=41577 mean|dlp|=0.0659 p99=0.814 top1_agree=0.9659 jac20=0.808
+
+positive controls (a real distribution change must be caught):
+  T0.95@T1.00(control)   KS D=0.0100 p=0.0327  N=20630
+  T1.05@T1.00(control)   KS D=0.0057 p=0.51  N=20981
+
+arms:
+  T1.0a  N= 20808  KS p=0.6  autocorr_z=-0.52  runs_z=-0.52  mean_u=0.4979  mass_top20=0.9952  ptail=0.0048  flags=0
+  T1.0b  N= 20897  KS p=0.348  autocorr_z=-1.39  runs_z=2.67  mean_u=0.4982  mass_top20=0.9963  ptail=0.0037  flags=0
+  T0.95  N= 20630  KS p=0.374  autocorr_z=1.72  runs_z=0.11  mean_u=0.4987  mass_top20=1.0000  ptail=0.0000  flags=58
+  T1.05  N= 20981  KS p=0.297  autocorr_z=-0.17  runs_z=0.90  mean_u=0.5020  mass_top20=1.0000  ptail=0.0000  flags=116
+
+pre-registered bars:
+  [PASS] P1 pooled PIT KS p >= 0.01                                     got=0.28431 want=>= 0.01
+  [PASS] P2 no per-class KS rejects after Holm (FWER 5%)                got={"min_holm_p": 0.72045, "class": "prose"} want=>= 0.05
+  [PASS] P3 dependence: |z(autocorr1)|, |z(runs)| < 3                   got={"autocorr_z": -1.35062, "runs_z": 1.52258} want=< 3
+  [FAIL] P4 top-1 calibration |z| < 3                                   got=5.0732 want=< 3
+  [PASS] P5 mean NLL - H_partition in [-0.02, tail_bound+0.02]          got={"gap": 0.01914, "bound": 0.04962} want=in band
+  [PASS] P6 decode-vs-prefill mean|dlp| <= 0.10 and top-1 agree >= 0.95 got={"mean_abs_dlp": 0.06591, "top1_agree": 0.96594} want=0.10 / 0.95
+
+Do not read this as: the accept/reject arithmetic is correct (G3 GPU unit test), the
+distribution is right at temperatures not sampled here, or anything about speed.
+

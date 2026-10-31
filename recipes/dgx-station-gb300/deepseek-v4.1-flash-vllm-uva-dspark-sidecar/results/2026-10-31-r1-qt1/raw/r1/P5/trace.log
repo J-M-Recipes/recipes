@@ -1,0 +1,93 @@
++1793467335.390593963 set -uo pipefail
++1793467335.391281933 DRY=0
++1793467335.391977327 [[ '' == --dry-run ]]
++++1793467335.392996019 dirname ~/dsv41/garner/promote/cutover-h2ref-to-pg61.sh
+++1793467335.394883833 cd ~/dsv41/garner/promote
+++1793467335.395588443 pwd
++1793467335.396310237 HERE=~/dsv41/garner/promote
++1793467335.396997088 GR=~/dsv41/garner
++1793467335.397643234 M3=~/dsv41/m3
++1793467335.398252580 LW=~/dsv41/garner/pg61-work
++1793467335.398904134 LAUNCH=~/dsv41/garner/launcher/launch-pg61.sh
++1793467335.399541704 GH=~/dsv41/garner/home
++1793467335.400172266 MODEL=/models/DeepSeek-V4.1-Flash-1017-1bae0e1088993b9b82de08f59de5be5a34e42170
++1793467335.400825900 SRV=dsv41-vllm-1017-h2-REF
++1793467335.401480718 RTX=dsv41-vllm-1017-h2-REF-rtx
++1793467335.402135920 OWNER=~/dsv41/m3/LANE-OWNER.txt
++1793467335.402787058 MAINT=~/dsv41/m3/logs/MAINTENANCE
++1793467335.403402548 U=http://127.0.0.1:30006
++1793467335.404075606 pre=0
++1793467335.404717048 pgrep -f 'g[0-9]+b?_runner.sh'
++1793467335.435168794 running dsv41-vllm-1017-h2-REF
+++1793467335.435964701 docker inspect -f '{{.State.Running}}' dsv41-vllm-1017-h2-REF
++1793467335.443799062 [[ true == true ]]
++1793467335.444460248 running dsv41-vllm-1017-h2-REF-rtx
+++1793467335.445359099 docker inspect -f '{{.State.Running}}' dsv41-vllm-1017-h2-REF-rtx
++1793467335.452849427 [[ true == true ]]
++1793467335.453696534 docker ps --format '{{.Names}}'
++1793467335.453749206 grep -qx ds41
++1793467335.473297205 cd ~/dsv41/garner/pg61-work
++1793467335.475931582 sha256sum -c --quiet BUILD-SHA256SUMS
++1793467335.658025289 bash ~/dsv41/garner/promote/rollback-pg61-to-h2ref.sh --dry-run
++1793467335.789460304 log 'plan: stop dsv41-vllm-1017-h2-REF/dsv41-vllm-1017-h2-REF-rtx (kept); launch-pg61.sh up; smoke; freeze build'
+++1793467335.790291955 date '+%F %T %Z'
++1793467335.791419766 printf '%s [cutover-pg61] %s\n' '2026-10-31 12:22:15 CDT' 'plan: stop dsv41-vllm-1017-h2-REF/dsv41-vllm-1017-h2-REF-rtx (kept); launch-pg61.sh up; smoke; freeze build'
+2026-10-31 12:22:15 CDT [cutover-pg61] plan: stop dsv41-vllm-1017-h2-REF/dsv41-vllm-1017-h2-REF-rtx (kept); launch-pg61.sh up; smoke; freeze build
++1793467335.792059289 [[ 0 == 1 ]]
++1793467335.792688891 [[ 0 == 0 ]]
+++1793467335.793562653 date '+%F %T %Z'
++1793467335.794668033 echo 'cutover-pg61 2026-10-31 12:22:15 CDT'
+++1793467335.796509095 date '+%F %T %Z'
++1793467335.797611402 echo '- 2026-10-31 12:22:15 CDT CUTOVER h2-REF -> Pg61 starting (h2-REF pair stopped-and-kept = rollback; rollback-pg61-to-h2ref.sh)'
+++1793467335.798461485 wd_pids
+++1793467335.799293328 ps -eo pid=,comm=,args=
+++1793467335.799404144 awk '$2=="python3" && index($0,"sidecar_watchdog.py"){print $1}'
++1793467335.820581396 for p in $(wd_pids)
++1793467335.821249175 kill 828714
++1793467335.821895065 sleep 3
++1793467338.823202337 docker stop -t 60 dsv41-vllm-1017-h2-REF
++1793467344.134086853 docker stop -t 60 dsv41-vllm-1017-h2-REF-rtx
++1793467404.791825851 log 'h2-REF pair stopped (kept)'
+++1793467404.792732126 date '+%F %T %Z'
++1793467404.793848866 printf '%s [cutover-pg61] %s\n' '2026-10-31 12:23:24 CDT' 'h2-REF pair stopped (kept)'
+2026-10-31 12:23:24 CDT [cutover-pg61] h2-REF pair stopped (kept)
++1793467404.794541924 sudo -n sh -c 'sync; echo 3 > /proc/sys/vm/drop_caches'
++1793467406.039601994 sleep 45
++1793467451.094183858 WORK=~/dsv41/garner/pg61-work
++1793467451.094888789 MODEL_DIR=/models/DeepSeek-V4.1-Flash-1017-1bae0e1088993b9b82de08f59de5be5a34e42170
++1793467451.095534968 DS41_HOME=~/dsv41/garner/home
++1793467451.096218779 bash ~/dsv41/garner/launcher/launch-pg61.sh up
+[ds41] starting RTX sidecar on NVIDIA RTX PRO 6000 Blackwell Max-Q Workstation Edition (GPU-d07eb6e6-7053-42a7-6811-7bb833266182)
+prepared 40 layers in 58s; 98.5 GB allocated
+serving; v3 call statistics -> /var/lib/ds41/sidecar/peer3_stats.json
+[ds41] starting GB300 vLLM on NVIDIA GB300 (GPU-1c1855c8-dd10-0247-583e-3c3880ddbf55); util=0.95, reserve=0 MiB, rowmap=rowmap-mix-v1-h255.json, maxlen=1048576
+MEGA_PEER finalize layer 39: done
+(EngineCore pid=403) INFO 10-31 17:28:11 [interface.py:692] Setting kv cache block size to 128 for FLASHMLA_MEGA_ATTN_DSV41/DEEPSEEK_SPARSE_SWA/DEEPSEEK_V41_INDEXER/CompressorBackend backend(s).
+MEGA_PEER ACTIVE peer tier v2: max_rows=8192, small-row routing <= 64
+(EngineCore pid=403) INFO 10-31 17:28:33 [kv_cache_utils.py:2464] GPU KV cache size: 11,696,582 tokens, Maximum concurrency for 1,048,576 tokens per request: 11.15x
+A12_INSTALL_MEMORY {"phase": "after_capture_warmup_gc", "reason": null, "retirement": {"alternate_graphs_retained": 0, "candidate_allocated_bytes": 11752439808, "checked_graph_managers": [{"full_count": 36, "manager": "ModelCudaGraphManager
+[ds41] ready: http://127.0.0.1:30006/v1  (model dsv41-flash-uva)
+[ds41] sample: curl -s http://127.0.0.1:30006/v1/models -H "Authorization: <redacted>"
+2026-10-31 12:29:43 CDT [pg61] verify OK: gumbel 6eac3e134833 rsu edc8f8f4c425 libw6mk b54168223847560b PEER3_SPINS=1000000000000
+2026-10-31 12:29:46 CDT [pg61] UP on :30006; watchdog ENFORCE armed (status ~/dsv41/garner/pg61-work/wdp3.status.json)
+2026-10-31 12:29:46 CDT [pg61] soak clock started: {"soak_start_utc": "2026-10-31T17:29:46Z", "soak_start_local": "2026-10-31 12:29:46 CDT", "epoch": 1793467786}
++1793467786.375795924 curl -s -m 60 http://127.0.0.1:30006/v1/chat/completions -H 'Content-Type: application/json' -d '{"model":"dsv41-flash-uva","messages":[{"role":"user","content":"Reply with exactly: lane ok"}],"max_tokens":16,"temperature":0,"chat_template_kwargs":{"thinking":false}}'
++1793467786.375915125 grep -q 'lane ok'
++1793467786.903943409 log 'smoke OK'
+++1793467786.904844565 date '+%F %T %Z'
++1793467786.905990138 printf '%s [cutover-pg61] %s\n' '2026-10-31 12:29:46 CDT' 'smoke OK'
+2026-10-31 12:29:46 CDT [cutover-pg61] smoke OK
++1793467786.906696060 chmod -R a-w ~/dsv41/garner/pg61-work/tree ~/dsv41/garner/pg61-work/overlay-vllm ~/dsv41/garner/pg61-work/BUILD-SHA256SUMS ~/dsv41/garner/pg61-work/policy.env ~/dsv41/garner/pg61-work/sidecar_watchdog_p3.py
+chmod: changing permissions of '~/dsv41/garner/pg61-work/tree/fastpath/libw6mk.so': Operation not permitted
++1793467787.050320346 sudo -n chmod a-w ~/dsv41/garner/pg61-work/tree/fastpath/libw6mk.so
++1793467787.114576123 log 'build frozen (chmod a-w; libw6mk.so is root-owned)'
+++1793467787.115418718 date '+%F %T %Z'
++1793467787.116520802 printf '%s [cutover-pg61] %s\n' '2026-10-31 12:29:47 CDT' 'build frozen (chmod a-w; libw6mk.so is root-owned)'
+2026-10-31 12:29:47 CDT [cutover-pg61] build frozen (chmod a-w; libw6mk.so is root-owned)
++1793467787.117162181 rm -f ~/dsv41/m3/logs/MAINTENANCE
+++1793467787.129478902 date '+%F %T %Z'
++1793467787.130630043 echo '- 2026-10-31 12:29:47 CDT CUTOVER done: Pg61 (ds41 + ds41-sidecar, launch-pg61.sh) serving :30006 + p3 watchdog ENFORCE; soak 48 h; rollback: ~/dsv41/garner/promote/rollback-pg61-to-h2ref.sh'
++1793467787.134214825 log 'DONE: Pg61 serving'
+++1793467787.135069548 date '+%F %T %Z'
++1793467787.136168401 printf '%s [cutover-pg61] %s\n' '2026-10-31 12:29:47 CDT' 'DONE: Pg61 serving'
+2026-10-31 12:29:47 CDT [cutover-pg61] DONE: Pg61 serving
