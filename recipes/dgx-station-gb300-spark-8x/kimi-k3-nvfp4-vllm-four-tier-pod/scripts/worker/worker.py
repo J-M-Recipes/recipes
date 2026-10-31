@@ -25,7 +25,7 @@ from k3proto import (HDR, HIDDEN, MSG_BYTES, REP, REQ, SHUTDOWN_ID, ST_BAD, ST_E
 INTER, REC, HEADER = 3072, 18_579_480, 4096
 E = 62          # experts per layer in this bank; overwritten from the bank header at boot
 OFF = {"w13": 0, "w2": 11_010_048, "sf13": 16_515_072, "sf2": 17_891_328, "sc": 18_579_456}
-NSLOTS, SLOT = 8, 2 << 20          # must match K3_NSLOTS / K3_SLOT in k3hop.c (checked at boot)
+NSLOTS, SLOT = 4, 8 << 20          # must match K3_NSLOTS / K3_SLOT in k3hop.c (checked at boot)
 # K3-4 batched path: pair counts are padded up to one of these so the B12x static kernels (compiled per exact row
 # count, ~1.5-3 s each) are all built at boot; >= 1024 pairs use the dynamic kernel, which takes any count.
 BATCH_BUCKETS = (32, 64, 96, 128, 192, 256, 320, 384, 512, 640, 768, 896, 1024)   # 1024 = static cutover; above it every count runs the dynamic kernel
@@ -287,7 +287,7 @@ def main():
         # dynamic FIRST: once the dynamic workspace exists the wrapper re-sizes its static workspace (max_rows = the
         # 1,024-pair cutover), and the static kernels are keyed on it - warming statics first builds the wrong keys
         # and the first real chunk compiles for ~3 s (measured: Station batch timeout, 2026-10-31 00:26)
-        for n in (2048,) + BATCH_BUCKETS:
+        for n in (BATCH_CAP, 2048) + BATCH_BUCKETS:
             b_ids[:n, 0] = torch.arange(n, device="cuda") % E
             y = run_batch(0, bx[torch.arange(n, device="cuda") % BATCH_MAX_M], n); torch.cuda.synchronize()
             assert bool(torch.isfinite(y).all()), f"batch warmup n={n} non-finite"

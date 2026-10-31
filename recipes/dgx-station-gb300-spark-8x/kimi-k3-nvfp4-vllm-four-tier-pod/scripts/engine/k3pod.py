@@ -27,6 +27,9 @@ FAST = os.environ.get("K3POD_FAST", "1") == "1"
 # K3-4: multi-token calls (prefill chunks, batch > 1) send ONE message per worker carrying every token that worker
 # serves, instead of one round trip per token. Workers must run K3_BATCH=1 (worker.py) on the 2 MiB-slot libk3hop.
 BATCH = os.environ.get("K3POD_BATCH", "1") == "1"
+# diagnostics: time the Station's own routed experts (CUDA events, synchronizing - slows prefill a little)
+TIME = os.environ.get("K3POD_TIME") == "1"
+_TM = {"n": 0, "ms": 0.0, "tok": 0}
 # Graph-resident expert step for one-token decode (idea: Javier, @javierbits): no eager graph break; the GPU writes
 # x/ids/w + a ready flag into pinned host memory, a C proxy thread (libk3hop k3proxy_*) sends/collects, and the
 # graph waits on a done flag with cuStreamWaitValue32.
@@ -95,6 +98,19 @@ def rewrite_name(name: str):
 
 
 # ---------------------------------------------------------------------------------------------
+class _CAI:
+    """Minimal __cuda_array_interface__ so torch can wrap host-registered (device-visible) memory."""
+    def __init__(self, ptr, shape, typestr):
+        self.__cuda_array_interface__ = {"data": (ptr, False), "shape": shape, "typestr": typestr,
+                                         "version": 3, "strides": None}
+
+
+def _dev_tensor(ptr, shape, typestr, dtype=None):
+    import torch
+    t = torch.as_tensor(_CAI(ptr, shape, typestr), device="cuda")
+    return t.view(dtype) if dtype is not None else t
+
+
 class _Pod:
     """Station-side client for the nine expert workers. One request in flight per worker."""
 
@@ -116,8 +132,25 @@ class _Pod:
         self.KP = KP
         self.SLOT = KP.lib().k3_slot_bytes()
         self.conns, self.req = [], []
+        self.rings = []
+        GPUB = BATCH and os.environ.get("K3POD_BATCH_GPU", "1") == "1"
+        self.gpub = GPUB
+        if GPUB:
+            # Station rings allocated here (page-aligned for the 64 KiB-page kernel) and cudaHostRegister'ed, so the
+            # GPU gathers batch rows straight into the send slot and sums replies straight out of the recv slots.
+            import ctypes as _ct, mmap as _mm, torch as _torch
+            _cudart = _torch.cuda.cudart()
+            _rb = KP.lib().k3_ring_bytes()
         for name, ip, port, dev in PLAN.workers:
-            c = Conn.connect(ip, port, dev, 3)
+            ring = None
+            if GPUB:
+                mmo = _mm.mmap(-1, _rb)
+                ring = _ct.addressof(_ct.c_char.from_buffer(mmo))
+                rc = _cudart.cudaHostRegister(ring, _rb, 0)
+                if int(rc) != 0:
+                    raise RuntimeError(f"k3pod: cudaHostRegister of the {name} ring failed rc={rc}")
+                self.rings.append((mmo, ring))
+            c = Conn.connect(ip, port, dev, 3, ring=ring)
             self.conns.append(c)
             self.req.append(c.view(0, MSG_BYTES))
             if BATCH:
@@ -315,6 +348,88 @@ class _Pod:
         self.batch_tokens = getattr(self, "batch_tokens", 0) + M
         return out
 
+    def batch_send_gpu(self, L, x, ids, w):
+        """Batched send with the x rows gathered on the GPU straight into each worker's (registered) send slot."""
+        import numpy as np
+        import torch
+        self._np = np
+        if self.conns is None:
+            self.connect()
+        KP = self.KP
+        t0 = time.perf_counter()
+        M, H = x.shape
+        own = self.owner_tab[L].astype(np.int16)
+        valid = (ids >= 0) & (ids < 896)
+        o = np.where(valid, own[np.clip(ids, 0, 895)], -2)
+        k_station = (o < 0).sum(1)
+        parts = []
+        for wi in range(len(self.conns)):
+            want = (o == wi).sum(1)
+            rows = np.nonzero(want)[0]
+            if not rows.size:
+                continue
+            m = rows.size
+            c = self.conns[wi]
+            base = c.addr(0)
+            self.rid += 1
+            v = c.view(0, KP.batch_xoff(m))
+            self.REQ.pack_into(v, 0, self.rid, L, 0, KP.FLAG_BATCH, 0, *([-1] * 16), *([0.0] * 16))
+            KP.BATCH_M.pack_into(v, KP.BATCH_M_OFF, m)
+            np.frombuffer(v, np.int32, m * 16, self.HDR).reshape(m, 16)[:] = ids[rows]
+            np.frombuffer(v, np.float32, m * 16, self.HDR + 64 * m).reshape(m, 16)[:] = w[rows]
+            rows_t = torch.from_numpy(rows).to(x.device)
+            xv = _dev_tensor(base + KP.batch_xoff(m), (m, H), "<i2", torch.bfloat16)
+            torch.index_select(x, 0, rows_t, out=xv)
+            parts.append((wi, rows, want[rows], rows_t, m))
+        torch.cuda.current_stream().synchronize()          # rows are in the slots before the NIC reads them
+        self._t_sent = time.perf_counter()
+        for wi, _, _, _, m in parts:
+            self.conns[wi].send(0, KP.batch_req_bytes(m))
+        self.t_send += time.perf_counter() - t0
+        return (L, M, H, parts, k_station, ids.shape[1])
+
+    def batch_end_gpu(self, h, add):
+        """Collect batched replies; each reply's y rows are added on the GPU straight out of its recv slot."""
+        import torch
+        np, KP = self._np, self.KP
+        L, M, H, parts, k_station, K = h
+        t0 = time.perf_counter()
+        add.zero_()
+        got = np.zeros(M, dtype=np.int64)
+        used = []
+        try:
+            for wi, rows, want, rows_t, m in parts:
+                c = self.conns[wi]
+                s = c.poll(5_000_000)
+                if s < 0:
+                    raise RuntimeError(f"k3pod: worker {PLAN.workers[wi][0]} timed out (batch), layer {L}")
+                used.append((c, s))
+                rv = c.view(s, KP.batch_yoff(m))
+                rr = self.REP.unpack_from(rv, 0)
+                if rr[1] != 0:
+                    raise RuntimeError(f"k3pod: worker {PLAN.workers[wi][0]} status {rr[1]} (batch) layer {L}")
+                ku = np.frombuffer(rv, np.uint16, m, self.HDR).astype(np.int64)
+                if not np.array_equal(ku, want):
+                    bad = int(np.nonzero(ku != want)[0][0])
+                    raise RuntimeError(f"k3pod: {PLAN.workers[wi][0]} batch k_used {ku[bad]} != {want[bad]} "
+                                       f"(token {int(rows[bad])}), layer {L}")
+                got[rows] += ku
+                y = _dev_tensor(c.addr(s) + KP.batch_yoff(m), (m, H), "<i2", torch.bfloat16)
+                add.index_add_(0, rows_t, y.float())
+                st = self.wstats.setdefault(wi, [0, 0.0, 0.0, 0])
+                st[0] += 1; st[1] += time.perf_counter() - self._t_sent; st[2] += (rr[9] - rr[5]) / 1e9
+            bad = np.nonzero(got + k_station != K)[0]
+            if bad.size:
+                t = int(bad[0])
+                raise RuntimeError(f"k3pod: partition broken layer {L} token {t}: {got[t]} + {k_station[t]} != {K}")
+            torch.cuda.current_stream().synchronize()      # the GPU has read every slot before it is re-armed
+        finally:
+            for c, s in used:
+                c.post_recv(s)
+        self.t_remote += time.perf_counter() - t0
+        self.batch_calls = getattr(self, "batch_calls", 0) + 1
+        self.batch_tokens = getattr(self, "batch_tokens", 0) + M
+
     def end(self, h):
         np = self._np
         if h[0] == "B":
@@ -363,13 +478,19 @@ def _ops():
                              torch.empty((cap, w.shape[1]), dtype=torch.float32, pin_memory=True))
             pin["ev"] = torch.cuda.Event()
         xb, ib, wb = pb[0][:M], pb[1][:M], pb[2][:M]
-        xb.copy_(x, non_blocking=True)          # one sync for all three copies instead of three
+        if POD.conns is None:
+            POD.connect()
+        gpu_batch = BATCH and POD.gpub and 1 < M <= POD.KP.BATCH_MAX_M
+        if not gpu_batch:
+            xb.copy_(x, non_blocking=True)      # one sync for all three copies instead of three
         ib.copy_(ids, non_blocking=True)
         wb.copy_(w, non_blocking=True)
         pin["ev"].record()
         pin["ev"].synchronize()
         POD.t_d2h += time.perf_counter() - t0
-        if M == 1 and FAST:
+        if gpu_batch:
+            pend[L] = ("gpu", POD.batch_send_gpu(L, x, ib.numpy(), wb.numpy()))
+        elif M == 1 and FAST:
             pend[L] = ("fast", POD.fast_send(L, xb.data_ptr(), ib.data_ptr(), wb.data_ptr(), x.shape[1]))
         else:
             pend[L] = ("py", POD.begin(L, xb.view(torch.int16).numpy().view(np.uint16), ib.numpy(), wb.numpy()))
@@ -377,6 +498,19 @@ def _ops():
     @eager_break_during_capture
     def pod_collect(L, add):
         kind, h = pend.pop(L)
+        if kind == "gpu":
+            POD.batch_end_gpu(h, add)
+            POD.calls += 1
+            if POD.calls % (LOG_EVERY * len(PLAN.layers)) == 0:
+                n = LOG_EVERY * len(PLAN.layers)
+                _log(f"{POD.calls} layer calls (gpu batch); per layer over last {n}: d2h {POD.t_d2h / n * 1e3:.3f} ms, "
+                     f"send {POD.t_send / n * 1e3:.3f} ms, wait+collect {POD.t_remote / n * 1e3:.3f} ms")
+                POD.t_d2h = POD.t_send = POD.t_remote = 0.0
+                ws = " ".join(f"{PLAN.workers[w][0]}:arr{v[1] / v[0] * 1e6:.0f}us/wrk{v[2] / v[0] * 1e6:.0f}us"
+                              for w, v in sorted(POD.wstats.items()))
+                _log("workers " + ws)
+                POD.wstats = {}
+            return
         if kind == "fast":
             rows = pin.get("rows")
             if rows is None:
@@ -627,7 +761,17 @@ def _attach(moe, layer_idx: int, n_global: int):
         ops = _ops() if routed_in is not None else None
         if routed_in is not None:
             ops["send"](L, *routed_in)                     # eager: D2H + post sends (workers start now)
+        tm = TIME and routed_in is not None and routed_in[0].shape[0] > 8
+        if tm:
+            e0, e1 = torch.cuda.Event(enable_timing=True), torch.cuda.Event(enable_timing=True)
+            e0.record()
         out = orig_fm(*args, **kwargs)                    # captured: the Station's own experts
+        if tm:
+            e1.record(); e1.synchronize()
+            _TM["n"] += 1; _TM["ms"] += e0.elapsed_time(e1); _TM["tok"] += routed_in[0].shape[0]
+            if _TM["n"] % 920 == 0:
+                _log(f"TIME station experts (M>8): {_TM['ms'] / _TM['n']:.3f} ms per layer call, "
+                     f"mean M {_TM['tok'] / _TM['n']:.0f}, over {_TM['n']} calls")
         if routed_in is None:
             return out
         if not isinstance(out, torch.Tensor):

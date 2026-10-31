@@ -25,9 +25,9 @@
 #include <time.h>
 #include <unistd.h>
 
-/* 2 MiB slots: a batched prefill chunk (<= 256 tokens x 7,296 B) is one SEND. Decode still sends 7,424 B. */
-#define K3_SLOT (2u << 20)
-#define K3_NSLOTS 8
+/* 8 MiB slots: a batched prefill chunk (<= 1,024 tokens x 7,296 B) is one SEND. Decode still sends 7,424 B. */
+#define K3_SLOT (8u << 20)
+#define K3_NSLOTS 4   /* 4 x 8 MiB: a 1,024-token batch (7.5 MB) is one SEND; decode needs one slot in flight */
 #define K3_PORT_IB 1
 
 typedef struct k3conn {

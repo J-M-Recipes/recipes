@@ -19,7 +19,7 @@ model:
 hero:
   c1:      { value: 18.5, unit: tok/s, class: "512-token streamed, temperature 0", label: "Decode · C1, batch 1", note: "54.1 ms/token, mean of 3 runs, worst gap 56.1 ms · flat 16→512 tokens · fresh boots 54.6 / 54.4 ms · 273 ms at first tokens" }
   c16:     { value: 305, unit: µs/layer, label: "Expert step · send → last worker reply", note: "inside the CUDA graph (proxy) · Spark round trip 150 µs for 1 expert, +77 µs per extra (bandwidth) · batch > 1 not measured" }
-  prefill: { value: 212.7, unit: tok/s, label: "Prompt reading · 3,364-token prompt", note: "15.8 s to first token · one message per worker per 256-token chunk, one grouped kernel call (was 31 tok/s / 108 s one token at a time) · 32 / 284 / 1,124 tokens: 52 / 159 / 204 tok/s" }
+  prefill: { value: 575.6, unit: tok/s, label: "Prompt reading · 3,364-token prompt", note: "5.8 s to first token · 1,024-token chunks, one message + one grouped kernel call per worker per chunk · was 31 tok/s (108 s) one token at a time, 231 tok/s at 256-token chunks · 284 / 1,124 tokens: 263 / 414 tok/s" }
 
 guesser:
   name: "none"
