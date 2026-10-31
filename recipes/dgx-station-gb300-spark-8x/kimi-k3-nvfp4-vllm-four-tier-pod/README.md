@@ -99,6 +99,7 @@ GB300_UUID=GPU-... MODEL_DIR=/models/kimi-k3/nvidia-nvfp4-b2428a0b bash scripts/
 ## Verify
 
 ```bash
+python3 scripts/check/warmup.py 30023 1024                    # absorbs the one-time vLLM JIT (first long prompt ~10 s)
 python3 scripts/check/k3pod_probe.py 30023 probe.json        # 3 greedy prompts, coherent text
 python3 scripts/check/bench.py 30023 128 3                    # expect ~54-55 ms/token
 python3 scripts/check/prefill_bench.py 30023 run1             # prompt reading; expect ~575 tok/s at 3,364 tokens
@@ -163,8 +164,11 @@ transcribed from session output, labelled; `raw/parity/`, `raw/fault-injection/`
   ~4–5 s vLLM FlashAttention JIT compile.
 - **Batch kernels are compiled per padded row count.** `worker.py` builds every bucket at boot and must warm the
   dynamic kernel first; otherwise the first real chunk compiles for ~3 s.
-- **Batch 1, 4K context.** `--max-num-seqs 1 --max-model-len 4096 --max-num-batched-tokens 256`. Batch 2–8 decode
-  takes the same one-token path and was not measured.
+- **One request at a time.** Serve with `--max-num-seqs 1`. With 8 allowed, 1 / 2 / 4 / 8 concurrent streams ran at
+  54.4 / 235 / 266 / 305 ms per step (13.3* / 8.3 / 14.7 / 25.9 tok/s total; *includes time to first token):
+  multi-token decode steps leave the CUDA graph for the eager batched path (~2.5–3 ms per layer vs 0.3 ms), so two
+  users at once get less than one alone. Fix (not done): graph-resident step and worker graphs for 2–8 tokens.
+  `--max-model-len 4096`; long context is untested.
 - **No model-level quality gate.** No teacher-forced comparison with a reference engine, no tool-call gate, no task
   benchmark: no machine here can hold a stock copy of the whole model. Evidence is per layer (above).
 - **NVFP4 precision at low-magnitude layers** (24, 25, 36, 48; layer 12 carries ~0.2 % of its input) — matched by an
