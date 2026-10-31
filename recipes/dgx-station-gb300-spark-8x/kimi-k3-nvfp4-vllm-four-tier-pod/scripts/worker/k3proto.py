@@ -26,6 +26,31 @@ REP = struct.Struct("<I I H H I Q Q Q Q Q I")    # 4+4+2+2+4+40+4 = 60
 assert REQ.size <= HDR and REP.size <= HDR
 
 FLAG_PROBE = 1
+# Batched request (K3-4, prefill / multi-token): flags |= FLAG_BATCH, n_tok = 0, u16 M at byte 140.
+#   [HDR, HDR+64M)      i32 ids[M][16]  (GLOBAL ids, -1 empty)
+#   [HDR+64M, HDR+128M) f32 w[M][16]
+#   [HDR+128M, ...)     bf16 x[M][3584]
+# Batched reply: REP header (k_used = total pairs), u16 k_used[M] at HDR, bf16 y[M][3584] at batch_yoff(M).
+FLAG_BATCH = 2
+BATCH_M = struct.Struct("<H")
+BATCH_M_OFF = 140
+BATCH_MAX_M = 256
+
+
+def batch_xoff(m):
+    return HDR + 128 * m
+
+
+def batch_req_bytes(m):
+    return batch_xoff(m) + m * X_BYTES
+
+
+def batch_yoff(m):
+    return HDR + ((2 * m + 127) // 128) * 128
+
+
+def batch_rep_bytes(m):
+    return batch_yoff(m) + m * X_BYTES
 SHUTDOWN_ID = 0xFFFFFFFF
 ST_OK, ST_EMPTY, ST_NONFINITE, ST_BAD, ST_WRONG_BANK = 0, 1, 2, 3, 4
 

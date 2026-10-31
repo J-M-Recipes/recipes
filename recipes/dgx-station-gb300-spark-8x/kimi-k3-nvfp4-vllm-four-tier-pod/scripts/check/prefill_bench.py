@@ -13,4 +13,4 @@ for reps in (1, 10, 40, 120):
     m = sorted(runs)[1]
     res.append({"prompt_tokens": n, "ttft_s": runs, "median_s": m, "tok_per_s": n / m})
     print(f"prompt {n:5d} tok: TTFT median {m:7.2f} s -> {n/m:6.1f} tok/s  runs " + " ".join(f"{t:.2f}" for t in runs), flush=True)
-json.dump(res, open("./prefill-n93.json", "w"), indent=1)
+json.dump(res, open("./prefill-" + sys.argv[2] + ".json", "w"), indent=1)

@@ -19,12 +19,17 @@ import torch
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from k3proto import (HDR, HIDDEN, MSG_BYTES, REP, REQ, SHUTDOWN_ID, ST_BAD, ST_EMPTY, ST_NONFINITE,  # noqa
-                     ST_OK, TOPK, Conn, FLAG_PROBE)
+                     ST_OK, TOPK, Conn, FLAG_PROBE, FLAG_BATCH, BATCH_M, BATCH_M_OFF, BATCH_MAX_M, X_BYTES,
+                     batch_xoff, batch_req_bytes, batch_yoff, batch_rep_bytes, lib as _k3lib)
 
 INTER, REC, HEADER = 3072, 18_579_480, 4096
 E = 62          # experts per layer in this bank; overwritten from the bank header at boot
 OFF = {"w13": 0, "w2": 11_010_048, "sf13": 16_515_072, "sf2": 17_891_328, "sc": 18_579_456}
-NSLOTS, SLOT = 8, 16384
+NSLOTS, SLOT = 8, 2 << 20          # must match K3_NSLOTS / K3_SLOT in k3hop.c (checked at boot)
+# K3-4 batched path: pair counts are padded up to one of these so the B12x static kernels (compiled per exact row
+# count, ~1.5-3 s each) are all built at boot; >= 1024 pairs use the dynamic kernel, which takes any count.
+BATCH_BUCKETS = (32, 64, 96, 128, 192, 256, 320, 384, 512, 640, 768, 896, 1024)   # 1024 = static cutover; above it every count runs the dynamic kernel
+BATCH_CAP = BATCH_MAX_M * TOPK
 
 
 class CAI:
@@ -250,6 +255,57 @@ def main():
     log(f"GC {'disabled' if not gc.isenabled() else 'enabled'}, frozen {gc.get_freeze_count()} objects; "
         f"x path: {'zero-copy (integrated)' if integrated else 'device-staged (discrete)'}")
 
+    assert (_k3lib().k3_nslots(), _k3lib().k3_slot_bytes()) == (NSLOTS, SLOT), "libk3hop slot layout mismatch"
+    BATCH = os.environ.get("K3_BATCH", "1") == "1"
+    if BATCH:
+        t1 = time.perf_counter()
+        bwrap = B12xMoEWrapper(num_experts=E, top_k=1, hidden_size=HIDDEN, intermediate_size=INTER,
+                               use_cuda_graph=False, max_num_tokens=BATCH_CAP, num_local_experts=E,
+                               output_dtype=torch.bfloat16, activation="situ", quant_mode="nvfp4")
+        bx = torch.empty((BATCH_MAX_M, HIDDEN), dtype=torch.bfloat16, device="cuda")
+        b_ids = torch.zeros((BATCH_CAP, 1), dtype=torch.int32, device="cuda")
+        b_w = torch.zeros((BATCH_CAP, 1), dtype=torch.float32, device="cuda")
+        b_tix = torch.zeros((BATCH_CAP,), dtype=torch.int64, device="cuda")
+        b_acc = torch.zeros((BATCH_MAX_M + 1, HIDDEN), dtype=torch.float32, device="cuda")
+        h_ids = torch.zeros((BATCH_CAP,), dtype=torch.int32, pin_memory=True)
+        h_w = torch.zeros((BATCH_CAP,), dtype=torch.float32, pin_memory=True)
+        h_tix = torch.zeros((BATCH_CAP,), dtype=torch.int64, pin_memory=True)
+        slot_np = {lay: np.array(mm, dtype=np.int32) for lay, (_, mm) in slot_of.items()}
+
+        def bucket(p):
+            i = bisect.bisect_left(BATCH_BUCKETS, p)
+            return BATCH_BUCKETS[i] if i < len(BATCH_BUCKETS) else p
+
+        def run_batch(L, xrows, n):
+            Lr = layers[L]
+            return bwrap.run(xrows, Lr["w13"], Lr["w13_sf"], Lr["w2"], Lr["w2_sf"], b_ids[:n], b_w[:n],
+                             w1_alpha=Lr["w1_alpha"], w2_alpha=Lr["w2_alpha"], fc2_input_scale=one,
+                             input_global_scale=one)
+
+        # build every bucket now (and the dynamic kernel), on layer 0, and check one bucket against the M=1 path
+        bx.normal_(); b_w.fill_(0.5)
+        # dynamic FIRST: once the dynamic workspace exists the wrapper re-sizes its static workspace (max_rows = the
+        # 1,024-pair cutover), and the static kernels are keyed on it - warming statics first builds the wrong keys
+        # and the first real chunk compiles for ~3 s (measured: Station batch timeout, 2026-10-31 00:26)
+        for n in (2048,) + BATCH_BUCKETS:
+            b_ids[:n, 0] = torch.arange(n, device="cuda") % E
+            y = run_batch(0, bx[torch.arange(n, device="cuda") % BATCH_MAX_M], n); torch.cuda.synchronize()
+            assert bool(torch.isfinite(y).all()), f"batch warmup n={n} non-finite"
+        b_ids[:32, 0] = 0; b_w[:32, 0] = 0.0
+        b_ids[:3, 0] = torch.tensor([5, 9, 5], dtype=torch.int32); b_w[:3, 0] = torch.tensor([0.25, 0.75, 1.0])
+        rows = torch.zeros(32, dtype=torch.int64, device="cuda"); rows[2] = 1
+        yb = run_batch(0, bx.index_select(0, rows), 32)[:3].float().clone()
+        cur_slot = 1
+        x_t[1].copy_(bx[0:1]); ids_np[:2] = [5, 9]; w_np[:2] = [0.25, 0.75]; torch.cuda.synchronize()
+        y1 = run(2, 0).float().clone(); torch.cuda.synchronize()
+        r = float(((yb[0] + yb[1]) - y1[0]).norm() / y1[0].norm().clamp_min(1e-12))
+        assert r < 0.05, f"batch path disagrees with the M=1 path: rel {r:.3e}"
+        x_t[1].zero_()
+        log(f"BATCH path ready: buckets {BATCH_BUCKETS} + dynamic, built in {time.perf_counter() - t1:.1f} s; "
+            f"pairs-vs-M=1 rel {r:.2e}")
+    b_served = b_tokens = b_pairs = 0
+    b_us = 0.0
+
     conn = Conn.listen(BIND, PORT, DEV, GID, ring=ring_ptr, timeout_s=3600)
     log("READY (RTS)")
 
@@ -275,6 +331,62 @@ def main():
             conn.post_recv(s)
             if req_id == SHUTDOWN_ID:
                 break
+            continue
+        if BATCH and flags & FLAG_BATCH and layer in slot_of:
+            Mb = BATCH_M.unpack_from(buf, BATCH_M_OFF)[0]
+            if not 1 <= Mb <= BATCH_MAX_M:
+                REP.pack_into(out, 0, req_id, ST_BAD, 0, 0, bank_tag, t_recv, 0, 0, 0, time.monotonic_ns(), 0)
+                conn.send(rep_slot, 64); conn.post_recv(s)
+                log(f"BAD batch M={Mb}")
+                continue
+            L, _m = slot_of[layer]
+            v = conn.view(s, batch_req_bytes(Mb))
+            gid = np.frombuffer(v, np.int32, Mb * TOPK, HDR).reshape(Mb, TOPK)
+            gw = np.frombuffer(v, np.float32, Mb * TOPK, HDR + 64 * Mb).reshape(Mb, TOPK)
+            valid = (gid >= 0) & (gid < 896)
+            loc = np.where(valid, slot_np[layer][np.clip(gid, 0, 895)], -1)
+            sel = loc >= 0
+            kused = sel.sum(1).astype(np.uint16)
+            tix, col = np.nonzero(sel)
+            P = len(tix)
+            t_x = time.monotonic_ns()
+            xin = dev_tensor(ring_ptr + s * SLOT + batch_xoff(Mb), (Mb, HIDDEN), "<i2", torch.bfloat16)
+            bx[:Mb].copy_(xin, non_blocking=True)
+            ok = True
+            yoff = batch_yoff(Mb)
+            ydst = dev_tensor(ring_ptr + yoff, (Mb, HIDDEN), "<i2", torch.bfloat16)   # reply slot 0
+            t_k = time.monotonic_ns()
+            if P:
+                n = bucket(P)
+                hi, hw, ht = h_ids.numpy(), h_w.numpy(), h_tix.numpy()
+                hi[:n] = 0; hw[:n] = 0.0; ht[:n] = Mb          # padding rows: weight 0, summed into a dummy row
+                hi[:P] = loc[tix, col]; hw[:P] = gw[tix, col]; ht[:P] = tix
+                b_ids[:n, 0].copy_(h_ids[:n], non_blocking=True)
+                b_w[:n, 0].copy_(h_w[:n], non_blocking=True)
+                b_tix[:n].copy_(h_tix[:n], non_blocking=True)
+                y = run_batch(L, bx.index_select(0, b_tix[:n].clamp(max=Mb - 1)), n)
+                acc = b_acc[:Mb + 1]; acc.zero_()
+                acc.index_add_(0, b_tix[:n], y.float())
+                yb16 = acc[:Mb].to(torch.bfloat16)
+                ydst.copy_(yb16)
+                fin = torch.isfinite(yb16).all()
+                torch.cuda.current_stream().synchronize()
+                ok = bool(fin)
+            else:
+                ydst.zero_(); torch.cuda.current_stream().synchronize()
+            t_kd = time.monotonic_ns()
+            ob = conn.view(rep_slot, batch_rep_bytes(Mb))
+            np.frombuffer(ob, np.uint16, Mb, HDR)[:] = kused
+            status = ST_OK if ok else ST_NONFINITE
+            nonfinite += (not ok)
+            REP.pack_into(ob, 0, req_id, status, P, 0, bank_tag, t_recv, t_x, t_k, t_kd, time.monotonic_ns(),
+                          t_kd - t_k)
+            conn.send(rep_slot, batch_rep_bytes(Mb))
+            conn.post_recv(s)
+            b_served += 1; b_tokens += Mb; b_pairs += P; b_us += (t_kd - t_k) / 1e3
+            if b_served % (LOG_EVERY // 10 or 1) == 0:
+                log(f"BATCH {b_served} calls, {b_tokens} tokens, {b_pairs} pairs, mean kernel+sum "
+                    f"{b_us / b_served:.0f} us")
             continue
         if layer not in slot_of or n_tok != 1:
             REP.pack_into(out, 0, req_id, ST_BAD, 0, 0, bank_tag, t_recv, 0, 0, 0, time.monotonic_ns(), 0)

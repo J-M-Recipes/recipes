@@ -15,5 +15,6 @@ Times are CDT unless a log line says otherwise (vLLM logs are UTC: 01:13 UTC = 2
 | `raw/worker/a5-*.json` | Spark-tier-only replay of real routing (36.5 ms/token p50 with GC frozen) | original |
 | `raw/fabric/` | RDMA half-RTT by Spark and fan-out (switch placement) | original |
 | `raw/prefill-n93.json`, `.txt`, `raw/server-logs/prefill-n93.worker-lines.log` | prompt reading by prompt length (2026-10-31 00:05); per-layer wait and per-worker arrival during it | original |
+| `raw/prefill-batch-n93.json`, `raw/k3-4-prof-batch-spark1.txt`, `raw/parity/shadow-n13-batch-prefill.json`, `raw/server-logs/podb-n93.server.log`, `shadow-n13-batch.server-lines.log` | batched prompt path: full-model prompt reading (01:20 10-31), worker kernel batch vs loop on Spark 1, shadow parity on prompt tokens with the near-zero layer-12 debug lines | original |
 | `raw/fault-injection/` | two runs killing a Spark worker mid-decode; `README.md` there | original |
 | `system.json`, `system/*.json` | `collect_system_snapshot.sh` on the Station and all eight Sparks | original |

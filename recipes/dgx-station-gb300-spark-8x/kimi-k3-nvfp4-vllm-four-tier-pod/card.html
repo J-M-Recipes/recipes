@@ -59,7 +59,7 @@
   <div class="grid">
 <div class="box"><div class="lbl">Decode · C1, batch 1 (512-token streamed, temperature 0)</div><div class="hero">18.5<small>tok/s</small></div><div class="note">54.1 ms/token, mean of 3 runs, worst gap 56.1 ms · flat 16→512 tokens · fresh boots 54.6 / 54.4 ms · 273 ms at first tokens</div></div>
 <div class="box"><div class="lbl">Expert step · send → last worker reply</div><div class="hero">305<small>µs/layer</small></div><div class="note">inside the CUDA graph (proxy) · Spark round trip 150 µs for 1 expert, +77 µs per extra (bandwidth) · batch &gt; 1 not measured</div></div>
-<div class="box"><div class="lbl">Prompt reading · 3,364-token prompt</div><div class="hero">31.0<small>tok/s</small></div><div class="note">108 s to first token · SLOW: prompt tokens go to the workers one at a time (256 round trips per layer per chunk) · 32 / 284 / 1,124 tokens: 25 / 30 / 31 tok/s · batched worker path planned</div></div>
+<div class="box"><div class="lbl">Prompt reading · 3,364-token prompt</div><div class="hero">212.7<small>tok/s</small></div><div class="note">15.8 s to first token · one message per worker per 256-token chunk, one grouped kernel call (was 31 tok/s / 108 s one token at a time) · 32 / 284 / 1,124 tokens: 52 / 159 / 204 tok/s</div></div>
   </div>
   <div class="row2">
 <div class="box"><div class="lbl">Guesser</div><div class="kv"><b>none</b> · no speculative decoding<br>plain autoregressive decode<br><span class="acc">accept: <span>n/a <b>no drafter</b></span></span></div></div>
@@ -74,7 +74,7 @@
 <li class="meas">Layers 24/25/36/48 lose precision to NVFP4 activation quantization (0.84–0.99 vs fp32); both tiers match an exact emulation at 0.992–0.997, as does stock</li>
 <li class="meas">Worker kernel non-deterministic: 0.8–2 % repeat spread (GB10), heavy tail to ~5–6 % (RTX sm_120); boot-to-boot logprob Δ median ~0.13</li>
 <li class="pend">Teacher-forced divergence vs a reference engine — no machine here can hold the whole model</li>
-<li class="meas">Prompt reading 31 tok/s — a 3,364-token prompt waits 108 s for its first token (serial one-token worker path)</li>
+<li class="ok">Batched prompt path vs stock vLLM on ~15,000 prompt token-layers per layer (shadow): layers 1–11 cosine mean 0.99980–0.99994; layer 12 flags only near-zero outputs (|f| ≤ 0.0007)</li>
 <li class="pend">Tool-call gate · task benchmark (GSM8K / needle) · long context · batch &gt; 1 · soak</li>
     </ul>
   </div>
