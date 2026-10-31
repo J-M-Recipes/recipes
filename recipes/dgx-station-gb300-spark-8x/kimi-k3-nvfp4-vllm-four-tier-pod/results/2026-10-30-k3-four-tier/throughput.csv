@@ -27,3 +27,7 @@ time_cdt,config,metric,value,unit,workload,source
 03:43 (10-31),1024-token chunks (serving),prefill,575.6,tok/s,"C1, 3364-token prompt, max_tokens 1, TTFT median of 3 = 5.84 s",raw/prefill-b1024c-n93.json
 03:43 (10-31),1024-token chunks (serving),decode,54.56,ms/token,"C1, 128 tok x3, bench.py A",raw/server-logs/pod1024-n93.server.log
 02:00 (10-31),256-token chunks + GPU collect,prefill,230.9,tok/s,"C1, 3,364-token prompt, TTFT median of 3 = 14.57 s",raw/prefill-gpubatch-n93.json
+04:20 (10-31),max-num-seqs 8 (not serving),decode C1,54.41,ms/step,"1 streams x 128 tokens, gap median; aggregate 13.3 tok/s",raw/conc-seqs8.json
+04:20 (10-31),max-num-seqs 8 (not serving),decode C2,234.79,ms/step,"2 streams x 128 tokens, gap median; aggregate 8.32 tok/s",raw/conc-seqs8.json
+04:20 (10-31),max-num-seqs 8 (not serving),decode C4,265.98,ms/step,"4 streams x 128 tokens, gap median; aggregate 14.71 tok/s",raw/conc-seqs8.json
+04:20 (10-31),max-num-seqs 8 (not serving),decode C8,305.44,ms/step,"8 streams x 128 tokens, gap median; aggregate 25.88 tok/s",raw/conc-seqs8.json

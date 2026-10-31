@@ -1,0 +1,314 @@
+(APIServer pid=1) INFO 10-31 08:51:41 [api_utils.py:347] 
+(APIServer pid=1) INFO 10-31 08:51:41 [api_utils.py:347]        █     █     █▄   ▄█
+(APIServer pid=1) INFO 10-31 08:51:41 [api_utils.py:347]  ▄▄ ▄█ █     █     █ ▀▄▀ █  version 0.31.0
+(APIServer pid=1) INFO 10-31 08:51:41 [api_utils.py:347]   █▄█▀ █     █     █     █  model   /models/kimi-k3/g1-view-n93
+(APIServer pid=1) INFO 10-31 08:51:41 [api_utils.py:347]    ▀▀  ▀▀▀▀▀ ▀▀▀▀▀ ▀     ▀
+(APIServer pid=1) INFO 10-31 08:51:41 [api_utils.py:347] 
+(APIServer pid=1) INFO 10-31 08:51:41 [api_utils.py:286] non-default args: {'model_tag': '/models/kimi-k3/g1-view-n93', 'host': '127.0.0.1', 'port': 30023, 'model': '/models/kimi-k3/g1-view-n93', 'trust_remote_code': True, 'max_model_len': 4096, 'served_model_name': ['k3'], 'enable_prefix_caching': False, 'cpu_offload_gb': 401.0, 'cpu_offload_params': ['w13_weight', 'w2_weight'], 'language_model_only': True, 'max_num_batched_tokens': 1024, 'max_num_seqs': 8, 'compilation_config': {'mode': None, 'debug_dump_path': None, 'cache_dir': '', 'compile_cache_save_format': 'binary', 'backend': 'inductor', 'custom_ops': [], 'ir_enable_torch_wrap': None, 'splitting_ops': None, 'compile_mm_encoder': False, 'cudagraph_mm_encoder': False, 'encoder_cudagraph_token_budgets': [], 'encoder_cudagraph_max_vision_items_per_batch': 0, 'encoder_cudagraph_max_frames_per_batch': None, 'compile_sizes': None, 'compile_ranges_endpoints': None, 'inductor_compile_config': {'enable_auto_functionalized_v2': False, 'combo_kernels': True, 'benchmark_combo_kernel': True}, 'inductor_passes': {}, 'cudagraph_mode': <CUDAGraphMode.PIECEWISE: 1>, 'cudagraph_num_of_warmups': 0, 'cudagraph_capture_sizes': [1, 2, 4, 8], 'cudagraph_copy_inputs': False, 'cudagraph_specialize_lora': True, 'use_inductor_graph_partition': None, 'pass_config': {}, 'max_cudagraph_capture_size': None, 'dynamic_shapes_config': {'type': <DynamicShapesType.BACKED: 'backed'>, 'evaluate_guards': False, 'assume_32_bit_indexing': False}, 'local_cache_dir': None, 'fast_moe_cold_start': None, 'static_all_moe_layers': []}}
+(APIServer pid=1) INFO 10-31 08:51:41 [kimi_k3.py:116] Overriding vision_config.text_hidden_size from 2304 to 4096 to match text_config.hidden_size
+(APIServer pid=1) INFO 10-31 08:51:41 [model.py:699] Resolved architecture: KimiK3ForConditionalGeneration
+(APIServer pid=1) INFO 10-31 08:51:41 [model.py:722] Defaulting to tokenizer_mode='kimi_k3' for KimiK3ForConditionalGeneration
+(APIServer pid=1) INFO 10-31 08:51:41 [model.py:2109] Using max model len 4096
+(APIServer pid=1) INFO 10-31 08:51:47 [kimi_k3.py:116] Overriding vision_config.text_hidden_size from 2304 to 4096 to match text_config.hidden_size
+(APIServer pid=1) WARNING 10-31 08:51:47 [registry.py:290] Using a slow tokenizer. This might cause a significant slowdown. Consider using a fast tokenizer instead.
+(APIServer pid=1) INFO 10-31 08:51:47 [kimi_k3.py:116] Overriding vision_config.text_hidden_size from 2304 to 4096 to match text_config.hidden_size
+(APIServer pid=1) INFO 10-31 08:51:47 [model.py:917] All limits of multimodal modalities supported by the model are set to 0, running in text-only mode.
+(APIServer pid=1) INFO 10-31 08:51:47 [model.py:974] Disabled mm_prefix attention mode because multimodal inputs are configuration-disabled. Attention backends without mm_prefix support may now be selected.
+(APIServer pid=1) INFO 10-31 08:51:47 [scheduler.py:308] Chunked prefill is enabled with max_num_batched_tokens=1024.
+(APIServer pid=1) INFO 10-31 08:51:47 [kernel.py:408] Final IR op priority after setting platform defaults: IrOpPriorityConfig(rms_norm=['vllm_c', 'native'], fused_add_rms_norm=['vllm_c', 'native'], gelu_and_mul_sparse=['triton', 'native'])
+(APIServer pid=1) INFO 10-31 08:51:47 [compilation.py:331] Enabled custom fusions: norm_quant, act_quant
+(EngineCore pid=294) INFO 10-31 08:51:54 [core.py:129] Initializing a V1 LLM engine (v0.31.0) with config: model='/models/kimi-k3/g1-view-n93', speculative_config=None, tokenizer='/models/kimi-k3/g1-view-n93', skip_tokenizer_init=False, tokenizer_mode=kimi_k3, revision=None, tokenizer_revision=None, trust_remote_code=True, dtype=torch.bfloat16, max_seq_len=4096, download_dir=None, load_format=auto, tensor_parallel_size=1, pipeline_parallel_size=1, data_parallel_size=1, decode_context_parallel_size=1, dcp_comm_backend=ag_rs, disable_custom_all_reduce=False, quantization=modelopt_mixed, quantization_config=None, enforce_eager=False, aux_output_config=AuxOutputConfig(enable_return_routed_experts=False, max_bytes=None), kv_cache_dtype=auto, device_config=cuda, structured_outputs_config=StructuredOutputsConfig(backend='auto', disable_any_whitespace=False, disable_additional_properties=False, reasoning_parser='', reasoning_parser_plugin='', enable_in_reasoning=False), observability_config=ObservabilityConfig(show_hidden_metrics_for_version=None, otlp_traces_endpoint=None, collect_detailed_traces=None, per_request_spec_decode_metrics='none', kv_cache_metrics=False, kv_cache_metrics_sample=0.01, cudagraph_metrics=False, enable_layerwise_nvtx_tracing=False, enable_mfu_metrics=False, enable_mm_processor_stats=False, enable_logging_iteration_details=False, jit_monitor_mode='warn', jit_monitor_verbose=False), seed=0, served_model_name=k3, enable_prefix_caching=False, enable_chunked_prefill=True, pooler_config=None, compilation_config={'mode': <CompilationMode.NONE: 0>, 'debug_dump_path': None, 'cache_dir': '', 'compile_cache_save_format': 'binary', 'backend': 'inductor', 'custom_ops': ['+quant_fp8', 'all', '+quant_fp8'], 'ir_enable_torch_wrap': False, 'splitting_ops': [], 'compile_mm_encoder': False, 'cudagraph_mm_encoder': False, 'encoder_cudagraph_token_budgets': [], 'encoder_cudagraph_max_vision_items_per_batch': 0, 'encoder_cudagraph_max_frames_per_batch': None, 'compile_sizes': [], 'compile_ranges_endpoints': [1024], 'inductor_compile_config': {'enable_auto_functionalized_v2': False, 'combo_kernels': True, 'benchmark_combo_kernel': True}, 'inductor_passes': {}, 'cudagraph_mode': <CUDAGraphMode.PIECEWISE: 1>, 'cudagraph_num_of_warmups': 1, 'cudagraph_capture_sizes': [1, 2, 4, 8], 'cudagraph_copy_inputs': False, 'cudagraph_specialize_lora': True, 'use_inductor_graph_partition': False, 'pass_config': {'fuse_norm_quant': True, 'fuse_act_quant': True, 'fuse_attn_quant': False, 'enable_sp': False, 'fuse_gemm_comms': False, 'fuse_allreduce_rms': False, 'enable_qk_norm_rope_fusion': False, 'fuse_rope_kvcache_cat_mla': False, 'fuse_act_padding': False, 'fuse_qk_norm_rope_kvcache': False}, 'max_cudagraph_capture_size': 8, 'dynamic_shapes_config': {'type': <DynamicShapesType.BACKED: 'backed'>, 'evaluate_guards': False, 'assume_32_bit_indexing': False}, 'local_cache_dir': None, 'fast_moe_cold_start': False, 'static_all_moe_layers': []}, kernel_config=KernelConfig(ir_op_priority=IrOpPriorityConfig(rms_norm=['vllm_c', 'native'], fused_add_rms_norm=['vllm_c', 'native'], gelu_and_mul_sparse=['triton', 'native']), enable_flashinfer_autotune=True, enable_cutedsl_warmup=True, enable_jit_warmup=True, moe_backend='auto', sparse_indexer_topk_backend='auto', linear_backend='auto', linear_backend_per_quant=None)
+(EngineCore pid=294) INFO 10-31 08:51:55 [parallel_state.py:1825] world_size=1 rank=0 local_rank=0 distributed_init_method=file:///tmp/vllm_dist_c289482fc3f244f7aa1751cf50c79cd8 backend=nccl
+(EngineCore pid=294) INFO 10-31 08:51:55 [parallel_state.py:2269] rank 0 in world size 1 is assigned as DP rank 0, PP rank 0, PCP rank 0, TP rank 0, ETP rank 0, EP rank 0, EPLB rank N/A
+(EngineCore pid=294) INFO 10-31 08:51:55 [gpu_worker.py:479] Using V2 Model Runner
+(EngineCore pid=294) INFO 10-31 08:51:55 [base.py:139] Offloader set to UVAOffloader
+(EngineCore pid=294) INFO 10-31 08:51:56 [model_runner.py:375] Loading model from scratch...
+(EngineCore pid=294) INFO 10-31 08:51:56 [cuda.py:585] Using backend AttentionBackendEnum.FLASH_ATTN for vit attention
+(EngineCore pid=294) INFO 10-31 08:51:56 [mm_encoder_attention.py:372] Using AttentionBackendEnum.FLASH_ATTN for MMEncoderAttention.
+(EngineCore pid=294) INFO 10-31 08:51:56 [model.py:974] Disabled mm_prefix attention mode because multimodal inputs are configuration-disabled. Attention backends without mm_prefix support may now be selected.
+(EngineCore pid=294) WARNING 10-31 08:51:57 [gemm_rs_ar.py:1136] GEMM-AR is disabled because TP size is not in the supported range 2-16.
+(EngineCore pid=294) INFO 10-31 08:51:57 [__init__.py:726] Selected DeepGemmFp8BlockScaledMMKernel for _KimiGDNMergedColumnParallelLinear
+(EngineCore pid=294) INFO 10-31 08:51:57 [deep_gemm.py:197] deep_gemm not found in site-packages, trying vendored vllm.third_party.deep_gemm
+(EngineCore pid=294) INFO 10-31 08:51:57 [deep_gemm.py:224] DeepGEMM PDL enabled on vllm.third_party.deep_gemm.
+(EngineCore pid=294) INFO 10-31 08:51:57 [deep_gemm.py:136] DeepGEMM E8M0 enabled on current platform.
+(EngineCore pid=294) INFO 10-31 08:51:57 [__init__.py:726] Selected DeepGemmFp8BlockScaledMMKernel for ColumnParallelLinear
+(EngineCore pid=294) INFO 10-31 08:51:57 [kda.py:242] Using native fused KDA decode backend.
+(EngineCore pid=294) INFO 10-31 08:51:59 [kda.py:431] Using FlashKDA KDA prefill backend.
+(EngineCore pid=294) INFO 10-31 08:51:59 [__init__.py:726] Selected DeepGemmFp8BlockScaledMMKernel for RowParallelLinear
+[k3 hook] TRT-LLM NVFP4 MoE: monolithic disabled, modular path forced
+(EngineCore pid=294) INFO 10-31 08:51:59 [nvfp4.py:302] Using 'FLASHINFER_TRTLLM' NvFp4 MoE backend out of potential backends: ['FLASHINFER_TRTLLM', 'FLASHINFER_CUTEDSL', 'FLASHINFER_CUTEDSL_BATCHED', 'FLASHINFER_CUTLASS', 'VLLM_CUTLASS', 'MARLIN', 'HUMMING', 'EMULATION'].
+[k3pod 294 08:51:59] KimiMoE patched: 344 local experts/layer, gate 896, 9 workers
+(EngineCore pid=294) INFO 10-31 08:52:00 [__init__.py:726] Selected DeepGemmFp8BlockScaledMMKernel for KimiK3MergedQKVGateLinear
+(EngineCore pid=294) INFO 10-31 08:52:01 [cuda.py:526] Using FLASHINFER_MLA attention backend out of potential backends: ['FLASHINFER_MLA', 'CUTLASS_MLA', 'TRITON_MLA'].
+(EngineCore pid=294) INFO 10-31 08:52:01 [selector.py:207] Using FLASH_ATTN MLA prefill backend.
+(EngineCore pid=294) INFO 10-31 08:52:38 [uva.py:68] Total CPU offloaded parameters: 402.12
+(EngineCore pid=294) INFO 10-31 08:52:39 [weight_utils.py:1063] Filesystem type for checkpoints: XFS. Checkpoint size: 1498.52 GiB. Available RAM: 3.01 GiB.
+(EngineCore pid=294) INFO 10-31 08:52:39 [weight_utils.py:1093] Auto-prefetch is disabled because the filesystem (XFS) is not a recognized network FS (NFS/Lustre) and the checkpoint size (1498.52 GiB) exceeds 90% of available RAM (3.01 GiB).
+Loading safetensors checkpoint shards:   0% Completed | 0/94 [00:00<?, ?it/s]
+Loading safetensors checkpoint shards:   1% Completed | 1/94 [00:01<02:20,  1.51s/it]
+Loading safetensors checkpoint shards:   2% Completed | 2/94 [00:05<04:15,  2.78s/it]
+Loading safetensors checkpoint shards:   3% Completed | 3/94 [00:08<04:45,  3.13s/it]
+Loading safetensors checkpoint shards:   4% Completed | 4/94 [00:12<04:52,  3.26s/it]
+Loading safetensors checkpoint shards:   5% Completed | 5/94 [00:15<04:56,  3.33s/it]
+Loading safetensors checkpoint shards:   6% Completed | 6/94 [00:19<04:56,  3.37s/it]
+Loading safetensors checkpoint shards:   7% Completed | 7/94 [00:22<05:00,  3.45s/it]
+Loading safetensors checkpoint shards:   9% Completed | 8/94 [00:26<04:58,  3.47s/it]
+Loading safetensors checkpoint shards:  10% Completed | 9/94 [00:29<04:55,  3.48s/it]
+Loading safetensors checkpoint shards:  11% Completed | 10/94 [00:33<04:53,  3.49s/it]
+Loading safetensors checkpoint shards:  12% Completed | 11/94 [00:36<04:51,  3.51s/it]
+Loading safetensors checkpoint shards:  13% Completed | 12/94 [00:40<04:45,  3.48s/it]
+Loading safetensors checkpoint shards:  14% Completed | 13/94 [00:43<04:43,  3.50s/it]
+Loading safetensors checkpoint shards:  15% Completed | 14/94 [00:47<04:40,  3.50s/it]
+Loading safetensors checkpoint shards:  16% Completed | 15/94 [00:50<04:37,  3.51s/it]
+Loading safetensors checkpoint shards:  17% Completed | 16/94 [00:54<04:30,  3.47s/it]
+Loading safetensors checkpoint shards:  18% Completed | 17/94 [00:57<04:28,  3.49s/it]
+Loading safetensors checkpoint shards:  19% Completed | 18/94 [01:01<04:25,  3.49s/it]
+Loading safetensors checkpoint shards:  20% Completed | 19/94 [01:04<04:24,  3.52s/it]
+Loading safetensors checkpoint shards:  21% Completed | 20/94 [01:08<04:19,  3.51s/it]
+Loading safetensors checkpoint shards:  22% Completed | 21/94 [01:11<04:18,  3.54s/it]
+Loading safetensors checkpoint shards:  23% Completed | 22/94 [01:15<04:13,  3.53s/it]
+Loading safetensors checkpoint shards:  24% Completed | 23/94 [01:18<04:09,  3.52s/it]
+Loading safetensors checkpoint shards:  26% Completed | 24/94 [01:22<04:03,  3.48s/it]
+Loading safetensors checkpoint shards:  27% Completed | 25/94 [01:25<04:02,  3.52s/it]
+Loading safetensors checkpoint shards:  28% Completed | 26/94 [01:29<03:58,  3.51s/it]
+Loading safetensors checkpoint shards:  29% Completed | 27/94 [01:32<03:55,  3.51s/it]
+Loading safetensors checkpoint shards:  30% Completed | 28/94 [01:36<03:49,  3.47s/it]
+Loading safetensors checkpoint shards:  31% Completed | 29/94 [01:39<03:44,  3.46s/it]
+Loading safetensors checkpoint shards:  32% Completed | 30/94 [01:43<03:43,  3.49s/it]
+Loading safetensors checkpoint shards:  33% Completed | 31/94 [01:46<03:41,  3.52s/it]
+Loading safetensors checkpoint shards:  34% Completed | 32/94 [01:50<03:36,  3.49s/it]
+Loading safetensors checkpoint shards:  35% Completed | 33/94 [01:53<03:33,  3.51s/it]
+Loading safetensors checkpoint shards:  36% Completed | 34/94 [01:57<03:30,  3.50s/it]
+Loading safetensors checkpoint shards:  37% Completed | 35/94 [02:00<03:27,  3.52s/it]
+Loading safetensors checkpoint shards:  38% Completed | 36/94 [02:04<03:23,  3.51s/it]
+Loading safetensors checkpoint shards:  39% Completed | 37/94 [02:07<03:19,  3.51s/it]
+Loading safetensors checkpoint shards:  40% Completed | 38/94 [02:11<03:16,  3.52s/it]
+Loading safetensors checkpoint shards:  41% Completed | 39/94 [02:14<03:14,  3.53s/it]
+Loading safetensors checkpoint shards:  43% Completed | 40/94 [02:18<03:07,  3.48s/it]
+Loading safetensors checkpoint shards:  44% Completed | 41/94 [02:21<03:05,  3.50s/it]
+Loading safetensors checkpoint shards:  45% Completed | 42/94 [02:25<03:01,  3.49s/it]
+Loading safetensors checkpoint shards:  46% Completed | 43/94 [02:28<02:59,  3.52s/it]
+Loading safetensors checkpoint shards:  47% Completed | 44/94 [02:32<02:53,  3.48s/it]
+Loading safetensors checkpoint shards:  48% Completed | 45/94 [02:35<02:50,  3.48s/it]
+Loading safetensors checkpoint shards:  49% Completed | 46/94 [02:39<02:47,  3.49s/it]
+Loading safetensors checkpoint shards:  50% Completed | 47/94 [02:42<02:44,  3.51s/it]
+Loading safetensors checkpoint shards:  51% Completed | 48/94 [02:46<02:39,  3.48s/it]
+Loading safetensors checkpoint shards:  52% Completed | 49/94 [02:49<02:38,  3.52s/it]
+Loading safetensors checkpoint shards:  53% Completed | 50/94 [02:53<02:34,  3.52s/it]
+Loading safetensors checkpoint shards:  54% Completed | 51/94 [02:56<02:32,  3.55s/it]
+Loading safetensors checkpoint shards:  55% Completed | 52/94 [03:00<02:27,  3.51s/it]
+Loading safetensors checkpoint shards:  56% Completed | 53/94 [03:03<02:24,  3.52s/it]
+Loading safetensors checkpoint shards:  57% Completed | 54/94 [03:07<02:21,  3.54s/it]
+Loading safetensors checkpoint shards:  59% Completed | 55/94 [03:11<02:17,  3.54s/it]
+Loading safetensors checkpoint shards:  60% Completed | 56/94 [03:14<02:13,  3.50s/it]
+Loading safetensors checkpoint shards:  61% Completed | 57/94 [03:17<02:09,  3.51s/it]
+Loading safetensors checkpoint shards:  62% Completed | 58/94 [03:21<02:06,  3.50s/it]
+Loading safetensors checkpoint shards:  63% Completed | 59/94 [03:24<02:02,  3.50s/it]
+Loading safetensors checkpoint shards:  64% Completed | 60/94 [03:28<01:58,  3.48s/it]
+Loading safetensors checkpoint shards:  65% Completed | 61/94 [03:32<01:56,  3.52s/it]
+Loading safetensors checkpoint shards:  66% Completed | 62/94 [03:35<01:52,  3.52s/it]
+Loading safetensors checkpoint shards:  67% Completed | 63/94 [03:39<01:49,  3.52s/it]
+Loading safetensors checkpoint shards:  68% Completed | 64/94 [03:42<01:44,  3.48s/it]
+Loading safetensors checkpoint shards:  69% Completed | 65/94 [03:45<01:40,  3.48s/it]
+Loading safetensors checkpoint shards:  70% Completed | 66/94 [03:49<01:37,  3.49s/it]
+Loading safetensors checkpoint shards:  71% Completed | 67/94 [03:52<01:34,  3.50s/it]
+Loading safetensors checkpoint shards:  72% Completed | 68/94 [03:56<01:30,  3.50s/it]
+Loading safetensors checkpoint shards:  73% Completed | 69/94 [04:00<01:28,  3.52s/it]
+Loading safetensors checkpoint shards:  74% Completed | 70/94 [04:03<01:24,  3.53s/it]
+Loading safetensors checkpoint shards:  76% Completed | 71/94 [04:07<01:20,  3.52s/it]
+Loading safetensors checkpoint shards:  77% Completed | 72/94 [04:10<01:16,  3.49s/it]
+Loading safetensors checkpoint shards:  78% Completed | 73/94 [04:14<01:13,  3.51s/it]
+Loading safetensors checkpoint shards:  79% Completed | 74/94 [04:17<01:10,  3.50s/it]
+Loading safetensors checkpoint shards:  80% Completed | 75/94 [04:21<01:06,  3.50s/it]
+Loading safetensors checkpoint shards:  81% Completed | 76/94 [04:24<01:02,  3.48s/it]
+Loading safetensors checkpoint shards:  82% Completed | 77/94 [04:27<00:59,  3.49s/it]
+Loading safetensors checkpoint shards:  83% Completed | 78/94 [04:33<01:03,  3.95s/it]
+Loading safetensors checkpoint shards:  84% Completed | 79/94 [04:38<01:04,  4.27s/it]
+Loading safetensors checkpoint shards:  85% Completed | 80/94 [04:42<01:02,  4.45s/it]
+Loading safetensors checkpoint shards:  86% Completed | 81/94 [04:47<00:59,  4.58s/it]
+Loading safetensors checkpoint shards:  87% Completed | 82/94 [04:52<00:56,  4.73s/it]
+Loading safetensors checkpoint shards:  88% Completed | 83/94 [04:57<00:53,  4.84s/it]
+Loading safetensors checkpoint shards:  89% Completed | 84/94 [05:02<00:48,  4.89s/it]
+Loading safetensors checkpoint shards:  90% Completed | 85/94 [05:07<00:44,  4.93s/it]
+Loading safetensors checkpoint shards:  91% Completed | 86/94 [05:13<00:39,  4.97s/it]
+Loading safetensors checkpoint shards:  93% Completed | 87/94 [05:18<00:34,  4.98s/it]
+Loading safetensors checkpoint shards:  94% Completed | 88/94 [05:23<00:29,  4.98s/it]
+Loading safetensors checkpoint shards:  95% Completed | 89/94 [05:28<00:24,  4.98s/it]
+Loading safetensors checkpoint shards:  96% Completed | 90/94 [05:32<00:19,  4.98s/it]
+Loading safetensors checkpoint shards:  97% Completed | 91/94 [05:38<00:15,  5.00s/it]
+Loading safetensors checkpoint shards:  98% Completed | 92/94 [05:42<00:09,  4.99s/it]
+Loading safetensors checkpoint shards:  99% Completed | 93/94 [05:47<00:04,  4.96s/it]
+Loading safetensors checkpoint shards: 100% Completed | 94/94 [05:48<00:00,  3.66s/it]
+Loading safetensors checkpoint shards: 100% Completed | 94/94 [05:48<00:00,  3.71s/it]
+
+[k3 hook] safetensors_weights_iterator: dropped 609408, renamed 379176
+(EngineCore pid=294) INFO 10-31 08:58:28 [default_loader.py:484] Loading weights took 348.53 seconds
+(EngineCore pid=294) INFO 10-31 08:58:47 [nvfp4.py:612] Using MoEPrepareAndFinalizeNoDPEPModular
+(EngineCore pid=294) INFO 10-31 08:58:58 [model_runner.py:407] Model loading took 218.9 GiB memory and 421.768000 seconds
+(EngineCore pid=294) INFO 10-31 08:58:58 [topk_topp_sampler.py:124] Using FlashInfer for top-p & top-k sampling.
+(EngineCore pid=294) INFO 10-31 08:58:58 [torch_utils.py:286] Reducing Torch threads from 72 to 1 for serving. Set OMP_NUM_THREADS in the external environment to override.
+(EngineCore pid=294) INFO 10-31 08:58:58 [interface.py:692] Setting kv cache block size to 32 for FLASHINFER_MLA backend(s).
+(EngineCore pid=294) INFO 10-31 08:58:58 [interface.py:989] Setting attention block size to 5760 tokens to ensure that attention page size is >= mamba page size.
+(EngineCore pid=294) INFO 10-31 08:58:58 [interface.py:1013] Padding mamba page size by 1.89% to ensure that mamba page size and attention page size are exactly equal.
+(EngineCore pid=294) INFO 10-31 08:58:58 [utils.py:343] Using LBNHC KV cache layout.
+[k3pod 294 08:59:12] connected spark0 10.0.0.1:19600 via mlx5_0
+[k3pod 294 08:59:12] connected spark1 10.0.0.2:19600 via mlx5_0
+[k3pod 294 08:59:12] connected spark2 10.0.0.3:19600 via mlx5_0
+[k3pod 294 08:59:12] connected spark3 10.0.0.4:19600 via mlx5_0
+[k3pod 294 08:59:12] connected spark4 10.0.0.5:19600 via mlx5_0
+[k3pod 294 08:59:12] connected spark5 10.0.0.6:19600 via mlx5_0
+[k3pod 294 08:59:12] connected spark6 10.0.0.7:19600 via mlx5_0
+[k3pod 294 08:59:12] connected spark7 10.0.0.8:19600 via mlx5_0
+[k3pod 294 08:59:12] connected rtx0 10.0.1.9:19601 via mlx5_1
+[k3pod 294 08:59:12] proxy started: 9 workers, control block pinned, graph-resident expert step ON
+(EngineCore pid=294) WARNING 10-31 08:59:24 [kv_cache_utils.py:1574] Add 3 padding layers, may waste at most 4.35% KV cache memory
+(EngineCore pid=294) INFO 10-31 08:59:24 [breakable_cudagraph.py:294] Breakable CUDA graph enabled
+(EngineCore pid=294) WARNING 10-31 08:59:27 [flashinfer_mla.py:62] trtllm-gen MLA decode does not support num_heads=96 (query/kv head ratio); falling back to the cute-dsl backend.
+Capturing CUDA graphs (PIECEWISE):   0%|          | 0/4 [00:00<?, ?it/s]/usr/local/lib/python3.12/dist-packages/nvidia_cutlass_dsl/dsl_packages/cutlass/pipeline/helpers.py:669: UserWarning: NamedBarrier wait also arrives on the barrier. Routing call to NamedBarrier.arrive_and_wait().
+  warnings.warn(
+Capturing CUDA graphs (PIECEWISE):  25%|██▌       | 1/4 [00:06<00:20,  6.71s/it]Capturing CUDA graphs (PIECEWISE):  50%|█████     | 2/4 [00:07<00:06,  3.49s/it]Capturing CUDA graphs (PIECEWISE):  75%|███████▌  | 3/4 [00:09<00:02,  2.52s/it]Capturing CUDA graphs (PIECEWISE): 100%|██████████| 4/4 [00:12<00:00,  2.60s/it]Capturing CUDA graphs (PIECEWISE): 100%|██████████| 4/4 [00:12<00:00,  3.01s/it]
+(EngineCore pid=294) INFO 10-31 08:59:37 [model_runner.py:1087] Graph capturing finished in 12 secs, took 0.47 GiB
+(EngineCore pid=294) INFO 10-31 08:59:37 [gpu_worker.py:692] Available KV cache memory: 9.65 GiB
+(EngineCore pid=294) INFO 10-31 08:59:37 [gpu_worker.py:707] CUDA graph memory profiling is enabled (default since v0.21.0). The current --gpu-memory-utilization=0.9200 is equivalent to --gpu-memory-utilization=0.9181 without CUDA graph memory profiling. To maintain the same effective KV cache size as before, increase --gpu-memory-utilization to 0.9219. To disable, set VLLM_MEMORY_PROFILER_ESTIMATE_CUDAGRAPHS=0.
+(EngineCore pid=294) WARNING 10-31 08:59:37 [kv_cache_utils.py:1574] Add 3 padding layers, may waste at most 4.35% KV cache memory
+(EngineCore pid=294) INFO 10-31 08:59:37 [kv_cache_utils.py:2464] GPU KV cache size: 66,560 tokens, Maximum concurrency for 4,096 tokens per request: 16.25x
+(EngineCore pid=294) INFO 10-31 08:59:37 [kernel_warmup.py:172] JIT kernel warmup starting.
+(EngineCore pid=294) WARNING 10-31 08:59:37 [fa_utils.py:204] FA4 on Blackwell does not support head_size=192 due to TMEM capacity limits, defaulting to FA version 2.
+(EngineCore pid=294) INFO 10-31 08:59:37 [kernel_warmup.py:185] JIT kernel warmup finished in 0.00s.
+(EngineCore pid=294) INFO 10-31 08:59:37 [mamba_triton_warmup.py:42] Warmed Mamba batch_memcpy_kernel.
+(EngineCore pid=294) INFO 10-31 08:59:37 [kernel_warmup.py:94] Warming up ll_bf16 router GEMM kernels for shapes: ((7168, 896),).
+(EngineCore pid=294) INFO 10-31 08:59:38 [cutedsl_warmup.py:107] Warming up CuTeDSL compile_units=7 names=('shape-dynamic skinny GEMM with residual', 'shape-dynamic skinny GEMM').
+Compiling CuTeDSL kernels:   0%|          | 0/7 [00:00<?, ?it/s]Compiling CuTeDSL kernels:  14%|█▍        | 1/7 [00:00<00:01,  4.89it/s]Compiling CuTeDSL kernels:  29%|██▊       | 2/7 [00:00<00:00,  5.16it/s]Compiling CuTeDSL kernels:  43%|████▎     | 3/7 [00:00<00:00,  5.02it/s]Compiling CuTeDSL kernels:  57%|█████▋    | 4/7 [00:00<00:00,  4.64it/s]Compiling CuTeDSL kernels:  71%|███████▏  | 5/7 [00:01<00:00,  4.03it/s]Compiling CuTeDSL kernels:  86%|████████▌ | 6/7 [00:01<00:00,  4.24it/s]Compiling CuTeDSL kernels: 100%|██████████| 7/7 [00:01<00:00,  4.30it/s]Compiling CuTeDSL kernels: 100%|██████████| 7/7 [00:01<00:00,  4.43it/s]
+DeepGEMM warmup:   0%|          | 0/708 [00:00<?, ?it/s]DeepGEMM warmup:  66%|██████▌   | 469/708 [00:00<00:00, 4606.30it/s]DeepGEMM warmup: 100%|██████████| 708/708 [00:00<00:00, 4196.72it/s]
+(EngineCore pid=294) INFO 10-31 08:59:40 [kimi_k3.py:116] Overriding vision_config.text_hidden_size from 2304 to 4096 to match text_config.hidden_size
+(EngineCore pid=294) INFO 10-31 08:59:40 [kernel_warmup.py:437] Using FlashInfer autotune cache file: /root/.cache/vllm/flashinfer_autotune_cache/0.7.0.post1/103a/f6f03f3ea6feeabf6dd9d234e26078e278d2b1813dbd7eaab3efa3f0c627381a/autotune_configs.json
+2026-10-31 08:59:40,063 - INFO - autotuner.py:1046 - flashinfer.jit: [Autotuner]: Autotuning process starts ...
+(EngineCore pid=294) INFO 10-31 08:59:40 [kernel_warmup.py:359] Running FlashInfer autotune with 1024 tokens and token buckets (1, 2, 4, 8, 16, 32, 64, 128, 256, 512, 768, 1024).
+[AutoTuner]: Tuning flashinfer::trtllm_fp4_block_scale_moe:   0%|          | 0/12 [00:00<?, ?profile/s][k3pod 294 08:59:42] proxy: 92 layer calls served; mean proxy work 375 us
+[AutoTuner]: Tuning flashinfer::trtllm_fp4_block_scale_moe:   8%|▊         | 1/12 [00:08<01:29,  8.10s/profile][AutoTuner]: Tuning flashinfer::trtllm_fp4_block_scale_moe:  17%|█▋        | 2/12 [00:19<01:41, 10.14s/profile][AutoTuner]: Tuning flashinfer::trtllm_fp4_block_scale_moe:  25%|██▌       | 3/12 [00:40<02:14, 14.99s/profile][AutoTuner]: Tuning flashinfer::trtllm_fp4_block_scale_moe:  33%|███▎      | 4/12 [01:16<03:05, 23.17s/profile][AutoTuner]: Tuning flashinfer::trtllm_fp4_block_scale_moe:  42%|████▏     | 5/12 [02:13<04:09, 35.64s/profile][AutoTuner]: Tuning flashinfer::trtllm_fp4_block_scale_moe:  50%|█████     | 6/12 [03:41<05:19, 53.26s/profile][AutoTuner]: Tuning flashinfer::trtllm_fp4_block_scale_moe:  58%|█████▊    | 7/12 [05:40<06:13, 74.65s/profile][AutoTuner]: Tuning flashinfer::trtllm_fp4_block_scale_moe:  67%|██████▋   | 8/12 [08:18<06:45, 101.49s/profile][AutoTuner]: Tuning flashinfer::trtllm_fp4_block_scale_moe:  75%|███████▌  | 9/12 [11:59<06:55, 138.58s/profile][AutoTuner]: Tuning flashinfer::trtllm_fp4_block_scale_moe:  83%|████████▎ | 10/12 [14:56<05:00, 150.49s/profile][AutoTuner]: Tuning flashinfer::trtllm_fp4_block_scale_moe:  92%|█████████▏| 11/12 [16:32<02:13, 133.90s/profile][AutoTuner]: Tuning flashinfer::trtllm_fp4_block_scale_moe: 100%|██████████| 12/12 [18:17<00:00, 124.96s/profile][AutoTuner]: Tuning flashinfer::trtllm_fp4_block_scale_moe: 100%|██████████| 12/12 [18:17<00:00, 91.42s/profile] 
+/usr/local/lib/python3.12/dist-packages/nvidia_cutlass_dsl/dsl_packages/cutlass/base_dsl/dsl.py:2463: UserWarning: Argument aux_data (position 19) cannot be converted to a JitArgument for function 'cutlass___call___vllmvllm_flash_attncuteflash_fwd_sm100FlashAttentionForwardSm100_object_at__Tensorgmemoi64i641_Tensorgmemoi64i641_Tensorgmemoi64i641_Tensorgmemoi64i641_None_007216'. Its type `<class 'vllm.vllm_flash_attn.cute.utils.AuxData'>` is not supported. If the value is known at compile time, annotate it: `aux_data: Constexpr`. Otherwise, implement the `JitArgument` or `DynamicExpression` protocol for type `<class 'vllm.vllm_flash_attn.cute.utils.AuxData'>`, or register a custom argument adapter.
+  exe_args, func_types, adapted_args = self.generate_mlir_function_types(
+2026-10-31 09:18:02,434 - INFO - autotuner.py:1069 - flashinfer.jit: [Autotuner]: Autotuning process ends
+2026-10-31 09:18:02,814 - INFO - autotuner.py:3554 - flashinfer.jit: [Autotuner]: Saved 12 configs to /root/.cache/vllm/flashinfer_autotune_cache/0.7.0.post1/103a/f6f03f3ea6feeabf6dd9d234e26078e278d2b1813dbd7eaab3efa3f0c627381a/autotune_configs.json (12 new, 0 from previous config)
+/usr/local/lib/python3.12/dist-packages/triton/language/core.py:2284: UserWarning: tl.make_block_ptr is deprecated. Use TensorDescriptor or tl.make_tensor_descriptor instead.
+  warn("tl.make_block_ptr is deprecated. Use TensorDescriptor or tl.make_tensor_descriptor instead.")
+Capturing CUDA graphs (PIECEWISE):   0%|          | 0/4 [00:00<?, ?it/s]Capturing CUDA graphs (PIECEWISE):  25%|██▌       | 1/4 [00:00<00:02,  1.42it/s]Capturing CUDA graphs (PIECEWISE):  50%|█████     | 2/4 [00:01<00:01,  1.48it/s]Capturing CUDA graphs (PIECEWISE):  75%|███████▌  | 3/4 [00:01<00:00,  1.52it/s]Capturing CUDA graphs (PIECEWISE): 100%|██████████| 4/4 [00:02<00:00,  1.73it/s]Capturing CUDA graphs (PIECEWISE): 100%|██████████| 4/4 [00:02<00:00,  1.63it/s]
+(EngineCore pid=294) INFO 10-31 09:18:13 [model_runner.py:1087] Graph capturing finished in 3 secs, took 0.08 GiB
+[k3pod 294 09:18:13] proxy: 276 layer calls served; mean proxy work 308 us
+(EngineCore pid=294) INFO 10-31 09:18:13 [gpu_worker.py:892] CUDA graph pool memory: 0.08 GiB (actual), 0.47 GiB (estimated), difference: 0.38 GiB (455.8%).
+(EngineCore pid=294) INFO 10-31 09:18:13 [gpu_worker.py:955] Free memory on device (249.12/249.81 GiB) on startup. Desired GPU memory utilization is (0.92, 229.83 GiB). Actual usage is 219.29 GiB for consumed memory (weights + non-torch), 0.89 GiB for peak activation, and 0.08 GiB for CUDAGraph memory. Replace gpu_memory_utilization config with `--kv-cache-memory=10113357804` (9.42 GiB) to fit into requested memory, or `--kv-cache-memory=30832805376` (28.72 GiB) to fully utilize gpu memory. Current kv cache memory in use is 9.65 GiB.
+(EngineCore pid=294) INFO 10-31 09:18:15 [jit_monitor.py:84] Kernel JIT monitor activated; monitored JIT compilations during inference will use mode=warn.
+(EngineCore pid=294) INFO 10-31 09:18:15 [core.py:380] init engine (profile, create kv cache, warmup model) took 1157.65 s
+(EngineCore pid=294) INFO 10-31 09:18:15 [kimi_k3.py:116] Overriding vision_config.text_hidden_size from 2304 to 4096 to match text_config.hidden_size
+(EngineCore pid=294) WARNING 10-31 09:18:16 [registry.py:290] Using a slow tokenizer. This might cause a significant slowdown. Consider using a fast tokenizer instead.
+(EngineCore pid=294) INFO 10-31 09:18:16 [kv_cache_utils.py:772] kv cache group sizes [4096, 4096, 4096, 5760]
+(EngineCore pid=294) INFO 10-31 09:18:16 [kv_cache_utils.py:773] kv lcm block sizes 184320
+(EngineCore pid=294) INFO 10-31 09:18:16 [kernel.py:408] Final IR op priority after setting platform defaults: IrOpPriorityConfig(rms_norm=['vllm_c', 'native'], fused_add_rms_norm=['vllm_c', 'native'], gelu_and_mul_sparse=['triton', 'native'])
+(EngineCore pid=294) INFO 10-31 09:18:16 [compilation.py:331] Enabled custom fusions: norm_quant, act_quant
+(APIServer pid=1) INFO 10-31 09:18:16 [entry.py:132] Supported tasks: ['generate']
+(APIServer pid=1) INFO 10-31 09:18:16 [factories.py:76] Scale-out endpoints are disabled. Set --enable-scale-out to enable them.
+(APIServer pid=1) INFO 10-31 09:18:16 [kimi_k3.py:116] Overriding vision_config.text_hidden_size from 2304 to 4096 to match text_config.hidden_size
+(APIServer pid=1) INFO 10-31 09:18:16 [kimi_k3.py:116] Overriding vision_config.text_hidden_size from 2304 to 4096 to match text_config.hidden_size
+(APIServer pid=1) INFO 10-31 09:18:16 [kimi_k3.py:116] Overriding vision_config.text_hidden_size from 2304 to 4096 to match text_config.hidden_size
+(APIServer pid=1) INFO 10-31 09:18:16 [kimi_k3.py:116] Overriding vision_config.text_hidden_size from 2304 to 4096 to match text_config.hidden_size
+(APIServer pid=1) INFO 10-31 09:18:16 [kimi_k3.py:116] Overriding vision_config.text_hidden_size from 2304 to 4096 to match text_config.hidden_size
+(APIServer pid=1) WARNING 10-31 09:18:16 [serving.py:221] The chat template requires system-first ordering, so inline system messages in /v1/messages requests (e.g. Claude Code's per-turn reminders) are merged into the leading system prompt. Each new one changes the prompt prefix, so the rest of the conversation misses the prefix cache. Pass a --chat-template that accepts non-leading system messages to avoid this.
+(APIServer pid=1) WARNING 10-31 09:18:16 [serving.py:221] The chat template requires system-first ordering, so inline system messages in /v1/messages requests (e.g. Claude Code's per-turn reminders) are merged into the leading system prompt. Each new one changes the prompt prefix, so the rest of the conversation misses the prefix cache. Pass a --chat-template that accepts non-leading system messages to avoid this.
+(APIServer pid=1) INFO 10-31 09:18:16 [kimi_k3.py:116] Overriding vision_config.text_hidden_size from 2304 to 4096 to match text_config.hidden_size
+(APIServer pid=1) INFO 10-31 09:18:16 [entry.py:136] Starting vLLM server on http://127.0.0.1:30023
+(APIServer pid=1) INFO 10-31 09:18:16 [launcher.py:60] Available routes are:
+(APIServer pid=1) INFO 10-31 09:18:16 [launcher.py:69] Route: /openapi.json, Methods: HEAD, GET
+(APIServer pid=1) INFO 10-31 09:18:16 [launcher.py:69] Route: /docs, Methods: HEAD, GET
+(APIServer pid=1) INFO 10-31 09:18:16 [launcher.py:69] Route: /docs/oauth2-redirect, Methods: HEAD, GET
+(APIServer pid=1) INFO 10-31 09:18:16 [launcher.py:69] Route: /redoc, Methods: HEAD, GET
+(APIServer pid=1) INFO 10-31 09:18:16 [launcher.py:69] Route: /load, Methods: GET
+(APIServer pid=1) INFO 10-31 09:18:16 [launcher.py:69] Route: /version, Methods: GET
+(APIServer pid=1) INFO 10-31 09:18:16 [launcher.py:69] Route: /kv_event_sources, Methods: GET
+(APIServer pid=1) INFO 10-31 09:18:16 [launcher.py:69] Route: /health, Methods: GET
+(APIServer pid=1) INFO 10-31 09:18:16 [launcher.py:69] Route: /metrics, Methods: GET
+(APIServer pid=1) INFO 10-31 09:18:16 [launcher.py:69] Route: /tokenize, Methods: POST
+(APIServer pid=1) INFO 10-31 09:18:16 [launcher.py:69] Route: /detokenize, Methods: POST
+(APIServer pid=1) INFO 10-31 09:18:16 [launcher.py:69] Route: /v1/models, Methods: GET
+(APIServer pid=1) INFO 10-31 09:18:16 [launcher.py:69] Route: /ping, Methods: GET
+(APIServer pid=1) INFO 10-31 09:18:16 [launcher.py:69] Route: /ping, Methods: POST
+(APIServer pid=1) INFO 10-31 09:18:16 [launcher.py:69] Route: /invocations, Methods: POST
+(APIServer pid=1) INFO 10-31 09:18:16 [launcher.py:69] Route: /v1/chat/completions, Methods: POST
+(APIServer pid=1) INFO 10-31 09:18:16 [launcher.py:69] Route: /v1/chat/completions/batch, Methods: POST
+(APIServer pid=1) INFO 10-31 09:18:16 [launcher.py:69] Route: /v1/responses, Methods: POST
+(APIServer pid=1) INFO 10-31 09:18:16 [launcher.py:69] Route: /v1/responses/{response_id}, Methods: GET
+(APIServer pid=1) INFO 10-31 09:18:16 [launcher.py:69] Route: /v1/responses/{response_id}/cancel, Methods: POST
+(APIServer pid=1) INFO 10-31 09:18:16 [launcher.py:69] Route: /v1/completions, Methods: POST
+(APIServer pid=1) INFO 10-31 09:18:16 [launcher.py:69] Route: /v1/messages, Methods: POST
+(APIServer pid=1) INFO 10-31 09:18:16 [launcher.py:69] Route: /v1/messages/count_tokens, Methods: POST
+(APIServer pid=1) INFO 10-31 09:18:16 [launcher.py:69] Route: /generative_scoring, Methods: POST
+(APIServer pid=1) INFO 10-31 09:18:16 [launcher.py:69] Route: /scale_elastic_ep, Methods: POST
+(APIServer pid=1) INFO 10-31 09:18:16 [launcher.py:69] Route: /is_scaling_elastic_ep, Methods: POST
+INFO:     Started server process [1]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+(EngineCore pid=294) WARNING 10-31 09:18:18 [jit_monitor.py:140] CuTeDSL JIT compilation during inference: FlashAttentionForwardSm100. This causes a latency spike; consider extending warmup to cover this shape/config.
+/usr/local/lib/python3.12/dist-packages/nvidia_cutlass_dsl/dsl_packages/cutlass/base_dsl/dsl.py:2463: UserWarning: Argument aux_data (position 19) cannot be converted to a JitArgument for function 'cutlass___call___vllmvllm_flash_attncuteflash_fwd_sm100FlashAttentionForwardSm100_object_at__Tensorgmemoi64i641_Tensorgmemoi64i641_Tensorgmemoi64i641_Tensorgmemoi64i641_None_007216'. Its type `<class 'vllm.vllm_flash_attn.cute.utils.AuxData'>` is not supported. If the value is known at compile time, annotate it: `aux_data: Constexpr`. Otherwise, implement the `JitArgument` or `DynamicExpression` protocol for type `<class 'vllm.vllm_flash_attn.cute.utils.AuxData'>`, or register a custom argument adapter.
+  exe_args, func_types, adapted_args = self.generate_mlir_function_types(
+/usr/local/lib/python3.12/dist-packages/nvidia_cutlass_dsl/dsl_packages/cutlass/base_dsl/dsl.py:2463: UserWarning: Argument aux_data (position 19) cannot be converted to a JitArgument for function 'cutlass___call___vllmvllm_flash_attncuteflash_fwd_sm100FlashAttentionForwardSm100_object_at__Tensorgmemoi64i641_Tensorgmemoi64i641_Tensorgmemoi64i641_Tensorgmemoi64i641_Tensorgmem_'. Its type `<class 'vllm.vllm_flash_attn.cute.utils.AuxData'>` is not supported. If the value is known at compile time, annotate it: `aux_data: Constexpr`. Otherwise, implement the `JitArgument` or `DynamicExpression` protocol for type `<class 'vllm.vllm_flash_attn.cute.utils.AuxData'>`, or register a custom argument adapter.
+  exe_args, func_types, adapted_args = self.generate_mlir_function_types(
+INFO:     127.0.0.1:41698 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:42776 - "POST /v1/completions HTTP/1.1" 200 OK
+/usr/local/lib/python3.12/dist-packages/triton/language/core.py:2284: UserWarning: tl.make_block_ptr is deprecated. Use TensorDescriptor or tl.make_tensor_descriptor instead.
+  warn("tl.make_block_ptr is deprecated. Use TensorDescriptor or tl.make_tensor_descriptor instead.")
+(EngineCore pid=294) WARNING 10-31 09:18:32 [jit_monitor.py:140] Triton kernel JIT compilation during inference: layer_norm_gated_fwd_kernel. This causes a latency spike; consider extending warmup to cover this shape/config.
+INFO:     127.0.0.1:42790 - "POST /v1/completions HTTP/1.1" 200 OK
+(EngineCore pid=294) WARNING 10-31 09:18:33 [jit_monitor.py:140] Triton kernel JIT compilation during inference: _topk_log_softmax_kernel. This causes a latency spike; consider extending warmup to cover this shape/config.
+INFO:     127.0.0.1:42796 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:42806 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:42808 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:42810 - "POST /v1/completions HTTP/1.1" 200 OK
+(APIServer pid=1) INFO 10-31 09:18:37 [loggers.py:320] Engine 000: Avg prompt throughput: 321.2 tokens/s, Avg generation throughput: 5.9 tokens/s, Running: 1 reqs, Waiting: 0 reqs, GPU KV cache usage: 6.2%
+(EngineCore pid=294) WARNING 10-31 09:18:42 [jit_monitor.py:140] CuTeDSL JIT compilation during inference: BlackwellMultiHeadLatentAttentionForwardFP16. This causes a latency spike; consider extending warmup to cover this shape/config.
+/usr/local/lib/python3.12/dist-packages/nvidia_cutlass_dsl/dsl_packages/cutlass/pipeline/helpers.py:669: UserWarning: NamedBarrier wait also arrives on the barrier. Routing call to NamedBarrier.arrive_and_wait().
+  warnings.warn(
+[k3pod 294 09:18:43] proxy: 14538 layer calls served; mean proxy work 310 us
+INFO:     127.0.0.1:58640 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58654 - "POST /v1/completions HTTP/1.1" 200 OK
+(APIServer pid=1) INFO 10-31 09:18:47 [loggers.py:320] Engine 000: Avg prompt throughput: 2.1 tokens/s, Avg generation throughput: 11.8 tokens/s, Running: 2 reqs, Waiting: 0 reqs, GPU KV cache usage: 12.5%
+[k3pod 294 09:18:51] 4600 layer calls (gpu batch); per layer over last 4600: d2h 0.106 ms, send 0.890 ms, wait+collect 3.610 ms
+[k3pod 294 09:18:51] workers spark0:arr302327us/wrk1376us spark1:arr303864us/wrk1385us spark2:arr304935us/wrk1398us spark3:arr300783us/wrk1373us spark4:arr302349us/wrk1379us spark5:arr303840us/wrk1361us spark6:arr298949us/wrk1369us spark7:arr301416us/wrk1366us rtx0:arr308340us/wrk1005us
+(APIServer pid=1) INFO 10-31 09:18:57 [loggers.py:320] Engine 000: Avg prompt throughput: 0.0 tokens/s, Avg generation throughput: 8.6 tokens/s, Running: 2 reqs, Waiting: 0 reqs, GPU KV cache usage: 12.5%
+[k3pod 294 09:19:03] 9200 layer calls (gpu batch); per layer over last 4600: d2h 0.153 ms, send 0.832 ms, wait+collect 1.312 ms
+[k3pod 294 09:19:03] workers spark0:arr679us/wrk575us spark1:arr803us/wrk596us spark2:arr891us/wrk585us spark3:arr970us/wrk588us spark4:arr1041us/wrk580us spark5:arr1109us/wrk574us spark6:arr1178us/wrk580us spark7:arr1241us/wrk571us rtx0:arr1308us/wrk679us
+(APIServer pid=1) INFO 10-31 09:19:07 [loggers.py:320] Engine 000: Avg prompt throughput: 0.0 tokens/s, Avg generation throughput: 8.4 tokens/s, Running: 2 reqs, Waiting: 0 reqs, GPU KV cache usage: 12.5%
+[k3pod 294 09:19:13] proxy: 15364 layer calls served; mean proxy work 308 us
+[k3pod 294 09:19:15] 13800 layer calls (gpu batch); per layer over last 4600: d2h 0.153 ms, send 0.839 ms, wait+collect 1.322 ms
+[k3pod 294 09:19:15] workers spark0:arr685us/wrk581us spark1:arr809us/wrk597us spark2:arr899us/wrk595us spark3:arr979us/wrk593us spark4:arr1051us/wrk583us spark5:arr1120us/wrk578us spark6:arr1186us/wrk579us spark7:arr1251us/wrk568us rtx0:arr1318us/wrk683us
+INFO:     127.0.0.1:59690 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59678 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59700 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59706 - "POST /v1/completions HTTP/1.1" 200 OK
+(APIServer pid=1) INFO 10-31 09:19:17 [loggers.py:320] Engine 000: Avg prompt throughput: 0.0 tokens/s, Avg generation throughput: 7.9 tokens/s, Running: 0 reqs, Waiting: 0 reqs, GPU KV cache usage: 0.0%
+(APIServer pid=1) INFO 10-31 09:19:27 [loggers.py:320] Engine 000: Avg prompt throughput: 4.1 tokens/s, Avg generation throughput: 15.3 tokens/s, Running: 4 reqs, Waiting: 0 reqs, GPU KV cache usage: 25.0%
+[k3pod 294 09:19:28] 18400 layer calls (gpu batch); per layer over last 4600: d2h 0.155 ms, send 0.906 ms, wait+collect 1.531 ms
+[k3pod 294 09:19:28] workers spark0:arr815us/wrk708us spark1:arr971us/wrk731us spark2:arr1080us/wrk744us spark3:arr1164us/wrk715us spark4:arr1241us/wrk716us spark5:arr1314us/wrk701us spark6:arr1387us/wrk733us spark7:arr1458us/wrk710us rtx0:arr1529us/wrk718us
+(APIServer pid=1) INFO 10-31 09:19:37 [loggers.py:320] Engine 000: Avg prompt throughput: 0.0 tokens/s, Avg generation throughput: 14.8 tokens/s, Running: 4 reqs, Waiting: 0 reqs, GPU KV cache usage: 25.0%
+[k3pod 294 09:19:42] 23000 layer calls (gpu batch); per layer over last 4600: d2h 0.160 ms, send 0.906 ms, wait+collect 1.575 ms
+[k3pod 294 09:19:42] workers spark0:arr850us/wrk744us spark1:arr1015us/wrk768us spark2:arr1116us/wrk770us spark3:arr1200us/wrk758us spark4:arr1277us/wrk748us spark5:arr1350us/wrk731us spark6:arr1423us/wrk768us spark7:arr1494us/wrk740us rtx0:arr1566us/wrk729us
+[k3pod 294 09:19:43] proxy: 15456 layer calls served; mean proxy work 313 us
+(APIServer pid=1) INFO 10-31 09:19:47 [loggers.py:320] Engine 000: Avg prompt throughput: 0.0 tokens/s, Avg generation throughput: 15.2 tokens/s, Running: 4 reqs, Waiting: 0 reqs, GPU KV cache usage: 25.0%
+INFO:     127.0.0.1:52382 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52390 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52414 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52406 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52426 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52430 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52436 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52444 - "POST /v1/completions HTTP/1.1" 200 OK
+[k3pod 294 09:19:56] 27600 layer calls (gpu batch); per layer over last 4600: d2h 0.158 ms, send 0.922 ms, wait+collect 1.668 ms
+[k3pod 294 09:19:56] workers spark0:arr929us/wrk818us spark1:arr1094us/wrk831us spark2:arr1201us/wrk839us spark3:arr1288us/wrk821us spark4:arr1366us/wrk808us spark5:arr1440us/wrk792us spark6:arr1513us/wrk836us spark7:arr1585us/wrk809us rtx0:arr1658us/wrk750us
+(APIServer pid=1) INFO 10-31 09:19:57 [loggers.py:320] Engine 000: Avg prompt throughput: 8.3 tokens/s, Avg generation throughput: 19.6 tokens/s, Running: 8 reqs, Waiting: 0 reqs, GPU KV cache usage: 50.0%
+(APIServer pid=1) INFO 10-31 09:20:07 [loggers.py:320] Engine 000: Avg prompt throughput: 0.0 tokens/s, Avg generation throughput: 27.2 tokens/s, Running: 8 reqs, Waiting: 0 reqs, GPU KV cache usage: 50.0%
+[k3pod 294 09:20:11] 32200 layer calls (gpu batch); per layer over last 4600: d2h 0.168 ms, send 0.927 ms, wait+collect 1.917 ms
+[k3pod 294 09:20:11] workers spark0:arr1094us/wrk984us spark1:arr1271us/wrk988us spark2:arr1388us/wrk1005us spark3:arr1479us/wrk992us spark4:arr1564us/wrk985us spark5:arr1640us/wrk943us spark6:arr1715us/wrk996us spark7:arr1788us/wrk962us rtx0:arr1860us/wrk804us
+(APIServer pid=1) INFO 10-31 09:20:17 [loggers.py:320] Engine 000: Avg prompt throughput: 0.0 tokens/s, Avg generation throughput: 26.4 tokens/s, Running: 8 reqs, Waiting: 0 reqs, GPU KV cache usage: 50.0%
+[k3pod 294 09:20:26] 36800 layer calls (gpu batch); per layer over last 4600: d2h 0.168 ms, send 0.932 ms, wait+collect 1.982 ms
+[k3pod 294 09:20:26] workers spark0:arr1151us/wrk1041us spark1:arr1329us/wrk1035us spark2:arr1442us/wrk1046us spark3:arr1533us/wrk1036us spark4:arr1615us/wrk1027us spark5:arr1691us/wrk1004us spark6:arr1767us/wrk1060us spark7:arr1841us/wrk1009us rtx0:arr1914us/wrk825us
+(APIServer pid=1) INFO 10-31 09:20:27 [loggers.py:320] Engine 000: Avg prompt throughput: 0.0 tokens/s, Avg generation throughput: 25.6 tokens/s, Running: 8 reqs, Waiting: 0 reqs, GPU KV cache usage: 50.0%
+(APIServer pid=1) INFO 10-31 09:20:37 [loggers.py:320] Engine 000: Avg prompt throughput: 0.0 tokens/s, Avg generation throughput: 9.5 tokens/s, Running: 0 reqs, Waiting: 0 reqs, GPU KV cache usage: 0.0%
+(APIServer pid=1) INFO 10-31 09:20:47 [loggers.py:320] Engine 000: Avg prompt throughput: 0.0 tokens/s, Avg generation throughput: 0.0 tokens/s, Running: 0 reqs, Waiting: 0 reqs, GPU KV cache usage: 0.0%

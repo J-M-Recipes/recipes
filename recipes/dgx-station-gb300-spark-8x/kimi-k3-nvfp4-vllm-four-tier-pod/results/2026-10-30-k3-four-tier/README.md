@@ -17,5 +17,6 @@ Times are CDT unless a log line says otherwise (vLLM logs are UTC: 01:13 UTC = 2
 | `raw/prefill-n93.json`, `.txt`, `raw/server-logs/prefill-n93.worker-lines.log` | prompt reading by prompt length (2026-10-31 00:05); per-layer wait and per-worker arrival during it | original |
 | `raw/prefill-batch-n93.json`, `raw/k3-4-prof-batch-spark1.txt`, `raw/parity/shadow-n13-batch-prefill.json`, `raw/server-logs/podb-n93.server.log`, `shadow-n13-batch.server-lines.log` | batched prompt path: full-model prompt reading (01:20 10-31), worker kernel batch vs loop on Spark 1, shadow parity on prompt tokens with the near-zero layer-12 debug lines | original |
 | `raw/prefill-gpubatch-n93.json`, `raw/prefill-b1024c-n93.json`, `raw/parity/shadow-n13-gpubatch-prefill.json`, `raw/parity/shadow-n13-1024-prefill.json`, `raw/server-logs/pod1024-n93.server.log` | GPU-side collect (256-token chunks) and 1,024-token chunks (serving config): full-model prompt reading and shadow parity for each | original |
+| `raw/conc-seqs8.json`, `raw/server-logs/pods8-n93.server.log` | concurrent decode with --max-num-seqs 8 (C = 1/2/4/8) and the cold-engine warmup timing | original |
 | `raw/fault-injection/` | two runs killing a Spark worker mid-decode; `README.md` there | original |
 | `system.json`, `system/*.json` | `collect_system_snapshot.sh` on the Station and all eight Sparks | original |
