@@ -8,9 +8,10 @@ summary: >
   live on each of eight DGX Sparks and 56 on the Station's RTX PRO 6000, which compute them on request over 200G
   RoCE. A vLLM hook (no fork) sends each layer's routed share from inside the CUDA graph through a C proxy thread and
   waits in-graph (idea - Javier, @javierbits), and each worker replays one CUDA graph per (layer, expert count).
-  Batch 1 decode is 54.1 ms/token = 18.5 tok/s, flat from 16 to 512 tokens. Prompt reading is 213 tok/s - a
-  3,364-token prompt reaches its first token in 15.8 s - since each worker now gets a whole 256-token chunk in one
-  message and runs it as one grouped kernel call (it was 31 tok/s / 108 s with one token per round trip). Every one of the 92 MoE layers was
+  Batch 1 decode is 54.1 ms/token = 18.5 tok/s, flat from 16 to 512 tokens. Prompt reading is 576 tok/s - a
+  3,364-token prompt reaches its first token in 5.8 s - since each worker gets a whole 1,024-token chunk in one
+  message and runs it as one grouped kernel call, and the Station reads each of its experts once per chunk (it was
+  31 tok/s / 108 s with one token per round trip). Every one of the 92 MoE layers was
   checked on the full model's own inputs against an fp32 reference built from the checkpoint (87 at cosine >= 0.99;
   the low-magnitude outliers match stock vLLM, layers 1-12 at cosine >= 0.9993 on identical inputs). A dead worker
   kills the engine within seconds (fault-injected). Experimental - batch 1 only, 4K context, no model-level quality
@@ -62,10 +63,10 @@ runtime:
     libk3hop: "scripts/worker/k3hop.c (ibverbs RC, zero-copy registered ring; k3pod_send/k3pod_collect fast path; k3proxy graph-resident proxy) - built on each host with gcc -O2 -shared -fPIC -libverbs -lpthread"
   patches:
     - { path: patches/b12x-situ.patch, sha256: 5250f9d00de6dfef082585bdff3fa32ee0a63e3e8f5ac8b363eb3b3331b428b7, purpose: "SiTU-GLU activation (Kimi-K3) in FlashInfer 0.7.0.post1 B12x MoE kernels, workers only" }
-    - { path: scripts/engine/k3pod.py, sha256: 42b21778446d5566dc8718770172e2800bcdb22c372b89d73b1b63de5948e7c7, purpose: "vLLM hook - Station expert subset, global->local id remap, remote share via eager breaks or the graph-resident proxy, shadow/record modes; hash = the file the reference box ran" }
+    - { path: scripts/engine/k3pod.py, sha256: 838fae8d324dc84bad12291ca5850804b74fee7b1fb08fb7e7b43c696074aa22, purpose: "vLLM hook - Station expert subset, global->local id remap, remote share via eager breaks or the graph-resident proxy, shadow/record modes; hash = the file the reference box ran" }
     - { path: scripts/engine/sitecustomize.py, sha256: 318f1d4449aa76981b8e58bab523fd80b7775779cbe91829c10d08d7e7cb118f, purpose: "import hook that installs k3pod and the truncated-layer loader filter in every vLLM process" }
-    - { path: scripts/worker/k3hop.c, sha256: 4f1ac714e69cdbfcb21d6a7b1efb9e335f843b8d6794a645b9091f14c4680a39, purpose: "RDMA transport + C fast path + graph-resident proxy (fails closed by SIGKILL of the engine core)" }
-    - { path: scripts/worker/worker.py, sha256: 4e1e0ae90a565dba4ed77a269c5cb1732783a73b6eaf16ed01ba226d8a0219ce, purpose: "expert worker - bank resident, one CUDA graph per (k, layer), distributional graph-vs-eager boot check" }
+    - { path: scripts/worker/k3hop.c, sha256: bbe9512d3a8986edf6753cdf9ff62d68f2d7e569bbd206740a60ac05d9a4b535, purpose: "RDMA transport + C fast path + graph-resident proxy (fails closed by SIGKILL of the engine core)" }
+    - { path: scripts/worker/worker.py, sha256: 814a7d82d373e60cf0f707618ece99235f5ef33971d81b4c2ddbf9849c793576, purpose: "expert worker - bank resident, one CUDA graph per (k, layer), distributional graph-vs-eager boot check" }
 
 launch:
   script: scripts/launch-engine.sh
@@ -76,7 +77,7 @@ launch:
     - "--cpu-offload-gb 401 --cpu-offload-params w13_weight w2_weight (Station's packed expert weights beyond HBM in pinned Grace, read in place over C2C)"
     - "-cc cudagraph_mode PIECEWISE, capture sizes 1 2 4 8, with VLLM_USE_BREAKABLE_CUDAGRAPH=1 and VLLM_DISABLE_SHARED_EXPERTS_STREAM=1 (an eager break on the aux shared-expert stream ends capture unjoined)"
     - "K3POD_PROXY=1 - one-token decode runs the expert step inside the graph (cuStreamWriteValue32 ready flag, C proxy thread, cuStreamWaitValue32 done flag); prefill and batch 2-8 keep eager breaks"
-    - "--max-model-len 4096 --max-num-seqs 1 --max-num-batched-tokens 256 - the configuration measured; nothing larger has been run"
+    - "--max-model-len 4096 --max-num-seqs 1 --max-num-batched-tokens 1024 - the configuration measured; nothing larger has been run"
     - "K3_WGRAPH=1 on workers (default) - one CUDA graph per (expert count, layer), 1,472 per worker, captured in ~1 s"
     - "VARIANT shadow parity - K3POD_SHADOW=1 N=13 K3_GPU_UTIL=0.95 (every expert of layers 1-12 in HBM; per-layer pod vs stock on identical inputs)"
     - "VARIANT record mode - EAGER=1 K3POD_DUMP_DIR=/pod/dump then scripts/check/pod_ref_check.py and pod_emu_check.py"
@@ -94,12 +95,19 @@ metrics:
     workload: "C1, 128 tokens, bench.py A (3 reps); fresh boot of the same config at 23:05 CDT"
     aggregation: median of 3
     provenance: { run_id: 2026-10-30-k3-four-tier, method: "scripts/check/bench.py 30023 128 3; transcribed", raw: raw/speed-transcribed.txt }
-  - name: prompt reading (prefill), batched worker path
-    value: 212.7
+  - name: prompt reading (prefill), batched worker path, 1,024-token chunks (serving config)
+    value: 575.6
     unit: tok/s
-    workload: "C1, one 3,364-token prompt (repeated transistor sentence), max_tokens 1, chunks of 256 (--max-num-batched-tokens), prefix caching off; 32 / 284 / 1,124 tokens = 51.7 / 158.6 / 204.2 tok/s"
-    aggregation: prompt_tokens / median time-to-first-token of 3 runs (15.82 s); the first multi-chunk prompt after boot pays a one-time ~4 s vLLM FlashAttention JIT compile
-    provenance: { run_id: 2026-10-30-k3-four-tier, method: "scripts/check/prefill_bench.py 30023 (2026-10-31 01:20 CDT)", raw: raw/prefill-batch-n93.json }
+    workload: "C1, one 3,364-token prompt (repeated transistor sentence), max_tokens 1, --max-num-batched-tokens 1024, prefix caching off; 32 / 284 / 1,124 tokens = 46.1 / 263.2 / 414.2 tok/s"
+    aggregation: prompt_tokens / median time-to-first-token of 3 runs (5.84 s); the first multi-chunk prompt after boot pays a one-time ~4-5 s vLLM FlashAttention JIT compile
+    provenance: { run_id: 2026-10-30-k3-four-tier, method: "scripts/check/prefill_bench.py 30023 (2026-10-31 03:43 CDT)", raw: raw/prefill-b1024c-n93.json }
+  - name: prompt reading, 256-token chunks (superseded)
+    value: 230.9
+    unit: tok/s
+    workload: "same prompts, --max-num-batched-tokens 256, GPU-side batch send/collect; CPU-side collect read 212.7 (raw/prefill-batch-n93.json)"
+    aggregation: prompt_tokens / median TTFT of 3 runs (14.57 s)
+    label: before 1,024-token chunks
+    provenance: { run_id: 2026-10-30-k3-four-tier, method: "scripts/check/prefill_bench.py 30023 (2026-10-31 02:00 CDT)", raw: raw/prefill-gpubatch-n93.json }
   - name: prompt reading (prefill), one token per round trip (superseded)
     value: 31.0
     unit: tok/s
@@ -110,7 +118,7 @@ metrics:
   - name: per-layer parity vs stock vLLM on prompt tokens (batched path, layers 1-11)
     value: 0.99980
     unit: cosine (worst layer mean)
-    workload: "13-layer shadow cut, ~15,000 token-layers per layer, almost all prompt tokens (prefill_bench x3)"
+    workload: "13-layer shadow cut, ~13,000-15,000 token-layers per layer, almost all prompt tokens (prefill_bench x3); repeated with GPU-side collect and with 1,024-token chunks (layers 1-11 0.99979-0.99993)"
     aggregation: per-layer mean; layers 1-11 0.99980-0.99994; layer 12 flags only tokens where stock's own output is ~0 (|f| <= 0.0007)
     provenance: { run_id: 2026-10-30-k3-four-tier, method: "K3POD_SHADOW=1 K3POD_SHADOW_DEBUG=1", raw: raw/parity/shadow-n13-batch-prefill.json }
   - name: decode - eager expert step, no worker graphs (superseded)
@@ -148,7 +156,7 @@ verification:
     performance: { how: "18.5 tok/s C1 decode reproduced after two reboots within 1% (54.57, 54.36 ms/token)" }
 
 limits:
-  - "Prompt reading is 213 tok/s (a 3,364-token prompt: 15.8 s to first token). Multi-token calls take the batched path - one message per worker per chunk (2 MiB transport slots), one grouped B12x call on the worker - but still outside the CUDA graph, with the Station packing and summing replies in Python. The first version (one token per round trip) read prompts at 31 tok/s."
+  - "Prompt reading is 576 tok/s (3,364-token prompt: 5.8 s to first token) with 1,024-token chunks: one message per worker per chunk (4 x 8 MiB transport slots), one grouped B12x call on the worker, rows gathered and replies summed by the GPU straight in cudaHostRegister'ed Station buffers. At 256-token chunks it was 231 tok/s: then ~6 ms of each ~11 ms layer step was the Station's own experts, ~270 of them read from Grace over C2C at ~850 GB/s, once per chunk - larger chunks amortize that read. Chunks are capped at 1,024 (k3proto.BATCH_MAX_M, slot size); K3POD_MAX_REMOTE_M must be >= the chunk or remote experts would be skipped (the launcher ties them). The batched step runs outside the CUDA graph."
   - "The batched worker kernel is compiled per padded row count; worker.py builds every bucket at boot (~30-70 s on first boot, cached after) and must warm the dynamic kernel FIRST - warming the static buckets first builds the wrong cache keys and the first real chunk then compiles for ~3 s (seen twice during bring-up). The Station waits 5 s for a batched reply (2 s for decode)."
   - "Batch 1 only. --max-num-seqs 1, --max-model-len 4096, --max-num-batched-tokens 256. Batch 2-8 decode takes the same one-token-at-a-time path and was not measured; long context is untested."
   - "No model-level quality gate. Correctness evidence is per layer (shadow vs stock on layers 1-12, fp32 reference on all 92 with real inputs). There is no teacher-forced comparison against a reference engine, no tool-call gate and no task benchmark, because no machine here can run a stock copy of the whole 1.5 TB of experts."

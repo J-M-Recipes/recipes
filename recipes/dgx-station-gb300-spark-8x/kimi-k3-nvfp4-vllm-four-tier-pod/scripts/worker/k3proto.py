@@ -34,7 +34,7 @@ FLAG_PROBE = 1
 FLAG_BATCH = 2
 BATCH_M = struct.Struct("<H")
 BATCH_M_OFF = 140
-BATCH_MAX_M = 256
+BATCH_MAX_M = 1024
 
 
 def batch_xoff(m):

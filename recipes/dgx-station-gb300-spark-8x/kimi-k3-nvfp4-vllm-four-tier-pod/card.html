@@ -59,7 +59,7 @@
   <div class="grid">
 <div class="box"><div class="lbl">Decode · C1, batch 1 (512-token streamed, temperature 0)</div><div class="hero">18.5<small>tok/s</small></div><div class="note">54.1 ms/token, mean of 3 runs, worst gap 56.1 ms · flat 16→512 tokens · fresh boots 54.6 / 54.4 ms · 273 ms at first tokens</div></div>
 <div class="box"><div class="lbl">Expert step · send → last worker reply</div><div class="hero">305<small>µs/layer</small></div><div class="note">inside the CUDA graph (proxy) · Spark round trip 150 µs for 1 expert, +77 µs per extra (bandwidth) · batch &gt; 1 not measured</div></div>
-<div class="box"><div class="lbl">Prompt reading · 3,364-token prompt</div><div class="hero">212.7<small>tok/s</small></div><div class="note">15.8 s to first token · one message per worker per 256-token chunk, one grouped kernel call (was 31 tok/s / 108 s one token at a time) · 32 / 284 / 1,124 tokens: 52 / 159 / 204 tok/s</div></div>
+<div class="box"><div class="lbl">Prompt reading · 3,364-token prompt</div><div class="hero">575.6<small>tok/s</small></div><div class="note">5.8 s to first token · 1,024-token chunks, one message + one grouped kernel call per worker per chunk · was 31 tok/s (108 s) one token at a time, 231 tok/s at 256-token chunks · 284 / 1,124 tokens: 263 / 414 tok/s</div></div>
   </div>
   <div class="row2">
 <div class="box"><div class="lbl">Guesser</div><div class="kv"><b>none</b> · no speculative decoding<br>plain autoregressive decode<br><span class="acc">accept: <span>n/a <b>no drafter</b></span></span></div></div>

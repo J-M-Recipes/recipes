@@ -1,7 +1,7 @@
 # Kimi-K3 NVFP4 across four memory tiers — DGX Station GB300 + RTX PRO 6000 + 8× DGX Spark
 
 **Status: experimental (2026-10-30).** Batch-1 decode at **18.5 tok/s** (54.1 ms/token, flat 16→512 tokens).
-Prompt reading **213 tok/s** (a 3,364-token prompt reaches its first token in 15.8 s; 31 tok/s before batching).
+Prompt reading **576 tok/s** (a 3,364-token prompt reaches its first token in 5.8 s; 31 tok/s before batching).
 Every MoE layer checked against the checkpoint; no model-level quality gate yet (see [Known limits](#known-limits)).
 
 ![card](card.png)
@@ -101,7 +101,7 @@ GB300_UUID=GPU-... MODEL_DIR=/models/kimi-k3/nvidia-nvfp4-b2428a0b bash scripts/
 ```bash
 python3 scripts/check/k3pod_probe.py 30023 probe.json        # 3 greedy prompts, coherent text
 python3 scripts/check/bench.py 30023 128 3                    # expect ~54-55 ms/token
-python3 scripts/check/prefill_bench.py 30023 run1             # prompt reading; expect ~210 tok/s at 3,364 tokens
+python3 scripts/check/prefill_bench.py 30023 run1             # prompt reading; expect ~575 tok/s at 3,364 tokens
 docker logs k3-pod-n93 2>&1 | grep "proxy:"                   # 'mean proxy work ~305 us' per layer
 ```
 
@@ -133,7 +133,8 @@ Run `2026-10-30-k3-four-tier`, reference box, `--max-num-seqs 1`, `--max-model-l
 | length sweep 16 / 64 / 128 / 256 / 512 tokens (gap p90) | 54.65 / 54.96 / 54.87 / 54.93 / 54.96 ms |
 | fresh boots (22:29, 23:05) | 54.57, 54.36 ms per token |
 | per layer: proxy send → last worker reply | 305 µs |
-| prompt reading, batched path, 32 / 284 / 1,124 / 3,364-token prompts (time to first token, median of 3) | 0.62 / 1.79 / 5.51 / 15.8 s → 52 / 159 / 204 / **213 tok/s** |
+| prompt reading, 1,024-token chunks (serving), 32 / 284 / 1,124 / 3,364-token prompts (time to first token, median of 3) | 0.69 / 1.08 / 2.71 / 5.84 s → 46 / 263 / 414 / **576 tok/s** |
+| prompt reading, 256-token chunks (GPU collect / CPU collect) | 3,364 tokens: 14.57 s / 15.8 s → 231 / 213 tok/s |
 | prompt reading, one token per round trip (first version) | 1.26 / 9.40 / 36.4 / 108.4 s → 25 / 30 / 31 / 31 tok/s |
 | worker kernel, 256-token chunk on one Spark (real weights) | one call 5.7–6.6 ms vs 37.9 ms token by token, ~1% apart (kernel noise) |
 | Spark round trip (graphed worker), k = 1 / 2 / 3 / 4 | 150 / 225 / 311 / 385 µs (v1: 244 / 312 / 398 / 469) |
@@ -155,10 +156,11 @@ transcribed from session output, labelled; `raw/parity/`, `raw/fault-injection/`
 
 ## Known limits
 
-- **Prompt reading is 213 tok/s**, not GPU-class. Each worker now gets a whole 256-token chunk in one message and
-  runs one grouped kernel call (31 tok/s before, one token per round trip). The batched step still breaks the CUDA
-  graph, and the Station packs and sums the replies in Python. The first multi-chunk prompt after boot pays a one-time
-  ~4 s vLLM FlashAttention JIT compile.
+- **Prompt reading is 576 tok/s**, not GPU-class. Each worker gets a whole 1,024-token chunk in one message and runs
+  one grouped kernel call; the GPU gathers rows and sums replies in place. At 256-token chunks the limit was the
+  Station's own experts — ~270 per layer read from Grace over C2C at ~850 GB/s once per chunk — so bigger chunks
+  were the lever. Chunks are capped at 1,024 (8 MiB slots). The first multi-chunk prompt after boot pays a one-time
+  ~4–5 s vLLM FlashAttention JIT compile.
 - **Batch kernels are compiled per padded row count.** `worker.py` builds every bucket at boot and must warm the
   dynamic kernel first; otherwise the first real chunk compiles for ~3 s.
 - **Batch 1, 4K context.** `--max-num-seqs 1 --max-model-len 4096 --max-num-batched-tokens 256`. Batch 2–8 decode
