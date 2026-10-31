@@ -115,8 +115,9 @@ EAGER=1 K3POD_PROXY=0 K3POD_DUMP_DIR=/pod/dump bash scripts/launch-engine.sh  # 
 python3 scripts/check/pod_ref_check.py DUMP_DIR scripts/build/plan-4tier-v1.json out.json 10000 LO HI
 ```
 
-Fault path: kill any worker during a request — the engine container must exit within seconds and the stream must
-end with an error chunk (`results/…/raw/fault-injection/README.md`).
+Fault path: kill any worker during a request — the engine container must exit within seconds. The open stream is
+cut short but still ends with `[DONE]`, so check `finish_reason` / length client-side
+(`results/…/raw/fault-injection/README.md`).
 
 ## Results
 
@@ -140,7 +141,7 @@ Run `2026-10-30-k3-four-tier`, reference box, `--max-num-seqs 1`, `--max-model-l
 | all 92 layers, full-model inputs (29,440 layer-tokens) vs fp32 checkpoint reference | 87/92 ≥ 0.99, median 0.996; no cross-tier leaks |
 | outlier layers 24/25/36/48 vs a kernel-faithful NVFP4 emulation | both tiers 0.992–0.997 (vs fp32 0.84–0.99 — the recipe, also seen in stock) |
 | greedy text, 5 prompts (EN, FR, code, arithmetic) | coherent; arithmetic correct |
-| fault injection (kill a Spark worker mid-decode) | proxy trips in ~2 s, engine exits, stream errors (SIGKILL build) |
+| fault injection (kill a Spark worker mid-decode) | proxy trips in ~2 s, engine exits (SIGKILL build); open stream cut at 578/2,000 tokens, closed with `[DONE]` |
 
 Receipts: `results/2026-10-30-k3-four-tier/` (`throughput.csv`, `raw/speed-transcribed.txt` — speed lines
 transcribed from session output, labelled; `raw/parity/`, `raw/fault-injection/`, `raw/worker/`, `raw/probes/`,
@@ -157,6 +158,8 @@ transcribed from session output, labelled; `raw/parity/`, `raw/fault-injection/`
 - **Non-deterministic worker kernel.** B12x repeats differ by 0.8–2 % on GB10; the RTX (sm_120) has a
   timing-dependent tail to ~5–6 % with or without graphs. Logprobs move ~0.12–0.14 (median) between boots; greedy
   text can flip at near-ties. Repro for upstream: `scripts/check/rtx_tail_check.py`.
+- **A cut-off stream looks finished.** When a worker dies, the open stream stops early but still ends with `[DONE]`;
+  clients must check `finish_reason` / token count.
 - **Every worker is on the critical path.** One dead or stalled (> 2 s) worker SIGKILLs the engine core; recovery is
   `start-workers.sh` + a ~20 min boot. An earlier `abort()` build left a healthy-looking server that hung while
   writing a ~480 GB core dump — do not revert to it.

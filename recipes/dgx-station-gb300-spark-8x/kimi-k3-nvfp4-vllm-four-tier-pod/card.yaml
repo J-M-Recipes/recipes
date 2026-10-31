@@ -36,7 +36,7 @@ secondary:
       "graphed workers": "64 → 54 ms · the workers' 'fixed cost' was ~100 µs of wrapper launches; the kernel is ~91 µs + ~75 µs per extra expert"
   - label: "Guard"
     items:
-      "dead or stalled worker": "proxy SIGKILLs the engine core after 2 s → vLLM exits, stream gets an error chunk (fault-injected)"
+      "dead or stalled worker": "proxy SIGKILLs the engine core after 2 s → vLLM exits (fault-injected) · the open stream was cut at 578/2,000 tokens and closed with a normal [DONE] — clients must check the length"
       "abort() build": "left /health 200 while a 480 GB core dump hung every request — replaced"
       "partition": "Station ids + Σ k_used == 16 asserted every layer and token"
 
