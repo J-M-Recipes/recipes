@@ -27,6 +27,10 @@ FAST = os.environ.get("K3POD_FAST", "1") == "1"
 # K3-4: multi-token calls (prefill chunks, batch > 1) send ONE message per worker carrying every token that worker
 # serves, instead of one round trip per token. Workers must run K3_BATCH=1 (worker.py) on the 2 MiB-slot libk3hop.
 BATCH = os.environ.get("K3POD_BATCH", "1") == "1"
+# K3-5: decode steps of 2..PXM tokens also go through the graph-resident proxy (C batch path) instead of breaking the
+# graph. 1 = on. Needs the K3-5 libk3hop (k3proxy_set_batch) and K3-5 workers (small-batch graphs).
+PX_BATCH = os.environ.get("K3POD_PROXY_BATCH", "1") == "1"
+PXM = 8
 # diagnostics: time the Station's own routed experts (CUDA events, synchronizing - slows prefill a little)
 TIME = os.environ.get("K3POD_TIME") == "1"
 _TM = {"n": 0, "ms": 0.0, "tok": 0}
@@ -556,6 +560,15 @@ def _ops():
 
     @eager_break_during_capture
     def pod_compare(L, pod, full, station=None, add=None):
+        # graph capture runs this eager op on buffers the (recorded, not executed) graph never filled; touching
+        # /pod/shadow-reset after startup drops everything collected so far, so the stats cover real traffic only
+        if os.path.exists("/pod/shadow-reset"):
+            try:
+                os.remove("/pod/shadow-reset")
+            except OSError:
+                pass
+            _SH["cos"].clear(); _SH["rel"].clear(); _SH["n"] = 0
+            _log("shadow stats reset")
         f = full.float()
         nf = f.norm(dim=-1)
         keep = nf > 0
@@ -610,6 +623,11 @@ def _proxy_init(device):
              ids=torch.zeros((NL, 16), dtype=torch.int32, pin_memory=True),
              w=torch.zeros((NL, 16), dtype=torch.float32, pin_memory=True),
              rows=torch.zeros((NL, n, H), dtype=torch.bfloat16, pin_memory=True))
+    if PX_BATCH:
+        t.update(xb=torch.zeros((NL, PXM, H), dtype=torch.bfloat16, pin_memory=True),
+                 idsb=torch.full((NL, PXM, 16), -1, dtype=torch.int32, pin_memory=True),
+                 wb=torch.zeros((NL, PXM, 16), dtype=torch.float32, pin_memory=True),
+                 outb=torch.zeros((NL, PXM, H), dtype=torch.float32, pin_memory=True))
     _PX.update(host=t, dev={k: uva(v) for k, v in t.items()})
     lib = POD.clib
     lib.k3proxy_start.argtypes = [ctypes.c_void_p, ctypes.c_int, ctypes.c_int, ctypes.c_int, ctypes.c_void_p,
@@ -622,6 +640,11 @@ def _proxy_init(device):
                            2_000_000, int(os.environ.get("K3POD_PROXY_CPU", "71")))
     if rc != 0:
         raise RuntimeError(f"k3proxy_start: {lib.k3_last_error().decode()}")
+    if PX_BATCH:
+        lib.k3proxy_set_batch.argtypes = [ctypes.c_void_p] * 4
+        mx = lib.k3proxy_set_batch(t["xb"].data_ptr(), t["idsb"].data_ptr(), t["wb"].data_ptr(), t["outb"].data_ptr())
+        if mx != PXM:
+            raise RuntimeError(f"k3pod: libk3hop proxy batch max {mx} != {PXM}")
     cu = ctypes.CDLL("libcuda.so.1")
     for f in ("cuStreamWriteValue32_v2", "cuStreamWaitValue32_v2"):
         getattr(cu, f).argtypes = [ctypes.c_void_p, ctypes.c_uint64, ctypes.c_uint32, ctypes.c_uint]
@@ -639,19 +662,30 @@ def _proxy_init(device):
                 _log(f"proxy: {sv} layer calls served; mean proxy work {lib.k3proxy_work_s() / max(sv - last, 1) * 1e6:.0f} us")
                 last = sv
     threading.Thread(target=stats, daemon=True).start()
-    _log(f"proxy started: {n} workers, control block pinned, graph-resident expert step ON")
+    _log(f"proxy started: {n} workers, control block pinned, graph-resident expert step ON"
+         f"{f' (1..{PXM} tokens)' if PX_BATCH else ' (1 token)'}")
     return _PX
 
 
+def _proxy_ok(M):
+    return M == 1 or (PX_BATCH and 1 < M <= PXM)
+
+
 def _proxy_issue(L, x, ids, w):
-    """Captured: stage the token for the proxy and raise ready[L]."""
+    """Captured: stage the token(s) for the proxy and raise ready[L] = M (constant per captured graph size)."""
     import torch
     d = _PX["dev"]
-    d["x"][L:L + 1].copy_(x)
-    d["ids"][L:L + 1].copy_(ids)
-    d["w"][L:L + 1].copy_(w)
+    M = x.shape[0]
+    if M == 1:
+        d["x"][L:L + 1].copy_(x)
+        d["ids"][L:L + 1].copy_(ids)
+        d["w"][L:L + 1].copy_(w)
+    else:
+        d["xb"][L, :M].copy_(x)
+        d["idsb"][L, :M].copy_(ids)
+        d["wb"][L, :M].copy_(w)
     s = torch.cuda.current_stream().cuda_stream
-    rc = _PX["cu"].cuStreamWriteValue32_v2(s, _PX["fbase"] + (L * 32) * 4, 1, 0)
+    rc = _PX["cu"].cuStreamWriteValue32_v2(s, _PX["fbase"] + (L * 32) * 4, M, 0)
     if rc != 0:
         raise RuntimeError(f"cuStreamWriteValue32 rc={rc}")
 
@@ -665,7 +699,11 @@ def _proxy_finish(L, add):
     rc |= cu.cuStreamWriteValue32_v2(s, fb + (L * 32 + 16) * 4, 0, 0)
     if rc != 0:
         raise RuntimeError(f"cuStreamWait/WriteValue32 rc={rc}")
-    torch.sum(_PX["dev"]["rows"][L].float(), dim=0, keepdim=True, out=add[:1])
+    M = add.shape[0]
+    if M == 1:
+        torch.sum(_PX["dev"]["rows"][L].float(), dim=0, keepdim=True, out=add[:1])
+    else:
+        add.copy_(_PX["dev"]["outb"][L, :M])
 
 
 _ADD = {}
@@ -752,10 +790,10 @@ def _attach(moe, layer_idx: int, n_global: int):
     def forward_modular(*args, **kwargs):
         routed_in = state["routed"]
         state["routed"] = None
-        if routed_in is not None and PROXY and routed_in[0].shape[0] == 1:
+        if routed_in is not None and PROXY and _proxy_ok(routed_in[0].shape[0]):
             _proxy_issue(L, *routed_in)                   # captured: workers start now, no graph break
             out = orig_fm(*args, **kwargs)                # captured: the Station's own experts
-            add = _add_buf(1, out.shape[1], out.device)
+            add = _add_buf(routed_in[0].shape[0], out.shape[1], out.device)
             _proxy_finish(L, add)                         # captured: in-graph wait on done[L]
             return (out.float() + add).to(out.dtype)
         ops = _ops() if routed_in is not None else None
@@ -820,7 +858,7 @@ def _attach_shadow(moe, layer_idx: int, n_global: int):
         if state["tab"].device != ids.device:
             state["tab"] = state["tab"].to(ids.device)
         ops = _ops()
-        px = PROXY and x.shape[0] == 1
+        px = PROXY and _proxy_ok(x.shape[0])
         if px:
             _proxy_issue(L, x, ids, w)                                    # captured (proxy path)
         else:

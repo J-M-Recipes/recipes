@@ -20,6 +20,7 @@
 #   K3POD_SHADOW    1 = shadow parity mode (needs every expert of N layers in HBM)    [0]
 #   K3POD_DUMP_DIR  record mode for scripts/check/pod_ref_check.py (needs EAGER=1)   []
 #   EAGER           1 = --enforce-eager (no CUDA graphs)                             [0]
+#   K3_MAX_SEQS     concurrent requests (--max-num-seqs); multi-token decode goes through the proxy up to 8  [8]
 #   K3_MAX_BATCHED  prefill chunk (--max-num-batched-tokens); <= 1024 (k3proto.BATCH_MAX_M, 8 MiB slots)  [1024]
 set -euo pipefail
 : "${MODEL_DIR:?set MODEL_DIR}" "${GB300_UUID:?set GB300_UUID}"
@@ -56,7 +57,7 @@ docker run -d --name "$NAME" --gpus "\"device=$GB300_UUID\"" --ipc=host --networ
   -e K3POD_MAX_REMOTE_M=$(( ${K3_MAX_BATCHED:-1024} > 512 ? ${K3_MAX_BATCHED:-1024} : 512 )) \
   --entrypoint vllm vllm/vllm-openai:v0.31.0@sha256:c1c9f6fd5c109ba7f0546a59f5b2f15fb87f64c77782e90a27b648b42a8e67c3 \
   serve "$VIEW" --served-model-name k3 --trust-remote-code --language-model-only \
-  --max-model-len 4096 --max-num-seqs 1 --max-num-batched-tokens "${K3_MAX_BATCHED:-1024}" --no-enable-prefix-caching \
+  --max-model-len 4096 --max-num-seqs "${K3_MAX_SEQS:-8}" --max-num-batched-tokens "${K3_MAX_BATCHED:-1024}" --no-enable-prefix-caching \
   --gpu-memory-utilization "$UTIL" "${GRAPHS[@]}" "${OFF[@]}" \
   --host 127.0.0.1 --port "$PORT" > "$K3_OUT_DIR/$NAME.cid"
 echo "started $NAME on 127.0.0.1:$PORT (load ~7 min + FlashInfer autotune ~12 min at N=93)"
