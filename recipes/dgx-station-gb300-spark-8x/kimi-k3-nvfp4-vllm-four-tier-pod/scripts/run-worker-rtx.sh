@@ -1,7 +1,7 @@
 #!/bin/bash
-# K3_SMALLB=0 (default here): the RTX's 2-8 token small-batch CUDA graphs fail worker.py's graph-vs-eager boot check
-# intermittently on sm_120 (2026-10-31: 1.33e-2 vs limit 1.19e-2 after passing at 1.10e-2 an hour earlier), so the RTX
-# runs multi-token decode on the eager batched path. Its one-token graphs (K3_WGRAPH) still pass their own check.
+# K3_SMALLB=1 (default): the RTX replays small-batch CUDA graphs like the Sparks. Its graphs scatter ~2.3x more than
+# eager runs but are unbiased and as close to fp32 (scripts/check/rtx_sb_check.py); worker.py's boot check tests exactly
+# that since 2026-10-31. Set K3_SMALLB=0 to run RTX multi-token decode eagerly (~14 ms slower per step at 2 streams).
 # The 9th expert worker on the Station's RTX PRO 6000 (sm_120): plan target rtx0, second Station NIC.
 # The RTX is VGA-class and hidden from --gpus by DGX OS: expose it with a CDI spec and pin it by UUID.
 #   RTX_UUID=GPU-...  bash run-worker-rtx.sh
@@ -15,6 +15,6 @@ docker run -d --name k3-worker-rtx --device nvidia.com/gpu=$RTX_UUID \
   -v "$K3_DIR:/w" -v "$RTX_BANK_DIR:/bank:ro" -v "$CACHE:/root/.cache" \
   -e BANK=/bank/k3bank-rtx0.ldb -e PLAN=/w/a3/plan-4tier-v1.json -e TARGET=rtx0 \
   -e BIND_IP=${BIND:-10.0.1.9} -e PORT=${PORT:-19601} -e DEV=${DEV:-mlx5_1} -e PYTHONUNBUFFERED=1 -e K3_WGRAPH=${K3_WGRAPH:-1} \
-  -e K3_SMALLB=${K3_SMALLB:-0} \
+  -e K3_SMALLB=${K3_SMALLB:-1} \
   nvcr.io/nvidia/pytorch:26.07-py3@sha256:3b0a5c3aa754aff7c86bc0ced07cb064ebce1048f6c12d717e2fa55766276521 \
   /w/situ/venv/bin/python /w/a3/worker.py

@@ -132,7 +132,7 @@ Run `2026-10-30-k3-four-tier`, reference box, `--max-num-seqs 8`, `--max-model-l
 |---|---:|
 | 512-token streamed decode, 3 runs | 54.11 / 54.13 / 54.13 ms per token → **18.5 tok/s**, worst gap 56.1 ms |
 | length sweep 16 / 64 / 128 / 256 / 512 tokens (gap p90) | 54.65 / 54.96 / 54.87 / 54.93 / 54.96 ms |
-| concurrent decode, 1 / 2 / 4 / 8 streams (ms per step → total tok/s) | 54.2 / 88.4 / 113.1 / 172.5 → 18.5 / 22.6 / 35.4 / **46.4** (RTX small batches eager; was 235–305 ms per step at 2–8 before the multi-token proxy) |
+| concurrent decode, 1 / 2 / 4 / 8 streams (ms per step → total tok/s) | 54.3 / 74.3 / 113.1 / 172.1 → 18.4 / 26.9 / 35.4 / **46.5** (was 235–305 ms per step at 2–8 before the multi-token proxy) |
 | fresh boots (22:29, 23:05) | 54.57, 54.36 ms per token |
 | per layer: proxy send → last worker reply | 305 µs |
 | prompt reading, 1,024-token chunks (serving), 32 / 284 / 1,124 / 3,364-token prompts (time to first token, median of 3) | 0.69 / 1.08 / 2.71 / 5.84 s → 46 / 263 / 414 / **576 tok/s** |
@@ -167,17 +167,18 @@ transcribed from session output, labelled; `raw/parity/`, `raw/fault-injection/`
 - **Batch kernels are compiled per padded row count.** `worker.py` builds every bucket at boot and must warm the
   dynamic kernel first; otherwise the first real chunk compiles for ~3 s.
 - **Up to 8 requests, and each slows as more join.** `--max-num-seqs 8`: 1 / 2 / 4 / 8 streams run at
-  54.2 / 88.4 / 113.1 / 172.5 ms per step — 18.5 / 22.6 / 35.4 / 46.4 tok/s in total, ~5.8 tok/s each at 8.
-  Multi-token steps stay inside the Station's CUDA graph (proxy batch path); before, they broke it and ran
-  235–305 ms per step. Part of the 172 ms is measured: the workers' micro kernel costs ~80 µs per distinct expert up
-  to 8 rows and jumps at 9 (640 → 1,013 µs), and a Spark usually gets 9–10 pairs at 8 streams. `--max-model-len 4096`;
-  long context is untested.
-- **RTX small batches run without CUDA graphs** (`K3_SMALLB=0` in `run-worker-rtx.sh`) because the RTX's graphs fail
-  `worker.py`'s boot check now and then. An offline test against an fp32 reference shows the graphs are correct
-  (0/640 bad runs; same mean as eager) — they just scatter ~2.3× more than eager runs, which the check's 1.5× rule
-  reads as an error. Separately, the first eager call after a graph capture on the same layer sometimes returns garbage
-  (2/640, up to 49× off): a FlashInfer B12x artifact that serving never triggers. Cost of running eager: ~12 ms per
-  step at 2 streams. Receipts: `results/…/raw/rtx-graph-check/`, scripts `rtx_sb_check.py`, `rtx_check_bias.py`.
+  54.3 / 74.3 / 113.1 / 172.1 ms per step — 18.4 / 26.9 / 35.4 / 46.5 tok/s in total, ~5.8 tok/s each at 8.
+  Multi-token steps stay inside CUDA graphs end to end (proxy batch path, per-(bucket, layer) worker graphs); before,
+  they broke the graph and ran 235–305 ms per step. Part of the 172 ms is measured: the workers' micro kernel costs
+  ~80 µs per distinct expert up to 8 rows and jumps at 9 (640 → 1,013 µs), and a Spark usually gets 9–10 pairs at
+  8 streams. `--max-model-len 4096`; long context is untested.
+- **Worker graphs are checked for bias, not bit-equality.** The B12x kernel is non-deterministic. Since 2026-10-31
+  `worker.py` requires the mean of 6 graph replays to match the eager mean within what 6 noisy draws allow, and no
+  replay to be > 0.10 off; it rejected a deliberately wrong-layer graph (1.42 vs a 7.95e-3 limit) and passes all nine
+  workers (3.2–3.5e-3). The old rule rejected correct RTX graphs on and off: against an fp32 reference they are unbiased
+  and as accurate as eager (0/640 bad runs) but scatter ~2.3× more. The first eager call after a graph capture on the
+  same layer can return garbage (2/640, up to 49× off) — a FlashInfer B12x artifact serving never triggers. From 06:04
+  to 09:14 the RTX ran small batches eagerly while this was sorted out. Receipts: `results/…/raw/rtx-graph-check/`.
 - **No model-level quality gate.** No teacher-forced comparison with a reference engine, no tool-call gate, no task
   benchmark: no machine here can hold a stock copy of the whole model. Evidence is per layer (above).
 - **NVFP4 precision at low-magnitude layers** (24, 25, 36, 48; layer 12 carries ~0.2 % of its input) — matched by an
