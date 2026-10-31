@@ -64,7 +64,7 @@
   <div class="row2">
 <div class="box"><div class="lbl">Guesser</div><div class="kv"><b>none</b> · no speculative decoding<br>plain autoregressive decode<br><span class="acc">accept: <span>n/a <b>no drafter</b></span></span></div></div>
 <div class="box"><div class="lbl">Where the 273 → 54 ms went</div><div class="kv">breakable CUDA graphs: <b>273 → 86 ms (network steps as eager breaks; workers start before the Station&#x27;s experts)</b><br>C send/collect: <b>86 → 80 ms</b><br>graph-resident expert step (@javierbits): <b>80 → 64 ms · GPU flag → C proxy → in-graph wait, 37 µs/layer round trip</b><br>graphed workers: <b>64 → 54 ms · the workers&#x27; &#x27;fixed cost&#x27; was ~100 µs of wrapper launches; the kernel is ~91 µs + ~75 µs per extra expert</b></div></div>
-<div class="box"><div class="lbl">Guard</div><div class="kv">dead or stalled worker: <b>proxy SIGKILLs the engine core after 2 s → vLLM exits, stream gets an error chunk (fault-injected)</b><br>abort() build: <b>left /health 200 while a 480 GB core dump hung every request — replaced</b><br>partition: <b>Station ids + Σ k_used == 16 asserted every layer and token</b></div></div>
+<div class="box"><div class="lbl">Guard</div><div class="kv">dead or stalled worker: <b>proxy SIGKILLs the engine core after 2 s → vLLM exits (fault-injected) · the open stream was cut at 578/2,000 tokens and closed with a normal [DONE] — clients must check the length</b><br>abort() build: <b>left /health 200 while a 480 GB core dump hung every request — replaced</b><br>partition: <b>Station ids + Σ k_used == 16 asserted every layer and token</b></div></div>
   </div>
   <div class="fid"><div class="lbl">Output fidelity — does the recipe change what the model says?</div>
     <ul>
