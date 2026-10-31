@@ -19,7 +19,7 @@ model:
 hero:
   c1:      { value: 18.5, unit: tok/s, class: "512-token streamed, temperature 0", label: "Decode · C1, batch 1", note: "54.1 ms/token, mean of 3 runs, worst gap 56.1 ms · flat 16→512 tokens · fresh boots 54.6 / 54.4 ms · 273 ms at first tokens" }
   c16:     { value: 305, unit: µs/layer, label: "Expert step · send → last worker reply", note: "inside the CUDA graph (proxy) · Spark round trip 150 µs for 1 expert, +77 µs per extra (bandwidth) · batch > 1 not measured" }
-  prefill: { value: 31.0, unit: tok/s, label: "Prompt reading · 3,364-token prompt", note: "108 s to first token · SLOW: prompt tokens go to the workers one at a time (256 round trips per layer per chunk) · 32 / 284 / 1,124 tokens: 25 / 30 / 31 tok/s · batched worker path planned" }
+  prefill: { value: 212.7, unit: tok/s, label: "Prompt reading · 3,364-token prompt", note: "15.8 s to first token · one message per worker per 256-token chunk, one grouped kernel call (was 31 tok/s / 108 s one token at a time) · 32 / 284 / 1,124 tokens: 52 / 159 / 204 tok/s" }
 
 guesser:
   name: "none"
@@ -47,5 +47,5 @@ fidelity:
   - { status: measured, text: "Layers 24/25/36/48 lose precision to NVFP4 activation quantization (0.84–0.99 vs fp32); both tiers match an exact emulation at 0.992–0.997, as does stock" }
   - { status: measured, text: "Worker kernel non-deterministic: 0.8–2 % repeat spread (GB10), heavy tail to ~5–6 % (RTX sm_120); boot-to-boot logprob Δ median ~0.13" }
   - { status: pending, text: "Teacher-forced divergence vs a reference engine — no machine here can hold the whole model" }
-  - { status: measured, text: "Prompt reading 31 tok/s — a 3,364-token prompt waits 108 s for its first token (serial one-token worker path)" }
+  - { status: pass, text: "Batched prompt path vs stock vLLM on ~15,000 prompt token-layers per layer (shadow): layers 1–11 cosine mean 0.99980–0.99994; layer 12 flags only near-zero outputs (|f| ≤ 0.0007)" }
   - { status: pending, text: "Tool-call gate · task benchmark (GSM8K / needle) · long context · batch > 1 · soak" }

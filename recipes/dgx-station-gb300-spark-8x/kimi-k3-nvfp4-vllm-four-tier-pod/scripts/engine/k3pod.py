@@ -24,6 +24,9 @@ MAX_REMOTE_M = int(os.environ.get("K3POD_MAX_REMOTE_M", "512"))
 # exact output (teacher forcing) so every layer is compared on reference inputs.
 SHADOW = os.environ.get("K3POD_SHADOW") == "1"
 FAST = os.environ.get("K3POD_FAST", "1") == "1"
+# K3-4: multi-token calls (prefill chunks, batch > 1) send ONE message per worker carrying every token that worker
+# serves, instead of one round trip per token. Workers must run K3_BATCH=1 (worker.py) on the 2 MiB-slot libk3hop.
+BATCH = os.environ.get("K3POD_BATCH", "1") == "1"
 # Graph-resident expert step for one-token decode (idea: Javier, @javierbits): no eager graph break; the GPU writes
 # x/ids/w + a ready flag into pinned host memory, a C proxy thread (libk3hop k3proxy_*) sends/collects, and the
 # graph waits on a done flag with cuStreamWaitValue32.
@@ -108,12 +111,17 @@ class _Pod:
         sys.path.insert(0, os.environ.get("K3POD_PROTO_DIR", "/k3a3"))
         import gc
         from k3proto import Conn, HDR, MSG_BYTES, REQ, REP  # noqa
+        import k3proto as KP
         self.HDR, self.MSG, self.REQ, self.REP = HDR, MSG_BYTES, REQ, REP
+        self.KP = KP
+        self.SLOT = KP.lib().k3_slot_bytes()
         self.conns, self.req = [], []
         for name, ip, port, dev in PLAN.workers:
             c = Conn.connect(ip, port, dev, 3)
             self.conns.append(c)
             self.req.append(c.view(0, MSG_BYTES))
+            if BATCH:
+                assert self.SLOT >= KP.batch_req_bytes(KP.BATCH_MAX_M), f"libk3hop slot {self.SLOT} too small for batch"
             _log(f"connected {name} {ip}:{port} via {dev}")
         self.rid = 0
         # C fast path (one token): owner table [93][896] int8, conn handle array, reply rows [n][H] bf16
@@ -188,6 +196,8 @@ class _Pod:
         self._np = np
         if self.conns is None:
             self.connect()
+        if BATCH and ids.shape[0] > 1:
+            return ("B", self._batch_send(L, x_u16, ids, w))
         t0 = time.perf_counter()
         row = [int(v) for v in ids[0]]
         o, targets = self._send_token(L, x_u16[0].view(np.uint8), row, [float(v) for v in w[0]])
@@ -220,8 +230,95 @@ class _Pod:
             raise RuntimeError(f"k3pod: partition broken layer {L}: {got} + {nst} != 16")
         self.t_remote += time.perf_counter() - t0
 
+    def _batch_send(self, L, x_u16, ids, w):
+        """One message per worker with every token it serves (M <= BATCH_MAX_M per message; larger M is split)."""
+        np, KP = self._np, self.KP
+        t0 = time.perf_counter()
+        M = ids.shape[0]
+        own = self.owner_tab[L].astype(np.int16)
+        valid = (ids >= 0) & (ids < 896)
+        o = np.where(valid, own[np.clip(ids, 0, 895)], -2)           # -1 Station, -2 padding/none, >=0 worker
+        k_station = (o < 0).sum(1)
+        parts = []                                                    # (wi, token rows, want per token)
+        for wi in range(len(self.conns)):
+            hit = (o == wi)
+            want = hit.sum(1)
+            rows = np.nonzero(want)[0]
+            if rows.size:
+                parts.append((wi, rows, want[rows]))
+        x8 = x_u16.view(np.uint8).reshape(M, -1)
+        groups = []
+        for wi, rows, want in parts:
+            for a in range(0, rows.size, KP.BATCH_MAX_M):
+                r = rows[a:a + KP.BATCH_MAX_M]
+                groups.append((wi, r, want[a:a + KP.BATCH_MAX_M]))
+        # first message per worker now; any overflow messages are sent as earlier ones are collected
+        pending = {}
+        for g in groups:
+            pending.setdefault(g[0], []).append(g)
+        self._t_sent = time.perf_counter()
+        for wi, gl in pending.items():
+            self._batch_post(L, wi, gl[0], ids, w, x8)
+        self.t_send += time.perf_counter() - t0
+        return (L, M, pending, k_station, ids, w, x8)
+
+    def _batch_post(self, L, wi, g, ids, w, x8):
+        np, KP = self._np, self.KP
+        _, r, _ = g
+        m = r.size
+        self.rid += 1
+        v = self.conns[wi].view(0, KP.batch_req_bytes(m))
+        self.REQ.pack_into(v, 0, self.rid, L, 0, KP.FLAG_BATCH, 0, *([-1] * 16), *([0.0] * 16))
+        KP.BATCH_M.pack_into(v, KP.BATCH_M_OFF, m)
+        np.frombuffer(v, np.int32, m * 16, self.HDR).reshape(m, 16)[:] = ids[r]
+        np.frombuffer(v, np.float32, m * 16, self.HDR + 64 * m).reshape(m, 16)[:] = w[r]
+        np.frombuffer(v, np.uint8, m * x8.shape[1], KP.batch_xoff(m)).reshape(m, -1)[:] = x8[r]
+        self.conns[wi].send(0, KP.batch_req_bytes(m))
+
+    def _batch_end(self, h):
+        np, KP = self._np, self.KP
+        L, M, pending, k_station, ids, w, x8 = h
+        H = x8.shape[1] // 2
+        out = np.zeros((M, H), dtype=np.float32)
+        got = np.zeros(M, dtype=np.int64)
+        t0 = time.perf_counter()
+        for wi, gl in pending.items():
+            c = self.conns[wi]
+            for gi, (_, r, want) in enumerate(gl):
+                if gi:
+                    self._batch_post(L, wi, gl[gi], ids, w, x8)
+                s = c.poll(5_000_000)          # 5 s: a stray kernel compile on a worker is ~3 s; decode keeps 2 s
+                if s < 0:
+                    raise RuntimeError(f"k3pod: worker {PLAN.workers[wi][0]} timed out (batch), layer {L}")
+                m = r.size
+                rv = c.view(s, KP.batch_rep_bytes(m))
+                rr = self.REP.unpack_from(rv, 0)
+                if rr[1] != 0:
+                    raise RuntimeError(f"k3pod: worker {PLAN.workers[wi][0]} status {rr[1]} (batch) layer {L}")
+                ku = np.frombuffer(rv, np.uint16, m, self.HDR).astype(np.int64)
+                if not np.array_equal(ku, want):
+                    bad = int(np.nonzero(ku != want)[0][0])
+                    raise RuntimeError(f"k3pod: {PLAN.workers[wi][0]} batch k_used {ku[bad]} != {want[bad]} "
+                                       f"(token {int(r[bad])}), layer {L}")
+                got[r] += ku
+                y = np.frombuffer(rv, np.uint16, m * H, KP.batch_yoff(m)).reshape(m, H)
+                out[r] += (y.astype(np.uint32) << 16).view(np.float32)
+                c.post_recv(s)
+                st = self.wstats.setdefault(wi, [0, 0.0, 0.0, 0])
+                st[0] += 1; st[1] += time.perf_counter() - self._t_sent; st[2] += (rr[9] - rr[5]) / 1e9
+        bad = np.nonzero(got + k_station != ids.shape[1])[0]
+        if bad.size:
+            t = int(bad[0])
+            raise RuntimeError(f"k3pod: partition broken layer {L} token {t}: {got[t]} + {k_station[t]} != {ids.shape[1]}")
+        self.t_remote += time.perf_counter() - t0
+        self.batch_calls = getattr(self, "batch_calls", 0) + 1
+        self.batch_tokens = getattr(self, "batch_tokens", 0) + M
+        return out
+
     def end(self, h):
         np = self._np
+        if h[0] == "B":
+            return self._batch_end(h[1])
         L, x_u16, ids, w, o, targets = h
         M, K = ids.shape
         out = np.zeros((M, x_u16.shape[1]), dtype=np.float32)
@@ -324,10 +421,23 @@ def _ops():
             POD.wstats = {}
 
     @eager_break_during_capture
-    def pod_compare(L, pod, full):
+    def pod_compare(L, pod, full, station=None, add=None):
         f = full.float()
         nf = f.norm(dim=-1)
         keep = nf > 0
+        if os.environ.get("K3POD_SHADOW_DEBUG") == "1":
+            npd = pod.norm(dim=-1)
+            c_all = torch.nn.functional.cosine_similarity(pod, f, dim=-1)
+            bad = torch.nonzero((c_all < 0.5) & keep).flatten()
+            nz = int((~keep).sum())
+            if bad.numel() or nz:
+                b = bad[:8].tolist()
+                ns = station.float().norm(dim=-1) if station is not None else None
+                na = add.norm(dim=-1) if add is not None else None
+                _log(f"SHDBG L{L} M={pod.shape[0]} bad={bad.numel()} f_zero={nz} idx={b} "
+                     f"|f|={[round(float(nf[i]), 4) for i in b]} |pod|={[round(float(npd[i]), 4) for i in b]} "
+                     f"|station|={[round(float(ns[i]), 4) for i in b] if ns is not None else '-'} "
+                     f"|remote|={[round(float(na[i]), 4) for i in b] if na is not None else '-'}")
         if not bool(keep.any()):
             return
         cos = torch.nn.functional.cosine_similarity(pod[keep], f[keep], dim=-1)
@@ -580,7 +690,7 @@ def _attach_shadow(moe, layer_idx: int, n_global: int):
         else:
             ops["collect"](L, add)                                        # eager break
         pod = station.float() + add                                       # captured
-        ops["compare"](L, pod, full)                                      # eager break
+        ops["compare"](L, pod, full, station, add)                        # eager break
         return full
 
     router.select_experts = select_experts
