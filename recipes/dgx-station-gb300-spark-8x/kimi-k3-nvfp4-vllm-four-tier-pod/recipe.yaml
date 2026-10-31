@@ -8,7 +8,8 @@ summary: >
   live on each of eight DGX Sparks and 56 on the Station's RTX PRO 6000, which compute them on request over 200G
   RoCE. A vLLM hook (no fork) sends each layer's routed share from inside the CUDA graph through a C proxy thread and
   waits in-graph (idea - Javier, @javierbits), and each worker replays one CUDA graph per (layer, expert count).
-  Batch 1 decode is 54.1 ms/token = 18.5 tok/s, flat from 16 to 512 tokens. Every one of the 92 MoE layers was
+  Batch 1 decode is 54.1 ms/token = 18.5 tok/s, flat from 16 to 512 tokens. Prompt reading is slow - 31 tok/s, a
+  3,364-token prompt takes 108 s to the first token - because prompt tokens go to the workers one at a time. Every one of the 92 MoE layers was
   checked on the full model's own inputs against an fp32 reference built from the checkpoint (87 at cosine >= 0.99;
   the low-magnitude outliers match stock vLLM, layers 1-12 at cosine >= 0.9993 on identical inputs). A dead worker
   kills the engine within seconds (fault-injected). Experimental - batch 1 only, 4K context, no model-level quality
@@ -92,6 +93,13 @@ metrics:
     workload: "C1, 128 tokens, bench.py A (3 reps); fresh boot of the same config at 23:05 CDT"
     aggregation: median of 3
     provenance: { run_id: 2026-10-30-k3-four-tier, method: "scripts/check/bench.py 30023 128 3; transcribed", raw: raw/speed-transcribed.txt }
+  - name: prompt reading (prefill)
+    value: 31.0
+    unit: tok/s
+    workload: "C1, one 3,364-token prompt (repeated transistor sentence), max_tokens 1, chunks of 256 (--max-num-batched-tokens), prefix caching off; 32 / 284 / 1,124 tokens = 25.3 / 30.2 / 30.9 tok/s"
+    aggregation: prompt_tokens / median time-to-first-token of 3 runs (108.35 s)
+    label: "slow by design of this version - one token per worker round trip, see limits"
+    provenance: { run_id: 2026-10-30-k3-four-tier, method: "scripts/check/prefill_bench.py 30023 (2026-10-31 00:05 CDT)", raw: raw/prefill-n93.json }
   - name: decode - eager expert step, no worker graphs (superseded)
     value: 79.85
     unit: ms/token
@@ -127,7 +135,8 @@ verification:
     performance: { how: "18.5 tok/s C1 decode reproduced after two reboots within 1% (54.57, 54.36 ms/token)" }
 
 limits:
-  - "Batch 1 only. --max-num-seqs 1, --max-model-len 4096, --max-num-batched-tokens 256. Batch 2-8 decode and prefill take the eager-break path (one worker round trip per token per layer) and were not measured; long context is untested."
+  - "Prompt reading is 31 tok/s (measured 2026-10-31 - a 3,364-token prompt waits 108 s for its first token). Prompt tokens leave the Station one at a time - send token t, wait for every worker's reply, send t+1 - and each worker runs a one-token kernel, so a 256-token chunk is 256 serial round trips per layer (~72-74 ms of waiting per layer vs ~0.3 ms in decode) and no expert's weights are reused across tokens. The graph-resident step covers one-token decode only. A batched worker path (all of a chunk's tokens in one message, one grouped kernel call) is the planned fix."
+  - "Batch 1 only. --max-num-seqs 1, --max-model-len 4096, --max-num-batched-tokens 256. Batch 2-8 decode takes the same one-token-at-a-time path and was not measured; long context is untested."
   - "No model-level quality gate. Correctness evidence is per layer (shadow vs stock on layers 1-12, fp32 reference on all 92 with real inputs). There is no teacher-forced comparison against a reference engine, no tool-call gate and no task benchmark, because no machine here can run a stock copy of the whole 1.5 TB of experts."
   - "Four of 92 layers (24, 25, 36, 48) have small MoE inputs where NVFP4 activation quantization loses precision vs fp32 (cosine 0.84-0.99); both tiers match an exact emulation of that quantization at 0.992-0.997 and stock vLLM's kernel shows the same loss. Layer 12's routed MoE output is ~0.2% of its input; pod and stock agree at cosine 0.9993 there, both ~0.05 vs fp32."
   - "The workers' B12x expert kernel is not run-to-run deterministic - 0.8-2% repeat difference on GB10 and a timing-dependent heavy tail up to ~5-6% on the RTX's sm_120 build, with or without CUDA graphs. Two boots give logprobs ~0.12-0.14 apart (median) and greedy text can flip at near-ties. Upstream repro - scripts/check/rtx_tail_check.py."
