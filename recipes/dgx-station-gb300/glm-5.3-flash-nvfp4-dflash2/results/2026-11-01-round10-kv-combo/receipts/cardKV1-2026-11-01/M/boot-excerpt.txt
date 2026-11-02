@@ -1,0 +1,12 @@
+[2026-11-02 03:41:51] --enable-linear-replayssm-spec: setting --mamba-ssm-dtype float32 (cached replay uses compensated checkpoint projection and materialization).
+[2026-11-02 03:41:54] server_args={'model_path': '/model', 'tokenizer_path': '/model', 'tokenizer_mode': 'auto', 'tokenizer_backend': 'huggingface', 'tokenizer_worker_num': 1, 'detokenizer_worker_num': 1, 'skip_tokenizer_init': False, 'load_format': 'auto', 'model_loader_extra_config': '{}', 'trust_
+[2026-11-02 03:42:09] DFLASH fa4 draft: overriding KV cache dtype torch.float8_e4m3fn -> torch.bfloat16 (fa4 needs K.dtype == Q.dtype; cannot read the target's quantized KV).
+[2026-11-02 03:43:10] DFLASH fa4 draft: overriding KV cache dtype torch.float8_e4m3fn -> torch.bfloat16 (fa4 needs K.dtype == Q.dtype; cannot read the target's quantized KV).
+[2026-11-02 03:43:10] Initialized DFLASH draft runner. attention_backend=fa4, model=DFlash2DraftModel, block_size=7, draft_window_size=None, compact_cache=False
+[2026-11-02 03:43:10] DFLASH draft runner ready. mask_token=<|MASK|>, mask_token_id=154856, mask_token_id_override=154856, noise_embed_scale=1.0
+[2026-11-02 03:43:11] max_running_requests is capped to 9 by the mamba state cache (max_mamba_cache_size=48, 5 state slots per request). To raise it: increase --mamba-full-memory-ratio or --max-mamba-cache-size, or halve the state size with --mamba-ssm-dtype bfloat16.
+[2026-11-02 03:43:11] Mamba Cache is allocated. max_mamba_cache_size: 48, conv_state size: 0.24GB, ssm_state size: 6.70GB intermediate_ssm_state_cache size: 0.00GB intermediate_conv_window_cache size: 0.34GB 
+[2026-11-02 03:43:11] GDN ReplaySSM ring buffers allocated (record_len=16, fold=True): d=0.419GB, k=0.419GB, g=0.837GB rawv=0.419GB, rawk=0.419GB, beta=0.007GB 
+[2026-11-02 03:43:11] KV Cache is allocated. dtype: torch.float8_e4m3fn, #tokens: 1341568, KV size: 8.85 GB
+[2026-11-02 03:43:12] KV Cache is allocated. dtype: torch.bfloat16, #tokens: 1341568, K size: 12.79 GB, V size: 12.79 GB
+[2026-11-02 03:47:42] max_total_num_tokens=1341568, chunked_prefill_size=8192, max_prefill_tokens=8192, max_running_requests=9, context_len=1048576, available_gpu_mem=22.96 GB

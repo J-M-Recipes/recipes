@@ -1,0 +1,36 @@
+1001c1001,1003
+<         self._buffer[self._curr_index] = value
+---
+>         # KV1/ED overlay: the buffer is an inference tensor; appends arrive outside InferenceMode under DFlash + overlap.
+>         with torch.inference_mode():
+>             self._buffer[self._curr_index] = value
+1008c1010,1011
+<         self._buffer[...] = 0
+---
+>         with torch.inference_mode():
+>             self._buffer[...] = 0
+1022,1027c1025,1032
+<         if self._size == curr_buffer_size:
+<             new_buffer = torch.zeros(
+<                 (2 * curr_buffer_size, *self._item_shape), dtype=dtype, device=device
+<             )
+<             new_buffer[:curr_buffer_size] = self._buffer
+<             self._buffer = new_buffer
+---
+>         # KV1/ED overlay: grow and write inside InferenceMode (buffer is an inference tensor).
+>         with torch.inference_mode():
+>             if self._size == curr_buffer_size:
+>                 new_buffer = torch.zeros(
+>                     (2 * curr_buffer_size, *self._item_shape), dtype=dtype, device=device
+>                 )
+>                 new_buffer[:curr_buffer_size] = self._buffer
+>                 self._buffer = new_buffer
+1029c1034
+<         self._buffer[self._size] = value
+---
+>             self._buffer[self._size] = value
+1036c1041,1042
+<         self._buffer[...] = 0
+---
+>         with torch.inference_mode():
+>             self._buffer[...] = 0

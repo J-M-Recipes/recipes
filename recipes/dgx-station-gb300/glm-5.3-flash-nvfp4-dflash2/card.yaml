@@ -2,8 +2,8 @@
 # Every number here traces to recipe.yaml metrics or a results/<run_id>/ bundle. Unknown = pending (renders amber).
 title: "GLM-5.3-Flash · 1× DGX Station GB300"
 subtitle: "NVIDIA first-party NVFP4 + SGLang nightly 09-22 with #39688 reverted (transformers 5.16.1 for image input) + DFlash2 block-diffusion draft (block 7) + ReplaySSM — 1M context configured, one GPU, nothing offloaded"
-version: "nightly 09-22 582389ce − #39688 + ReplaySSM (2026-09-29 · draft 7d74cdd8 · promoted Round 8; v0.5.20 rollback kept)"
-run_id: 2026-09-29-round8-promote-replayssm (hero C1 code, KV pool, max-effort, promotion) · 2026-09-28-round7-39688-revert (drift cause, flood fixture) · 2026-09-27-round6-drift-bisect · 2026-09-27-round5-nightly-replayssm · 2026-09-24-tf5161-vision (image input, text parity) · 2026-09-23-cardE-gpqa-w3a (claim card, needle, GPQA, prefill, boot) · 2026-09-21-v0520-rebase (hero C1, rebase fidelity) · 2026-09-15-effort-drafter-nightly (acceptance, effort method) · 2026-09-11-nvidia-nvfp4-b7-1M (concurrency curve, TF vs FP8, Hermes) · 2026-09-01-flash-dflash2 (prefill)
+version: "nightly 09-22 582389ce − #39688 + ReplaySSM + fp8 draft KV / lazy KDA buffer (2026-11-02 · draft 7d74cdd8 · flags promoted Round 10; Round 8 flags rollback)"
+run_id: 2026-11-01-round10-kv-combo (KV pool, running cap, prefix reuse, RTX cold-band rejection, promotion) · 2026-09-29-round8-promote-replayssm (hero C1 code, max-effort) · 2026-09-28-round7-39688-revert (drift cause, flood fixture) · 2026-09-27-round6-drift-bisect · 2026-09-27-round5-nightly-replayssm · 2026-09-24-tf5161-vision (image input, text parity) · 2026-09-23-cardE-gpqa-w3a (claim card, needle, GPQA, prefill, boot) · 2026-09-21-v0520-rebase (hero C1, rebase fidelity) · 2026-09-15-effort-drafter-nightly (acceptance, effort method) · 2026-09-11-nvidia-nvfp4-b7-1M (concurrency curve, TF vs FP8, Hermes) · 2026-09-01-flash-dflash2 (prefill)
 handles: "github.com/J-M-Recipes/recipes · al-engr.com · @jmeadlock"
 
 model:
@@ -14,7 +14,7 @@ model:
   checkpoint_gb: 204.5              # 204,475,659,764 B / 42 files byte-verified vs HF (digest gate)
   weights_short: "as shipped · NVFP4 routed experts (NVIDIA ModelOpt) · attn/shared/router/embeddings/lm_head unquantized"
   engine_extra: "SGLang main 582389ce (2026-09-22) − #39688 (patches/revert-39688-on-582389ce.patch, hash-gated every boot) · glmf-sglang:0922-582389ce-revert39688-tf5.16.1 (Dockerfile.0922-revert39688) · --enable-linear-replayssm-spec · torch 2.13.0+cu130"
-  memory: "single GPU, nothing offloaded · KV pool 857K tok (fp8 DSA indexer + bf16 MLA KV; 576K before ReplaySSM freed the 9.57 GB SSM state cache) · 48 KDA state slots (9 running) · 1M ctx configured"
+  memory: "single GPU, nothing offloaded · KV pool 2.13M tok (fp8 target KV + fp8 draft KV, mem 0.90; 857K with the bf16 fa4 draft KV) · 48 KDA state slots (12 running, extra_buffer_lazy) · 1M ctx configured"
 
 hero:
   c1:      { value: 197, unit: tok/s, class: prose, note: "warm, T=0, 512 tok, history essay, answer-only (reasoning_effort low), 2026-09-29 promoted image · code 319 (+11% vs v0.5.20 daily 287) / shell pending · max-effort thinking-counted 263 (= v0.5.20) · v0.5.20 daily same window 201 / 287 · prose-heavy text ~150 (accept 17%)" }
