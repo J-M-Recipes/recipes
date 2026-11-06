@@ -1,0 +1,26 @@
+# Hardware profile: 1x NVIDIA DGX Spark (GB10) — a single node of the CRS804 rack ("GhettoRak")
+# Same node class as hardware/dgx-spark-2x.yaml, without a fabric peer: no RoCE, no TP. Values under `observed`
+# come from scripts/collect_system_snapshot.sh on the node (kept in the recipe's results bundle).
+# First use: Sparks 5, 2026-10-22 (the idle node left over while Sparks 1-4 ran the DSV4.1 lane).
+slug: dgx-spark-1x
+name: 1x NVIDIA DGX Spark (GB10), standalone node
+vendor: NVIDIA
+form_factor: desktop box, single node, no inter-node fabric in play
+nominal:
+  gpu: NVIDIA GB10 (Blackwell, SM121)
+  unified_memory_gb_per_node: 128      # LPDDR5X shared by CPU and GPU
+  memory_bandwidth_gbs_per_node: 273
+  nic: ConnectX-7 (unused by this recipe; nothing is served off-node)
+observed:                              # 2026-10-22, spark5
+  gpu: NVIDIA GB10
+  memory_total_gib: 121.69             # nvidia-smi memory.total reads [N/A] on GB10; ggml_cuda_init reports 124,610 MiB
+  driver: "595.84"
+  cuda: "13.0 (host toolkit 13.0.88; llama.cpp built with -DCMAKE_CUDA_ARCHITECTURES=121)"
+  os: Ubuntu 24.04.5 LTS (DGX OS 7.2.3 build)
+  kernel: 6.17.0-1031-nvidia
+  cpu: 20x Arm Cortex-X925
+  page_size_kib: 4
+notes:
+  - Unified memory means there is no separate VRAM pool to blow: a 15.6 GB GGUF is 15.6 GB of the host's 121.7 GiB.
+  - "nvidia-smi memory.total / power.limit read [N/A] on GB10; take memory from ggml_cuda_init or torch, power at the wall."
+  - Decode on one node is bandwidth-bound on the weights each token touches, which is why a deeper model loses to a shallower one at the same quant (see the recipe).

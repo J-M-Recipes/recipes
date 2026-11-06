@@ -1,0 +1,191 @@
+schema: jm-recipe/v1
+id: dgx-spark-1x/kimi-k3-q0-0086-1x-spark
+title: "Kimi-K3 at 0.0086 bits/parameter on one DGX Spark (12 layers, 16/896 experts, Q1_0) — a joke with receipts"
+summary: >-
+  Deliberately useless. This recipe takes the 2.8T-parameter Kimi-K3, HTTP-range-fetches 9.4% of a published GGUF so that
+  only 16 of 896 routed experts per layer are ever downloaded, throws away 81 of 93 layers, requantizes the survivors to
+  Q1_0 (1.125 bpw with llama.cpp's existing quantizer), and serves 3.01 GB on one GB10 at 83.65 tok/s decode and 1,806.63
+  tok/s prefill. The output is not language. That part is optional; the point is the arithmetic: bits-per-weight is
+  file_bytes * 8 / advertised_parameter_count, so deleting weights does nothing to your headline number until you notice
+  what it does to the denominator's coverage. Same weights, same quantizer, three depths: 93 layers 11.27 tok/s (declared
+  0.0447 bpw), 24 layers 49.03 (0.0140), 12 layers 83.65 (0.0086). Every number here was measured on one box on
+  2026-10-22; none of it should be deployed or cited as a quantization result.
+status: experimental
+owners:
+- jmeadlock
+- milo
+updated: '2026-10-22'
+tags:
+- kimi-k3
+- q1_0
+- extreme-quantization
+- moe
+- expert-pruning
+- depth-pruning
+- bits-per-weight
+- dgx-spark
+- gb10
+- llama.cpp
+- shitpost
+model:
+  name: Kimi-K3 (2.8T MoE) — depth- and expert-pruned derivative, Q1_0
+  params: 2.8T nominal / 104.78B in the 93-layer build / 15.60B in the shipped 12-layer build (llama.cpp counts the tensors present)
+  repo: https://huggingface.co/moonshotai/Kimi-K3
+  revision: f831ab66814297da540d832a5235f8e904f29d06
+  quantization: >-
+    Not a new format and not a real 1-bit model. Source tensors are byte-range-fetched from unsloth/Kimi-K3-GGUF
+    UD-IQ1_S @ a0836360 (594.0 GB, 14 shards): every non-expert tensor whole plus the first 16 of 896 slabs of each
+    *_exps.weight, so 56.10 GB (9.4%) is fetched in 7.7 min and 537.9 GB is never requested. That file is then cut to 12
+    layers and requantized whole with stock llama-quantize --allow-requantize Q1_0, giving 3,010,804,800 B. UD-Q1_0 is
+    unusable as a source: its expert tensors are ggml type 66, a patched-fork type upstream rejects.
+  draft:
+    repo: https://huggingface.co/moonshotai/Kimi-K3
+    revision: f831ab66814297da540d832a5235f8e904f29d06
+    method: none — no drafter and no speculation; the artifact is 15.6B of weights and 83.65 tok/s is its plain decode rate
+hardware:
+  profile: hardware/dgx-spark-1x.yaml
+  nominal:
+    unified_memory_gb: 128
+    nodes: 1
+  observed:
+    gpu: NVIDIA GB10
+    driver: '595.84'
+    cuda: 13.0 (host toolkit 13.0.88; llama.cpp built for sm_121)
+    gpu_memory_visible_gib: 121.69
+    host_memory_gib: 121.7
+    os: Ubuntu 24.04.5 LTS (DGX OS 7.2.3 build)
+    kernel: 6.17.0-1031-nvidia
+    snapshot: results/2026-10-22-k3-q01-lulz/system.json
+runtime:
+  engine: llama.cpp
+  engine_version: 0.7.0-dev (build 1)
+  engine_commit: 36cbf41
+  container:
+    image: none — host build, no container; digest is the sha256 of build/bin/llama-server
+    digest: sha256:699c87830fae51ff4c57339e53ef82e5be8f5ac163a8032bcd8eb50f52f2d88d
+  key_libraries:
+    cuda: '13.0.88'
+    cmake: system package
+    gcc: '13.3.0'
+launch:
+  script: scripts/serve.sh
+  command: MODEL=${MODEL:-k3-q01-L12.gguf} NGL=99 CTX=4096 PORT=8099 bash scripts/serve.sh
+  health: >-
+    curl -sf http://127.0.0.1:8099/v1/models returns the model id inside ~2 s of the weights finishing mmap (3.01 GB);
+    a 94-token prompt returns 48 completion tokens at temperature 0 (raw/smoke-L12.txt)
+  warmup: >-
+    llama-bench -m MODEL -p 128 -n 128 -ngl 99 -r 3 is self-warming per repetition and the first timed repetition is not
+    discarded. The serving sample was taken after one 94-token request on a fresh boot.
+  notable_flags:
+  - "-ngl 99 — every tensor on the GB10; 3.01 GB of unified memory, no offload involved"
+  - "-c 4096 — the advertised 1,048,576 context is meaningless at 12 layers; 4096 is arbitrary and small on purpose"
+  - "-t 8 — CPU threads only drive sampling and tokenization here"
+  - "No flash-attn, no KV quantization, no speculation: nothing on this stack is tuned, because tuning a joke is how you end up publishing one"
+metrics:
+- name: Decode, tg128
+  value: 83.65
+  unit: tok/s
+  workload: llama-bench tg128, one DGX Spark, Q1_0, 12 layers, top-2 of 16 retained experts
+  aggregation: mean of 3 repetitions, ± 0.17
+  provenance:
+    run_id: 2026-10-22-k3-q01-lulz
+    method: ./llama.cpp/build/bin/llama-bench -m k3-q01-L12.gguf -p 128 -n 128 -ngl 99 -r 3 -o csv
+    raw: raw/bench-k3-q01-L12.csv
+- name: Prefill, pp128
+  value: 1806.63
+  unit: tok/s
+  workload: llama-bench pp128 on the same file
+  aggregation: mean of 3 repetitions, ± 131.24
+  provenance:
+    run_id: 2026-10-22-k3-q01-lulz
+    method: same command as the decode row
+    raw: raw/bench-k3-q01-L12.csv
+- name: Declared bits per parameter (the joke)
+  value: 0.0086
+  unit: bits/param
+  workload: 3,010,804,800 bytes * 8 / 2.8e12 advertised parameters
+  aggregation: single arithmetic identity, not a measurement
+  provenance:
+    run_id: 2026-10-22-k3-q01-lulz
+    method: scripts/receipts.py k3-q01-L12.gguf
+    raw: raw/receipts-L12.txt
+- name: Real bits per parameter over the tensors present
+  value: 1.544
+  unit: bits/param
+  workload: 3,010,804,800 bytes * 8 / 15,599,198,864 parameters in the file
+  aggregation: single arithmetic identity, not a measurement
+  provenance:
+    run_id: 2026-10-22-k3-q01-lulz
+    method: scripts/receipts.py k3-q01-L12.gguf
+    raw: raw/receipts-L12.txt
+- name: Ladder rung — 24 layers, top-4
+  value: 49.03
+  unit: tok/s
+  workload: same source tensors, 24 layers, top-4 of 16 retained experts, 4.88 GB
+  aggregation: mean of 3 repetitions, ± 0.09
+  provenance:
+    run_id: 2026-10-22-k3-q01-lulz
+    method: scripts/local_subset.py --layers 24 --expert-used 4, llama-quantize Q1_0, llama-bench
+    raw: raw/bench-k3-q01-L24.csv
+- name: Ladder rung — 93 layers, top-16 (no depth pruning)
+  value: 11.27
+  unit: tok/s
+  workload: same source tensors, all 93 layers, 16 of 896 experts per layer, 15.64 GB
+  aggregation: mean of 3 repetitions, ± 0.02
+  provenance:
+    run_id: 2026-10-22-k3-q01-lulz
+    method: scripts/k3_slice.py --dir UD-IQ1_S --shards 14, llama-quantize Q1_0, llama-bench
+    raw: raw/bench-k3-q01.csv
+verification:
+  gates:
+    schema:
+      how: scripts/check_recipe.py passes on this directory
+      last_pass_utc: '2026-10-22T16:20:00Z'
+      run_id: 2026-10-22-k3-q01-lulz
+    digest:
+      how: >-
+        Source pinned by repo revision (a0836360) and per-file sizes from the Hub manifest; byte spans were computed from
+        each shard's own GGUF header and fetched by range, so every tensor in the output is a verbatim copy of a source
+        tensor. Individual tensor sha256 was NOT recorded, and the 594 GB source was never fully downloaded (9.4% only).
+      last_pass_utc: '2026-10-22T16:04:00Z'
+      run_id: 2026-10-22-k3-q01-lulz
+      notes: A real recipe would hash the shipped artifact; this one is a joke and hashes its arithmetic instead.
+    health:
+      how: >-
+        /v1/models returns 200 with the model id; a chat completion honours a 48-token cap at temperature 0 and reports
+        its own timings (81.30 tok/s on that request). Raw JSON and server log in raw/smoke-L12.txt.
+      last_pass_utc: '2026-10-22T16:05:00Z'
+      run_id: 2026-10-22-k3-q01-lulz
+    quality:
+      how: >-
+        FAIL AS DESIGNED — there is no quality gate because there is no output to gate. Greedy 48-token sample:
+        "moderate moderate … Zem Nom Nom". 99.4% of the weight volume is absent and the survivors were requantized twice
+        (IQ1_S then Q1_0), so teacher-forced divergence against Kimi-K3 is not a threshold, it is a different language
+        model. This row is the one thing the recipe deliberately does not have.
+      run_id: 2026-10-22-k3-q01-lulz
+    performance:
+      how: >-
+        llama-bench -p 128 -n 128 -ngl 99 -r 3 on an otherwise idle node (Sparks 1-4 were running the DSV4.1 lane; Sparks
+        6-8 idle). The reported spread is the bench's own stddev across repetitions, not across boots.
+      last_pass_utc: '2026-10-22T16:04:58Z'
+      run_id: 2026-10-22-k3-q01-lulz
+limits:
+- "Output is not language. It is token-shaped noise. Any use of this artifact outside a joke is a misuse, and the joke is about accounting, not about the model."
+- "The headline number is a division, not a quantization result: 0.0086 bits/param divides by 2.8T parameters of which 0.56% are present. Over the tensors actually shipped the file is 1.544 bpw."
+- "Not a 1-bit model in any meaningful sense: the quantizer is stock Q1_0 (1.125 bpw) and 99.4% of the weights were deleted, not represented at 0.1 bit."
+- "Q1_0 is the llama.cpp floor. Lower quant is not a speed lever here: decode is bandwidth-bound on the 15.6B weights read per token, so depth and active-expert count are the levers."
+- "Single box, single user, no concurrency measurement. C16 and any multi-user number are unmeasured; do not infer them from tg128."
+- "Do not publish the 3 GB GGUF as a model release: Kimi-K3 ships under the Kimi K3 license (not Modified MIT), and a derivative repack is a licensing question that the script is not."
+- "The 93-layer build (0.0447 bpw) exists only as a ladder rung; it was never served under load and its 11.27 tok/s is a bench row, not a lane."
+- "No KV quantization, no flash-attn, no speculation, no tuning. Speeds are untuned but not floored: a careful run would find a few percent, and it would still be a joke."
+rollback:
+  script: scripts/stop.sh
+  summary: >-
+    Nothing to roll back to: this recipe never replaced a serving lane. scripts/stop.sh kills the server by pid file and
+    frees the 3 GB. The node was idle before and is idle after; Sparks 1-4 kept running the DSV4.1 lane untouched
+    throughout.
+links:
+  blog: https://al-engr.com/kimi-k3-0-0086-bpw-lulz.html
+  source_gguf: https://huggingface.co/unsloth/Kimi-K3-GGUF
+  upstream_model: https://huggingface.co/moonshotai/Kimi-K3
+  upstream_engine: https://github.com/ggml-org/llama.cpp
