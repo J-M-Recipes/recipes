@@ -120,6 +120,14 @@ Neither needs a rebuild, both are read-only, and both are checksummed in `overla
 
 `overlays/README.md` carries the provenance for both.
 
+### Tool-parser overlay: DSML closers inside arguments (2026-11-06)
+
+[`overlays/dsml-structural/vllm/parser/deepseek_v41.py`](overlays/dsml-structural/vllm/parser/deepseek_v41.py) (sha256 `1c309d19…`) replaces `/opt/spark3/candidate/vllm/vllm/parser/deepseek_v41.py`. With it, a tool argument
+that *contains* a DSML closer (`</｜DSML｜ parameter>`, `</｜DSML｜ invoke>`, `</｜DSML｜ calls>`) comes back
+intact; stock cut or dropped the argument and streamed unterminated JSON. Kill switch
+`VLLM_DSV41_STRUCTURAL_DSML=0`. Idea from Hector Isaza's TensorFold patch 0052. How it is applied, the 25-case offline gate,
+the live probe and the behaviour changes: [`results/2026-11-06-dsml-structural-closers/README.md`](results/2026-11-06-dsml-structural-closers/README.md).
+
 ## Launch
 
 ```bash
@@ -170,6 +178,11 @@ different batch mix — the weaker evidence there is qeval 71/75 and a 40/40 byt
 
 Identity across arms: qeval content matches C0 on all 75 tasks (71 correct, same four misses); the 40-prompt greedy
 raw-completion probe matches 40/40; bench C1 per-request token/char signature matches 9/9.
+
+**Tool-parser overlay** (2026-11-06): `docker exec <server> sha256sum /opt/spark3/candidate/vllm/vllm/parser/deepseek_v41.py` must read `1c309d19…`;
+then `python3 results/2026-11-06-dsml-structural-closers/tests/live_probe.py http://<head>:8002/v1` must print `"ALL_PASS": true`.
+Offline, before touching a lane: `ENGINE=vllm IMAGE=vllm-ds41f-kkref:19f2c20ed4d6-r6x PARSER_PATH=/opt/spark3/candidate/vllm/vllm/parser/deepseek_v41.py MODEL_DIR=… OVERLAY=overlays/dsml-structural/vllm/parser/deepseek_v41.py bash results/2026-11-06-dsml-structural-closers/tests/run_matrix.sh`
+must end `ALL GATES PASS`.
 
 ## Results
 
@@ -239,6 +252,8 @@ numbers above were measured on exactly that shape. The other published DeepSeek-
 - the SGLang sibling on 4× Spark: [`dgx-spark-4x/deepseek-v4.1-flash-sglang-tp4-roce`](../deepseek-v4.1-flash-sglang-tp4-roce/)
 - the single-GB300 recipe: [`dgx-station-gb300/deepseek-v4.1-flash-vllm-uva-dspark`](../../dgx-station-gb300/deepseek-v4.1-flash-vllm-uva-dspark/)
 
+**Tool-parser overlay only:** `docker cp` the stock file back (the image's own copy: `docker run --rm --entrypoint cat <image> /opt/spark3/candidate/vllm/vllm/parser/deepseek_v41.py`, sha256 `9b5293f5…`) on all four ranks and restart, or recreate the containers with `cluster.sh up`. No-file-change option: `VLLM_DSV41_STRUCTURAL_DSML=0`.
+
 ## Credits
 
 - **Christopher Owen**: [spark-ds41f](https://github.com/christopherowen/spark-ds41f) (r6x config, patch chain, build,
@@ -248,3 +263,9 @@ numbers above were measured on exactly that shape. The other published DeepSeek-
 - **TileLang** and **DeepSeek TileKernels**: the kernel family. **vLLM**: the base. **DeepSeek**: the model.
 - **knapcio**: the four-Spark TP4 findings that Owen's `docs/inspiration.md` lists as hypotheses to reproduce. The
   SGLang sibling runs knapcio's stack; this lane does not use his Engram pack.
+
+- **Hector Isaza** ([@hecisaza](https://github.com/hecisaza)), for TensorFold patch `0052` ([MiaAI-Lab PR
+  #49](https://github.com/MiaAI-Lab/DeepSeek-V4.1-Flash-1017-4x-DGX-Sparks-TensorFold/pull/49), for [issue #14](https://github.com/MiaAI-Lab/DeepSeek-V4.1-Flash-1017-4x-DGX-Sparks-TensorFold/issues/14) reported by **ecohash-co**) in
+  [MiaAI-Lab's TensorFold recipe](https://github.com/MiaAI-Lab/DeepSeek-V4.1-Flash-1017-4x-DGX-Sparks-TensorFold): a DSML closer inside a parameter value must not end the block. Our
+  `deepseek_v41.py` overlay applies the same idea to the vLLM parser; it is our own
+  code, not theirs ([`results/2026-11-06-dsml-structural-closers/README.md`](results/2026-11-06-dsml-structural-closers/README.md)).

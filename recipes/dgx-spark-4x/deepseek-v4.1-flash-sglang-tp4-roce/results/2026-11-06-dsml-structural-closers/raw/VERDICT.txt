@@ -1,0 +1,34 @@
+cases=25 overlay=dsv41-structural-dsml-sglang-v1
+IMPROVED L_omit_invoke_end stream1: stock stream [('write_file', '{"path": "a.txt"')] -> patched matches non-streaming
+IMPROVED L_omit_invoke_end stream3: stock stream [('write_file', '{"path": "a.txt"')] -> patched matches non-streaming
+IMPROVED L_omit_invoke_end stream7: stock stream [('write_file', '{"path": "a.txt"')] -> patched matches non-streaming
+IMPROVED L_omit_invoke_end streamAll: stock stream [('write_file', None)] -> patched matches non-streaming
+CHANGE N_omit_param_close_then_invoke_end:
+    stock   [('write_file', {'path': 'a.txt'})] content=''
+    patched [('write_file', {'path': 'a.txt', 'content': 'hello'})] content=''
+STOCK-ASYMMETRY N2_omit_param_close_then_invoke_end_eos stream1: stock stream/non-stream already disagree; patched stream valid, non-stream == stock
+STOCK-ASYMMETRY N2_omit_param_close_then_invoke_end_eos stream3: stock stream/non-stream already disagree; patched stream valid, non-stream == stock
+STOCK-ASYMMETRY N2_omit_param_close_then_invoke_end_eos stream7: stock stream/non-stream already disagree; patched stream valid, non-stream == stock
+STOCK-ASYMMETRY N2_omit_param_close_then_invoke_end_eos streamAll: stock stream/non-stream already disagree; patched stream valid, non-stream == stock
+CHANGE N2_omit_param_close_then_invoke_end_eos:
+    stock   [] content=''
+    patched [] content=''
+PRE-EXISTING O_truncated_mid_value stream1: truncated call streams invalid JSON in stock too
+PRE-EXISTING O_truncated_mid_value stream3: truncated call streams invalid JSON in stock too
+PRE-EXISTING O_truncated_mid_value stream7: truncated call streams invalid JSON in stock too
+PRE-EXISTING O2_truncated_after_literal_closer stream1: truncated call streams invalid JSON in stock too
+PRE-EXISTING O2_truncated_after_literal_closer stream3: truncated call streams invalid JSON in stock too
+PRE-EXISTING O2_truncated_after_literal_closer stream7: truncated call streams invalid JSON in stock too
+CHANGE O2_truncated_after_literal_closer:
+    stock   [('write_file', {'path': 'a.txt'})] content=''
+    patched [] content=''
+CHANGE Q_ambiguous_value_holds_closer_plus_head:
+    stock   [('write_file', {'path': 'x.md', 'content': 'a', 'z': 'b'})] content=''
+    patched [('write_file', {'path': 'x.md', 'content': 'a', 'z': 'b'})] content=''
+CHANGE R_value_ends_with_literal_param_closer:
+    stock   [('write_file', {'path': 'x.md', 'content': 'the tag is'})] content=''
+    patched [('write_file', {'path': 'x.md', 'content': 'the tag is </｜DSML｜ parameter>'})] content=''
+CHANGE U2_json_body_holds_invoke_closer:
+    stock   [('write_file', {})] content=''
+    patched [('write_file', {'path': 'j.txt', 'content': 'has </｜DSML｜ invoke> inside'})] content=''
+ALL GATES PASS

@@ -247,6 +247,14 @@ Checkpoint identity (revision, 49 safetensors shards — the 48 `model-0000N-of-
 set — 510,311,114,235 B, 253 files, config/index hashes) is in
 [`raw/weights-1017-receipt.txt`](results/2026-10-22-v25-sidecar/raw/weights-1017-receipt.txt).
 
+### Tool-parser overlay: DSML closers inside arguments (2026-11-06)
+
+[`patches/garner-8043a681/overlay-vllm/parser/deepseek_v41.py`](patches/garner-8043a681/overlay-vllm/parser/deepseek_v41.py) (sha256 `1c309d19…`) replaces `/usr/local/lib/python3.12/dist-packages/vllm/parser/deepseek_v41.py`. With it, a tool argument
+that *contains* a DSML closer (`</｜DSML｜ parameter>`, `</｜DSML｜ invoke>`, `</｜DSML｜ calls>`) comes back
+intact; stock cut or dropped the argument and streamed unterminated JSON. Kill switch
+`VLLM_DSV41_STRUCTURAL_DSML=0`. Idea from Hector Isaza's TensorFold patch 0052. How it is applied, the 25-case offline gate,
+the live probe and the behaviour changes: [`results/2026-11-06-dsml-structural-closers/README.md`](results/2026-11-06-dsml-structural-closers/README.md).
+
 ## Launch
 
 **The serving config, Pg61.** You need Garner's checkout at the pin, this recipe (which ships the vLLM overlay
@@ -366,6 +374,11 @@ the v2 watchdog) are in [HISTORY.md → Launching h2-REF and earlier releases](H
 Nothing here is promoted on throughput alone: the cosine gate and the 0-timeout soak are pass/fail, and a
 timeout is treated as a correctness bug rather than a slow request. The v27 row is in
 [HISTORY.md → Superseded Verify rows](HISTORY.md#superseded-verify-rows).
+
+**Tool-parser overlay** (2026-11-06): `docker exec <server> sha256sum /usr/local/lib/python3.12/dist-packages/vllm/parser/deepseek_v41.py` must read `1c309d19…`;
+then `python3 results/2026-11-06-dsml-structural-closers/tests/live_probe.py http://<head>:30006/v1` must print `"ALL_PASS": true`.
+Offline, before touching a lane: `ENGINE=vllm IMAGE=vllm/vllm-openai:v0.31.0 PARSER_PATH=/usr/local/lib/python3.12/dist-packages/vllm/parser/deepseek_v41.py MODEL_DIR=… OVERLAY=patches/garner-8043a681/overlay-vllm/parser/deepseek_v41.py bash results/2026-11-06-dsml-structural-closers/tests/run_matrix.sh`
+must end `ALL GATES PASS`.
 
 ## Results
 
@@ -610,6 +623,8 @@ segment; the hardened `up` does, but only when `ds41-sidecar` is not running.)*
 [HISTORY.md → Older rollback pairs](HISTORY.md#older-rollback-pairs). Going back to v27 or older **reintroduces the
 out-of-bounds read** (see Known limits).
 
+**Tool-parser overlay only:** Remove `patches/garner-8043a681/overlay-vllm/parser/` (or, on a built lane, `$WORK/overlay-vllm/parser/deepseek_v41.py` plus its `BUILD-SHA256SUMS` line), then `launch-pg61.sh down` / `up`. Faster, no file change: set `VLLM_DSV41_STRUCTURAL_DSML=0` in the container env (reproduces stock exactly, gate G5).
+
 ## Credits
 
 This recipe is a productionised descendant of other people's recipes, and the ordering here is deliberate.
@@ -695,6 +710,12 @@ and the G0–G5 gates. Measurements, gate design and the write-up: **J&M Recipes
 note: the numbers were produced with a Claude Opus 5.5 orchestrator on the research side; the recipe was written
 from the receipts. The 2026-10-31 release gates (Cards R1 and QT1) were orchestrated by Claude Opus 5.5, with
 Fable 5.1 as advisor.
+
+- **Hector Isaza** ([@hecisaza](https://github.com/hecisaza)), for TensorFold patch `0052` ([MiaAI-Lab PR
+  #49](https://github.com/MiaAI-Lab/DeepSeek-V4.1-Flash-1017-4x-DGX-Sparks-TensorFold/pull/49), for [issue #14](https://github.com/MiaAI-Lab/DeepSeek-V4.1-Flash-1017-4x-DGX-Sparks-TensorFold/issues/14) reported by **ecohash-co**) in
+  [MiaAI-Lab's TensorFold recipe](https://github.com/MiaAI-Lab/DeepSeek-V4.1-Flash-1017-4x-DGX-Sparks-TensorFold): a DSML closer inside a parameter value must not end the block. Our
+  `deepseek_v41.py` overlay applies the same idea to the vLLM parser; it is our own
+  code, not theirs ([`results/2026-11-06-dsml-structural-closers/README.md`](results/2026-11-06-dsml-structural-closers/README.md)).
 
 ## History
 

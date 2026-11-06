@@ -14,7 +14,7 @@ status: experimental
 owners:
 - jmeadlock
 - milo
-updated: '2026-10-20'
+updated: '2026-11-06'
 tags:
 - deepseek-v4.1-flash
 - mxfp4
@@ -83,6 +83,10 @@ runtime:
     flashinfer: 0.6.18 (MXFP4 MoE runner flashinfer_mxfp4 + fp8 GEMM flashinfer_cutlass; routed MoE on b12x_next at EP1)
     nccl: 2.30.7 (prefill/large collectives; decode all-reduce/all-gather <= 2 MiB on RoCEnante)
     b12x_next: a7d7d29b
+  patches:
+    - path: overlays/dsml-structural/deepseekv41_detector.py
+      sha256: 7e7384dd61302d89e8cfda9630c5bad0f31445b68553ca79f37e93bc1bb837d8
+      purpose: "2026-11-06. Structural-DSML tool-parser overlay (credit: Hector Isaza's TensorFold patch 0052, MiaAI-Lab PR #49 / issue #14): a DSML closer inside a tool-argument value is kept as text instead of ending the value or call; stock cut or dropped the argument and vLLM streamed unterminated JSON. Replaces /sgl-workspace/sglang/python/sglang/srt/function_call/deepseekv41_detector.py (stock sha256 a6c5e25f). Kill switch SGLANG_DSV41_STRUCTURAL_DSML=0 == stock. Gates and receipts in results/2026-11-06-dsml-structural-closers/."
 launch:
   script: scripts/launch-sglang-tp4.sh
   command: SPARK_HOSTS="spark1 spark2 spark3 spark4" STACK_DIR=$HOME/dsv41-4x-spark bash scripts/launch-sglang-tp4.sh serve  (renders scripts/env.tp4.recipe to $STACK_DIR/.env.tp4 and execs knapcio's ./start-tp4.sh serve; exact engine argv in results/2026-10-19-sglang-ladder-r2/launch-command.txt)
@@ -222,6 +226,7 @@ verification:
     quality: { how: "PENDING teacher-forced delta-logprob vs a reference build, PENDING a public bench run by us. Measured: qeval content 71/75 on all six boots (same as the vLLM sibling); knapcio's own v2.4 release gate (not ours) KL 0.0045/0.0061 vs v2.3 and qeval 72/72/72.", run_id: 2026-10-19-sglang-ladder-r2 }
     performance: { how: "scripts/b-battery.sh on a quiet lane: C1 per-stream within 3% of 96 (8-class mix), C6 within 4% of 253-262, 93K prefill-reps median >= 5.8K, 300K needles PASS with runs 2-3 >= 4.0K, mixed TTFT <= 2.5 s, head MemAvailable floor >= 13 GiB", last_pass_utc: "2026-10-20T02:43:40Z", run_id: 2026-10-19-sglang-ladder-r2 }
 limits:
+- "DSML TOOL-PARSER OVERLAY (2026-11-06). overlays/dsml-structural/deepseekv41_detector.py changes how tool-call arguments containing DSML closers parse (kept as text; stock truncated or dropped them). Intended side effects: a value whose parameter closer the model omitted before the invoke closer is now kept. Out of scope, unchanged: a call cut by max_tokens still streams unterminated JSON; a value holding a parameter closer + whitespace + a parameter head still reads as two arguments. Applied with docker cp into the kept containers, not by the launcher; lost on recreate. Kill switch SGLANG_DSV41_STRUCTURAL_DSML=0. See results/2026-11-06-dsml-structural-closers/README.md."
 - "Round 2 found no lever. Six boots, one change each vs knapcio's v2.4 block, KEEP bar +2% on any headline metric with no regression > 2%: nothing cleared it. C1 and C6 moved within a +-3% noise band (C1 agg 78.7-83.7, C6 249.9-261.6). The published config is the authors' block plus one robustness override."
 - "HAZARD - SKIP_PREPARE. Any env that un-sets SKIP_PREPARE=1 makes boot.py snapshot_download its hard-coded REVISION fb2764a5... INTO MODEL_DIR. On 2026-10-19 (~20:27 CDT boot) this overwrote shards on spark1; the copy was restored from spark5 (21:08-21:21) and re-verified 48/48. scripts/launch-sglang-tp4.sh aborts unless the rendered env has SKIP_PREPARE=1 and HF_REVISION=1bae0e10."
 - "state-tp4/launch.json records revision fb2764a5cf321eaa5070ca8f9e892818f477c16d. That is boot.py's hard-coded constant, not the mounted checkpoint; MODEL_DIR (1017, 1bae0e10) is what is mounted at /models/DeepSeek-V4.1-Flash."

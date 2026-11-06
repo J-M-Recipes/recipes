@@ -1,0 +1,28 @@
+cases=25 overlay=dsv41-structural-dsml-v1
+CHANGE N_omit_param_close_then_invoke_end:
+    stock   [('write_file', {'path': 'a.txt'})] content=None
+    patched [('write_file', {'path': 'a.txt', 'content': 'hello\n'})] content=None
+CHANGE N2_omit_param_close_then_invoke_end_eos:
+    stock   [('write_file', {'path': 'a.txt'})] content=None
+    patched [('write_file', {'path': 'a.txt', 'content': 'hello\n'})] content=None
+PRE-EXISTING O_truncated_mid_value stream1: truncated call streams invalid JSON in stock too
+PRE-EXISTING O_truncated_mid_value stream3: truncated call streams invalid JSON in stock too
+PRE-EXISTING O_truncated_mid_value stream7: truncated call streams invalid JSON in stock too
+PRE-EXISTING O_truncated_mid_value streamAll: truncated call streams invalid JSON in stock too
+PRE-EXISTING O2_truncated_after_literal_closer stream1: truncated call streams invalid JSON in stock too
+PRE-EXISTING O2_truncated_after_literal_closer stream3: truncated call streams invalid JSON in stock too
+PRE-EXISTING O2_truncated_after_literal_closer stream7: truncated call streams invalid JSON in stock too
+PRE-EXISTING O2_truncated_after_literal_closer streamAll: truncated call streams invalid JSON in stock too
+CHANGE O2_truncated_after_literal_closer:
+    stock   [('write_file', {'path': 'a.txt'})] content=None
+    patched [('write_file', {'path': 'a.txt'})] content=None
+CHANGE Q_ambiguous_value_holds_closer_plus_head:
+    stock   [('write_file', {'path': 'x.md', 'content': 'a', 'z': 'b'})] content=None
+    patched [('write_file', {'path': 'x.md', 'content': 'a', 'z': 'b'})] content=None
+CHANGE R_value_ends_with_literal_param_closer:
+    stock   [('write_file', {'path': 'x.md', 'content': 'the tag is '})] content=None
+    patched [('write_file', {'path': 'x.md', 'content': 'the tag is </｜DSML｜ parameter>'})] content=None
+CHANGE U2_json_body_holds_invoke_closer:
+    stock   [('write_file', {})] content=None
+    patched [('write_file', {})] content=None
+ALL GATES PASS

@@ -1,4 +1,4 @@
-# overlay-vllm — the two vLLM files `build` mounts over Garner's `overlay-58132`
+# overlay-vllm — the vLLM files `build` mounts over Garner's `overlay-58132`
 
 `launch-pg61.sh build` copies `docker/overlay-58132/vllm` out of Garner's tree into `$WORK/overlay-vllm`, then copies
 this directory on top of it, then sha1-gates both files (`WANT_GUMBEL`, `WANT_RSU` in the launcher). Two files ship:
@@ -28,3 +28,15 @@ files the launcher mounts.
 (`/usr/local/lib/python3.12/dist-packages/vllm/v1/worker/gpu/`), apply the two patches above with `patch -p1`, and
 compare sha1/sha256 against the table. **What is not claimed:** these files are ours to maintain only as a backport —
 when an image ships both PRs, the overlay should be dropped, not carried forward.
+
+## Added 2026-11-06: `parser/deepseek_v41.py` (structural DSML closers)
+
+| path | sha1 | sha256 |
+|---|---|---|
+| `parser/deepseek_v41.py` | `fd659140ede54170ca34440d968dee8cf1a4ea72` | `1c309d195e4346969f6b5b511e49f8e6d60e8d1023b1f93619f346cbcb4da3ba` |
+
+Not a backport: our tool-parser overlay that keeps a DSML closer inside a tool-argument value as text (idea from Hector
+Isaza's TensorFold patch 0052). Stock v0.31.0 file sha256 `9b5293f5…`; diff, gates and receipts in
+[`results/2026-11-06-dsml-structural-closers/`](../../../results/2026-11-06-dsml-structural-closers/README.md). `build` copies it like the other two, but the launcher's sha1
+gates (`WANT_GUMBEL`, `WANT_RSU`) do not cover it; `BUILD-SHA256SUMS` and the in-container sha256 check do.
+Kill switch `VLLM_DSV41_STRUCTURAL_DSML=0`. Drop it once upstream vLLM's V4.1 parser handles closers inside values.
