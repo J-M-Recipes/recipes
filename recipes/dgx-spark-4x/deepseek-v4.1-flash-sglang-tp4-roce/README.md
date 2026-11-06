@@ -71,6 +71,14 @@ The vLLM sibling runs on Sparks 5–8 through the same switch. A deliberate A/B 
 | Libraries | torch 2.13.0+cu130, flashinfer 0.6.18, NCCL 2.30.7, b12x_next `a7d7d29b` |
 | Instrument | `scripts/` — the shared two-lane tools (v41bench v1, prefill_reps, long_check, mixed_probe, qeval 75 tasks, gates, spec_by_cat) with box paths replaced by `BASE_URL` / env |
 
+### Tool-parser overlay: DSML closers inside arguments (2026-11-06)
+
+[`overlays/dsml-structural/deepseekv41_detector.py`](overlays/dsml-structural/deepseekv41_detector.py) (sha256 `7e7384dd…`) replaces `/sgl-workspace/sglang/python/sglang/srt/function_call/deepseekv41_detector.py`. With it, a tool argument
+that *contains* a DSML closer (`</｜DSML｜ parameter>`, `</｜DSML｜ invoke>`, `</｜DSML｜ calls>`) comes back
+intact; stock cut or dropped the argument. Kill switch
+`SGLANG_DSV41_STRUCTURAL_DSML=0`. Idea from Hector Isaza's TensorFold patch 0052. How it is applied, the 25-case offline gate,
+the live probe and the behaviour changes: [`results/2026-11-06-dsml-structural-closers/README.md`](results/2026-11-06-dsml-structural-closers/README.md).
+
 ## Launch
 
 On the head node, with passwordless ssh to the three workers and the checkpoint at `$HOME/models/DeepSeek-V4.1-Flash-1017`:
@@ -109,6 +117,11 @@ per-stream ≈ 96 ±3%, C6 ≈ 253–262, 93K reps median ≥ 5.8K, 300K needles
 Note: on every round-2 arm the on-box `gates.py` exited rc=1 at its `/metrics` read (HTTP 404 — this launch serves no
 `/metrics`) **before** writing its results, so the tool-call gate result was never recorded. The published copy makes
 `/metrics` optional; the gate has not been re-run (the lane is live).
+
+**Tool-parser overlay** (2026-11-06): `docker exec <server> sha256sum /sgl-workspace/sglang/python/sglang/srt/function_call/deepseekv41_detector.py` must read `7e7384dd…`;
+then `python3 results/2026-11-06-dsml-structural-closers/tests/live_probe.py http://<head>:8888/v1` must print `"ALL_PASS": true`.
+Offline, before touching a lane: `ENGINE=sglang IMAGE=dsv41-4x-spark:canary-roce-v25-vision PARSER_PATH=/sgl-workspace/sglang/python/sglang/srt/function_call/deepseekv41_detector.py MODEL_DIR=… OVERLAY=overlays/dsml-structural/deepseekv41_detector.py bash results/2026-11-06-dsml-structural-closers/tests/run_matrix.sh`
+must end `ALL GATES PASS`.
 
 ## Results
 
@@ -169,6 +182,8 @@ survives the stop, `docker stop dsv41-worker` on that node by name — the chain
 script (not published here). For the same model on other hardware, use the vLLM sibling (Sparks 5–8) or the GB300
 recipe.
 
+**Tool-parser overlay only:** `docker cp` the image's stock detector (sha256 `a6c5e25f…`) back into head + workers and do the ordered restart, or recreate the containers. No-file-change option: `SGLANG_DSV41_STRUCTURAL_DSML=0` in `EXTRA_CONTAINER_ENV` (reproduces stock exactly, gate G5).
+
 ## Credits
 
 - **knapcio** — [DeepSeek-V4.1-Flash-4x-DGX-Spark-TP4](https://github.com/knapcio/DeepSeek-V4.1-Flash-4x-DGX-Spark-TP4):
@@ -184,3 +199,9 @@ recipe.
 - **hushengkai** — the head-memory and short-request-starvation reports behind v2.4's chunk/fraction and prefill
   bypass ([MiaAI-Lab#44](https://github.com/MiaAI-Lab/DeepSeek-v4.1-Flash-DGX-Sparks/issues/44)).
 - SGLang `dsv4.1` branch authors (BBuf and contributors), and **DeepSeek** for the model and its in-checkpoint drafter.
+
+- **Hector Isaza** ([@hecisaza](https://github.com/hecisaza)), for TensorFold patch `0052` ([MiaAI-Lab PR
+  #49](https://github.com/MiaAI-Lab/DeepSeek-V4.1-Flash-1017-4x-DGX-Sparks-TensorFold/pull/49), for [issue #14](https://github.com/MiaAI-Lab/DeepSeek-V4.1-Flash-1017-4x-DGX-Sparks-TensorFold/issues/14) reported by **ecohash-co**) in
+  [MiaAI-Lab's TensorFold recipe](https://github.com/MiaAI-Lab/DeepSeek-V4.1-Flash-1017-4x-DGX-Sparks-TensorFold): a DSML closer inside a parameter value must not end the block. Our
+  `deepseekv41_detector.py` overlay applies the same idea to the SGLang parser; it is our own
+  code, not theirs ([`results/2026-11-06-dsml-structural-closers/README.md`](results/2026-11-06-dsml-structural-closers/README.md)).

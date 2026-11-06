@@ -17,7 +17,7 @@ status: verified
 owners:
 - jmeadlock
 - milo
-updated: '2026-10-23'
+updated: '2026-11-06'
 tags:
 - deepseek-v4.1-flash
 - deepseek-v4.1-flash-1017
@@ -81,6 +81,10 @@ runtime:
     tilelang: 0.1.15 @ b95ee4ff + patches (tree 222b895d)
     tile_kernels: deepseek-ai/TileKernels 2.0.0 @ 66258df6 + patches (tree cb2fa41c)
     b12x: local-inference-lab/b12x karmic-kraken-beta @ 236ddff0 + patches (tree 1a647a31; b12x loader)
+  patches:
+    - path: overlays/dsml-structural/vllm/parser/deepseek_v41.py
+      sha256: 1c309d195e4346969f6b5b511e49f8e6d60e8d1023b1f93619f346cbcb4da3ba
+      purpose: "2026-11-06. Structural-DSML tool-parser overlay (credit: Hector Isaza's TensorFold patch 0052, MiaAI-Lab PR #49 / issue #14): a DSML closer inside a tool-argument value is kept as text instead of ending the value or call; stock cut or dropped the argument and vLLM streamed unterminated JSON. Replaces /opt/spark3/candidate/vllm/vllm/parser/deepseek_v41.py (stock sha256 9b5293f5). Kill switch VLLM_DSV41_STRUCTURAL_DSML=0 == stock. Gates and receipts in results/2026-11-06-dsml-structural-closers/."
 launch:
   script: scripts/cluster.sh
   command: SPARK_HOSTS="spark5 spark6 spark7 spark8" bash scripts/cluster.sh push && SPARK_HOSTS="spark5 spark6 spark7 spark8" bash scripts/cluster.sh up
@@ -239,6 +243,7 @@ verification:
     quality: { how: "PASS on the adopted config 2026-10-23 - teacher-forced against per-token temp-0 baselines from the kept 8 GiB control container: 45 segments, 5,485 forced positions, p99 and max absolute delta logprob both 0.0, self-repeat exactly 0.0 on both sides, top-1 agreement 1.0, perplexity identical. Plus qeval 71/75 (same 4 misses as C0), 40-prompt greedy probe 40/40 byte-identical, 0 preemptions. Limit - teacher forcing does not exercise T>0 sampling under a different batch mix, and no public benchmark has been run by us.", last_pass_utc: "2026-10-23T11:10:26Z", run_id: 2026-10-23-adopted-l20-net }
     performance: { how: "scripts/run_battery.sh full on the adopted config: C1 per stream 105.21, C1 aggregate 93.89, C4 233.16, C6 291.75, mean TTFT C1 0.158 / C4 0.231 / C6 0.286 s, 93K cold prefill 5,338, warm-cache guest turn 2.147 s, warm boot 101 s. scripts/verify_launcher.py renders the launcher with a stub docker and diffs it against the live container - 80/80 args, 103/103 env pairs, 8 mounts, ranks 1 and 3 checked the same day", last_pass_utc: "2026-10-23T11:10:26Z", run_id: 2026-10-23-adopted-l20-net }
 limits:
+- "DSML TOOL-PARSER OVERLAY (2026-11-06). overlays/dsml-structural/vllm/parser/deepseek_v41.py changes how tool-call arguments containing DSML closers parse (kept as text; stock truncated or dropped them). Intended side effects: a value whose parameter closer the model omitted before the invoke closer is now kept. Out of scope, unchanged: a call cut by max_tokens still streams unterminated JSON; a value holding a parameter closer + whitespace + a parameter head still reads as two arguments. Applied with docker cp into the kept containers, not by the launcher; lost on recreate. Kill switch VLLM_DSV41_STRUCTURAL_DSML=0. See results/2026-11-06-dsml-structural-closers/README.md."
 - "Tuning found nothing. Round 2 (2026-10-20 01:14-02:12 UTC), one change per boot against a same-window control, keep bar +2% on any headline metric with no regression over 2%: C7ced (Owen's CED non-final-row skip overlay) +0.9% 93K, +1.6% 300K, +4.1% 131K single shot, outputs bit-identical - REVERT; Owen measured +10.6-11.1% on TP3, so the gain is shape-dependent. C8pp2 (--max-parallel-prefills 2) C4 -8.3%, C6 -10.8%, TTFT not improved - REVERT (C8pp2b not run). C9nvfp4 (NVFP4 draft head + Markov) C1 +1.7%, C6 -2.8% - REVERT. Round 1 (2026-10-19, nine arms, per the published post; receipts left on spark5, not mirrored) - NIC merge/cross-NIC, NCCL channels 4 to 8, NCCL buffers 4 to 16 MiB, KV 8.6 / 9.2 GiB, max-num-batched-tokens 16384, row cost 0.05 / 0.02 - all within about 2% or worse; a single-rail diagnostic cost 14% of 93K prefill."
 - "Cold JIT: the first boot on an empty $DS41F_DIR/cache took 351 s and read 7.7% lower 93K prefill than the same config rebooted warm (Round 1). Benchmark warm boots only; the 89-101 s figure assumes a populated cache."
 - "Mixed traffic, measured two ways. A guest turn over an already-cached 68K prefix (the shape the lane actually sees) is 2.147 s median on the adopted config, down from about 3.14 s. A short turn arriving behind a 413K COLD prefill is 1.196 s with late admission at layer 20 versus 1.885 s without, so the queue-jump works on this lane; the older ~3.0 s figure was measured behind a cold 93K prefill with parallel-prefills 1 and a 8096 chunk threshold, a different shape."
