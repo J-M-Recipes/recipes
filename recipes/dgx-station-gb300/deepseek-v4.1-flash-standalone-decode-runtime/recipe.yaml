@@ -1,0 +1,198 @@
+schema: jm-recipe/v1
+id: dgx-station-gb300/deepseek-v4.1-flash-standalone-decode-runtime
+title: DeepSeek-V4.1-Flash standalone decode runtime - one DGX Station GB300, no vLLM, no server
+summary: >
+  A research decode runtime, not an API server. It runs DeepSeek-V4.1-Flash-1017 (stock MXFP4 experts, FP8
+  attention and Engram, nothing re-quantized) on one DGX Station GB300 in a single Python process: DeepSeek's
+  reference model.py (unchanged) for prefill, an own CUDA-graph decode step built from borrowed kernels
+  (DeepGEMM, FlashMLA, Triton GEMV, fused glue), 301 hot experts per layer in HBM and the rest in pinned Grace memory read over
+  NVLink-C2C, the in-checkpoint DSpark drafter at k=5. One sequence at a time. Measured on 8 fixture prompts x 256
+  new tokens, greedy: 18.62 ms per 6-row step = 6.41 ms/token (156 tok/s, GPU time) in the headline cold column,
+  17.92 / 6.17 (162 tok/s) after the residency policy has warmed; time to first token 0.95 s on 31-54-token prompts.
+  The two-GPU production lane (Pg61) measured 7.66 ms per step / 2.55 ms per token wall-clock and about 30 ms to
+  first token on the same prompts - different hardware and a different clock, so not a like-for-like ratio. The
+  prefill is bit-equal to the reference prefill and 13 receipts from the 20.30 ms tree onward emit byte-identical
+  256-token streams, but the decode kernels are not DeepSeek's reference kernels (A3 class: 2/8 free-run streams
+  match production; 55 teacher-forced top-1 flips in 1,476 production tokens). Experimental - single stream,
+  greedy only, context past 310 positions not measured, no public quality benchmark run.
+status: experimental     # 2026-11-08. First recipe for this runtime. No gate beyond schema has a pass stamp; see verification and limits.
+owners: [jmeadlock, milo]
+updated: "2026-11-08"
+tags: [deepseek-v4.1-flash, mxfp4, standalone-runtime, dspark, speculative-decoding, cuda-graphs, uva-offload, single-gpu, single-sequence, gb300, research]
+
+model:
+  name: DeepSeek-V4.1-Flash-1017
+  repo: https://huggingface.co/deepseek-ai/DeepSeek-V4.1-Flash-1017
+  revision: 1bae0e1088993b9b82de08f59de5be5a34e42170
+  quantization: "as shipped - routed experts MXFP4 (I8 + E8M0 block scales), Engram and attention FP8, nothing re-quantized. The loader widens 7 bf16 tensors to fp32 (head.weight and the ratio-2 compressor wkv/wgate of layers 2, 8, 14), dequantizes wo_a to bf16 (40 layers + 3 MTP), and may re-layout weights in memory (values bit-identical to the checkpoint). Checkpoint 96,085 tensors / 475.24 GiB (docs/checkpoint-1017-inventory.json); config.json sha256 8be45ce0476004a3f529fd896115a4a2e800a129ad2d3ec05b16050f52e21879 (from the receipt)."
+  params: "552B backbone (MoE, 384 routed + 1 shared expert, 6 active; 8B activated per token in prefill / 16B in decode) + 196B Engram - model-card figures as carried in the sibling recipes, not re-derived here"
+  draft:
+    repo: in-checkpoint (mtp.0-2.* tensors, 2,395 tensors, 7.543 GiB in HBM)
+    revision: 1bae0e1088993b9b82de08f59de5be5a34e42170
+    method: "DSpark, 3 stages, block 5 = k=5 drafts, 6-row verify, greedy exact-match acceptance (first mismatch stops), confidence head off, draft temperature 0"
+
+hardware:
+  profile: hardware/dgx-station-gb300.yaml
+  nominal: { gpu_memory_gb: 288, host_memory_gb: 496 }
+  observed:
+    gpu: NVIDIA GB300
+    driver: "595.99.02"
+    cuda: "13.0 (container; torch 2.13.0+cu130)"
+    gpu_memory_visible_gib: 249.8
+    os: "not recorded by the decode runtime's receipts"
+    kernel: "not recorded by the decode runtime's receipts"
+    snapshot: results/2026-11-08-v1-recipe/system.json
+  required_settings:
+    - "Checkpoint on local NVMe, mounted read-only at /ref. The runtime reads 207.6 GiB into HBM and 259.4 GiB into pinned Grace memory at boot (host read 24.0 s, HBM load 21.1 s, total boot 62.7 s in the headline receipt); it refuses to start unless MemAvailable covers the pinned allocation plus a 16 GiB reserve (448.8 GiB was available before the host allocation in the receipt)."
+    - "docker run needs --ulimit memlock=-1:-1 and --cap-add IPC_LOCK (the Grace tier is cudaHostRegister'd), --ipc=host, and the GB300 passed by CDI name; index 0 on this box is a display GPU."
+    - "The GB300 must be free of other work: the runtime sizes itself to 249.8 GiB of HBM and ends the build with 2.72 GiB free. On the reference box a flock lease (bench/box/lease.sh) serialises runs."
+
+runtime:
+  engine: gb300-dsv41-decode (standalone research runtime, Python host + CUDA graphs; vLLM is never imported)
+  engine_version: "unreleased (no tag); ed6582e = merge m4-p2, 2026-11-08 09:57 CST"
+  engine_commit: ed6582e051b9b743f1a68b88750c627d2a63ca03
+  container:
+    image: vllm/vllm-openai:v0.31.0
+    digest: sha256:c1c9f6fd5c109ba7f0546a59f5b2f15fb87f64c77782e90a27b648b42a8e67c3
+    base_image: "Stock pullable vllm/vllm-openai:v0.31.0, nothing built, used only as the CUDA / torch / TileLang / DeepGEMM / FlashMLA / Triton library image (entrypoint overridden to python3). The digest is the one the sibling Kimi-K3 recipe records for this tag ('repo digest == image id on the reference box'); the decode runtime's own receipts record the library versions, not the image digest, and this write-up did not re-pull the image. The runtime itself is not baked in: the repo checkout at engine_commit is bind-mounted at /work, with the receipt/tune-cache directory at /work/scratch and per-tool JIT caches at /root/.tilelang, /root/.triton, /root/.nv, /root/.deep_gemm. Nothing is mounted over the image's own packages."
+  key_libraries:
+    torch: 2.13.0+cu130
+    triton: 3.7.1
+    cuda: "13.0"
+    python: 3.12.3 aarch64
+    tilelang: "0.1.12 (the reference's pin; docs/ENVIRONMENT.md, verified 2026-11-06)"
+    cutlass_dsl: "4.7.1 (docs/ENVIRONMENT.md)"
+    flashinfer: "0.7.0.post1 (donor, docs/ENVIRONMENT.md)"
+    deep_gemm: "2.8.0 Python wrappers from the image's vllm/third_party tree (VENDORED.md); the repo records its pin as DeepGEMM 88965b078186ee7510ab9fc4f1d5ebc19adfa8d1"
+    transformers: "5.17.0 / tokenizers 0.23.2 (tokenizer only; docs/ENVIRONMENT.md)"
+    reference_model_py: "DeepSeek inference/model.py from the checkpoint, MIT, vendored unchanged (the runtime patches around it at call time)"
+  patches: []
+
+launch:
+  script: scripts/launch-headline.sh
+  command: "MODEL_DIR=/models/DeepSeek-V4.1-Flash-1017-1bae0e1088993b9b82de08f59de5be5a34e42170 WORK=$HOME/gb300-dsv41-decode GPU=<GB300 CDI name> bash scripts/launch-headline.sh   # WORK = git checkout at ed6582e; receipt lands in $WORK/scratch/headline.json"
+  health: "There is no server. A good run exits 0, prints no errors, and its JSON has errors == [], streams.exact == 8 of 8 (emitted stream equals the runtime's own 1-row greedy), replay_ok == 8 (self-replay byte-identical), overflow.steps == 0. The launcher refuses a WORK checkout, checkpoint config.json or image that does not match the pins above unless an ALLOW_* override is set."
+  warmup: "Boot ~61-63 s (receipts 62.7 / 60.55 s), then CUDA-graph warmup+capture ~2.4 s. A cold JIT cache (TileLang, Triton, DeepGEMM) adds compile time that no receipt measured; the first GEMV tune is timed on the box and persisted to DSV41_GEMV_CACHE. A whole headline run took 578 s (two-column), 564 s, 353 s in the three receipts."
+  notable_flags:
+    - "--moe-impl dg-inplace --fp8-impl gemv --glue-impl fused --attn-impl flashmla --fp32-impl fixed --moe-rowmatch on - the decode kernel set (DeepGEMM fp8xfp4 grouped GEMM straight over the expert pool in a 16-row-aligned contiguous layout, Triton MXFP8 split-K GEMV, fused glue clusters, FlashMLA sparse prefill op on the bf16 caches, fixed-order fp32 for the head and mHC mixes, 16-row-aligned expert layout)."
+    - "--spare-slots 16 --residency-drain 64 - 16 spare expert slots per layer for cold-expert staging; the residency manager promotes hot experts between steps (pool-spare 20 is the headline default with residency on)."
+    - "Hot map docs/maps/hot-v26ar-seed-301.json - 301 hot experts per layer in HBM, 83 cold in pinned Grace; the map is the sibling recipe's seeded v26ar map (295) plus the 6 next-most-routed experts per layer from that campaign's router counts (sha256 4b68d8316697a77a3b98d4bc4077e4756dbba477b12b3df2866a92ddacb64ac6). The 304-hot map measured 18.56 ms and left 1.71 GiB free; it stays opt-in."
+    - "DSV41_POOL_SF=beside (default) - expert-pool scale factors slot-parallel with the weights, no hot-SF re-copy per layer-call, 5.18 GiB HBM freed versus the earlier pooled layout."
+    - "DSV41_STAGE=kernel-overlap (default), NPROG 48,16,16 and BLOCK 8192,32768,32768 - cold experts staged over C2C by a kernel on a forked capture stream, joined before each projection."
+    - "Row-conditional defaults: at R=1 the mHC mixes fork and fused q/kv tail are on; at R=6 they are off (they cost +0.35 and +1.5 ms there)."
+    - "DSV41_PREFILL=grouped DSV41_PREFILL_STREAMS=4 (defaults since ed6582e) - reference fp4_gemm per expert with the surrounding work grouped, fills off, 4 CUDA streams; bit-equal to the reference prefill on 8/8 prompts."
+    - "Per-step completion poll, lookahead 1, tail sync near max_new (defaults since LOOP-OVERRUN): 8 overrun steps over the fixture instead of 97."
+    - "DSV41_GEMV_PIN_M1=1 is set by the 6-row loop (the receipt's env_switches); DSV41_GEMV_CACHE=/work/scratch/gemv-tune.json persists the timed GEMV config choice. CUBLAS_WORKSPACE_CONFIG=:4096:8 and torch deterministic algorithms are on."
+    - "VARIANT steady-state pass - the same cell re-run after the headline cells with residency state carried over (default on; --no-steady-state skips it, saves ~3-4 minutes)."
+    - "VARIANT reference prefill - DSV41_PREFILL=reference reproduces the TTFT 3.9 s receipts (headline-20261108-main-ss.json, headline-20261108-main-ov2.json)."
+
+metrics:
+  - name: decode, headline (cold) column - GPU ms per emitted token
+    value: 6.415
+    unit: ms/token
+    workload: "single sequence (no batching), greedy, DSpark k=5 6-row step, 8 fixture prompts (42/47/54/38/34/49/46/31 prompt tokens: prose, code, math, json, shell, tool, long, story) x 256 new tokens, steps >= 32 of each sequence, residency policy cold at the start of the cell, one GB300"
+    aggregation: "total GPU ms / total emitted tokens = 10,392.2 ms / 1,620 tokens (CUDA events, fast reps pooled over prompts). The same cell on other tree states read 6.398 and 6.414. GPU time, not wall: the all-steps decode wall time of the 6.398 run is 6.166 ms/token including 8 overrun steps"
+    acceptance_len: 2.9032
+    label: "GPU time, headline cold column, reference prefill in this run; fixture mean (per-prompt tokens/step 2.11-5.00)"
+    provenance: { run_id: 2026-11-08-v1-recipe, method: "bench/headline.py (CUDA events around the verify and draft graphs); column definition raw/HEADLINE-COLUMNS.md", raw: raw/headline-20261108-main-ss.json }
+  - name: decode, headline (cold) column - ms per 6-row step
+    value: 18.624
+    unit: ms/step
+    workload: "same cell as the headline ms/token row: verify graph 15.716 + draft graph 2.908 ms"
+    aggregation: "mean over 558 live steps (p50 18.155, p90 19.584); the same cell on other tree states read 18.576 and 18.620"
+    acceptance_len: 2.9032
+    provenance: { run_id: 2026-11-08-v1-recipe, method: "bench/headline.py headline.two_graphs.ms_per_step", raw: raw/headline-20261108-main-ss.json }
+  - name: decode, steady-state column - GPU ms per emitted token
+    value: 6.172
+    unit: ms/token
+    workload: "the same cell run again on the same 8 prompts with the residency state carried over from the headline cells (2,686 manager steps before the pass); 17.919 ms/step, cold-expert share 1.55 % versus 4.83 % in the headline column"
+    aggregation: "total GPU ms / total emitted tokens = 9,998.7 / 1,620; a second pass of one run, not an independent run; other tree state read 6.174"
+    acceptance_len: 2.9032
+    label: "warmed residency; never quote where the cold headline belongs"
+    provenance: { run_id: 2026-11-08-v1-recipe, method: "bench/headline.py steady_state block", raw: raw/headline-20261108-main-ss.json }
+  - name: decode, wall clock per token incl. end-of-sequence overrun (all steps)
+    value: 6.166
+    unit: ms/token
+    workload: "same fixture, per-step poll schedule; excl. overrun 6.109, GPU 6.086, host gap 0.024 ms/token; 8 overrun steps over the fixture (max 1 per prompt) versus 97 with the old every-8-steps poll"
+    aggregation: "total decode wall / total decoded tokens (tokens after the first), pooled over fast reps and all steps including the first 32 of each sequence, so it is not the same pool as the headline row"
+    provenance: { run_id: 2026-11-08-v1-recipe, method: "bench/headline.py headline.decode_wall; poll cost in raw/poll-probe-20261108.log", raw: raw/headline-20261108-main-ov2.json }
+  - name: time to first token, grouped prefill, 4 streams (serving default)
+    value: 949.2
+    unit: ms
+    workload: "8 fixture prompts of 31-54 tokens (prefill + first draft), mean over prompts, 3 reps; reference prefill 4,345.4 ms on the same prompts; streams 1 / 8 read 999.2 / 969.7 ms"
+    aggregation: "mean over 8 prompts of the per-prompt median of 3 reps, benchmark run with --kineto"
+    label: "prompts of 31-54 tokens only; no longer prompt has a prefill measurement"
+    provenance: { run_id: 2026-11-08-v1-recipe, method: "bench/prefill_bench.py run --streams 1,4,8 --reps 3 --kineto; equal-to-reference check per prompt", raw: raw/prefill-bench-m4p2-20261108.json }
+  - name: prefill_ms mean inside the headline run with grouped prefill
+    value: 786.9
+    unit: ms
+    workload: "headline cell with DSV41_PREFILL=grouped (8 prompts, fast reps); decode columns of that run 18.620 ms/step, 6.414 ms/token, streams 8/8, replay 8/8"
+    aggregation: "mean of prefill_ms over 8 prompts x fast reps; the receipt does not explain why this is lower than the 942.9 ms of the dedicated prefill benchmark (that run used --kineto)"
+    label: "grouped prefill measured inside the headline run, before the per-step poll change was merged into this tree"
+    provenance: { run_id: 2026-11-08-v1-recipe, method: "bench/headline.py headline.prefill_ms_mean", raw: raw/headline-m4p2-20261108.json }
+  - name: 1-row decode step (single-row graph, no speculation)
+    value: 9.76
+    unit: ms/step
+    workload: "first_light step cell on the 295-hot map (not the 301 map), steps 32..512, small-wins defaults at R=1 (mixes fork + fused q/kv tail), SF beside; 102.43 tok/s"
+    aggregation: "mean of CUDA-event step times; p50 9.75, p90 10.00"
+    provenance: { run_id: 2026-11-08-v1-recipe, method: "bench/first_light.py step cell", raw: raw/fl-s3-beside-20261108.log }
+  - name: teacher-forced top-1 flips versus the production Pg61 lane (1,476 Pg61 tokens)
+    value: 55
+    unit: flips of 1476 positions
+    workload: "this runtime teacher-forced on the production lane's own 8 x 256-token greedy streams; margin-weighted 28.125, max |dlogprob| 2.685; measured on the 11/07 night tree (M3-N1 base arm), before staging overlap, SF beside, hot-301 and grouped prefill, which each reproduced their predecessor's streams byte for byte"
+    aggregation: single run
+    label: "distance to production, not to a reference build; no production floor measured in this arm"
+    provenance: { run_id: 2026-11-08-v1-recipe, method: "bench/dg_mega_numerics.py downstream arm 'base'", raw: raw/m3n1-downstream-20261107.json }
+  - name: HBM free after build (headroom)
+    value: 2.721
+    unit: GiB
+    workload: "249.814 GiB total as torch reports it, 245.925 allocated; hot-301 map, pool-spare 20, 16 spare slots, 6 rows, KV planned for 32,768 positions (0.838 GiB)"
+    aggregation: single boot
+    provenance: { run_id: 2026-11-08-v1-recipe, method: "bench/headline.py hbm_after_build_GiB", raw: raw/headline-20261108-main-ss.json }
+  - name: reference lane Pg61 (two GPUs) - decode wall ms per token, same 8 prompts
+    value: 2.553
+    unit: ms/token
+    workload: "production Pg61 lane (Garner engine + our patches; 255 hot experts per layer on the GB300, 129 cold computed on the RTX PRO 6000 sidecar), streamed, 24 timing passes, outputs equal to the fixture 8/8; 7.662 ms per engine step (wall / steps), 2.968 tokens/step, TTFT 20-34 ms"
+    aggregation: "decode wall / decoded tokens, wall-clock from SSE arrivals; NOT GPU events and not this runtime"
+    label: "comparison row for a different lane on different hardware; do not divide it into the rows above without saying so"
+    provenance: { run_id: 2026-11-08-v1-recipe, method: "bench/box/pg61-matched.sh; derivation in raw/GAP-LEDGER-20261108.md", raw: raw/pg61-drive-matched-20261108.json }
+
+verification:
+  gates:
+    schema:      { how: "scripts/check_recipe.py recipes/dgx-station-gb300/deepseek-v4.1-flash-standalone-decode-runtime/recipe.yaml passes (repo venv, 2026-11-08); pytest tests 284 passed", last_pass_utc: "2026-11-08T16:51:03Z", run_id: 2026-11-08-v1-recipe }
+    digest:      { how: "NOT RUN for this write-up. Needed: (1) the image digest re-read on the box (this recipe borrows sha256:c1c9f6fd... from the Kimi-K3 recipe), (2) checkpoint byte-verify against the Hub listing at 1bae0e10 (the repo's T2 boot verified 93,338/93,338 loaded tensors on 2026-11-06; no Hub comparison in these receipts), (3) a receipt that carries the git commit (all three headline receipts have git_commit null because the container has no git)." }
+    health:      { how: "Per run: errors == [], streams.exact 8/8, replay_ok 8, overflow.steps 0 - true in all three headline receipts (raw/headline-20261108-main-ss.json, headline-20261108-main-ov2.json, headline-m4p2-20261108.json). Not stamped: no run through scripts/launch-headline.sh exists." }
+    quality:     { how: "NOT RUN as a gate. Evidence on file: prefill bit-equal to the reference prefill 8/8; 256-token streams equal to the runtime's own 1-row greedy 8/8 and byte-identical across tree states 8/8 (tokens_sha256); free-run versus production 2/8 identical; 55 teacher-forced flips / 1,476 tokens versus production. Not run: tool-call gate, BFCL, GSM8K, needle, teacher-forced bracket against the reference kernels, any temperature > 0 check." }
+    performance: { how: "NOT STAMPED. The repo's bar is below 7.36 ms per 6-row step (restated 2026-11-07); the runtime reads 18.62 and does not meet it. No T1/T2 llm-inference-bench cells, no concurrency, no long-context cell." }
+
+limits:
+  - "Not a server and not a drop-in lane: no HTTP API, no tokenizer front end, no chat template handling, no scheduler. One sequence at a time (the 6 rows are one sequence's k=5 drafts plus the verified token). Concurrency, batching and the C32 case are declared non-goals of the runtime; there is no C2+ measurement to quote."
+  - "Greedy only. The loop accepts a draft only on exact argmax match; sampling, probabilistic drafting, top-p/top-k and temperature > 0 are not implemented and nothing above 0 was tested."
+  - "Context: every receipt uses prompts of 31-54 tokens plus 256 new tokens, so at most 310 positions were exercised. The loop's configured cap is max_pos 4,095 (draft ring 32,767); nothing between 311 and 4,095 was measured and nothing longer exists. The 32K arm is proposed in docs/SUNDAY-20261108.md, not run. Prefill speed is measured only for those 31-54-token prompts; it has not been run on a long prompt."
+  - "Fixture-bound numbers. Eight prompts, 1,620 window tokens; two of the eight (json 18 tokens, tool 21 tokens) end in 4 steps and never enter the >= 32-step window, so the mean 2.90 tokens/step is carried by six prompts (2.11 story to 4.40 math per prompt). The hot map was fitted to the router counts of the sibling lane's October adaptive-residency campaign, so the fixture's cold-expert share (4.83 % cold column, 1.55 % warmed) is an out-of-sample reading; other traffic will stage more or fewer cold experts per step."
+  - "BIT-IDENTITY SCOPE (read before quoting 'bit-identical'). What the receipts show: (a) the grouped prefill equals the reference prefill on first token, logits, main_hidden, every cache and replay, 8/8 prompts; (b) the 8 emitted 256-token streams (tokens_sha256) of 13 headline receipts, from the 20.30 ms tree of 2026-11-07 15:52 through residency, staging overlap, SF layouts, the 301 map, the declined PDL / mixes / q-kv-tail arms and the extra-slot arms, are equal to the final headline's, 8/8 (results/2026-11-08-v1-recipe/throughput.csv); the 8-spare-slot arm that overflowed is the one receipt that differs (7/8); (c) the 6-row verify step equals the 1-row step bit for bit on 8/8 prompts and self-replay is byte-identical 8/8. Rungs before the 20.30 tree (DeepGEMM, FlashMLA, GEMV, fixed-order fp32, the compressor change) did move streams; the receipts for them are not in this bundle but in the repo's docs/LEDGER.md (raw/LEDGER.md). What they do NOT show: equality with DeepSeek's reference kernels in the decode step. DeepGEMM replaces the reference fp4_gemm (dg-masked versus reference drift 0.0004-0.057 nats), FlashMLA's sparse prefill op replaces the reference sparse_attn (0.0006-0.016 nats against the bit-identical path), the Triton GEMV replaces the reference fp8 GEMM (single elements to 6 ulp at M=6), and fixed-order fp32 replaces cuBLAS for the head and mHC mixes. The repo calls this the A3 class (parity by flip count, not byte identity)."
+  - "Distance to production: free-run on the 8 fixture prompts matches the production Pg61 lane on 2 of 8 streams (json, tool); the others diverge at near-ties (first divergence at positions 1-149). Teacher-forced on Pg61's 1,476 tokens: 55 top-1 flips (margin-weighted 28.125), max |dlogprob| 2.685, measured on the 11/07 night tree; Pg61 versus its own rerun is 7/8 identical in free-run (a free-run floor; no teacher-forced production floor was measured). Four layers of DeepGEMM MegaMoE added 49-58 flips on top and were declined for that reason (raw/M2-L3-NUMERICS.md). No tool-call, BFCL, GSM8K, needle or reference-kernel teacher-forced gate was run on this runtime."
+  - "Comparison with production is two numbers on two bases. Pg61: 7.662 ms/step and 2.553 ms/token are wall-clock and use a second GPU (129 of 384 experts per layer computed on the RTX PRO 6000; the GB300 waits 0.02 ms/step for them). This runtime: 18.62 ms/step and 6.41 ms/token are GPU time on one GPU; its wall-clock all-steps number is 6.17 ms/token. Same-basis ratio (wall): about 2.4x slower per token. Time to first token: about 0.95 s here versus 20-34 ms streamed on Pg61. The repo's bar (below 7.36 ms per 6-row step) is not met; the original 5.0 ms bar is also in the receipts' bar_ms_per_step field and is stale."
+  - "Three receipts, three tree states, no single run of the published launch. Headline cold/steady (18.62 / 17.92) is from main at 07:04 CST (old poll schedule, reference prefill); the per-step poll numbers are from main at 09:14 CST (reference prefill); the grouped-prefill headline is from the m4-p2 branch worktree at 09:45 CST (old poll schedule); ed6582e (09:57) merges both. The GPU columns are the same path in all three (18.62 / 18.58 / 18.62 ms), and tokens_sha256 is equal 8/8 across them, but TTFT 0.95 s with the per-step poll was not measured in one run. The receipts carry git_commit null (no git in the container); the commit pin is from the repo history and the box script bench/box/m4p2.sh."
+  - "Two prefill numbers: 942.9 ms (dedicated benchmark, --kineto, 3 reps) versus 786.9 ms (inside the headline run). The receipts do not explain the gap; TTFT 0.95 s is the conservative one."
+  - "Failure mode: cold experts beyond the 16 spare slots overflow. The device counts overflow and the receipt reports it (0 on every run quoted here); an arm that deliberately used 8 spare slots overflowed on 13 steps / 25 experts and produced wrong streams (7/8 exact, 6/8 self-replay; raw/headline-s2-D-20261108.json, marked INVALID in the ledger). No receipt shows the runtime stopping on overflow, so check overflow.steps == 0 in every receipt you keep; a long-context or off-distribution workload may need more spare slots than the 16 measured."
+  - "Memory margin is thin: 2.72 GiB of HBM free after build (hot-304 left 1.71 GiB, under the 2 GiB headroom the staging setup wants), and about 260 GiB of Grace memory pinned. Raising max_pos or the hot-expert count needs the HBM that SF-beside freed to be spent differently."
+  - "GEMV tuning is timed on the box and the chosen config persisted in DSV41_GEMV_CACHE; configs with a different split-K partition can differ by an ulp. The receipts record the cache path, not its contents or hash, so a fresh tune on another box is not proven to land on the same numerics. docs/gemv-tune-gb300-20261106.json exists in the repo but is not shown to be the file these runs used."
+  - "scripts/launch-headline.sh and scripts/rollback.sh were written from the repo's box scripts (bench/box/m4p2.sh and docs/A2-2-BOX-PLAN.md) and checked with bash -n and a stub-docker render of the argv only; no container was started from them. JIT cold-compile time and the first-run GEMV tune time are unmeasured."
+  - "Declined or null rungs, each with its receipt in raw/: PDL integrated (0 gain, +0.33 with prefetch; eager cache hazard in the GPU test), mixes fork at 6 rows +0.35, fused q/kv tail at 6 rows +1.5 (then +0.15 after a fix, parked), GEMV v3 +0.16 at 1 row and a different stream (A3), MegaMoE (numerics), more residency slots (18.77 and 18.74 against 18.74)."
+  - "Ladder of adopted rungs (headline cell GPU ms/step, residency off then on): 20.30 -> 19.93 (residency) -> 19.34 (staging overlap) -> 19.06 (partial SF pool, pool-spare 20) -> 18.74 (SF beside) -> 18.62 (hot-301). Rungs are single headline runs on the 11/07-11/08 trees; run-to-run floor on this cell is about 0.04 ms (18.576 / 18.620 / 18.624 for the same path)."
+  - "The Station is the decode project's dev box, not a serving lane. Production DSV4.1 has run on Sparks 1-4 since the 2026-11-06 cutover; the former Station lane (Pg61) is stopped-and-kept."
+
+rollback:
+  script: scripts/rollback.sh
+  summary: "Nothing replaced a serving lane, so there is nothing to restore here: bash scripts/rollback.sh [--dry-run] stops the headline container (the run is --rm) and prints how to bring the former Station lane back (sibling sidecar recipe, scripts/launch-pg61.sh up, plus the repo's CUTOVER.md rollback) - on James's say-so only. Dry-run and bash -n only; not run against a live container."
+
+links:
+  blog: https://al-engr.com/gb300-dsv41-decode.html
+  repo: https://github.com/jmeadlock/gb300-dsv41-decode
+  repo_commit: https://github.com/jmeadlock/gb300-dsv41-decode/commit/ed6582e051b9b743f1a68b88750c627d2a63ca03
+  project_charter: https://github.com/jmeadlock/gb300-dsv41-decode/blob/ed6582e051b9b743f1a68b88750c627d2a63ca03/PROJECT.md
+  ledger: https://github.com/jmeadlock/gb300-dsv41-decode/blob/ed6582e051b9b743f1a68b88750c627d2a63ca03/docs/LEDGER.md
+  sibling_recipe: recipes/dgx-station-gb300/deepseek-v4.1-flash-vllm-uva-dspark
+  sibling_recipe_sidecar: recipes/dgx-station-gb300/deepseek-v4.1-flash-vllm-uva-dspark-sidecar
+  garner_engine: https://github.com/garnermccloud/dgx-station-recipes/tree/8043a6811a5feda70fdfb6e827eebb2ec25c65d1

@@ -1,0 +1,90 @@
+<!doctype html>
+<html><head><meta charset="utf-8">
+<style>
+  html,body{margin:0;background:#0b0f14;}
+  .card{width:1200px;box-sizing:border-box;padding:36px 44px;background:linear-gradient(160deg,#0b0f14 0%,#0f1620 100%);color:#e6edf3;font-family:Inter,-apple-system,Segoe UI,Helvetica,Arial,sans-serif;border:1px solid #1e2a38;border-radius:14px;}
+  .mono{font-family:"JetBrains Mono",SFMono-Regular,Menlo,Consolas,monospace;}
+  .top{display:flex;justify-content:space-between;align-items:flex-start;}
+  h1{margin:0;font-size:38px;font-weight:800;letter-spacing:-0.5px;}
+  .sub{margin-top:6px;font-size:15px;color:#9fb0c3;}
+  .brand{text-align:right;font-size:13px;color:#9fb0c3;line-height:1.5;white-space:nowrap}
+  .brand b{color:#6ee7b7;font-size:16px;letter-spacing:1px}
+  .pills{display:flex;flex-wrap:wrap;gap:8px;margin:18px 0 22px}
+  .pill{border:1px solid #2a3a4d;background:#111a25;border-radius:999px;padding:6px 12px;font-size:13px;color:#cfd9e4}
+  .pill b{color:#fff;font-weight:600}
+  .pill.type{border-color:#6ee7b7;color:#6ee7b7}
+  .grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px}
+  .box{background:#111a25;border:1px solid #1e2a38;border-radius:10px;padding:16px 18px}
+  .lbl{font-size:11px;letter-spacing:1.6px;text-transform:uppercase;color:#7f93a8;margin-bottom:6px}
+  .hero{font-size:56px;font-weight:800;line-height:1;color:#fff}
+  .hero small{font-size:18px;font-weight:500;color:#9fb0c3;margin-left:6px}
+  .note{font-size:12px;color:#9fb0c3;margin-top:8px;line-height:1.4}
+  .row2{display:grid;grid-template-columns:1.2fr 1fr 1fr;gap:14px;margin-top:14px}
+  .kv{font-size:14px;line-height:1.75}
+  .kv b{color:#fff;font-weight:600}
+  .acc span{display:inline-block;margin-right:12px}
+  .fid{margin-top:14px;background:#0e1a17;border:1px solid #1f4d3d;border-radius:10px;padding:16px 18px}
+  .fid .lbl{color:#6ee7b7}
+  .fid ul{margin:0;padding-left:0;list-style:none;display:grid;grid-template-columns:1fr 1fr;gap:6px 24px;font-size:14px;line-height:1.5}
+  .ok::before{content:"✓ ";color:#6ee7b7;font-weight:700}
+  .pend::before{content:"◌ ";color:#f59e0b;font-weight:700}
+  .pend{color:#d9c58a}
+  .meas::before{content:"≈ ";color:#93c5fd;font-weight:700}
+  .fail::before{content:"✗ ";color:#f87171;font-weight:700}
+  .fail{color:#fca5a5}
+  .pend-inline{color:#f59e0b;font-size:0.6em;font-weight:600;letter-spacing:1px}
+  .foot{display:flex;justify-content:space-between;margin-top:18px;font-size:12px;color:#7f93a8}
+  .foot .mono{color:#9fb0c3}
+  .fid li.pair { list-style: none; margin: 6px 0 2px -18px; padding: 10px 12px; border: 1px solid rgba(255,255,255,.14); border-radius: 8px; background: rgba(255,255,255,.04); }
+  .fid li.pair .big { font-size: 20px; font-weight: 700; color: #e8f0ff; letter-spacing: -.2px; }
+  .fid li.pair .sep { color: rgba(255,255,255,.35); margin: 0 6px; }
+  .fid li.pair .dim { font-size: 11.5px; color: rgba(255,255,255,.62); }
+</style></head><body>
+<div class="card">
+  <div class="top">
+    <div>
+      <h1>DeepSeek-V4.1-Flash · standalone decode runtime · 1× DGX Station GB300</h1>
+      <div class="sub">No vLLM, one sequence, greedy — DeepSeek&#x27;s reference prefill plus an own CUDA-graph decode step, 301 hot experts per layer in HBM and the rest read from Grace over NVLink-C2C, in-checkpoint DSpark k=5. A research runtime, not a server</div>
+    </div>
+    <div class="brand"><b>J-M-RECIPES</b><br>v1 · 2026-11-08 · repo ed6582e · 2026-11-08<br>status: experimental</div>
+  </div>
+  <div class="pills">
+<span class="pill type"><b>MoE</b> · 384 routed + 1 shared expert, 6 active, plus Engram · 301 hot experts per layer in HBM, 83 cold in pinned Grace</span>
+<span class="pill"><b>552B</b> total · <b>8B prefill / 16B decode</b> active</span>
+<span class="pill">checkpoint <b>510.3 GB</b> · rev <span class="mono">1bae0e10</span></span>
+<span class="pill">weights <b>as shipped · MXFP4 experts / FP8 attn+Engram · nothing re-quantized</b></span>
+<span class="pill">engine <b>gb300-dsv41-decode (standalone research runtime, Python host + CUDA graphs; vLLM is never imported) <span class="mono">ed6582e051b9b743f1a68b88750c627d2a63ca03</span> · gb300-dsv41-decode @ ed6582e · vllm-openai v0.31.0 as a library image only (vLLM never imported) · torch 2.13.0+cu130 · DeepGEMM / FlashMLA / TileLang / Triton</b></span>
+<span class="pill">memory <b>207.6 GiB read into HBM (hot experts + dense) + 259.4 GiB pinned in Grace (cold experts + Engram) · 2.72 GiB HBM free after build · 1 sequence</b></span>
+  </div>
+  <div class="grid">
+<div class="box"><div class="lbl">Decode · C1 headline (cold column) (mixed 8-prompt fixture, greedy, GPU time)</div><div class="hero">156<small>tok/s</small></div><div class="note">6.41 ms/token · 18.62 ms per 6-row step · steady state 162 tok/s (6.17 ms) · wall clock incl. end-of-sequence overrun 6.17 ms/token · per prompt 2.1–5.0 tok/step · Pg61 production (2 GPUs, wall clock, same prompts) 2.55 ms/token = 392 tok/s — different basis, not a ratio</div></div>
+<div class="box"><div class="lbl">Concurrency</div><div class="hero">n/a<small></small></div><div class="note">single sequence by design — no batching, scheduler or C2+ measurement</div></div>
+<div class="box"><div class="lbl">Prefill · TTFT, 31–54-token prompts</div><div class="hero">0.95<small>s</small></div><div class="note">grouped prefill, 4 streams, bit-equal to the reference prefill (was 3.9 s) · 820 ms in-run at the shipped tree, 943 ms under the profiler, 787 ms inside the headline run · longer prompts not measured · Pg61 first chunk 20–34 ms</div></div>
+  </div>
+  <div class="row2">
+<div class="box"><div class="lbl">Guesser</div><div class="kv"><b>DSpark</b> · in-checkpoint MTP head (mtp.0–2), 3 stages, 7.5 GiB in HBM<br>k = 5 drafts → 6-row verify, greedy exact match (first mismatch stops), confidence head off, one sequence<br><span class="acc">accept: <span>fixture mean (window ≥ 32 steps) <b>2.90 tok/step</b></span> <span>prose / story <b>2.49 / 2.11</b></span> <span>code / math <b>4.19 / 4.40</b></span> <span>shell / long <b>3.67 / 2.63</b></span> <span>json / tool (4 steps each) <b>4.50 / 5.00</b></span></span></div></div>
+<div class="box"><div class="lbl">Ladder — headline ms/step, streams byte-equal rung to rung (2026-11-07 → 11-08)</div><div class="kv">6-row step == 1-row step (T9b-8): <b>20.30</b><br>+ residency manager: <b>19.93</b><br>+ staging overlap (C2C → spare slots): <b>19.34</b><br>+ partial SF pool → SF beside weights: <b>19.06 → 18.74</b><br>+ hot map 301 (headline) · steady state: <b>18.62 · 17.92</b><br>per-step poll: overrun steps 97 → 8: <b>wall 6.17 ms/token, host gap 0.02</b></div></div>
+<div class="box"><div class="lbl">Declined, limits, comparison</div><div class="kv">PDL / mHC fork / q-kv tail at 6 rows: <b>0 / +0.34 / +1.5 ms</b><br>MegaMoE: <b>declined — +49–58 flips on 4 layers</b><br>context exercised: <b>≤ 310 positions (loop cap 4,095)</b><br>boot · whole run: <b>62.7 s · 6–10 min</b><br>Pg61 same prompts (2 GPUs, wall): <b>7.66 ms/step · 2.55 ms/token</b><br>repo bar (&lt;7.36 ms/step): <b>not met</b></div></div>
+  </div>
+  <div class="fid"><div class="lbl">Output fidelity — does the recipe change what the model says?</div>
+    <ul>
+<li class="ok">Prefill bit-equal to the reference prefill — first token, logits, main_hidden, every cache, replay — 8/8 prompts at 1, 4 and 8 streams; GPU gate 4/4</li>
+<li class="ok">Speculation exact: emitted stream == the runtime&#x27;s own 1-row greedy, logits rows bit-equal, 8/8 · self-replay byte-identical 8/8 · 6-row verify step == 1-row step</li>
+<li class="ok">Emitted streams byte-identical across 13 headline receipts, 20.30 ms tree → final (tokens_sha256 8/8); the 8-slot overflow arm broke it (7/8) and is INVALID</li>
+<li class="meas">Decode kernels are NOT DeepSeek&#x27;s reference kernels (DeepGEMM, FlashMLA, Triton GEMV; A3 class): free-run 2/8 identical to production · teacher-forced 55 flips / 1,476 production tokens (28.1 weighted), max abs Δlogprob 2.68 — 11/07 tree</li>
+<li class="meas">Weights as shipped: 93,338/93,338 loaded tensors verified at the 11/06 boot · no Hub-vs-local hash comparison in these receipts · image digest not re-read</li>
+<li class="pend">Tool-call parse, BFCL, GSM8K, needle, teacher-forced bracket vs the reference kernels, temperature &gt; 0 — not run</li>
+<li class="pend">Long context: receipts exercise ≤ 310 positions; 32K arm and long-prompt prefill not run</li>
+    </ul>
+  </div>
+  <div class="fid"><div class="lbl">Agent claim card — fixed protocol, held-out sibling, cost per solved task</div>
+    <ul>
+<li class="pend">harness card pending — protocol hash, held-out sibling suite, cost per solved task</li>
+    </ul>
+  </div>
+  <div class="foot">
+    <span>recipe <span class="mono">recipes/dgx-station-gb300/deepseek-v4.1-flash-standalone-decode-runtime</span> · run <span class="mono">2026-11-08-v1-recipe (headline cold/steady: main-ss · wall columns: main-ov2 · grouped prefill: m4p2 + prefill-bench · 1-row: fl-s3-beside)</span></span>
+    <span>github.com/J-M-Recipes/recipes · github.com/jmeadlock/gb300-dsv41-decode · al-engr.com/gb300-dsv41-decode.html · @jmeadlock</span>
+  </div>
+</div>
+</body></html>

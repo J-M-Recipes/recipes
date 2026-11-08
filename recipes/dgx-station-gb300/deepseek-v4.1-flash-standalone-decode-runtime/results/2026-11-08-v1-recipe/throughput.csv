@@ -1,0 +1,55 @@
+metric,value,unit,source file
+headline (cold column) ms per 6-row DSpark k=5 step,18.624,ms/step,headline-20261108-main-ss.json headline.two_graphs.ms_per_step.mean
+headline (cold column) verify graph,15.7163,ms/step,headline-20261108-main-ss.json headline.two_graphs.ms_verify_graph.mean
+headline (cold column) draft graph,2.9078,ms/step,headline-20261108-main-ss.json headline.two_graphs.ms_draft_graph.mean
+headline (cold column) tokens per step,2.9032,tokens/step,headline-20261108-main-ss.json headline.two_graphs.tokens_per_step
+headline (cold column) GPU ms per emitted token,6.4149,ms/token,headline-20261108-main-ss.json headline.two_graphs.ms_per_token (total_gpu_ms / total_emitted_tokens)
+"headline (cold column) tokens per second, GPU time",155.8859,tok/s,derived: 1000 / ms_per_token
+headline (cold column) cold-expert share of routed calls,0.0483,fraction,headline-20261108-main-ss.json headline.two_graphs.cold_share
+steady state (residency carried over) ms per step,17.9189,ms/step,headline-20261108-main-ss.json steady_state.ms_per_6row_step_dspark_k5
+steady state ms per emitted token,6.1721,ms/token,headline-20261108-main-ss.json steady_state.ms_per_token
+"steady state tokens per second, GPU time",162.0205,tok/s,derived: 1000 / steady_state.ms_per_token
+steady state policy steps before the pass,2686,manager steps,headline-20261108-main-ss.json steady_state.policy_steps_before
+steady state cold-expert share,0.0155,fraction,headline-20261108-main-ss.json steady_state.cold_share
+"one-graph cell ms per step (measured after the headline cell, policy warmed; not a column)",17.9013,ms/step,headline-20261108-main-ss.json headline.ms_per_6row_step_one_graph
+HBM free after build,2.721,GiB,headline-20261108-main-ss.json hbm_after_build_GiB.free (of 249.814 total)
+streams exact vs the runtime's own 1-row greedy,8,of 8 prompts,headline-20261108-main-ss.json streams.exact
+"self-replay (fast reps == parity reps, logits digests equal)",8,of 8 prompts,headline-20261108-main-ss.json replay_ok
+overflow steps (cold experts beyond the 16 spare slots),0,steps,headline-20261108-main-ss.json overflow.steps
+"headline ms per step, per-step poll schedule",18.5761,ms/step,headline-20261108-main-ov2.json headline.ms_per_6row_step_dspark_k5
+decode wall ms/token including overrun (all steps),6.1662,ms/token,headline-20261108-main-ov2.json headline.decode_wall.ms_per_token_wall_incl_overrun
+decode wall ms/token excluding overrun (all steps),6.1093,ms/token,headline-20261108-main-ov2.json headline.decode_wall.ms_per_token_wall_excl_overrun
+decode GPU ms/token (all steps),6.0857,ms/token,headline-20261108-main-ov2.json headline.decode_wall.ms_per_token_gpu
+host gap per token,0.0236,ms/token,headline-20261108-main-ov2.json headline.decode_wall.host_gap_ms_per_token
+"overrun steps over the fixture, new poll schedule",8,steps,headline-20261108-main-ov2.json headline.decode_wall.overrun_steps_total
+"overrun steps over the fixture, old poll schedule (every 8)",97,steps,headline-20261108-main-ss.json prompts.<tag>.steps_issued - steps (first fast rep)
+TTFT with the reference prefill,3876.5983,ms,headline-20261108-main-ov2.json headline.decode_wall.ttft_ms.mean
+steady state decode wall ms/token including overrun,5.926,ms/token,headline-20261108-main-ov2.json steady_state.decode_wall.ms_per_token_wall_incl_overrun
+headline with grouped prefill ms per step,18.6203,ms/step,headline-m4p2-20261108.json headline.ms_per_6row_step_dspark_k5
+headline with grouped prefill ms per token,6.4137,ms/token,headline-m4p2-20261108.json headline.ms_per_token
+headline with grouped prefill: mean prefill_ms over 8 prompts x fast reps,786.9009,ms,headline-m4p2-20261108.json headline.prefill_ms_mean
+256-token stream sha256 equal across main-ss / main-ov2 (reference prefill) / m4p2 (grouped prefill),8,of 8 prompts,"tokens_sha256 in headline-20261108-main-ss.json, headline-20261108-main-ov2.json, headline-m4p2-20261108.json"
+ladder + declined-arm receipts whose 8 emitted-stream sha256 all equal the final headline's (11/07 15:52 tree onward),13,of 13 receipts,"tokens_sha256 in headline-20261107j.json, headline-resid2-20261107.json, headline-s1-shapes-20261107.json, headline-s2-C-20261108.json, headline-s3-B-20261108.json, headline-hot301-20261108.json, headline-pdl-on-20261107.json, headline-pdl-prefetch-20261107.json, headline-mixes-fork-20261107.json, headline-qkv-20261107.json, headline-qkv2-20261107.json, headline-rs24-20261108.json, headline-rs28-20261108.json"
+"arm D (8 spare slots, overflow 13 steps) streams equal to the final headline's",7,of 8 prompts,"headline-s2-D-20261108.json tokens_sha256, overflow.steps"
+reference prefill mean (8 prompts),4345.3524,ms,prefill-bench-m4p2-20261108.json summary.by_streams.4.mean_ref_ms
+"grouped prefill mean, 1 stream(s)",992.8882,ms,prefill-bench-m4p2-20261108.json summary.by_streams.1.mean_prefill_ms
+"grouped TTFT mean (prefill + first draft), 1 stream(s)",999.1776,ms,prefill-bench-m4p2-20261108.json summary.by_streams.1.mean_ttft_ms
+"grouped prefill mean, 4 stream(s)",942.8891,ms,prefill-bench-m4p2-20261108.json summary.by_streams.4.mean_prefill_ms
+"grouped TTFT mean (prefill + first draft), 4 stream(s)",949.2449,ms,prefill-bench-m4p2-20261108.json summary.by_streams.4.mean_ttft_ms
+"grouped prefill mean, 8 stream(s)",963.3591,ms,prefill-bench-m4p2-20261108.json summary.by_streams.8.mean_prefill_ms
+"grouped TTFT mean (prefill + first draft), 8 stream(s)",969.6656,ms,prefill-bench-m4p2-20261108.json summary.by_streams.8.mean_ttft_ms
+reference expert launches per prefill (mean),89898.25,launches,prefill-bench-m4p2-20261108.json summary.by_streams.4.mean_expert_launches_before
+grouped GEMM launches per prefill (mean),10372.875,launches,prefill-bench-m4p2-20261108.json summary.by_streams.4.mean_gemm_launches
+"grouped prefill equal to reference prefill (all prompts, all stream counts)",1,bool,prefill-bench-m4p2-20261108.json summary.all_equal
+1-row step (single-row decode graph),9.76,ms/step,fl-s3-beside-20261108.log 'step cell (cuda_events): steps 32..512 mean 9.76'
+1-row step tokens per second,102.43,tok/s,fl-s3-beside-20261108.log 'step cell: 102.43 tok/s (1/mean)'
+"teacher-forced top-1 flips vs production Pg61 (11/07 tree, 1,476 Pg61 tokens)",55,flips,m3n1-downstream-20261107.json arms[0].tf_metrics.total.flips_pg61
+teacher-forced margin-weighted flips vs Pg61,28.125,nats,m3n1-downstream-20261107.json arms[0].tf_metrics.total.flips_w_pg61
+teacher-forced max |dlogprob| vs Pg61,2.6848,nats,m3n1-downstream-20261107.json arms[0].tf_metrics.total.max_abs_dlp_pg61
+"Pg61 (two-GPU production lane) streamed time-to-first-chunk, min of 24 passes",20.4,ms,pg61-drive-matched-20261108.json prompts.<tag>.time[].ttft_s
+"Pg61 streamed time-to-first-chunk, max of 24 passes",33.9,ms,pg61-drive-matched-20261108.json prompts.<tag>.time[].ttft_s
+"Pg61 matched re-run ms per step (wall / steps, NOT GPU events)",7.662,ms/step,GAP-LEDGER-20261108.md derivation 'pg61.matched step_gpu_ms = 1000 x 11.163 / 1457'
+Pg61 matched re-run decode wall ms per token,2.553,ms/token,GAP-LEDGER-20261108.md derivation 'pg61.matched wall_ms_per_token_decode'
+confirmation run (shipped tree) ms per 6-row step headline,18.58,ms/step,headline-20261108-v1-recipe.json two_graphs
+confirmation run TTFT mean (in-run; grouped prefill + poll fix),820.5,ms,headline-20261108-v1-recipe.json two_graphs decode wall line
+confirmation run decode wall ms/token incl overrun,6.168,ms/token,headline-20261108-v1-recipe.json
