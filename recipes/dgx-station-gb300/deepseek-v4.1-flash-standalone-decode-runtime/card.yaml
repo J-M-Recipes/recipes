@@ -1,0 +1,55 @@
+# card.yaml - at-a-glance card sidecar. Rendered by scripts/render_card.py; never hand-edit card.html.
+# Every number traces to recipe.yaml metrics or results/2026-11-08-v1-recipe/raw. Unknown = pending (renders amber).
+title: "DeepSeek-V4.1-Flash · standalone decode runtime · 1× DGX Station GB300"
+subtitle: "No vLLM, one sequence, greedy — DeepSeek's reference prefill plus an own CUDA-graph decode step, 301 hot experts per layer in HBM and the rest read from Grace over NVLink-C2C, in-checkpoint DSpark k=5. A research runtime, not a server"
+version: "v1 · 2026-11-08 · repo ed6582e"
+run_id: "2026-11-08-v1-recipe (headline cold/steady: main-ss · wall columns: main-ov2 · grouped prefill: m4p2 + prefill-bench · 1-row: fl-s3-beside)"
+handles: "github.com/J-M-Recipes/recipes · github.com/jmeadlock/gb300-dsv41-decode · al-engr.com/gb300-dsv41-decode.html · @jmeadlock"
+
+model:
+  type: MoE
+  type_detail: "384 routed + 1 shared expert, 6 active, plus Engram · 301 hot experts per layer in HBM, 83 cold in pinned Grace"
+  total_params: 552B              # backbone, model card as carried in the sibling recipe card; + 196B Engram
+  active_params: "8B prefill / 16B decode"   # model card (sibling recipe card); not re-derived from the checkpoint here
+  checkpoint_gb: 510.3            # sibling card: 510,311,114,235 B stat sum of the 1017 revision; decode inventory 475.24 GiB / 96,085 tensors
+  weights_short: "as shipped · MXFP4 experts / FP8 attn+Engram · nothing re-quantized"
+  engine_extra: "gb300-dsv41-decode @ ed6582e · vllm-openai v0.31.0 as a library image only (vLLM never imported) · torch 2.13.0+cu130 · DeepGEMM / FlashMLA / TileLang / Triton"
+  memory: "207.6 GiB read into HBM (hot experts + dense) + 259.4 GiB pinned in Grace (cold experts + Engram) · 2.72 GiB HBM free after build · 1 sequence"
+
+hero:
+  c1:      { value: 156, unit: tok/s, class: "mixed 8-prompt fixture, greedy, GPU time", label: "Decode · C1 headline (cold column)", note: "6.41 ms/token · 18.62 ms per 6-row step · steady state 162 tok/s (6.17 ms) · wall clock incl. end-of-sequence overrun 6.17 ms/token · per prompt 2.1–5.0 tok/step · Pg61 production (2 GPUs, wall clock, same prompts) 2.55 ms/token = 392 tok/s — different basis, not a ratio" }
+  c16:     { value: "n/a", unit: "", label: "Concurrency", note: "single sequence by design — no batching, scheduler or C2+ measurement" }
+  prefill: { value: 0.95, unit: s, label: "Prefill · TTFT, 31–54-token prompts", note: "grouped prefill, 4 streams, bit-equal to the reference prefill (was 3.9 s) · 820 ms in-run at the shipped tree, 943 ms under the profiler, 787 ms inside the headline run · longer prompts not measured · Pg61 first chunk 20–34 ms" }
+
+guesser:
+  name: DSpark
+  source: "in-checkpoint MTP head (mtp.0–2), 3 stages, 7.5 GiB in HBM"
+  schedule: "k = 5 drafts → 6-row verify, greedy exact match (first mismatch stops), confidence head off, one sequence"
+  accept: { "fixture mean (window ≥ 32 steps)": "2.90 tok/step", "prose / story": "2.49 / 2.11", "code / math": "4.19 / 4.40", "shell / long": "3.67 / 2.63", "json / tool (4 steps each)": "4.50 / 5.00" }
+
+secondary:
+  - label: "Ladder — headline ms/step, streams byte-equal rung to rung (2026-11-07 → 11-08)"
+    items:
+      "6-row step == 1-row step (T9b-8)": "20.30"
+      "+ residency manager": "19.93"
+      "+ staging overlap (C2C → spare slots)": "19.34"
+      "+ partial SF pool → SF beside weights": "19.06 → 18.74"
+      "+ hot map 301 (headline) · steady state": "18.62 · 17.92"
+      "per-step poll: overrun steps 97 → 8": "wall 6.17 ms/token, host gap 0.02"
+  - label: "Declined, limits, comparison"
+    items:
+      "PDL / mHC fork / q-kv tail at 6 rows": "0 / +0.34 / +1.5 ms"
+      "MegaMoE": "declined — +49–58 flips on 4 layers"
+      "context exercised": "≤ 310 positions (loop cap 4,095)"
+      "boot · whole run": "62.7 s · 6–10 min"
+      "Pg61 same prompts (2 GPUs, wall)": "7.66 ms/step · 2.55 ms/token"
+      "repo bar (<7.36 ms/step)": "not met"
+
+fidelity:
+  - { status: pass,     text: "Prefill bit-equal to the reference prefill — first token, logits, main_hidden, every cache, replay — 8/8 prompts at 1, 4 and 8 streams; GPU gate 4/4" }
+  - { status: pass,     text: "Speculation exact: emitted stream == the runtime's own 1-row greedy, logits rows bit-equal, 8/8 · self-replay byte-identical 8/8 · 6-row verify step == 1-row step" }
+  - { status: pass,     text: "Emitted streams byte-identical across 13 headline receipts, 20.30 ms tree → final (tokens_sha256 8/8); the 8-slot overflow arm broke it (7/8) and is INVALID" }
+  - { status: measured, text: "Decode kernels are NOT DeepSeek's reference kernels (DeepGEMM, FlashMLA, Triton GEMV; A3 class): free-run 2/8 identical to production · teacher-forced 55 flips / 1,476 production tokens (28.1 weighted), max abs Δlogprob 2.68 — 11/07 tree" }
+  - { status: measured, text: "Weights as shipped: 93,338/93,338 loaded tensors verified at the 11/06 boot · no Hub-vs-local hash comparison in these receipts · image digest not re-read" }
+  - { status: pending,  text: "Tool-call parse, BFCL, GSM8K, needle, teacher-forced bracket vs the reference kernels, temperature > 0 — not run" }
+  - { status: pending,  text: "Long context: receipts exercise ≤ 310 positions; 32K arm and long-prompt prefill not run" }
