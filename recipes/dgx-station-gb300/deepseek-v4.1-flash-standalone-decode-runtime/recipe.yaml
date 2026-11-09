@@ -1,8 +1,12 @@
 schema: jm-recipe/v1
 id: dgx-station-gb300/deepseek-v4.1-flash-standalone-decode-runtime
-title: DeepSeek-V4.1-Flash standalone decode runtime - one DGX Station GB300, no vLLM, no server
+title: DeepSeek-V4.1-Flash standalone decode runtime (research instrument) - one DGX Station GB300, no vLLM, no server
 summary: >
-  A research decode runtime, not an API server. It runs DeepSeek-V4.1-Flash-1017 (stock MXFP4 experts, FP8
+  A research instrument, not a serving recipe - a deterministic parity oracle and measurement bench. To serve
+  this checkpoint on one GB300 use the sibling vLLM recipe deepseek-v4.1-flash-vllm-uva-dspark (OpenAI API;
+  187.5 tok/s single-stream on real text with the static map and 189.6-218.9 with adaptive residency, by its own
+  receipts - a different harness from this page's greedy fixture; the two were never run side by side). This
+  runtime runs DeepSeek-V4.1-Flash-1017 (stock MXFP4 experts, FP8
   attention and Engram, nothing re-quantized) on one DGX Station GB300 in a single Python process: DeepSeek's
   reference model.py (unchanged) for prefill, an own CUDA-graph decode step built from borrowed kernels
   (DeepGEMM, FlashMLA, Triton GEMV, fused glue), 301 hot experts per layer in HBM and the rest in pinned Grace memory read over
@@ -15,9 +19,9 @@ summary: >
   256-token streams, but the decode kernels are not DeepSeek's reference kernels (A3 class: 2/8 free-run streams
   match production; 55 teacher-forced top-1 flips in 1,476 production tokens). Experimental - single stream,
   greedy only, context past 310 positions not measured, no public quality benchmark run.
-status: experimental     # 2026-11-08. First recipe for this runtime. No gate beyond schema has a pass stamp; see verification and limits.
+status: experimental     # 2026-11-09: reworded as a research instrument, not a serving recipe. 2026-11-08. First recipe for this runtime. No gate beyond schema has a pass stamp; see verification and limits.
 owners: [jmeadlock, milo]
-updated: "2026-11-08"
+updated: "2026-11-09"
 tags: [deepseek-v4.1-flash, mxfp4, standalone-runtime, dspark, speculative-decoding, cuda-graphs, uva-offload, single-gpu, single-sequence, gb300, research]
 
 model:
@@ -166,6 +170,7 @@ verification:
     performance: { how: "NOT STAMPED. The repo's bar is below 7.36 ms per 6-row step (restated 2026-11-07); the runtime reads 18.62 and does not meet it. No T1/T2 llm-inference-bench cells, no concurrency, no long-context cell." }
 
 limits:
+  - "Research instrument, not a serving recipe (reworded 2026-11-09). On its own greedy fixture this runtime reads 156-162 tok/s on one GB300; the sibling single-GPU vLLM recipe deepseek-v4.1-flash-vllm-uva-dspark reports 187.5 tok/s (static map) and 189.6-218.9 tok/s (adaptive residency) single-stream on real text, with an OpenAI API, concurrency and sampling. Those are two instruments on two harnesses and were never run side by side, so no ratio is quoted - but nothing here supports choosing this runtime to serve the model. Its use is as a bit-reproducible oracle, a per-kernel anatomy bench and a place to take bounding measurements before a port (the Grace cold-expert staging now being ported into the vLLM stack was measured here first)."
   - "Not a server and not a drop-in lane: no HTTP API, no tokenizer front end, no chat template handling, no scheduler. One sequence at a time (the 6 rows are one sequence's k=5 drafts plus the verified token). Concurrency, batching and the C32 case are declared non-goals of the runtime; there is no C2+ measurement to quote."
   - "Greedy only. The loop accepts a draft only on exact argmax match; sampling, probabilistic drafting, top-p/top-k and temperature > 0 are not implemented and nothing above 0 was tested."
   - "Context: every receipt uses prompts of 31-54 tokens plus 256 new tokens, so at most 310 positions were exercised. The loop's configured cap is max_pos 4,095 (draft ring 32,767); nothing between 311 and 4,095 was measured and nothing longer exists. The 32K arm is proposed in docs/SUNDAY-20261108.md, not run. Prefill speed is measured only for those 31-54-token prompts; it has not been run on a long prompt."

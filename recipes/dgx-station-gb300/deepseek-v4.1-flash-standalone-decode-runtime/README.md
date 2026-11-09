@@ -1,9 +1,21 @@
 # DeepSeek-V4.1-Flash standalone decode runtime - one DGX Station GB300
 
-Status: **experimental**, first recipe for this runtime, 2026-11-08. A research decode runtime, not an API server:
+Status: **experimental - a research instrument, not a serving recipe** (reworded 2026-11-09; first recipe for this
+runtime 2026-11-08). A research decode runtime, not an API server:
 one Python process, one sequence at a time, greedy only, no vLLM in the process. Public repo:
 [jmeadlock/gb300-dsv41-decode @ ed6582e](https://github.com/jmeadlock/gb300-dsv41-decode/commit/ed6582e051b9b743f1a68b88750c627d2a63ca03)
 (Apache-2.0). Blog: <https://al-engr.com/gb300-dsv41-decode.html>. Card: `card.png`.
+
+> **2026-11-09 - read this first.** Do not use this runtime to serve the model. To serve this checkpoint on one
+> GB300, use [`deepseek-v4.1-flash-vllm-uva-dspark`](../deepseek-v4.1-flash-vllm-uva-dspark/README.md): an
+> OpenAI-compatible vLLM lane with concurrency and sampling, 187.5 tok/s single-stream on real text with the
+> static map and 189.6 - 218.9 tok/s with adaptive residency (its receipts). With the chassis' RTX PRO 6000, use
+> [`deepseek-v4.1-flash-vllm-uva-dspark-sidecar`](../deepseek-v4.1-flash-vllm-uva-dspark-sidecar/README.md)
+> (320.5 - 324.7 tok/s on its per-class C1 cells, 343 on a 400-token reply). This page's 156 - 162 tok/s is a
+> greedy fixture on a different harness; the single-GPU lanes were never run side by side, so the numbers are
+> quoted separately and no ratio is claimed - but nothing measured here is a reason to serve from this runtime.
+> What it is for: bit-reproducible runs, per-kernel step anatomy, and bounding measurements taken before a
+> port into the serving stack (the Grace cold-expert staging now being ported to vLLM was measured here first).
 
 The question the project asks is how short one GB300's single-user decode step can get with stock weights, all 384
 experts and no KV quantization. This page is where the answer stands on Sunday 2026-11-08, with the numbers it rests on
