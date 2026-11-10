@@ -1,0 +1,172 @@
+DS41_FASTPATH ACTIVE suffix
+DS41_FASTPATH ACTIVE boundary
+DS41_FASTPATH ACTIVE fastload
+DS41_FASTPATH gracetier: all-resident rowmap /w/rowmap-allres.json: 40 layers, H [255], 30960 cold tensors read by gracetier (filtered from vLLM's iterator), G = 384
+(APIServer pid=1) INFO 11-10 04:12:34 [api_utils.py:286] non-default args: {'model_tag': '/model', 'enable_auto_tool_choice': True, 'tool_call_parser': 'deepseek_v41', 'host': '0.0.0.0', 'port': 30006, 'model': '/model', 'trust_remote_code': True, 'max_model_len': 1048576, 'served_model_name': ['dsv41-flash-gracetier', 'deepseek-v4.1-flash'], 'reasoning_parser': 'deepseek_v41', 'enable_expert_parallel': True, 'gpu_memory_utilization': 0.95, 'kv_cache_dtype': 'fp8_ds_mla', 'enable_prefix_caching': True, 'kv_offloading_size': 48.0, 'max_num_batched_tokens': 8192, 'max_num_seqs': 32, 'long_prefill_token_threshold': 6144, 'cudagraph_capture_sizes': [1, 2, 4, 6, 8, 12, 16, 18, 20, 24, 28, 32, 36, 40, 48, 56, 64, 72, 80, 96, 128, 144, 160, 192, 224, 256], 'moe_backend': 'deep_gemm_mega_moe', 'speculative_config': {'method': 'dspark', 'num_speculative_tokens': 5, 'num_speculative_tokens_per_batch_size': [[1, 4, 5], [5, 8, 3], [9, 32, 3]], 'draft_sample_method': 'probabilistic', 'rejection_sample_method': 'block'}, 'kv_transfer_config': KVTransferConfig(kv_connector='OffloadingConnector', engine_id='8a4f9411-99db-465e-9e9c-b314afc43b59', kv_buffer_device='cuda', kv_buffer_size=1000000000.0DS41_FASTPATH preattn: patched vllm.model_executor.layers.sparse_attn_indexer (cand)
+DS41_FASTPATH ACTIVE preattn_cand
+DS41_FASTPATH tail_swa_meta: decode-only SWA metadata builds use one fused kernel; DSpark block nested at 5 rows
+DS41_FASTPATH ACTIVE tail_swa_meta
+DS41_FASTPATH boundary: patched vllm.models.deepseek_v4.nvidia.model.DeepseekV4MoE.forward (router r1 candidate mailbox on, 1 <= T <= 16, MIX_OFFPATH on: the FFN-side mix stays off MegaMoE's path, MegaMoE at kNumSMs 144, peer v3 on when peer3 is installed)
+DS41_FASTPATH gracetier: vllm.models.deepseek_v4.nvidia.model.DeepseekV4MegaMoEExperts: __init__ / finalize_weights / forward wrapped (weight_loader stays the hook's: cold rows are dropped there, and never reach it)
+DS41_FASTPATH preattn: patched vllm.models.deepseek_v41.compressor (compress)
+DS41_FASTPATH ACTIVE preattn_compress
+DS41_FASTPATH preattn: patched vllm.models.deepseek_v41.attention (qkv)
+DS41_FASTPATH ACTIVE preattn
+DS41_FASTPATH preattn: patched vllm.models.deepseek_v41.attention (index)
+DS41_FASTPATH ACTIVE preattn_index
+DS41_FASTPATH preattn: patched vllm.models.deepseek_v41.attention (cstreams)
+DS41_FASTPATH attn: patched DeepseekV4MegaAttnAttention.__init__ / _forward_decode_mega (W1_LAYERS=['draft', 'sparse', 'swa'], W1_MAX_SQ=16, W1_MAX_SQ_CX=76, W1_MAX_SQ_SWA=24)
+DS41_FASTPATH ACTIVE attn
+DS41_FASTPATH preattn: patched vllm.models.deepseek_v41.nvidia.flash_mla_mega_attn (memo)
+DS41_FASTPATH preattn: patched vllm.models.deepseek_v41.nvidia.flash_mla_mega_attn (memo)
+DS41_FASTPATH ACTIVE engram_side
+DS41_FASTPATH boundary: patched vllm.models.deepseek_v41.nvidia.model.mhc_post_tilelang: post-only seam with the fused peer-v3 finish (POST_FUSE)
+DS41_FASTPATH boundary: patched vllm.models.deepseek_v41.nvidia.model.mhc_pre_delayed_overlap: Engram attention entry on the seam + mix (ENGRAM_PRE)
+DS41_FASTPATH boundary: patched vllm.models.deepseek_v41.nvidia.model.mhc_shifted_post_pre (seam on, cluster 16, T <= 16); images built in DeepseekV4Model.finalize_mhc_broadcast_weights
+DS41_FASTPATH engram_side: engram kv forked at the layer before each engram layer, joined when its attention returns, 32 SMs, T <= 32
+DS41_FASTPATH ACTIVE tail_ctxkv
+DS41_FASTPATH tail_draft_embed: patched DSparkDeepseekV4Model.forward: embedding, gate image mask and hc expansion in one launch
+DS41_FASTPATH ACTIVE tail_draft_embed
+DS41_FASTPATH boundary: patched vllm.models.deepseek_v41.nvidia.dspark.DSparkDeepseekV4Model.forward: the head (mhc_post + hc_collapse) in one launch
+DS41_FASTPATH suffix: speculative config: num_speculative_tokens 31, schedule [[1, 1, 31], [2, 4, 5], [5, 8, 3], [9, 32, 3]] (trigger 24, copy chain at 16)
+DS41_FASTPATH ACTIVE boundary
+DS41_FASTPATH ACTIVE fastload
+DS41_FASTPATH gracetier: all-resident rowmap /w/rowmap-allres.json: 40 layers, H [255], 30960 cold tensors read by gracetier (filtered from vLLM's iterator), G = 384
+DS41_FASTPATH preattn: patched vllm.model_executor.layers.sparse_attn_indexer (cand)
+DS41_FASTPATH ACTIVE preattn_cand
+DS41_FASTPATH tail_swa_meta: decode-only SWA metadata builds use one fused kernel; DSpark block nested at 5 rows
+DS41_FASTPATH ACTIVE tail_swa_meta
+DS41_FASTPATH boundary: patched vllm.models.deepseek_v4.nvidia.model.DeepseekV4MoE.forward (router r1 candidate mailbox on, 1 <= T <= 16, MIX_OFFPATH on: the FFN-side mix stays off MegaMoE's path, MegaMoE at kNumSMs 144, peer v3 on when peer3 is installed)
+DS41_FASTPATH gracetier: vllm.models.deepseek_v4.nvidia.model.DeepseekV4MegaMoEExperts: __init__ / finalize_weights / forward wrapped (weight_loader stays the hook's: cold rows are dropped there, and never reach it)
+DS41_FASTPATH preattn: patched vllm.models.deepseek_v41.compressor (compress)
+DS41_FASTPATH ACTIVE preattn_compress
+DS41_FASTPATH preattn: patched vllm.models.deepseek_v41.attention (qkv)
+DS41_FASTPATH ACTIVE preattn
+DS41_FASTPATH preattn: patched vllm.models.deepseek_v41.attention (index)
+DS41_FASTPATH ACTIVE preattn_index
+DS41_FASTPATH preattn: patched vllm.models.deepseek_v41.attention (cstreams)
+DS41_FASTPATH attn: patched DeepseekV4MegaAttnAttention.__init__ / _forward_decode_mega (W1_LAYERS=['draft', 'sparse', 'swa'], W1_MAX_SQ=16, W1_MAX_SQ_CX=76, W1_MAX_SQ_SWA=24)
+DS41_FASTPATH ACTIVE attn
+DS41_FASTPATH preattn: patched vllm.models.deepseek_v41.nvidia.flash_mla_mega_attn (memo)
+DS41_FASTPATH preattn: patched vllm.models.deepseek_v41.nvidia.flash_mla_mega_attn (memo)
+DS41_FASTPATH ACTIVE engram_side
+DS41_FASTPATH boundary: patched vllm.models.deepseek_v41.nvidia.model.mhc_post_tilelang: post-only seam with the fused peer-v3 finish (POST_FUSE)
+DS41_FASTPATH boundary: patched vllm.models.deepseek_v41.nvidia.model.mhc_pre_delayed_overlap: Engram attention entry on the seam + mix (ENGRAM_PRE)
+DS41_FASTPATH boundary: patched vllm.models.deepseek_v41.nvidia.model.mhc_shifted_post_pre (seam on, cluster 16, T <= 16); images built in DeepseekV4Model.finalize_mhc_broadcast_weights
+DS41_FASTPATH engram_side: engram kv forked at the layer before each engram layer, joined when its attention returns, 32 SMs, T <= 32
+DS41_FASTPATH ACTIVE tail_ctxkv
+DS41_FASTPATH tail_draft_embed: patched DSparkDeepseekV4Model.forward: embedding, gate image mask and hc expansion in one launch
+DS41_FASTPATH ACTIVE tail_draft_embed
+DS41_FASTPATH boundary: patched vllm.models.deepseek_v41.nvidia.dspark.DSparkDeepseekV4Model.forward: the head (mhc_post + hc_collapse) in one launch
+DS41_FASTPATH topp_fast: patched vllm.v1.worker.gpu.sample.states.SamplingStates.apply_top_k_top_p (top-p only calls -> w6_topp)
+DS41_FASTPATH ACTIVE topp_fast
+DS41_FASTPATH ACTIVE suffix
+DS41_FASTPATH topp_fast: patched vllm.v1.worker.gpu.sample.sampler.Sampler.apply_sampling_params (fp32 copy fused into top-p when nothing else processes the batch)
+DS41_FASTPATH tail_embed: text-only steps gather input embeddings in one kernel
+DS41_FASTPATH ACTIVE tail_embed
+DS41_FASTPATH tail_proj_side: patched vllm.v1.worker.gpu.spec_decode.rejection_sampler.RejectionSampler.__call__ (fork point)
+DS41_FASTPATH ACTIVE tail_proj_side
+DS41_FASTPATH tail_swa_meta: drafter SWA decode builds launch as one multi-group kernel
+DS41_FASTPATH tail_proj_side: patched vllm.v1.worker.gpu.model_runner.GPUModelRunner.sample_tokens
+DS41_FASTPATH gracetier: residency config /fastpath/gracetier-res.json: {"freeze": false, "hyst": 3.0, "mode": "adaptive"}
+DS41_FASTPATH gracetier: GPUModelRunner.execute_model wrapped: residency barrier before every call
+DS41_FASTPATH ACTIVE tail_dflash_prep
+DS41_FASTPATH tail_proj_side: patched vllm.v1.worker.gpu.spec_decode.dflash.speculator.DFlashSpeculator.propose (join point)
+DS41_FASTPATH tail_markov_fused: patched vllm.v1.worker.gpu.spec_decode.dspark.speculator.DSparkSpeculator
+DS41_FASTPATH ACTIVE tail_markov_fused
+DS41_FASTPATH suffix: DSpark block 7, draft rows 31, draft-logits cache 256,491,520 B
+(EngineCore pid=405) INFO 11-10 04:12:51 [attention.py:158] Using DeepSeek's fp8_ds_mla KV cache format.
+DS41_FASTPATH attn: prepared on cuda:0: scratch 2.8 MiB; layers=['draft', 'sparse', 'swa'] max_sq sparse=16 cluster=76 swa=24
+DS41_FASTPATH gracetier: layer 0 (language_model.model.layers.0.ffn.experts): 255 hot experts in HBM groups 0..254, 129 cold in Grace (groups 255..383 on the shared VMM scratch), MegaMoE G = 384
+DS41_FASTPATH gracetier: HOST_RAM_BUDGET [pre-alloc: the cold pool must fit now; Engram / KV residency is checked after load_model] engram 189.13 GiB (resident) + cold_pool 85.26 GiB (pending) + kv_offload 48.0 GiB (resident) = 322.39 GiB; MemAvailable 256.07 GiB - pending 85.26 GiB = headroom 170.81 GiB vs floor 32.0 GiB -> fits {"GiB": {"MemAvailable": 256.07, "cold_pool": 85.26, "engram": 189.13, "floor": 32.0, "headroom": 170.81, "host_total": 322.39, "kv_offload": 48.0, "pending": 85.26}, "MemAvailable_B": 274950914048, "fits": true, "floor_B": 34359738368, "headroom_B": 183405248512, "host_total_B": 346158349328, "pending": ["cold_pool"], "pending_B": 91545665536, "resident": ["engram", "kv_offload"], "terms_B": {"cold_pool": 91545665536, "engram": 203073076240, "kv_offload": 51539607552}} kv_source='vllm_config.cache_config.kv_offloading_size' scan_s=0.75
+DS41_FASTPATH gracetier: cold pool reader started: 5160 experts, 85.26 GiB pool, model /model
+DS41_FASTPATH gracetier: cold pool read: 30960 tensors, 91.30 GB weights in 61.8 s; registered 2 chunk(s) in 0.23 s (85.26 GiB, hugepages True)
+DS41_FASTPATH ACTIVE megamoe
+DS41_FASTPATH gracetier: VMM: granularity 2097152 B; shared scratch {'l1': 1.416, 'l2': 0.707} GiB; plan for all layers: weights 170.326 GiB (shared 2.123, straddle 0.112), SF all groups 15.82 GiB
+DS41_FASTPATH gracetier: parity slot0 layer 0 (our transform of the loader's raw hot slot 0 vs vLLM's finalized group 0): {"l1_sf": true, "l1_weight": true, "l2_sf": true, "l2_weight": true, "names": ["w13_weight", "w2_weight", "w13_weight_scale", "w2_weight_scale"], "ok": true}
+DS41_FASTPATH gracetier: SymmBuffer G = 384: {"bytes": 1048832384, "how": "vLLM's own (already G = 384)", "num_experts": 384, "num_max_tokens_per_rank": 9600, "num_shared_experts": 1}
+DS41_FASTPATH gracetier: finalize layer 0: G = 384 (hot 0..254 private HBM, cold 255..383 shared VMM scratch), SF banks (384, 4608, 40) / (384, 5120, 18), row_map all >= 0, 129 cold sources in Grace; VMM arena {"alloc_bytes": 6794772480, "allocs": [["shared.l1", 1520435200], ["shared.l2", 759169024], ["L0.l1.private", 3009413120], ["L0.l2.private", 1505755136]], "device": 0, "gran": 2097152, "maps": 4, "reserved_bytes": 6794772480}
+DS41_FASTPATH gracetier: finalize layer 39: G = 384 (hot 0..254 private HBM, cold 255..383 shared VMM scratch), SF banks (384, 4608, 40) / (384, 5120, 18), row_map all >= 0, 129 cold sources in Grace; VMM arena {"alloc_bytes": 182886334464, "allocs": [["shared.l1", 1520435200], ["shared.l2", 759169024], ["L0.l1.private", 3009413120], ["L0.l2.private", 1505755136], ["L1.l1.private", 3009413120], ["L1.l2.private", 1505755136], ["L2.l1.private", 3009413120], ["L2.l2.private", 1505755136], ["L3.l1.private", 3009413120], ["L3.l2.private", 1505755136], ["L4.l1.private", 3009413120], ["L4.l2.private", 1505755136], ["L5.l1.private", 3009413120], ["L5.l2.private", 1505755136], ["L6.l1.private", 3009413120], ["L6.l2.private", 1505755136], ["L7.l1.private", 3009413120], ["L7.l2.private", 1505755136], ["L8.l1.private", 3009413120], ["L8.l2.private", 1505755136], ["L9.l1.private", 3009413120], ["L9.l2.private", 1505755136], ["L10.l1.private", 3009413120], ["L10.l2.private", 1505755136], ["L11.l1.private", 3009413120], ["L11.l2.private", 1505755136], ["L12.l1.private", 3009413120], ["L12.l2.private", 1505755136], ["L13.l1.private", 3009413120], ["L13.l2.private", 1505755136], ["L14.l1.private", DS41_FASTPATH boundary: peer-v3 finish fused into the next seam for MoE layers [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39]
+DS41_FASTPATH boundary: hc_fn tf32 fragment images for 40 layers: 157286400 bytes (150.0 MiB)
+DS41_FASTPATH gracetier: load 1: skipped 30960 cold-expert tensors before reading (gracetier reads them into Grace)
+DS41_FASTPATH gracetier: load 2: skipped 30960 cold-expert tensors before reading (gracetier reads them into Grace)
+DS41_FASTPATH tail_markov_fused: one-launch Markov loop: 152 CTAs x 851 rows (384 resident in shared memory, the rest streamed), batches <= 1; W5's loop above
+DS41_FASTPATH tail_ctxkv: one projection for 3 draft layers' context KV, extra HBM 8,110,080 B (allocated in load_draft_model)
+DS41_FASTPATH boundary: DSpark drafter: 3 layers registered (w4 mega at T <= 64, drafter router at 2 <= T <= 64, router on)
+DS41_FASTPATH tail_swa_meta: target SWA decode builds launch as one multi-group kernel
+DS41_FASTPATH ACTIVE tail_replay_skip
+DS41_FASTPATH tail_replay_skip: replay_start uploads skipped when unchanged
+DS41_FASTPATH engram_side: warm: SM-limited (32 SMs) engram kv kernels bitwise-checked for T in [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32]
+DS41_FASTPATH gracetier: HOST_RAM_BUDGET [post-load: Engram + cold pool resident, KV overflow pending] engram 189.13 GiB (resident) + cold_pool 85.26 GiB (resident) + kv_offload 48.0 GiB (pending) = 322.39 GiB; MemAvailable 173.6 GiB - pending 48.0 GiB = headroom 125.6 GiB vs floor 32.0 GiB -> fits {"GiB": {"MemAvailable": 173.6, "cold_pool": 85.26, "engram": 189.13, "floor": 32.0, "headroom": 125.6, "host_total": 322.39, "kv_offload": 48.0, "pending": 48.0}, "MemAvailable_B": 186398343168, "MemAvailable_at_load_start_B": 274950914048, "fits": true, "floor_B": 34359738368, "headroom_B": 134858735616, "host_total_B": 346158349328, "kv_source": "vllm_config.cache_config.kv_offloading_size", "pending": ["kv_offload"], "pending_B": 51539607552, "resident": ["engram", "cold_pool"], "terms_B": {"cold_pool": 91545665536, "engram": 203073076240, "kv_offload": 51539607552}}
+DS41_FASTPATH gracetier: [gracetier-res] adaptive residency on 40 layers (H [255], G 384): drain_n 64 swaps/drain 2 cap/barrier 4 hyst 3.0 min_abs 8.0 halflife 500.0; freeze=0; ctrl + telemetry /prof/gracetier-res; boot digests 1.63 s
+DS41_FASTPATH gracetier: residency: manager over 40 layers; the SF banks it swaps are module._transformed_l1/l2_weights[1] as they are after load (40/40 layers retired by a12_retire into its compressible allocation); counter int32 (40, 384), counted calls <= 1536 ids; freeze=0
+DS41_FASTPATH ACTIVE gracetier
+DS41_FASTPATH gracetier: ENGAGED: 40 layers, H [255], G = 384, 30960 cold tensors in Grace (85.26 GiB, read 61.8 s, registered 0.23 s); VMM {"alloc_bytes": 182886334464, "allocs": [["shared.l1", 1520435200], ["shared.l2", 759169024], ["L0.l1.private", 3009413120], ["L0.l2.private", 1505755136], ["L1.l1.private", 3009413120], ["L1.l2.private", 1505755136], ["L2.l1.private", 3009413120], ["L2.l2.private", 1505755136], ["L3.l1.private", 3009413120], ["L3.l2.private", 1505755136], ["L4.l1.private", 3009413120], ["L4.l2.private", 1505755136], ["L5.l1.private", 3009413120], ["L5.l2.private", 1505755136], ["L6.l1.private", 3009413120], ["L6.l2.private", 1505755136], ["L7.l1.private", 3009413120], ["L7.l2.private", 1505755136], ["L8.l1.private", 3009413120], ["L8.l2.private", 1505755136], ["L9.l1.private", 3009413120], ["L9.l2.private", 1505755136], ["L10.l1.private", 3009413120], ["L10.l2.private", 1505755136], ["L11.l1.private", 3009413120], ["L11.l2.private", 1505755136], ["L12.l1.private", 3009413120], ["L12.l2.private", 1505755136], ["L13.l1.private", 3009413120], ["L13.l2.private", 1505755136], ["L14.l1.private", 3009413120], ["L14.l2.private", 1505755136], ["L15.l1.private", 3009413DS41_FASTPATH quant_producer: low-latency GEMM quantize closure rebound after model load {"apply_module": "ll_gemm", "class_name": "FlashInferCutedslMxfp8LinearKernel", "closure_is_wrapper": true, "freevar": "mxfp8_e4m3_quantize", "wrapper_module": "vllm.model_executor.layers.quantization.utils.mxfp8_utils"}
+DS41_FASTPATH ACTIVE a12_retire
+(EngineCore pid=405) INFO 11-10 04:15:13 [utils.py:343] Using BLHNC KV cache layout.
+DS41_FASTPATH gracetier: residency: first barrier: weights and SF banks of 40 layers unchanged since load_model
+DS41_FASTPATH gracetier: first eager stock-forward call (layer 0, T 8192): G = 384 SymmBuffer topk_idx == our groups: True
+DS41_FASTPATH suffix: skipping 7 multi-request 32-row decode graphs
+DS41_FASTPATH suffix: dynamic K: added the 1 x 8 FULL decode graph
+Capturing CUDA graphs (PIECEWISE):   0%|          | 0/26 [00:00<?, ?it/s]DS41_FASTPATH engram_side: not forked: T=256 outside 1..32
+Capturing CUDA graphs (PIECEWISE):   4%|▍         | 1/26 [00:01<00:33,  1.35s/it]DS41_FASTPATH engram_side: not forked: T=224 outside 1..32
+Capturing CUDA graphs (PIECEWISE):   8%|▊         | 2/26 [00:01<00:16,  1.48it/s]DS41_FASTPATH engram_side: not forked: T=192 outside 1..32
+Capturing CUDA graphs (PIECEWISE):  12%|█▏        | 3/26 [00:01<00:10,  2.16it/s]DS41_FASTPATH engram_side: not forked: T=160 outside 1..32
+Capturing CUDA graphs (PIECEWISE):  15%|█▌        | 4/26 [00:01<00:07,  2.75it/s]DS41_FASTPATH engram_side: not forked: T=144 outside 1..32
+Capturing CUDA graphs (PIECEWISE):  19%|█▉        | 5/26 [00:02<00:06,  3.26it/s]DS41_FASTPATH engram_side: not forked: T=128 outside 1..32
+Capturing CUDA graphs (PIECEWISE):  23%|██▎       | 6/26 [00:02<00:05,  3.65it/s]DS41_FASTPATH engram_side: not forked: T=96 outside 1..32
+Capturing CUDA graphs (PIECEWISE):  27%|██▋       | 7/26 [00:02<00:04,  3.96it/s]DS41_FASTPATH engram_side: not forked: T=80 outside 1..32
+Capturing CUDA graphs (PIECEWISE):  31%|███       | 8/26 [00:02<00:04,  4.20it/s]DS41_FASTPATH engram_side: not forked: T=72 outside 1..32
+Capturing CUDA graphs (PIECEWISE):  35%|███▍      | 9/26 [00:03<00:03,  4.32it/s]DS41_FASTPATH engram_side: not forked: T=64 outside 1..32
+Capturing CUDA graphs (PIECEWISE):  38%|███▊      | 10/26 [00:03<00:03,  4.33it/s]DS41_FASTPATH engram_side: not forked: T=56 outside 1..32
+Capturing CUDA graphs (PIECEWISE):  42%|████▏     | 11/26 [00:03<00:03,  4.35it/s]DS41_FASTPATH engram_side: not forked: T=48 outside 1..32
+Capturing CUDA graphs (PIECEWISE):  46%|████▌     | 12/26 [00:03<00:03,  4.43it/s]DS41_FASTPATH engram_side: not forked: T=40 outside 1..32
+Capturing CUDA graphs (PIECEWISE):  50%|█████     | 13/26 [00:03<00:02,  4.51it/s]DS41_FASTPATH engram_side: not forked: T=36 outside 1..32
+Capturing CUDA graphs (PIECEWISE):  54%|█████▍    | 14/26 [00:04<00:02,  4.59it/s]DS41_FASTPATH engram_side: engram kv on the side stream for layer 1 (T=32, 32 SMs)
+DS41_FASTPATH engram_side: engram kv on the side stream for layer 14 (T=32, 32 SMs)
+DS41_FASTPATH engram_side: not forked: piecewise graph
+Capturing CUDA graphs (PIECEWISE):  62%|██████▏   | 16/26 [00:04<00:02,  3.94it/s]DS41_FASTPATH attn: language_model.model.layers.0.attn (swa) on the W1 kernel (24 tokens, eager)
+Capturing CUDA graphs (FULL):  50%|█████     | 1/2 [00:00<00:00,  5.38it/s]DS41_FASTPATH engram_side: not forked: T=162 outside 1..32
+DS41_FASTPATH suffix: captured FULL 1-request decode graphs: none
+Capturing dspark CUDA graphs (FULL):  61%|██████    | 31/51 [00:00<00:00, 60.81it/s]DS41_FASTPATH attn: model.layers.40.attn (draft) on the W1 kernel (24 tokens, eager)
+DS41_FASTPATH attn: capture width 24: model.layers.40.attn (draft) on the W1 kernel
+Capturing dspark CUDA graphs (FULL):  75%|███████▍  | 38/51 [00:00<00:00, 62.77it/s]DS41_FASTPATH attn: capture width 21: model.layers.40.attn (draft) on the W1 kernel
+DS41_FASTPATH attn: capture width 20: model.layers.40.attn (draft) on the W1 kernel
+DS41_FASTPATH attn: capture width 18: model.layers.40.attn (draft) on the W1 kernel
+DS41_FASTPATH attn: capture width 15: model.layers.40.attn (draft) on the W1 kernel
+DS41_FASTPATH attn: capture width 14: model.layers.40.attn (draft) on the W1 kernel
+DS41_FASTPATH attn: capture width 12: model.layers.40.attn (draft) on the W1 kernel
+Capturing dspark CUDA graphs (FULL):  88%|████████▊ | 45/51 [00:00<00:00, 64.38it/s]DS41_FASTPATH attn: capture width 10: model.layers.40.attn (draft) on the W1 kernel
+DS41_FASTPATH attn: capture width 9: model.layers.40.attn (draft) on the W1 kernel
+DS41_FASTPATH attn: capture width 7: model.layers.40.attn (draft) on the W1 kernel
+DS41_FASTPATH attn: capture width 6: model.layers.40.attn (draft) on the W1 kernel
+DS41_FASTPATH attn: capture width 5: model.layers.40.attn (draft) on the W1 kernel
+DS41_FASTPATH attn: capture width 3: model.layers.40.attn (draft) on the W1 kernel
+DS41_FASTPATH attn: captured decode attention calls, W1/stock per width: 3:3/0 5:3/0 6:3/0 7:3/0 9:3/0 10:3/0 12:3/0 14:3/0 15:3/0 18:3/0 20:3/0 21:6/0 24:3/0 25:0/3 28:0/3 30:0/6 33:0/3 35:0/6 36:0/3 40:0/3 42:0/6 48:0/3 49:0/3 50:0/3 56:0/3 57:0/3 60:0/3 65:0/3 66:0/3 70:0/3 72:0/3 75:0/3 77:0/3 80:0/3 81:0/3 84:0/3 96:0/3 98:0/3 100:0/3 130:0/3 133:0/3 145:0/3 147:0/3 160:0/3 161:0/3 162:0/40 192:0/40 196:0/3 224:0/3 (total W1 42, stock 191)
+(EngineCore pid=405) INFO 11-10 04:15:33 [gpu_worker.py:692] Available KV cache memory: 19.07 GiB
+(EngineCore pid=405) INFO 11-10 04:15:33 [gpu_worker.py:707] CUDA graph memory profiling is enabled (default since v0.21.0). The current --gpu-memory-utilization=0.9500 is equivalent to --gpu-memory-utilization=0.9383 without CUDA graph memory profiling. To maintain the same effective KV cache size as before, increase --gpu-memory-utilization to 0.9617. To disable, set VLLM_MEMORY_PROFILER_ESTIMATE_CUDAGRAPHS=0.
+(EngineCore pid=405) INFO 11-10 04:15:33 [kv_cache_utils.py:2464] GPU KV cache size: 8,403,455 tokens, Maximum concurrency for 1,048,576 tokens per request: 8.01x
+DS41_FASTPATH suffix: skipping 7 multi-request 32-row decode graphs
+DS41_FASTPATH suffix: dynamic K: added the 1 x 8 FULL decode graph
+DS41_FASTPATH tail_embed: self-check bitwise equal, gather kernel active
+DS41_FASTPATH gracetier: stream check: 64 eager gt_stage calls inside execute_model ran on the barrier's stream
+DS41_FASTPATH tail_dflash_prep: one launch for draft KV groups [0, 1, 2]
+DS41_FASTPATH suffix: batch-1 proposals 1, copy chains 0, extensions 0, mean match 0.00; scheduled wide 0, normal 0
+DS41_FASTPATH engram_side: not forked: T=8192 outside 1..32
+DS41_FASTPATH engram_side: not forked: T=1056 outside 1..32
+DS41_FASTPATH engram_side: not forked: T=1024 outside 1..32
+DS41_FASTPATH engram_side: not forked: T=33 outside 1..32
+Capturing CUDA graphs (FULL):   8%|▊         | 3/36 [00:00<00:05,  5.67it/s]DS41_FASTPATH engram_side: not forked: T=132 outside 1..32
+Capturing CUDA graphs (FULL):  19%|█▉        | 7/36 [00:01<00:05,  5.68it/s]DS41_FASTPATH engram_side: not forked: T=84 outside 1..32
+Capturing CUDA graphs (FULL):  31%|███       | 11/36 [00:01<00:04,  5.66it/s]DS41_FASTPATH engram_side: not forked: T=66 outside 1..32
+Capturing CUDA graphs (FULL):  36%|███▌      | 13/36 [00:02<00:04,  5.34it/s]DS41_FASTPATH engram_side: not forked: T=60 outside 1..32
+Capturing CUDA graphs (FULL):  47%|████▋     | 17/36 [00:03<00:03,  5.28it/s]DS41_FASTPATH engram_side: not forked: T=42 outside 1..32
+Capturing CUDA graphs (FULL):  81%|████████  | 29/36 [00:05<00:01,  5.23it/s]DS41_FASTPATH attn: capture width 16: language_model.model.layers.0.attn (swa) on the W1 kernel
+Capturing CUDA graphs (FULL):  89%|████████▉ | 32/36 [00:05<00:00,  5.57it/s]DS41_FASTPATH attn: capture width 8: language_model.model.layers.0.attn (swa) on the W1 kernel
+Capturing CUDA graphs (FULL):  97%|█████████▋| 35/36 [00:08<00:00,  1.60it/s]DS41_FASTPATH attn: capture width 4: language_model.model.layers.0.attn (swa) on the W1 kernel
+DS41_FASTPATH suffix: captured FULL 1-request decode graphs: 1 x 4, 1 x 6, 1 x 8, 1 x 32
+DS41_FASTPATH quant_producer: CAPTURE {"descriptors": 36, "duplicate_graphs_retained": 0, "fused_t6_keys": ["BatchExecutionDescriptor(cg_mode=<CUDAGraphMode.FULL: 2>, num_tokens=6, num_reqs=1, uniform_token_count=6, max_query_len=None, num_active_loras=0, num_ubatches=1)"], "fused_t8_keys": ["BatchExecutionDescriptor(cg_mode=<CUDAGraphMode.FULL: 2>, num_tokens=8, num_reqs=1, uniform_token_count=8, max_query_len=None, num_active_loras=0, num_ubatches=1)"], "inventory": [{"edge_count": 964, "node_count": 917, "sha256": "1f916900a652ccfa9eb8c1d10366dd7b18a824d568721bac701013b29e9dfbb0"}, {"edge_count": 964, "node_count": 917, "sha256": "79b8592306c7e14ace03ebeacbe021623e062df465e2f773f60c1a1ac56a38b9"}, {"edge_count": 964, "node_count": 917, "sha256": "cb594e31f5f7c60311b59ae629b941dfcf30bd3b7966eb8ac8a1d124a53c0340"}, {"edge_count": 963, "node_count": 916, "sha256": "d50c7477501f4ea4fa831a8366163ac2a9ddcbcfb37811eb37121deb6e101026"}, {"edge_count": 946, "node_count": 899, "sha256": "1f4c350db3db45778a8a3e046c26e2cdeaca62756cf5ef084de6612f590c5dec"}, {"edge_count": 946, "node_count": 899, "sha256": "a232264e179c89e42d0393dc350b6970cedb64a5fce8dc5d898db5747fe83a09"}, {"edge_count": 946DS41_FASTPATH ACTIVE quant_producer
+DS41_FASTPATH quant_producer: CAPTURE {"descriptors": 51, "duplicate_graphs_retained": 0, "fused_t6_keys": [], "fused_t8_keys": [], "inventory": [{"edge_count": 68, "node_count": 69, "sha256": "6f058eb2cd7a0e763d675ddc8bbbd734a0556ea19a672bf60a9d502adbf05592"}, {"edge_count": 68, "node_count": 69, "sha256": "5ed0686d6e63abafc1b11e5fcfce43486ca111b91cf235c20c22ee05aa432975"}, {"edge_count": 68, "node_count": 69, "sha256": "8da7e7641e6ec49826dd399a36f30de2caf1be86a94a4014f495a204f57263bb"}, {"edge_count": 68, "node_count": 69, "sha256": "38066ed52609663f77d7b4e81cd369d94fd5de460b108ab758bfb94132b2959d"}, {"edge_count": 68, "node_count": 69, "sha256": "aa6c04f2644ac1828a1c0db016764dc79b3675039659a4961bb106b8afae19ca"}, {"edge_count": 68, "node_count": 69, "sha256": "9de2d78f61a69d4bb40f0ed0124695943edb95acf17c3b87b43cd30881c75104"}, {"edge_count": 68, "node_count": 69, "sha256": "013a9ef66709781065cfa99faf2958d77d60ae90c335ffe9a57b0dd00c87e3ac"}, {"edge_count": 68, "node_count": 69, "sha256": "c61510fc84be99976998e04bee74d825c7c7c11744e678632daddad047ae742c"}, {"edge_count": 68, "node_count": 69, "sha256": "7c69a2914c06db6595e3b84eee2ba7ffbc8cd3e876b3adbfb00e4b7621892195"}, {"edge_couDS41_FASTPATH attn: captured decode attention calls, W1/stock per width: 3:6/0 4:2/0 5:6/0 6:8/0 7:6/0 8:4/0 9:6/0 10:6/0 12:10/0 14:6/0 15:6/0 16:2/0 18:8/0 20:8/0 21:12/0 24:10/0 25:0/6 28:0/8 30:0/14 32:0/4 33:0/6 35:0/12 36:0/10 40:0/8 42:0/14 48:0/10 49:0/6 50:0/6 56:0/8 57:0/6 60:0/8 64:0/2 65:0/6 66:0/8 70:0/6 72:0/10 75:0/6 77:0/6 80:0/46 81:0/6 84:0/46 96:0/86 98:0/6 100:0/6 128:0/40 130:0/6 132:0/40 133:0/6 144:0/40 145:0/6 147:0/6 160:0/6 161:0/6 162:0/80 192:0/80 196:0/6 224:0/6 (total W1 106, stock 1720)
+DS41_FASTPATH ACTIVE a12_memory_guard
+DS41_FASTPATH suffix: dynamic K v3 on: batch-1 normal steps verify 5 or 7 drafts (cost 1.09, decay 0.9, n0 4.0, prior (2.6, 0.3, 1.15), explore up every 16 / down every 64, optimism 0.2, cost = median of 64); W6_DYNK_EARLY: decided in propose(), short Markov loop on K_LO steps
+INFO:     Application startup complete.

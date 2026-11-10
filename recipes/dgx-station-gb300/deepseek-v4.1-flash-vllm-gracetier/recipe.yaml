@@ -1,0 +1,180 @@
+schema: jm-recipe/v1
+id: dgx-station-gb300/deepseek-v4.1-flash-vllm-gracetier
+title: DeepSeek-V4.1-Flash on one GB300, no sidecar GPU - Garner's engine with the cold experts staged from Grace (gracetier)
+summary: >
+  Experimental, measured 2026-11-09. Garner McCloud's DS4.1 engine (garnermccloud/dgx-station-recipes @ 8043a681,
+  vllm/vllm-openai:v0.31.0) needs an RTX PRO 6000 beside the GB300 to compute the cold experts. This recipe replaces
+  that sidecar with one fastpath component, gracetier: every MoE layer runs all 384 experts in one MegaMoE call, 255
+  per layer live in HBM, the other 129 live in pinned Grace memory and the ones a step routes to are copied into a
+  shared HBM scratch by one kernel per layer, with an adaptive residency policy swapping hot and cold experts
+  between steps. Same harness, same night, 40 general prompts x 256 tokens, one stream - 261 tok/s against 225 for
+  our October single-GPU recipe (v28-prob) and 412 for the two-GPU lane (Pg61); 8 streams 489 / 452 / 909 tok/s
+  aggregate; 32 streams 718 / 683 / 1,733. That is 1.11-1.16x the October recipe at one stream, which MISSES the
+  1.25x release bar we pre-registered, and 0.63x the two-GPU lane. What it adds over the October recipe is KV
+  capacity (8.40M tokens against 2.48M at 1M context) at somewhat higher speed. Swaps are byte-audited (0
+  mismatches in every window), greedy output is identical with residency on and off (8/8), the tool gauntlet is
+  12/12. Not run - teacher-forced bracket, GSM8K, BFCL, needle, 1M-token prompt, temperature > 0 calibration, soak.
+  The launcher is a card runner that boots, measures and restores; no standing-service launcher exists yet.
+status: experimental     # 2026-11-09 first publication. Missed its own pre-registered speed bar (>= 1.25x v28-prob at C1). Only the schema gate is stamped.
+owners: [jmeadlock, milo]
+updated: "2026-11-09"
+tags: [deepseek-v4.1-flash, mxfp4, vllm, garner-ds41, gracetier, uva-offload, adaptive-residency, megamoe, dspark, speculative-decoding, single-gpu, gb300, 1m-context]
+
+model:
+  name: DeepSeek-V4.1-Flash-1017
+  repo: https://huggingface.co/deepseek-ai/DeepSeek-V4.1-Flash-1017
+  revision: 1bae0e1088993b9b82de08f59de5be5a34e42170
+  quantization: "as shipped - routed experts MXFP4 (I8 + E8M0 block scales), attention and Engram FP8, nothing re-quantized. gracetier reads the cold experts' tensors straight from the shards into one registered Grace buffer in MegaMoE's per-expert layout; a swap moves bytes, it never re-encodes them (digest audit, 0 mismatches)."
+  params: "552B backbone (MoE, 384 routed + 1 shared expert, 6 active; 8B activated per token in prefill / 16B in decode) + 196B Engram - model-card figures as carried in the sibling recipes, not re-derived here"
+  draft:
+    repo: in-checkpoint (mtp.0-2.* tensors)
+    revision: 1bae0e1088993b9b82de08f59de5be5a34e42170
+    method: "DSpark as configured by Garner's engine under our Pg61 policy (the launcher copies Pg61's policy.env and changes only the component list and the served name); the k-schedule was not re-read for this write-up - see the sibling sidecar recipe"
+
+hardware:
+  profile: hardware/dgx-station-gb300.yaml
+  nominal: { gpu_memory_gb: 288, host_memory_gb: 496 }
+  observed:
+    gpu: NVIDIA GB300
+    driver: "595.99.02"
+    cuda: "13.2 (host driver); container torch cu130"
+    gpu_memory_visible_gib: 250.7
+    host_memory_gib: 494.5
+    os: Ubuntu 24.04.5 LTS
+    kernel: 7.0.0-1024-nvidia-64k
+    snapshot: results/2026-11-09-gt-a5/system.json
+  required_settings:
+    - "The reference box also holds an RTX PRO 6000 (it drives the display). This recipe does not use it - the boot log reads 'gracetier - no RTX sidecar (cold experts in Grace)' and only the GB300 is passed to the container - but no run was made on a Station without that card installed."
+    - "Host memory - gracetier pins 85.26 GiB of cold experts in Grace beside the engine's 189.13 GiB Engram and a 48 GiB host KV tier (322.4 GiB in all). The component logs one HOST_RAM_BUDGET line and refuses to boot when headroom is under 32 GiB; the receipts show 124-126 GiB of headroom after load on a 494.5 GiB host with nothing else running."
+    - "Checkpoint on local NVMe (cold-expert read 60-62 s at boot; from a network share it will be far slower)."
+    - "Persistent JIT caches seeded from a previous boot of the same engine (the card's GT1_SEED_CACHE=1 copies Pg61's jit/ and flashinfer/ caches); boot to serving is about 4.5 minutes with them (4 min 19 s to 4 min 39 s in the five evening boots). A cold-cache boot was not measured."
+    - "The container needs --ulimit memlock=-1 and IPC_LOCK (the cold pool is cudaHostRegister'd), as Garner's serve.sh already sets for the engine."
+
+runtime:
+  engine: vLLM
+  engine_version: 0.31.0
+  engine_commit: db9527a46873454610df6dbedf79a36d6bf1a7f6
+  container:
+    image: vllm/vllm-openai:v0.31.0
+    digest: sha256:c1c9f6fd5c109ba7f0546a59f5b2f15fb87f64c77782e90a27b648b42a8e67c3
+    base_image: "Stock pullable vllm/vllm-openai:v0.31.0 (image id == repo digest on the reference box, re-read 2026-11-09). Nothing is built into an image - Garner's tree, our patches and the gracetier component are bind-mounted, exactly as in the sibling sidecar recipe."
+  key_libraries:
+    garner_engine: "garnermccloud/dgx-station-recipes 8043a6811a5feda70fdfb6e827eebb2ec25c65d1, deepseek-v4.1-flash/ (MIT). The gracetier tree is a copy of the built Pg61 tree (sibling sidecar recipe, launch-pg61.sh build - his clone at that commit plus our lane patches 01-05 and the vLLM #61161 / #60945 overlay)."
+    gracetier: "jmeadlock/gb300-dsv41-decode fadc3d2eb7289189d82ba40cbbdc9b3f10b357a2 (Apache-2.0) - port/garner/fastpath/fastpath_gracetier.py, runtime/gracetier_{vmm,pool,stage,res}.py, runtime/residency_policy.py, runtime/{dg_mega,dg_moe,host_tier,ckpt}.py, port/garner/make_rowmap_allres.py. The evening's boots ran commits e598f0a through 476176d; port/ and runtime/ are byte-identical from e598f0a to fadc3d2 (git diff empty), the later commits add bench scripts and receipts."
+    components: "23 fastpath components ACTIVE = Pg61's 24 minus coldskip and peer3, plus gracetier (boot log line 'components ACTIVE 23')"
+    residency_policy: "v26ar.2 decision core from the sibling single-GPU recipe, vendored byte-identical; drain every 64 engine steps, 2 swaps per layer per drain, at most 4 per barrier, half-life 500, min_abs 8, hysteresis 3.0 (the sibling ships 1.5)"
+  patches:
+    - path: patches/0001-boundary-gracetier.patch
+      sha256: 820f2711f3914e5e012b8390c949e36880f62f8f295628987e2d46b86f556d25
+      purpose: "Garner 8043a681 fastpath_boundary.py - lets a gracetier layer take the fused boundary path at T <= 16 with the all-resident row map (stage the call's cold groups, then MegaMoE over G = 384)."
+    - path: patches/0002-components-gracetier.patch
+      sha256: 2a00ab3aff3e859160d173a69bcd9d6603622e6f2ed4ee55be514394ca8501ff
+      purpose: "Garner 8043a681 components.py - registers the gracetier component (listed before a12_retire)."
+    - path: patches/serve-gracetier.patch
+      sha256: 04acd8235bbe0b99b643b2b82e7eb87d5cc0a30e215d660062fb64d26b75c687
+      purpose: "Garner 8043a681 serve/serve.sh - no sidecar container, no peer shm, when the component list carries gracetier."
+
+launch:
+  script: scripts/card-gt1.sh
+  command: "On a box where the sibling sidecar recipe's Pg61 tree is already built - cd <checkout of jmeadlock/gb300-dsv41-decode at fadc3d2> && GT1_WINDOW=<your window id> GT1_RES=1 GT1_RES_CELLS=a5 GT1_SEED_CACHE=1 GT1_RES_CONFIG='{\"mode\": \"adaptive\", \"freeze\": false, \"hyst\": 3.0}' bash bench/box/card-gt1.sh   # stops Pg61, builds the gracetier tree, boots it on :30006 as dsv41-flash-gracetier, runs the A5 cells, stops it, restores Pg61"
+  health: "Boot log - 'DS41_FASTPATH ACTIVE gracetier', 23 components ACTIVE, 'ENGAGED - 40 layers, H [255], G = 384', HOST_RAM_BUDGET post-load 'fits', 'residency - manager over 40 layers', 'GPU KV cache size - 8,403,455 tokens'. Running - curl -fs http://localhost:30006/v1/models lists dsv41-flash-gracetier; an audit control document ({\"audit\": {\"moved\": true, \"random\": 64}} written to the control dir) must come back with mismatches 0."
+  warmup: "Boot to serving 4 min 19 s to 4 min 39 s in the five evening boots (seeded JIT caches). The residency policy starts at the boot map and needs traffic - on the 8-prompt lab fixture the cold share reached 90 % of its drop in 6.4 s; on general prompts the first 20-prompt pass ran at the static speed and the second at the adapted one."
+  notable_flags:
+    - "DS41_FASTPATH - Pg61's component list with 'coldskip,peer3' replaced by 'gracetier' (the card writes policy.env from Pg61's and changes only that and the served name)."
+    - "fastpath/gracetier-res.json = {mode adaptive, freeze false, hyst 3.0} - adaptive expert residency. Absent file or mode off = the static 255-hot map (10.45-10.50 ms/step on the lab step prompt, 13.0-13.2 on general prompts)."
+    - "Row map - Garner's rowmap-mix-v1-h255.json (255 hot / 129 cold per layer) converted by scripts/make_rowmap_allres.py into an all-resident map (every expert has a MegaMoE group - hot 0..254 in private HBM, cold 255..383 on one shared scratch)."
+    - "VARIANT 275 hot per layer (GT1_HOT_MAP=docs/maps/hot-garner255-plus-275.json in the repo) - about 1 ms per step faster on general prompts (10.5-10.9 against 11.4-12.0) but the KV cache drops from 8.40M to 2.76M tokens (2.64 full-length contexts). A single-user setting. One boot, C1 cells only - no C8/C32, gauntlet or TTFT run on it."
+    - "DS41_OFFLOAD_GB=48 DS41_KV=fp8_ds_mla DS41_MAXLEN=1048576 - inherited from Pg61's policy unchanged."
+
+metrics:
+  - name: decode, one stream, general prompts - client tok/s
+    value: 261.0
+    unit: tok/s
+    workload: "40 general prompts (two disjoint sets of 20 - code, SQL, JSON, shell, math, history, cooking, translation, story, legal, biology, email, table, poem, physics, tool call, finance, debug) x 256 new tokens, greedy, thinking off, one stream, after two unmeasured warm passes; set A 261.54, set B 260.47; set A again after the C8/C32 cells 273.51"
+    aggregation: "sum of completion tokens / sum of first-to-last-content-chunk wall time over the 20 prompts of a set; the value is the mean of set A and set B"
+    acceptance_len: 3.0
+    label: "255 hot, adaptive residency, hysteresis 3.0; ms/step 11.80 (A) / 11.49 (B) / 11.27 (A again); general prompts, not the lab fixture"
+    provenance: { run_id: 2026-11-09-gt-a5, method: "scripts/gt_mix_drive.py pass (via scripts/a5-cells.sh)", raw: raw/a5/a5-gracetier-20261109-221120-c1-a.json }
+  - name: same cells on the October single-GPU recipe (v28-prob) - client tok/s
+    value: 224.9
+    unit: tok/s
+    workload: "the sibling recipe's stopped-and-kept reference container, docker start unchanged (bound after 345 s, KV 2,481,694 tokens, max-num-seqs 24), same two warm passes, same prompts - set A 226.40, set B 223.47, set A again 247.03; ms/step 13.67 / 13.52 / 12.53"
+    aggregation: "as the row above; gracetier / v28-prob = 1.155 (A), 1.166 (B), 1.107 (A again). The pre-registered release bar was >= 1.25"
+    label: "control arm, same night, same harness; its own adaptive residency was still improving between the first and the last pass"
+    provenance: { run_id: 2026-11-09-gt-a5, method: "scripts/a5-v28.sh", raw: raw/a5/a5-v28-20261109-2230-c1-a.json }
+  - name: same cells on the two-GPU lane (Pg61) - client tok/s
+    value: 412.3
+    unit: tok/s
+    workload: "production Pg61 (GB300 + RTX PRO 6000 sidecar) on the live lane right after its restore - set A 414.22, set B 410.35, set A again 414.36; ms/step 7.65 / 7.64 / 7.65"
+    aggregation: "as the first row; Pg61 / gracetier = 1.58 (A), 1.58 (B), 1.52 (A again)"
+    label: "different hardware (a second GPU); the price of removing it"
+    provenance: { run_id: 2026-11-09-gt-a5, method: "scripts/a5-cells.sh on the live lane", raw: raw/a5/a5-pg61-20261109-2230-c1-a.json }
+  - name: 8 streams, aggregate
+    value: 489.4
+    unit: tok/s
+    workload: "40 salted requests (the 40 prompts, a per-cell salt in front so no arm gets a prefix-cache hit) x 256 tokens on 8 streams; v28-prob 452.3, Pg61 909.0; per-stream decode p50 74.8 / 75.2 / 147.6 tok/s"
+    aggregation: "completion tokens / wall time of the whole cell (includes prefill and ramp); one cell per arm"
+    provenance: { run_id: 2026-11-09-gt-a5, method: "scripts/gt_mix_drive.py conc --n 8", raw: raw/a5/a5-gracetier-20261109-221120-c8.json }
+  - name: 32 streams, aggregate
+    value: 717.5
+    unit: tok/s
+    workload: "64 salted requests x 256 tokens on 32 streams; v28-prob 683.2 (it admits 24 sequences, so 8 queue), Pg61 1,733.3; TTFT p50 1.43 / 2.47 / 1.23 s, max 1.65 / 8.91 / 1.38 s; per-stream decode p50 29.0 / 36.6 / 78.3 tok/s"
+    aggregation: "completion tokens / wall time of the whole cell; one cell per arm; a 64-request burst, not a steady state"
+    provenance: { run_id: 2026-11-09-gt-a5, method: "scripts/gt_mix_drive.py conc --n 32", raw: raw/a5/a5-gracetier-20261109-221120-c32.json }
+  - name: time to first token, 60,954-token prompt
+    value: 1.337
+    unit: s
+    workload: "max_tokens 1, non-streamed wall time, pseudo-random common words with a per-run salt; median of 3 (first run 5.54 s, then 1.337 / 1.336); 31 tokens 0.050 s, 286 0.094, 954 0.097, 7,621 0.183; Pg61 0.020 / 0.123 / 0.127 / 0.184 / 1.474 s"
+    aggregation: "median of 3 runs per length; usage.prompt_tokens is the length"
+    label: "the first run at a new length is slower (0.69 s at 7.6K, 5.5 s at 61K on gracetier); nothing above 61K was run"
+    provenance: { run_id: 2026-11-09-gt-a5, method: "scripts/gt_mix_drive.py ttft", raw: raw/a5/a5-gracetier-20261109-224750-ttft.json }
+  - name: KV cache at 1M context
+    value: 8403455
+    unit: tokens
+    workload: "boot log, 255 hot per layer - 'Available KV cache memory 19.07 GiB', 8.01 full-length contexts; v28-prob 2,481,694 (2.37x); the 275-hot variant 2,763,997 (2.64x, 6.27 GiB)"
+    aggregation: single boot, read from the engine's own log line
+    provenance: { run_id: 2026-11-09-gt-a5, method: "vLLM boot log", raw: raw/a5/gt1-boot-20261109-221120.fastpath-lines.log }
+  - name: decode step on the lab step prompt, adaptive residency (best case)
+    value: 8.204
+    unit: ms/step
+    workload: "one 512-token prompt repeated (2 warm + 3 reps x 5 cells), hysteresis 1.5; same-boot static control 10.50, map fitted to other traffic then frozen 9.60, after restoring the boot map 10.41; Pg61 same cell 7.75"
+    aggregation: "median of 3 reps of the fifth cell; decode wall / (engine steps - 1) from the spec-decode counters"
+    acceptance_len: 2.753
+    label: "a repeated prompt is the best case for an adaptive map; quote the general-prompt rows for real traffic"
+    provenance: { run_id: 2026-11-09-gt-a5, method: "w0_drive.py step via card-gt1.sh GT1_RES=1 (card GT3)", raw: raw/gt3/gt1-res-summary-20261109-185832.json }
+
+verification:
+  gates:
+    schema:      { how: "scripts/check_recipe.py on this recipe.yaml passes (repo venv)", last_pass_utc: "2026-11-10T05:40:00Z", run_id: 2026-11-09-gt-a5 }
+    digest:      { how: "Image id == repo digest sha256:c1c9f6fd... re-read on the box 2026-11-09. Component and tree hashes - raw/a5/gt1-build-20261109-221120.log ('128 files hashed; component 543d89204e4e087b; rowmap-allres 51da2571cc98aeac'). NOT RUN - checkpoint byte-verify against the Hub listing for this write-up." }
+    health:      { how: "Boot gate G1 passed in all five evening boots and the two afternoon ones (gracetier ACTIVE, 23 components, host budget fits, 0 fatal lines); the server was alive after every cell including C32; Pg61 Pg61 restore rc=0 after every window (seven card windows and the v28-prob arm). Not stamped - there is no standing-service launch, watchdog or soak." }
+    quality:     { how: "Evidence on file, not a full gate. (1) Swap byte audit - digests of every moved expert plus 64 random per layer against boot digests, 0 mismatches in 8 audits across 5 boots. (2) Greedy fixture with the adapted map identical 8/8 to itself and 8/8 to the boot-map capture. (3) Against Pg61 on the same 8 prompts - 0 top-1 flips before divergence, 2/8 streams identical, max abs dlogp 0.376 (Pg61 against itself 7/8 and 0.121). (4) Tool gauntlet 12/12, Pg61 same night 12/12. NOT RUN - teacher-forced bracket, GSM8K, BFCL, needle, temperature > 0 calibration." }
+    performance: { how: "NOT STAMPED. Pre-registered bar (docs/REPLAN-20261109.md in the repo) - at least 1.25x v28-prob at C1 and nothing worse at C8/C32. Measured 1.155 / 1.166 / 1.107 at C1, 1.08 at C8, 1.05 at C32 - the C1 bar is missed." }
+
+limits:
+  - "Missed its own speed bar. We pre-registered 'at least 1.25x the October single-GPU recipe at one stream' as the release bar and measured 1.11-1.16x. It is published because the comparison is the result, not because it passed."
+  - "Not a standing service. scripts/card-gt1.sh stops Pg61, boots gracetier, runs cells, stops gracetier and restores Pg61; it has done that seven times. No launcher that leaves gracetier serving has been written or run, there is no health cron and no soak; each boot served only its card's cells, a few minutes of traffic."
+  - "Requires the sibling sidecar recipe's Pg61 tree to be built first (the gracetier tree is a patched copy of it). A build from a clean checkout on a box that never had the sidecar lane was not attempted."
+  - "The reference box has an RTX PRO 6000 installed. The recipe does not pass it to the container, but a Station without that card was not tested."
+  - "General prompts are slower than the lab fixture. The static 255-hot map runs 10.5 ms/step on our lab step prompt and 13.0-13.2 on general prompts; adaptive residency brings those to 8.2 (one prompt repeated) and 11.3-12.0. The row map was fitted to lab traffic."
+  - "The residency policy keeps swapping on mixed traffic - about 1,600 swaps per 20-second pass at hysteresis 1.5 with the count of displaced experts flat near 1,700; hysteresis 3.0 halved that (about 760) with equal or 1-3 % better step time in one pass each. 3.0 is a direction, not a tuned value."
+  - "Concurrency is the weak axis against the two-GPU lane - 0.54x at 8 streams and 0.41x at 32. Wide batches touch more cold experts per step."
+  - "Quality gates not run on this arm - teacher-forced bracket against a control, GSM8K, BFCL, needle, a 1M-token prompt, temperature > 0 sampler calibration. Greedy streams differ from Pg61's on 6 of 8 lab prompts (0 top-1 flips before the first divergence); Pg61 differs from itself on 1 of 8."
+  - "Time to first token was measured to 61K prompt tokens only; the 1M claim is the engine's KV accounting line, not a served 1M prompt."
+  - "Fail-open check not done. Garner's peer tier fails open on a sidecar timeout; gracetier has no sidecar and its stage kernel has no timeout path that we know of, but the wait sites were not audited for this write-up."
+  - "Single run per cell, one evening. No repeat brackets, no run-to-run spread for the C8/C32 cells. The three C1 passes per arm are the only repeats."
+  - "The 275-hot variant was measured at one stream only."
+
+rollback:
+  script: scripts/card-gt1.sh
+  summary: "The card's own exit path is the rollback and it is the only launch path - on any exit after Pg61 is stopped it stops the gracetier containers and restores Pg61 (launch-pg61.sh up, watchdog ENFORCE); restore rc=0 in all seven card windows of 2026-11-09. Nothing else on the box is changed."
+
+links:
+  blog: https://al-engr.com/gb300-dsv41-decode.html
+  repo: https://github.com/jmeadlock/gb300-dsv41-decode
+  repo_commit: https://github.com/jmeadlock/gb300-dsv41-decode/commit/fadc3d2eb7289189d82ba40cbbdc9b3f10b357a2
+  ledger: https://github.com/jmeadlock/gb300-dsv41-decode/blob/fadc3d2eb7289189d82ba40cbbdc9b3f10b357a2/docs/LEDGER.md
+  replan: https://github.com/jmeadlock/gb300-dsv41-decode/blob/fadc3d2eb7289189d82ba40cbbdc9b3f10b357a2/docs/REPLAN-20261109.md
+  sibling_recipe: recipes/dgx-station-gb300/deepseek-v4.1-flash-vllm-uva-dspark
+  sibling_recipe_sidecar: recipes/dgx-station-gb300/deepseek-v4.1-flash-vllm-uva-dspark-sidecar
+  garner_engine: https://github.com/garnermccloud/dgx-station-recipes/tree/8043a6811a5feda70fdfb6e827eebb2ec25c65d1

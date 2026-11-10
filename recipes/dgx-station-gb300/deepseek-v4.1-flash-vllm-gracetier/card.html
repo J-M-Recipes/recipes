@@ -1,0 +1,89 @@
+<!doctype html>
+<html><head><meta charset="utf-8">
+<style>
+  html,body{margin:0;background:#0b0f14;}
+  .card{width:1200px;box-sizing:border-box;padding:36px 44px;background:linear-gradient(160deg,#0b0f14 0%,#0f1620 100%);color:#e6edf3;font-family:Inter,-apple-system,Segoe UI,Helvetica,Arial,sans-serif;border:1px solid #1e2a38;border-radius:14px;}
+  .mono{font-family:"JetBrains Mono",SFMono-Regular,Menlo,Consolas,monospace;}
+  .top{display:flex;justify-content:space-between;align-items:flex-start;}
+  h1{margin:0;font-size:38px;font-weight:800;letter-spacing:-0.5px;}
+  .sub{margin-top:6px;font-size:15px;color:#9fb0c3;}
+  .brand{text-align:right;font-size:13px;color:#9fb0c3;line-height:1.5;white-space:nowrap}
+  .brand b{color:#6ee7b7;font-size:16px;letter-spacing:1px}
+  .pills{display:flex;flex-wrap:wrap;gap:8px;margin:18px 0 22px}
+  .pill{border:1px solid #2a3a4d;background:#111a25;border-radius:999px;padding:6px 12px;font-size:13px;color:#cfd9e4}
+  .pill b{color:#fff;font-weight:600}
+  .pill.type{border-color:#6ee7b7;color:#6ee7b7}
+  .grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px}
+  .box{background:#111a25;border:1px solid #1e2a38;border-radius:10px;padding:16px 18px}
+  .lbl{font-size:11px;letter-spacing:1.6px;text-transform:uppercase;color:#7f93a8;margin-bottom:6px}
+  .hero{font-size:56px;font-weight:800;line-height:1;color:#fff}
+  .hero small{font-size:18px;font-weight:500;color:#9fb0c3;margin-left:6px}
+  .note{font-size:12px;color:#9fb0c3;margin-top:8px;line-height:1.4}
+  .row2{display:grid;grid-template-columns:1.2fr 1fr 1fr;gap:14px;margin-top:14px}
+  .kv{font-size:14px;line-height:1.75}
+  .kv b{color:#fff;font-weight:600}
+  .acc span{display:inline-block;margin-right:12px}
+  .fid{margin-top:14px;background:#0e1a17;border:1px solid #1f4d3d;border-radius:10px;padding:16px 18px}
+  .fid .lbl{color:#6ee7b7}
+  .fid ul{margin:0;padding-left:0;list-style:none;display:grid;grid-template-columns:1fr 1fr;gap:6px 24px;font-size:14px;line-height:1.5}
+  .ok::before{content:"✓ ";color:#6ee7b7;font-weight:700}
+  .pend::before{content:"◌ ";color:#f59e0b;font-weight:700}
+  .pend{color:#d9c58a}
+  .meas::before{content:"≈ ";color:#93c5fd;font-weight:700}
+  .fail::before{content:"✗ ";color:#f87171;font-weight:700}
+  .fail{color:#fca5a5}
+  .pend-inline{color:#f59e0b;font-size:0.6em;font-weight:600;letter-spacing:1px}
+  .foot{display:flex;justify-content:space-between;margin-top:18px;font-size:12px;color:#7f93a8}
+  .foot .mono{color:#9fb0c3}
+  .fid li.pair { list-style: none; margin: 6px 0 2px -18px; padding: 10px 12px; border: 1px solid rgba(255,255,255,.14); border-radius: 8px; background: rgba(255,255,255,.04); }
+  .fid li.pair .big { font-size: 20px; font-weight: 700; color: #e8f0ff; letter-spacing: -.2px; }
+  .fid li.pair .sep { color: rgba(255,255,255,.35); margin: 0 6px; }
+  .fid li.pair .dim { font-size: 11.5px; color: rgba(255,255,255,.62); }
+</style></head><body>
+<div class="card">
+  <div class="top">
+    <div>
+      <h1>DeepSeek-V4.1-Flash · Garner&#x27;s engine without the sidecar GPU · 1× DGX Station GB300</h1>
+      <div class="sub">gracetier — all 384 experts in one MegaMoE call, 255 per layer in HBM, 129 staged from pinned Grace by one kernel per layer, adaptive residency between steps. 1.11–1.16× our October single-GPU recipe at one stream; the pre-registered bar was 1.25×</div>
+    </div>
+    <div class="brand"><b>J-M-RECIPES</b><br>v1 · fadc3d2 · experimental · 2026-11-09<br>status: experimental</div>
+  </div>
+  <div class="pills">
+<span class="pill type"><b>MoE</b> · 384 routed + 1 shared expert, 6 active, plus Engram · 255 hot experts per layer in HBM, 129 cold in pinned Grace</span>
+<span class="pill"><b>552B</b> total · <b>8B prefill / 16B decode</b> active</span>
+<span class="pill">checkpoint <b>510.3 GB</b> · rev <span class="mono">1bae0e10</span></span>
+<span class="pill">weights <b>as shipped · MXFP4 experts / FP8 attn+Engram · nothing re-quantized</b></span>
+<span class="pill">engine <b>vLLM <span class="mono">db9527a46873454610df6dbedf79a36d6bf1a7f6</span> · vLLM v0.31.0 · garnermccloud/dgx-station-recipes @ 8043a681 (23 fastpath components) · gracetier @ fadc3d2</b></span>
+<span class="pill">memory <b>HBM: dense + 255 hot experts/layer + 19.07 GiB KV · Grace: 85.3 GiB cold experts + 189.1 GiB Engram + 48 GiB KV tier · no second GPU</b></span>
+  </div>
+  <div class="grid">
+<div class="box"><div class="lbl">Decode · C1 (40 general prompts × 256 tokens, greedy)</div><div class="hero">261<small>tok/s</small></div><div class="note">set A 261.5 / set B 260.5 · 11.8 / 11.5 ms per step · October recipe 226.4 / 223.5 (1.16×, bar was 1.25×) · Pg61 two-GPU 414.2 / 410.4</div></div>
+<div class="box"><div class="lbl">Decode · C32 aggregate</div><div class="hero">718<small>tok/s</small></div><div class="note">64-request burst · C8 489 · October recipe 683 at C32 (admits 24) and 452 at C8 · Pg61 1,733 and 909</div></div>
+<div class="box"><div class="lbl">Prefill · TTFT, 61K-token prompt</div><div class="hero">1.34<small>s</small></div><div class="note">median of 3, first run 5.5 s · 7.6K 0.18 s · 954 tok 0.10 s · Pg61 1.47 / 0.18 / 0.13 s · longer prompts not run</div></div>
+  </div>
+  <div class="row2">
+<div class="box"><div class="lbl">Guesser</div><div class="kv"><b>DSpark</b> · in-checkpoint MTP head, as Garner&#x27;s engine runs it under the Pg61 policy<br>unchanged from the sibling sidecar recipe (policy.env copied; only the component list and served name differ)<br><span class="acc">accept: <span>general prompts, set A / B <b>3.05 / 2.95 tok/step</b></span> <span>lab step prompt <b>2.74–2.75 tok/step</b></span></span></div></div>
+<div class="box"><div class="lbl">Step time, ms — lab step prompt · general prompts</div><div class="kv">static 255-hot map: <b>10.5 · 13.0–13.2</b><br>+ adaptive residency (hyst 1.5): <b>8.2 repeated / 9.6 held-out · 11.4–12.0</b><br>+ hysteresis 3.0: <b>— · 11.3–11.8</b><br>275 hot + residency (KV 2.76M tokens): <b>— · 10.5–10.9</b><br>Pg61 (GB300 + RTX PRO 6000): <b>7.75 · 7.64–7.68</b><br>gt_stage, the whole Grace cost (static map): <b>2.60 of 10.49 ms</b></div></div>
+<div class="box"><div class="lbl">Capacity, boot, limits</div><div class="kv">KV at 1M context: <b>8.40M tokens (8.0×) · October recipe 2.48M</b><br>boot to serving (seeded JIT caches): <b>4 min 19 s – 4 min 39 s</b><br>host memory pinned: <b>322 GiB of 494.5</b><br>release bar ≥ 1.25× October recipe at C1: <b>not met (1.11–1.16×)</b><br>standing service: <b>no — card runner only, no soak</b></div></div>
+  </div>
+  <div class="fid"><div class="lbl">Output fidelity — does the recipe change what the model says?</div>
+    <ul>
+<li class="ok">Swap byte audit: every moved expert + 64 random per layer vs boot digests — 0 mismatches in 8 audits over 5 boots</li>
+<li class="ok">Greedy fixture with the adapted map identical to itself 8/8 and to the boot-map capture 8/8 — residency does not change output</li>
+<li class="ok">Tool gauntlet 12/12 (Pg61 same night 12/12) · 32-stream burst 64/64, server alive</li>
+<li class="meas">vs Pg61 on 8 lab prompts (static map): 0 top-1 flips before divergence · 2/8 streams identical · max abs Δlogp 0.376 (Pg61 vs itself 7/8, 0.121)</li>
+<li class="pend">Teacher-forced bracket, GSM8K, BFCL, needle, temperature &gt; 0 calibration — not run</li>
+<li class="pend">1M-token prompt served · soak · run-to-run spread · a Station without the RTX card installed — not run</li>
+    </ul>
+  </div>
+  <div class="fid"><div class="lbl">Agent claim card — fixed protocol, held-out sibling, cost per solved task</div>
+    <ul>
+<li class="pend">harness card pending — protocol hash, held-out sibling suite, cost per solved task</li>
+    </ul>
+  </div>
+  <div class="foot">
+    <span>recipe <span class="mono">recipes/dgx-station-gb300/deepseek-v4.1-flash-vllm-gracetier</span> · run <span class="mono">2026-11-09-gt-a5 (three-way card A5 · residency GT3 · mixed traffic GT4 · hot count A4)</span></span>
+    <span>github.com/J-M-Recipes/recipes · github.com/jmeadlock/gb300-dsv41-decode · al-engr.com/gb300-dsv41-decode.html · @jmeadlock</span>
+  </div>
+</div>
+</body></html>
