@@ -3,7 +3,7 @@
 # results/2026-10-29-pg61-garner-engine/ (older rows name their own run). Unmeasured = pending.
 # The h2-REF card (the rollback lane) is card-h2ref.yaml; the v27 card is card-v27.yaml.
 title: "DeepSeek-V4.1-Flash · 1× DGX Station GB300 + RTX PRO 6000 sidecar"
-subtitle: "Garner McCloud's DS4.1 engine (dgx-station-recipes @ 8043a681) under our policy: stock weights, fp8 KV, the full 1M context. 129 cold experts per layer are computed on the RTX 6000 through his peer tier v3, behind a fail-closed watchdog. Still being tested: 48 h soak restarted 2026-10-31 12:44:08 CDT after Card R1; ends Monday 2026-11-02 11:44 AM CST (17:44Z)."
+subtitle: "Garner McCloud's DS4.1 engine (dgx-station-recipes @ 8043a681) under our policy: stock weights, fp8 KV, the full 1M context. 129 cold experts per layer are computed on the RTX 6000 through his peer tier v3, behind a fail-closed watchdog. Still being tested: 48 h soak restarted 2026-10-31 12:44:08 CDT after Card R1; ends Thu 2026-11-12 5:39 AM CST (clock restarted 2026-11-10 05:38:56 CST after Card HC1; the 11-02 window never completed)."
 version: "Pg61 · experimental · soak"
 run_id: 2026-10-29-pg61-garner-engine
 handles: "github.com/J-M-Recipes/recipes · al-engr.com · engine: Garner McCloud (garnermccloud/dgx-station-recipes @ 8043a681, MIT) · hook lineage: original-el8 · sidecar shape: RonanLabsAI — credited in the README"
@@ -36,7 +36,7 @@ secondary:
       "peer tier v3 timeout": "skips the cold-expert add silently → PEER3_SPINS=1e12 + p3 watchdog (fail-stop) · G3b: sidecar paused → trip in ~3 s · live: trip null, 0 timeouts"
       "#60945 sampler read": "unguarded in v0.31.0 · killed both G1 arms + 4 bisect arms at C32 · layout-dependent · the 3-line guard (edc8f8f4) fixes it"
       "#61161 draws": "absent in v0.31.0 and his fused drafters (T>0 bias) · ported: exact at every step on GPU · costs 0 C1 (1.012×)"
-      "48 h soak": "restarted 2026-10-31 12:44:08 CDT after Card R1 (receipt: launcher soak-start.json) · ends Monday 2026-11-02 11:44 AM CST (17:44Z) · lane check every 10 min · rollback = h2-REF, one command"
+      "48 h soak": "restarted 2026-10-31 12:44:08 CDT after Card R1 (receipt: launcher soak-start.json) · ends Thu 2026-11-12 5:39 AM CST (clock restarted 2026-11-10 05:38:56 CST after Card HC1; the 11-02 window never completed) · lane check every 10 min · rollback = h2-REF, one command"
   - label: "What Pg61 bought, and what it costs"
     items:
       "C1 by class, temp 1": "prose 1.27 · structured 1.26 · code 1.34 · shell 1.36 · tool-JSON 1.30× h2-REF"
@@ -56,7 +56,7 @@ fidelity:
   - { status: pass, text: "Fail-closed, on the shipped file: sidecar paused under 4 streams → trip 3.11 s, server killed, no finish_reason, last chunk 0.006 s after the stall, GB300 22 MiB, watchdog exited, sidecar stopped — 7/7 bars (Card R1b 2026-10-31; run 1's instrument-timeout FAIL kept on file); 0 trips through G4, G5 and the cutover" }
   - { status: pass, text: "Speculation is target-verified (DSpark + suffix drafts are accepted by the full model)" }
   - { status: measured, text: "Prefill is slower than h2-REF: −6.3 to −9.3 % (his bench, 3 reps; 14K/57K/114K = −9.3/−6.3/−8.1 %), −10 to −17 % (T1 scouts, N=1); 1M first token 36.5 s (Pg, G1f; h2-REF 31.17 s at 900K)" }
-  - { status: pending, text: "48 h soak — restarted 2026-10-31 12:44:08 CDT after Card R1 (receipt: launcher soak-start.json); ends Monday 2026-11-02 11:44 AM CST (17:44Z); any restore or card restarts it" }
+  - { status: pending, text: "48 h soak — restarted 2026-10-31 12:44:08 CDT after Card R1 (receipt: launcher soak-start.json); ends Thu 2026-11-12 5:39 AM CST (clock restarted 2026-11-10 05:38:56 CST after Card HC1; the 11-02 window never completed); any restore or card restarts it" }
   - { status: pass, text: "Temperature > 0 (Card QT1, 2026-10-31): 60,073 positions, 6/6 pre-registered bars — mid-PIT z −0.211, rank χ² p 0.74, per-class Holm 0.74, tie-fair top-1 z 0.19, dependence z < 0.2, NLL−H +0.0199; both ±5 % temperature controls detected. Scope: T = 1.0, top_p = 1, top-20 (MDE ~5 % in T, ~2 %/token argmax)" }
   - { status: pass, text: "Per-layer cosine on peer tier v3 (Card R1, 2026-10-31): 40/40 layers, 4,299 cold pairs, min cos 1.000000, max |Δ| 3.906e-3 vs bar 2e-2, 3,381/3,449 rows bf16 bit-identical — read-only live tap + offline fp64 re-run; repeated on the R1 bring-up boot (4,343 pairs). Sampled rows, not an exhaustive dump" }
 

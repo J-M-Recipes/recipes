@@ -15,7 +15,7 @@ other road: it reads cold experts from Grace memory, which puts a serial read on
 - **Status:** `experimental`. Pg61 is **still being tested**: every release gate except the soak closed on 2026-10-31
   ([Card R1 + QT1](results/2026-10-31-r1-qt1/README.md)), and the five gate stamps follow the soak.
 - **Soak:** 48 h — restarted 2026-10-31 12:44:08 CDT, at the end of Card R1 (receipt: launcher `soak-start.json`);
-  it ends **Monday 2026-11-02 11:44 AM CST (17:44Z)**. Any restore or card restarts the clock.
+  it ends **Monday 2026-11-02 11:44 AM CST (17:44Z)** *(Corrected 2026-11-10: that window never completed. Restores on 11-01, 11-02, 11-04, 11-06, 11-08 and 11-09 and Card HC1 on 11-10 each restarted the clock; it now runs from 2026-11-10 05:38:56 CST to **Thursday 2026-11-12 5:39 AM CST (11:39Z)**.)*. Any restore or card restarts the clock.
   *(Corrected 2026-10-31: this said "ending Saturday 2026-10-31 10:14pm CDT". Two breaks on 2026-10-30 (04:57
   reboot, ~10:07 Kimi-K3 window) falsified that, and Card R1 restarted the clock from the top.)*
 - **Rollback:** h2-REF, one command: `bash scripts/rollback-pg61-to-h2ref.sh`. Drilled end to end on 2026-10-31
@@ -366,7 +366,7 @@ the v2 watchdog) are in [HISTORY.md → Launching h2-REF and earlier releases](H
 | output quality | teacher-forced flips vs a same-map floor, BFCL dev+held-out, GSM8K-1319, 500-needle, gauntlet, reasoning-effort vocabulary, one image request | SC2's 12 pre-registered gates |
 | drafter | per-class decode wall-clock, 20 cells × {C1, C8} | no cell worse than −3% vs both controls |
 | speed | bracketed ladders with a control on each side | knee C1 ≥ 198, knee C16 ≥ 974, sidecar C16 ≥ Grace-only +3% |
-| soak | 48 h, sampled every 5 min — restarted with the KV change: 2026-10-22 18:52 → 2026-10-24 18:52 CDT. *(Corrected 2026-10-26: that window was cut at ~25 h and the v25m window was cancelled; no 48 h soak has completed on any sidecar config, v27 included.)* **Pg61 — the soak was broken twice on 2026-10-30 (04:57 reboot, ~10:07 Kimi-K3 window) and restarted 2026-10-31 12:44:08 CDT after Card R1 (receipt: launcher soak-start.json); it ends Monday 2026-11-02 11:44 AM CST (17:44Z), sampled by `scripts/pg61_lane_check.sh` every 10 min.** | no timeout, no trip, no stall; lane check silent throughout |
+| soak | 48 h, sampled every 5 min — restarted with the KV change: 2026-10-22 18:52 → 2026-10-24 18:52 CDT. *(Corrected 2026-10-26: that window was cut at ~25 h and the v25m window was cancelled; no 48 h soak has completed on any sidecar config, v27 included.)* **Pg61 — the soak was broken twice on 2026-10-30 (04:57 reboot, ~10:07 Kimi-K3 window) and restarted 2026-10-31 12:44:08 CDT after Card R1 (receipt: launcher soak-start.json); it ends Monday 2026-11-02 11:44 AM CST (17:44Z) *(Corrected 2026-11-10: that window never completed; see Status.)*, sampled by `scripts/pg61_lane_check.sh` every 10 min.** | no timeout, no trip, no stall; lane check silent throughout |
 | **h2-REF serving release** | in-container sha256: `rejection_sampler_utils.py` **2d43d513** (guard; 42c5e8a0 = unguarded), `_flashmla_splitkv_C.abi3.so` 744a9de8 mapped by the engine, `_flashmla_C.abi3.so` df2cdd1c untouched. Log: split-KV `ENABLED cap=4 max_reqs=1`, the only decode gate line `s_q=6 splits=4 … op=_flashmla_splitkv_C`, `TRACE ok=1` only at (6, 6, 1 decode, 0 prefills), 0 GUARD lines, 2 `MEGA_L2` patched lines, `Loaded 117 configs`. KV 4,400,013; `journalctl -k` shows no new Xid since boot; watchdog enforce, PPID 1 | all checked at promotion ([`promote/promote.log`](results/2026-10-28-h2-splitkv-ap2/promote/promote.log)) and re-read at 22:53Z |
 | crash-free (any lane change) | the C32 lib cells in one process (C1/C8/C32 × 0/64K) under a 2 s Xid/fault watcher | 0 new Xid, 0 engine errors, 0 GPU-fault lines, alive at end — Card AP2 all four arms |
 | kv-host-tier (variant) | boot log `Creating v1 connector with name: OffloadingConnector` + `Created mmap file /dev/shm/vllm_offload_….mmap (51.54 GB)`, GPU KV line still 4,400,013; evict-replay probe in `results/2026-10-24-kv3-host-prefix-tier/scripts/kv3_cells.py` (needs dev mode, test boots only) | host-tier hit + load, identical output; Card KV3's 10 gates |
@@ -381,6 +381,26 @@ Offline, before touching a lane: `ENGINE=vllm IMAGE=vllm/vllm-openai:v0.31.0 PAR
 must end `ALL GATES PASS`.
 
 ## Results
+
+### Hot count 255 → 275 (Card HC1, 2026-11-10): measured, not promoted — [`results/2026-11-10-hc1-hot-count/`](results/2026-11-10-hc1-hot-count/README.md)
+
+One variable, the rowmap, bracketed control A → H = 275 → control A2 on the same cells in one morning (lane dark
+05:21:27 → 05:38:56 CST). Pg61 keeps the h255 map.
+
+| cell | control A | H = 275 | control A2 |
+|---|--:|--:|--:|
+| C1 mixed prompts, tok/s (mean of 4 passes) | 412.59 | 404.15 | 412.53 |
+| C1 ms per step | 7.637 | 7.674 | 7.64 |
+| C8 aggregate, 3 reps sorted | 891 / 1,027 / 1,099 | 881 / 1,038 / 1,090 | 844 / 1,084 / 1,104 |
+| C32 aggregate, 3 reps sorted | 1,625 / 1,784 / 1,806 | 1,442 / 1,870 / 1,885 | 1,582 / 1,813 / 1,818 |
+| first token, 60,954-token prompt, s | 1.592 / 1.499 / 1.488 | 3.978 / 1.318 / 1.312 | 1.600 / 1.482 / 1.473 |
+| KV pool at boot, tokens | 11,696,582 | 5,524,336 | 11,696,582 |
+| tool gauntlet | 12/12 | 12/12 | 12/12 |
+
+More hot experts buy prompt reading, not single-stream decode: the GB300's exposed wait on the RTX at 6 rows is
+3.6 µs per layer call at h255 and 0.7 µs at h275. The arm missed its registered C1 bar (0.9796× vs 0.98×) on
+fewer accepted draft tokens on one of the two prompt sets, which one sample per set cannot attribute. The first rep of
+each long prompt on the arm was slow (3.4–4.0 s); the bundle says what is and is not known about that.
 
 ### Release gates, 2026-10-31 (Cards R1 + QT1): [`results/2026-10-31-r1-qt1/`](results/2026-10-31-r1-qt1/README.md)
 
@@ -441,7 +461,7 @@ The long write-up for each release is in [HISTORY.md → Superseded Results subs
 
 **Pg61 (the serving config since 2026-10-29):**
 
-* **Still being tested.** 48 h window — the soak was broken twice on 2026-10-30 (04:57 reboot, ~10:07 Kimi-K3 window) and restarted 2026-10-31 12:44:08 CDT after Card R1 (receipt: launcher soak-start.json); it ends Monday 2026-11-02 11:44 AM CST (17:44Z), and the recipe stays `experimental`. Any restore or
+* **Still being tested.** 48 h window — the soak was broken twice on 2026-10-30 (04:57 reboot, ~10:07 Kimi-K3 window) and restarted 2026-10-31 12:44:08 CDT after Card R1 (receipt: launcher soak-start.json); it ends Monday 2026-11-02 11:44 AM CST (17:44Z) *(Corrected 2026-11-10: that window never completed; see Status.)*, and the recipe stays `experimental`. Any restore or
   card restarts the clock. *(Corrected 2026-10-31: this said the soak ran to Saturday 2026-10-31 10:14pm CDT; it
   was broken twice and Card R1 restarts it.)*
 * **`PEER3_SPINS=1000000000000` is required.** On a peer tier v3 wait timeout (his default: 20,000,000 polls), all
@@ -479,6 +499,9 @@ The long write-up for each release is in [HISTORY.md → Superseded Results subs
   (999,034 tokens, 27.3K tok/s, measured on Pg in G1f) vs the v25 launch's 33.2 s; h2-REF's own 900K needle was
   31.17 s. The probable cause, not measured, is 129 cold experts per layer on the RTX (h255 map, vs our 89), with
   T > 64 on peer tier v2. A rowmap sweep (h270/h285 under our policy) is planned after promotion; it costs KV tokens.
+  **Measured 2026-11-10 (Card HC1, [bundle](results/2026-11-10-hc1-hot-count/README.md)):** 275 hot / 109 cold brings the 61K first token
+  from 1.47–1.50 s to 1.31–1.32 s (11–12 % sooner), so the cold-expert count is at least part of the cause.
+  It was not adopted: C1 read 0.9796× the controls (bar 0.98×) and KV fell to 5,524,336 tokens.
 * **Temperature > 0 quality is covered at T = 1.0 only.** Card QT1 ran 60,073 positions of a fresh pre-registered
   run on 2026-10-31 and **PASSED** all six bars: mid-PIT z −0.211, rank-calibration χ² p 0.7355, per-class Holm min
   0.7446, tie-fair top-1 z 0.193, dependence z −0.009 / −0.171, NLL − H +0.0199 nats, with both temperature controls
@@ -722,6 +745,7 @@ Fable 5.1 as advisor.
 One line per dated round, newest first. The full text of each is in [HISTORY.md](HISTORY.md). The anchors on each
 line keep old links into this README working.
 
+- **2026-11-10** — Card HC1: 275 hot experts per layer measured against 255 (61K first token 11–12 % sooner, C1 0.9796×, KV 5,524,336 tokens); not promoted; soak clock restarted. [Bundle](results/2026-11-10-hc1-hot-count/README.md)
 - <a id="2026-10-31-cards-r1-and-qt1--release-gates-closed"></a><a id="release-gates-closed-2026-10-31"></a>**2026-10-31** — Cards R1 + QT1 closed the release gates in one 38-minute dark window: peer tier v3 cosine PASS (40/40 layers, min cos 1.000000), shipped watchdog fault-injected 7/7 (run 1's FAIL kept as an instrument defect), rollback drilled and cut back, P7 forward fidelity PASS, T>0 sampler calibration PASS on a fresh pre-registered run; soak restarted 12:44:08 CDT, ends Monday 2026-11-02 11:44 AM CST. [Round](results/2026-10-31-r1-qt1/README.md)
 - <a id="2026-10-29-pg61--garners-ds41-engine-under-our-policy-promoted-soak-in-progress"></a><a id="what-pg61-is"></a><a id="cards-g0--g5"></a><a id="known-costs"></a><a id="not-exercised"></a><a id="promotion-2026-10-29"></a>**2026-10-29** — Pg61 (Garner's engine under our policy) promoted after Cards G0–G5: T3 all six bars PASS, 1.31× h2-REF. [Round](HISTORY.md#2026-10-29-pg61--garners-ds41-engine-under-our-policy-promoted-soak-in-progress)
 - <a id="2026-10-28-h2-ref--the-60945-guard-and-split-kv-attention-card-ap2-promoted"></a><a id="why-the-guard-came-first"></a><a id="card-ap2--a--s8--s4--a2-2026-10-28-15101708-cdt"></a><a id="h2-ref-served-2026-10-28-172258-cdt--2026-10-29-1007pm-cdt-now-the-rollback-lane-results2026-10-28-h2-splitkv-ap2"></a>**2026-10-28** — h2-REF promoted on Card AP2 (S4 = PROMOTE-READY, 1.036× coding C1); the #60945 sampler read found. [Round](HISTORY.md#2026-10-28-h2-ref--the-60945-guard-and-split-kv-attention-card-ap2-promoted) · [results](HISTORY.md#h2-ref-served-2026-10-28-172258-cdt--2026-10-29-1007pm-cdt-now-the-rollback-lane-results2026-10-28-h2-splitkv-ap2)
@@ -748,9 +772,9 @@ What stands between Pg61 and `status: verified` (2026-10-29):
 | fail-closed guard + trip path under fault injection | **DONE 2026-10-31, on the shipped file** (Cards R1/R1b): sidecar paused under 4 streams → TRIP 3.11 s, server killed, no stream got a `finish_reason`, last chunk 0.006 s after the pause, GB300 22 MiB, watchdog exited, sidecar stopped — 7/7 bars. Run 1 read FAIL on three log-order/cleanup bars because the instrument judged 5 s after the trip (amendment A4); it stays on file |
 | rollback script | **DRILLED END TO END 2026-10-31** (Card R1 P4/P5, [`traces`](results/2026-10-31-r1-qt1/raw/r1/P4/trace.log)): rc 0 in 551 s → h2-REF `BOUND` after 420 s with the v2 fail-stop watchdog re-armed and the smoke OK; cut back rc 0 in 452 s, `BUILD=OK`, `verify` rc 0, KV 11,696,582 exact |
 | gate stamps | **not stamped — deliberately.** `schema` / `digest` / `health` / `quality` / `performance` are stamped *after* the soak completes, from this round's run ids. h2-REF's stamps stay in `notes:`, so `verified` cannot pass on the wrong config |
-| **remaining: 48 h soak** | restarted 2026-10-31 12:44:08 CDT at the end of Card R1 (receipt: launcher `soak-start.json`); it ends **Monday 2026-11-02 11:44 AM CST (17:44Z)**, with the M4 lane check silent throughout. The clock first started at the 2026-10-29 cutover and was broken twice on 2026-10-30 (04:57 reboot, ~10:07 Kimi-K3 window). *(Corrected 2026-10-31: the row promised 2026-10-31 10:14pm (Saturday) "if no restore or card takes the lane" — a restore and a card both did.)* |
+| **remaining: 48 h soak** | restarted 2026-10-31 12:44:08 CDT at the end of Card R1 (receipt: launcher `soak-start.json`); it ends **Monday 2026-11-02 11:44 AM CST (17:44Z)** *(Corrected 2026-11-10: that window never completed; see Status.)*, with the M4 lane check silent throughout. The clock first started at the 2026-10-29 cutover and was broken twice on 2026-10-30 (04:57 reboot, ~10:07 Kimi-K3 window). *(Corrected 2026-10-31: the row promised 2026-10-31 10:14pm (Saturday) "if no restore or card takes the lane" — a restore and a card both did.)* |
 | temperature > 0 quality | **DONE 2026-10-31** (Card QT1): fresh pre-registered confirmatory run, 60,073 positions, **PASS** on all six bars with both ±5 % temperature controls detected. Scope: T = 1.0, top_p = 1, speculative-decode path, top-20 reported distribution. The discovery run's registered P4 FAIL and its diagnosis are on file; full-vocab KLD is still not obtainable (`max_logprobs` 20) |
-| follow-up (not a gate) | rowmap sweep h270 / h285 under our policy, to buy back prefill (−6.3 to −9.3 %) at a KV-token cost — that is Pg62 work, not a release item |
+| follow-up (not a gate) | rowmap sweep under our policy, to buy back prefill (−6.3 to −9.3 %) at a KV-token cost. **h275 measured 2026-11-10 (Card HC1): 61K first token 11–12 % sooner, C1 0.9796× (bar 0.98×), not promoted.** Open: the per-class T = 1.0 C1 read on h275, and h285 — Pg62 work, not a release item |
 
 ### Release gates closed 2026-10-31
 
@@ -766,5 +790,5 @@ Cards **R1** (one dark window) and **QT1** (no dark window) closed every open ga
 | temperature > 0 sampler calibration | **PASS** — six pre-registered bars, controls at ±5 % detected; MDE stated (argmax substitution <~2 %/token not excluded) |
 | forward fidelity, Pg61 vs h2-REF | **PASS** — 79,505 forced positions, 0.0574 mean \|Δlp\| / 1.664 % flips vs bars 0.0684 / 2.066 % |
 | T0 tool-call smoke (`tool_calls[]` parses) | **PASS** — live lane 2026-10-31 11:19:47 CDT, `finish_reason: tool_calls`, `get_weather` with a parsed `city` ([receipt](results/2026-10-31-r1-qt1/raw/t0/toolcall.json)) |
-| **48 h soak** | **pending** — ends Monday 2026-11-02 11:44 AM CST (17:44Z) |
+| **48 h soak** | **pending** — ends Monday 2026-11-02 11:44 AM CST (17:44Z) *(Corrected 2026-11-10: that window never completed; see Status.)* |
 | gate stamps + `experimental → verified` | **pending** — after the soak, from this round's run ids |
