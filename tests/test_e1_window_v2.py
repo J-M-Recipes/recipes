@@ -219,7 +219,7 @@ def test_v2_runner_scrubs_launch_environment_uses_long_readiness_archives_and_ne
     docker = fake_docker(tmp_path)
     env = dict(os.environ, FAKE_LOG=str(log), NSYS='leak', IMAGE='bad:image', ROUTER='bad', CAPTURE='1', UNPACKED='1', LOGIT_RING='1', BYPASS='999', DRAFT_MODEL_DIR='/bad/draft')
     result = subprocess.run([
-        sys.executable, str(RUNNER), "--root", str(root), "--recipe", str(RECIPE), "--out", str(out), "--run-id", "e0-e1-20260908-v2",
+        sys.executable, str(RUNNER), "--host-operation-lock", str(tmp_path / "host-operation.lock"), "--root", str(root), "--recipe", str(RECIPE), "--out", str(out), "--run-id", "e0-e1-20260908-v2",
         "--docker", str(docker), "--bash", str(fake_bash(tmp_path)), "--python", str(fake_python(tmp_path)), "--health", str(fake_health(tmp_path)), "--nsys", str(fake_nsys(tmp_path)), "--api-probe", str(fake_api_probe(tmp_path)),
     ], env=env, text=True, capture_output=True, check=False)
     assert result.returncode == 0, result.stderr
@@ -281,7 +281,7 @@ def test_v2_runner_restores_incumbent_when_launch_fails(tmp_path):
     (root / "CONTROL").write_text("RUN\n")
     (root / "RELEASE").write_text("e0-e1-20260908-v2\n")
     result = subprocess.run([
-        sys.executable, str(RUNNER), "--root", str(root), "--recipe", str(RECIPE), "--out", str(tmp_path / "receipts"), "--run-id", "e0-e1-20260908-v2",
+        sys.executable, str(RUNNER), "--host-operation-lock", str(tmp_path / "host-operation.lock"), "--root", str(root), "--recipe", str(RECIPE), "--out", str(tmp_path / "receipts"), "--run-id", "e0-e1-20260908-v2",
         "--docker", str(fake_docker(tmp_path)), "--bash", str(failing_bash), "--python", str(fake_python(tmp_path)), "--health", str(fake_health(tmp_path)), "--nsys", str(fake_nsys(tmp_path)), "--api-probe", str(fake_api_probe(tmp_path)),
     ], env=dict(os.environ, FAKE_LOG=str(log)), text=True, capture_output=True, check=False)
     assert result.returncode != 0
@@ -296,7 +296,7 @@ def test_v2_runner_gate_failure_blocks_mutation_and_does_not_restore_unstopped_i
     root.mkdir()
     (root / "CONTROL").write_text("HOLD\n")
     result = subprocess.run([
-        sys.executable, str(RUNNER), "--root", str(root), "--recipe", str(RECIPE), "--out", str(tmp_path / "receipts"), "--run-id", "e0-e1-20260908-v2",
+        sys.executable, str(RUNNER), "--host-operation-lock", str(tmp_path / "host-operation.lock"), "--root", str(root), "--recipe", str(RECIPE), "--out", str(tmp_path / "receipts"), "--run-id", "e0-e1-20260908-v2",
         "--docker", str(fake_docker(tmp_path)), "--bash", str(fake_bash(tmp_path)), "--python", str(fake_python(tmp_path)), "--health", str(fake_health(tmp_path)), "--nsys", str(fake_nsys(tmp_path)), "--api-probe", str(fake_api_probe(tmp_path)),
     ], env=dict(os.environ, FAKE_LOG=str(log), FAKE_GATE_FAIL='1'), text=True, capture_output=True, check=False)
     assert result.returncode != 0
@@ -315,7 +315,7 @@ def test_v2_runner_refuses_existing_output_directory(tmp_path):
     root.mkdir()
     (root / "CONTROL").write_text("RUN\n")
     result = subprocess.run([
-        sys.executable, str(RUNNER), "--root", str(root), "--recipe", str(RECIPE), "--out", str(out), "--run-id", "e0-e1-20260908-v2",
+        sys.executable, str(RUNNER), "--host-operation-lock", str(tmp_path / "host-operation.lock"), "--root", str(root), "--recipe", str(RECIPE), "--out", str(out), "--run-id", "e0-e1-20260908-v2",
         "--docker", str(fake_docker(tmp_path)), "--bash", str(fake_bash(tmp_path)), "--python", str(fake_python(tmp_path)), "--health", str(fake_health(tmp_path)), "--nsys", str(fake_nsys(tmp_path)), "--api-probe", str(fake_api_probe(tmp_path)),
     ], env=dict(os.environ, FAKE_LOG=str(log)), text=True, capture_output=True, check=False)
     assert result.returncode != 0
@@ -344,7 +344,7 @@ sys.exit(0)
     root = tmp_path / "root"
     root.mkdir(); (root / "CONTROL").write_text("RUN\n")
     result = subprocess.run([
-        sys.executable, str(RUNNER), "--root", str(root), "--recipe", str(RECIPE), "--out", str(tmp_path / "receipts"), "--run-id", "e0-e1-20260908-v2",
+        sys.executable, str(RUNNER), "--host-operation-lock", str(tmp_path / "host-operation.lock"), "--root", str(root), "--recipe", str(RECIPE), "--out", str(tmp_path / "receipts"), "--run-id", "e0-e1-20260908-v2",
         "--docker", str(bad_docker), "--bash", str(fake_bash(tmp_path)), "--python", str(fake_python(tmp_path)), "--health", str(fake_health(tmp_path)), "--nsys", str(fake_nsys(tmp_path)), "--api-probe", str(fake_api_probe(tmp_path)),
     ], env=dict(os.environ, FAKE_LOG=str(log)), text=True, capture_output=True, check=False)
     assert result.returncode != 0
@@ -377,7 +377,7 @@ sys.exit(0)
     root = tmp_path / "root"
     root.mkdir(); (root / "CONTROL").write_text("RUN\n")
     result = subprocess.run([
-        sys.executable, str(RUNNER), "--root", str(root), "--recipe", str(RECIPE), "--out", str(tmp_path / "receipts"), "--run-id", "e0-e1-20260908-v2",
+        sys.executable, str(RUNNER), "--host-operation-lock", str(tmp_path / "host-operation.lock"), "--root", str(root), "--recipe", str(RECIPE), "--out", str(tmp_path / "receipts"), "--run-id", "e0-e1-20260908-v2",
         "--docker", str(k2_docker), "--bash", str(fake_bash(tmp_path)), "--python", str(fake_python(tmp_path)), "--health", str(fake_health(tmp_path)), "--nsys", str(fake_nsys(tmp_path)), "--api-probe", str(fake_api_probe(tmp_path)),
     ], env=dict(os.environ, FAKE_LOG=str(log)), text=True, capture_output=True, check=False)
     assert result.returncode != 0
@@ -412,7 +412,7 @@ sys.exit(0)
     root = tmp_path / "root"
     root.mkdir(); (root / "CONTROL").write_text("RUN\n")
     result = subprocess.run([
-        sys.executable, str(RUNNER), "--root", str(root), "--recipe", str(RECIPE), "--out", str(out), "--run-id", "e0-e1-20260908-v2",
+        sys.executable, str(RUNNER), "--host-operation-lock", str(tmp_path / "host-operation.lock"), "--root", str(root), "--recipe", str(RECIPE), "--out", str(out), "--run-id", "e0-e1-20260908-v2",
         "--docker", str(leaky_docker), "--bash", str(fake_bash(tmp_path)), "--python", str(fake_python(tmp_path)), "--health", str(fake_health(tmp_path)), "--nsys", str(fake_nsys(tmp_path)), "--api-probe", str(fake_api_probe(tmp_path)),
     ], env=dict(os.environ, FAKE_LOG=str(log)), text=True, capture_output=True, check=False)
     assert result.returncode == 0, result.stderr
@@ -437,7 +437,7 @@ else:
     root = tmp_path / "root"
     root.mkdir(); (root / "CONTROL").write_text("RUN\n")
     result = subprocess.run([
-        sys.executable, str(RUNNER), "--root", str(root), "--recipe", str(RECIPE), "--out", str(tmp_path / "receipts"), "--run-id", "e0-e1-20260908-v2", "--command-timeout-sec", "1",
+        sys.executable, str(RUNNER), "--host-operation-lock", str(tmp_path / "host-operation.lock"), "--root", str(root), "--recipe", str(RECIPE), "--out", str(tmp_path / "receipts"), "--run-id", "e0-e1-20260908-v2", "--command-timeout-sec", "1",
         "--docker", str(fake_docker(tmp_path)), "--bash", str(fake_bash(tmp_path)), "--python", str(slow_python), "--health", str(fake_health(tmp_path)), "--nsys", str(fake_nsys(tmp_path)), "--api-probe", str(fake_api_probe(tmp_path)),
     ], env=dict(os.environ, FAKE_LOG=str(log)), text=True, capture_output=True, check=False)
     assert result.returncode != 0
@@ -458,7 +458,7 @@ print('late health ok')
     root = tmp_path / "root"
     root.mkdir(); (root / "CONTROL").write_text("RUN\n")
     result = subprocess.run([
-        sys.executable, str(RUNNER), "--root", str(root), "--recipe", str(RECIPE), "--out", str(out), "--run-id", "e0-e1-20260908-v2", "--command-timeout-sec", "20", "--readiness-timeout-sec", "1",
+        sys.executable, str(RUNNER), "--host-operation-lock", str(tmp_path / "host-operation.lock"), "--root", str(root), "--recipe", str(RECIPE), "--out", str(out), "--run-id", "e0-e1-20260908-v2", "--command-timeout-sec", "20", "--readiness-timeout-sec", "1",
         "--docker", str(fake_docker(tmp_path)), "--bash", str(fake_bash(tmp_path)), "--python", str(fake_python(tmp_path)), "--health", str(slow_health), "--nsys", str(fake_nsys(tmp_path)), "--api-probe", str(fake_api_probe(tmp_path)),
     ], env=dict(os.environ, FAKE_LOG=str(log)), text=True, capture_output=True, check=False)
     assert result.returncode != 0
@@ -471,7 +471,7 @@ def test_v2_runner_rejects_trailing_k2_speculative_config_args_before_launch(tmp
     root = tmp_path / "root"
     root.mkdir(); (root / "CONTROL").write_text("RUN\n")
     result = subprocess.run([
-        sys.executable, str(RUNNER), "--root", str(root), "--recipe", str(RECIPE), "--out", str(tmp_path / "receipts"), "--run-id", "e0-e1-20260908-v2",
+        sys.executable, str(RUNNER), "--host-operation-lock", str(tmp_path / "host-operation.lock"), "--root", str(root), "--recipe", str(RECIPE), "--out", str(tmp_path / "receipts"), "--run-id", "e0-e1-20260908-v2",
         "--docker", str(fake_docker(tmp_path)), "--bash", str(fake_bash(tmp_path)), "--python", str(fake_python(tmp_path)), "--health", str(fake_health(tmp_path)), "--nsys", str(fake_nsys(tmp_path)), "--api-probe", str(fake_api_probe(tmp_path)),
         "--speculative-config", '{"method":"mtp","num_speculative_tokens":2}',
     ], env=dict(os.environ, FAKE_LOG=str(log)), text=True, capture_output=True, check=False)
@@ -510,7 +510,7 @@ while True:
     root = tmp_path / "root"
     root.mkdir(); (root / "CONTROL").write_text("RUN\n")
     proc = subprocess.Popen([
-        sys.executable, str(RUNNER), "--root", str(root), "--recipe", str(RECIPE), "--out", str(tmp_path / "receipts"), "--run-id", "e0-e1-20260908-v2",
+        sys.executable, str(RUNNER), "--host-operation-lock", str(tmp_path / "host-operation.lock"), "--root", str(root), "--recipe", str(RECIPE), "--out", str(tmp_path / "receipts"), "--run-id", "e0-e1-20260908-v2",
         "--docker", str(fake_docker(tmp_path)), "--bash", str(hanging_bash), "--python", str(fake_python(tmp_path)), "--health", str(fake_health(tmp_path)), "--nsys", str(fake_nsys(tmp_path)), "--api-probe", str(fake_api_probe(tmp_path)),
     ], env=dict(os.environ, FAKE_LOG=str(log)), text=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     wait_for_path(active)
@@ -569,7 +569,7 @@ print('mutated live source')
     root = tmp_path / "root"
     root.mkdir(); (root / "CONTROL").write_text("RUN\n")
     result = subprocess.run([
-        sys.executable, str(RUNNER), "--root", str(root), "--recipe", str(recipe_copy), "--out", str(out), "--run-id", "e0-e1-20260908-v2",
+        sys.executable, str(RUNNER), "--host-operation-lock", str(tmp_path / "host-operation.lock"), "--root", str(root), "--recipe", str(recipe_copy), "--out", str(out), "--run-id", "e0-e1-20260908-v2",
         "--docker", str(fake_docker(tmp_path)), "--bash", str(mutating_bash), "--python", str(snapshot_python), "--nsys", str(fake_nsys(tmp_path)), "--api-probe", str(fake_api_probe(tmp_path)),
     ], env=dict(os.environ, FAKE_LOG=str(log)), text=True, capture_output=True, check=False)
     assert result.returncode == 0, result.stderr
@@ -596,7 +596,7 @@ print('mutated archived source')
     root = tmp_path / "root"
     root.mkdir(); (root / "CONTROL").write_text("RUN\n")
     result = subprocess.run([
-        sys.executable, str(RUNNER), "--root", str(root), "--recipe", str(RECIPE), "--out", str(tmp_path / "receipts"), "--run-id", "e0-e1-20260908-v2",
+        sys.executable, str(RUNNER), "--host-operation-lock", str(tmp_path / "host-operation.lock"), "--root", str(root), "--recipe", str(RECIPE), "--out", str(tmp_path / "receipts"), "--run-id", "e0-e1-20260908-v2",
         "--docker", str(fake_docker(tmp_path)), "--bash", str(mutating_bash), "--python", str(fake_python(tmp_path)), "--health", str(fake_health(tmp_path)), "--nsys", str(fake_nsys(tmp_path)), "--api-probe", str(fake_api_probe(tmp_path)),
     ], env=dict(os.environ, FAKE_LOG=str(log)), text=True, capture_output=True, check=False)
     assert result.returncode != 0
@@ -624,7 +624,7 @@ sys.exit(0)
     root = tmp_path / "root"
     root.mkdir(); (root / "CONTROL").write_text("RUN\n")
     result = subprocess.run([
-        sys.executable, str(RUNNER), "--root", str(root), "--recipe", str(RECIPE), "--out", str(tmp_path / "receipts"), "--run-id", "e0-e1-20260908-v2",
+        sys.executable, str(RUNNER), "--host-operation-lock", str(tmp_path / "host-operation.lock"), "--root", str(root), "--recipe", str(RECIPE), "--out", str(tmp_path / "receipts"), "--run-id", "e0-e1-20260908-v2",
         "--docker", str(bad_docker), "--bash", str(fake_bash(tmp_path)), "--python", str(fake_python(tmp_path)), "--health", str(fake_health(tmp_path)), "--nsys", str(fake_nsys(tmp_path)), "--api-probe", str(fake_api_probe(tmp_path)),
     ], env=dict(os.environ, FAKE_LOG=str(log)), text=True, capture_output=True, check=False)
     assert result.returncode != 0
@@ -649,10 +649,32 @@ raise SystemExit(subprocess.run([{str(fake_py)!r}] + sys.argv[1:]).returncode)
     root = tmp_path / "root"
     root.mkdir(); (root / "CONTROL").write_text("RUN\n")
     result = subprocess.run([
-        sys.executable, str(RUNNER), "--root", str(root), "--recipe", str(RECIPE), "--out", str(tmp_path / "receipts"), "--run-id", "e0-e1-20260908-v2",
+        sys.executable, str(RUNNER), "--host-operation-lock", str(tmp_path / "host-operation.lock"), "--root", str(root), "--recipe", str(RECIPE), "--out", str(tmp_path / "receipts"), "--run-id", "e0-e1-20260908-v2",
         "--docker", str(fake_docker(tmp_path)), "--bash", str(fake_bash(tmp_path)), "--python", str(bad_ack_python), "--health", str(fake_health(tmp_path)), "--nsys", str(fake_nsys(tmp_path)), "--api-probe", str(fake_api_probe(tmp_path)),
     ], env=dict(os.environ, FAKE_LOG=str(log)), text=True, capture_output=True, check=False)
     assert result.returncode != 0
     events = read_events(log)
     assert ['start', INCUMBENT] in [e['argv'] for e in events if e['kind'] == 'docker']
     assert not any(e['kind'] == 'nsys' for e in events)
+
+
+def test_runner_takes_its_host_lock_from_the_argument_and_refuses_an_existing_one(tmp_path):
+    # The lifecycle tests above pass a per-test lock path. The script's default is a fixed /tmp path, and a lock left
+    # there by a test run that died made every later run on that machine fail. This proves the argument is honoured:
+    # a lock planted at the per-test path is refused by name, before anything is stopped, and is left in place.
+    log = tmp_path / "events.jsonl"
+    root = tmp_path / "root"
+    root.mkdir()
+    (root / "CONTROL").write_text("RUN\n")
+    (root / "RELEASE").write_text("e0-e1-20260908-v2\n")
+    lock = tmp_path / "host-operation.lock"
+    lock.write_text("pid=1 planted by the test\n")
+    result = subprocess.run([
+        sys.executable, str(RUNNER), "--host-operation-lock", str(lock), "--root", str(root), "--recipe", str(RECIPE), "--out", str(tmp_path / "receipts"), "--run-id", "e0-e1-20260908-v2",
+        "--docker", str(fake_docker(tmp_path)), "--bash", str(fake_bash(tmp_path)), "--python", str(fake_python(tmp_path)), "--health", str(fake_health(tmp_path)), "--nsys", str(fake_nsys(tmp_path)), "--api-probe", str(fake_api_probe(tmp_path)),
+    ], env=dict(os.environ, FAKE_LOG=str(log)), text=True, capture_output=True, check=False)
+    assert result.returncode != 0
+    assert f"host operation lock already exists: {lock}" in result.stderr
+    assert lock.read_text() == "pid=1 planted by the test\n"
+    docker_calls = [e['argv'] for e in read_events(log) if e['kind'] == 'docker'] if log.exists() else []
+    assert ['stop', INCUMBENT] not in docker_calls

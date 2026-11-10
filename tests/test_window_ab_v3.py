@@ -272,6 +272,8 @@ def base_cmd(tmp_path: Path, out: Path, recipe: Path | None = None):
         sys.executable, '-c',
         'import sys; sys.path.insert(0, ' + repr(str(RUNNER.parent)) + '); '
         'import window_ab_v3 as w; raise SystemExit(w._run_ab(w.parse_args()))',
+        # A per-test lock: the script's default is a fixed /tmp path, so a lock left by a dead run would fail every test.
+        "--host-operation-lock", str(tmp_path / "host-operation.lock"),
         "--root", str(root), "--recipe", str(recipe or recipe_with_fake_verdict(tmp_path)), "--out", str(out),
         "--run-id", "k2-v3-20260908", "--docker", str(fake_docker(tmp_path)), "--bash", str(fake_bash(tmp_path)),
         "--python", str(fake_python(tmp_path)), "--health", str(fake_health(tmp_path)), "--api-probe", str(fake_api_probe(tmp_path)), "--nsys", str(fake_nsys(tmp_path)),
