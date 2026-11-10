@@ -9,7 +9,7 @@ summary: >
   shared HBM scratch by one kernel per layer, with an adaptive residency policy swapping hot and cold experts
   between steps. Same harness, same night, 40 general prompts x 256 tokens, one stream - 261 tok/s against 225 for
   our October single-GPU recipe (v28-prob) and 412 for the two-GPU lane (Pg61); 8 streams 489 / 452 / 909 tok/s
-  aggregate; 32 streams 718 / 683 / 1,733. That is 1.11-1.16x the October recipe at one stream, which MISSES the
+  aggregate; 32 streams 718 / 683 / 1,733. That is 1.11-1.17x the October recipe at one stream, which MISSES the
   1.25x release bar we pre-registered, and 0.63x the two-GPU lane. What it adds over the October recipe is KV
   capacity (8.40M tokens against 2.48M at 1M context) at somewhat higher speed. Swaps are byte-audited (0
   mismatches in every window), greedy output is identical with residency on and off (8/8), the tool gauntlet is
@@ -106,7 +106,7 @@ metrics:
     value: 412.3
     unit: tok/s
     workload: "production Pg61 (GB300 + RTX PRO 6000 sidecar) on the live lane right after its restore - set A 414.22, set B 410.35, set A again 414.36; ms/step 7.65 / 7.64 / 7.65"
-    aggregation: "as the first row; Pg61 / gracetier = 1.58 (A), 1.58 (B), 1.52 (A again)"
+    aggregation: "as the first row; Pg61 / gracetier = 1.58 (A), 1.58 (B), 1.51 (A again)"
     label: "different hardware (a second GPU); the price of removing it"
     provenance: { run_id: 2026-11-09-gt-a5, method: "scripts/a5-cells.sh on the live lane", raw: raw/a5/a5-pg61-20261109-2230-c1-a.json }
   - name: 8 streams, aggregate
@@ -145,14 +145,14 @@ metrics:
 
 verification:
   gates:
-    schema:      { how: "scripts/check_recipe.py on this recipe.yaml passes (repo venv)", last_pass_utc: "2026-11-10T05:40:00Z", run_id: 2026-11-09-gt-a5 }
+    schema:      { how: "scripts/check_recipe.py on this recipe.yaml passes (repo venv)", last_pass_utc: "2026-11-10T05:10:34Z", run_id: 2026-11-09-gt-a5 }
     digest:      { how: "Image id == repo digest sha256:c1c9f6fd... re-read on the box 2026-11-09. Component and tree hashes - raw/a5/gt1-build-20261109-221120.log ('128 files hashed; component 543d89204e4e087b; rowmap-allres 51da2571cc98aeac'). NOT RUN - checkpoint byte-verify against the Hub listing for this write-up." }
     health:      { how: "Boot gate G1 passed in all five evening boots and the two afternoon ones (gracetier ACTIVE, 23 components, host budget fits, 0 fatal lines); the server was alive after every cell including C32; Pg61 Pg61 restore rc=0 after every window (seven card windows and the v28-prob arm). Not stamped - there is no standing-service launch, watchdog or soak." }
     quality:     { how: "Evidence on file, not a full gate. (1) Swap byte audit - digests of every moved expert plus 64 random per layer against boot digests, 0 mismatches in 8 audits across 5 boots. (2) Greedy fixture with the adapted map identical 8/8 to itself and 8/8 to the boot-map capture. (3) Against Pg61 on the same 8 prompts - 0 top-1 flips before divergence, 2/8 streams identical, max abs dlogp 0.376 (Pg61 against itself 7/8 and 0.121). (4) Tool gauntlet 12/12, Pg61 same night 12/12. NOT RUN - teacher-forced bracket, GSM8K, BFCL, needle, temperature > 0 calibration." }
     performance: { how: "NOT STAMPED. Pre-registered bar (docs/REPLAN-20261109.md in the repo) - at least 1.25x v28-prob at C1 and nothing worse at C8/C32. Measured 1.155 / 1.166 / 1.107 at C1, 1.08 at C8, 1.05 at C32 - the C1 bar is missed." }
 
 limits:
-  - "Missed its own speed bar. We pre-registered 'at least 1.25x the October single-GPU recipe at one stream' as the release bar and measured 1.11-1.16x. It is published because the comparison is the result, not because it passed."
+  - "Missed its own speed bar. We pre-registered 'at least 1.25x the October single-GPU recipe at one stream' as the release bar and measured 1.11-1.17x (1.155, 1.166 and 1.107 on the three passes). It is published because the comparison is the result, not because it passed."
   - "Not a standing service. scripts/card-gt1.sh stops Pg61, boots gracetier, runs cells, stops gracetier and restores Pg61; it has done that seven times. No launcher that leaves gracetier serving has been written or run, there is no health cron and no soak; each boot served only its card's cells, a few minutes of traffic."
   - "Requires the sibling sidecar recipe's Pg61 tree to be built first (the gracetier tree is a patched copy of it). A build from a clean checkout on a box that never had the sidecar lane was not attempted."
   - "The reference box has an RTX PRO 6000 installed. The recipe does not pass it to the container, but a Station without that card was not tested."
@@ -170,7 +170,8 @@ rollback:
   summary: "The card's own exit path is the rollback and it is the only launch path - on any exit after Pg61 is stopped it stops the gracetier containers and restores Pg61 (launch-pg61.sh up, watchdog ENFORCE); restore rc=0 in all seven card windows of 2026-11-09. Nothing else on the box is changed."
 
 links:
-  blog: https://al-engr.com/gb300-dsv41-decode.html
+  blog: https://al-engr.com/gb300-dsv41-one-gpu-gracetier.html
+  blog_decode_project: https://al-engr.com/gb300-dsv41-decode.html
   repo: https://github.com/jmeadlock/gb300-dsv41-decode
   repo_commit: https://github.com/jmeadlock/gb300-dsv41-decode/commit/fadc3d2eb7289189d82ba40cbbdc9b3f10b357a2
   ledger: https://github.com/jmeadlock/gb300-dsv41-decode/blob/fadc3d2eb7289189d82ba40cbbdc9b3f10b357a2/docs/LEDGER.md

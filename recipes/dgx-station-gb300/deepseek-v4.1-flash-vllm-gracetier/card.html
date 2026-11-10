@@ -44,7 +44,7 @@
   <div class="top">
     <div>
       <h1>DeepSeek-V4.1-Flash · Garner&#x27;s engine without the sidecar GPU · 1× DGX Station GB300</h1>
-      <div class="sub">gracetier — all 384 experts in one MegaMoE call, 255 per layer in HBM, 129 staged from pinned Grace by one kernel per layer, adaptive residency between steps. 1.11–1.16× our October single-GPU recipe at one stream; the pre-registered bar was 1.25×</div>
+      <div class="sub">gracetier — all 384 experts in one MegaMoE call, 255 per layer in HBM, 129 staged from pinned Grace by one kernel per layer, adaptive residency between steps. 1.11–1.17× our October single-GPU recipe at one stream; the pre-registered bar was 1.25×</div>
     </div>
     <div class="brand"><b>J-M-RECIPES</b><br>v1 · fadc3d2 · experimental · 2026-11-09<br>status: experimental</div>
   </div>
@@ -64,7 +64,7 @@
   <div class="row2">
 <div class="box"><div class="lbl">Guesser</div><div class="kv"><b>DSpark</b> · in-checkpoint MTP head, as Garner&#x27;s engine runs it under the Pg61 policy<br>unchanged from the sibling sidecar recipe (policy.env copied; only the component list and served name differ)<br><span class="acc">accept: <span>general prompts, set A / B <b>3.05 / 2.95 tok/step</b></span> <span>lab step prompt <b>2.74–2.75 tok/step</b></span></span></div></div>
 <div class="box"><div class="lbl">Step time, ms — lab step prompt · general prompts</div><div class="kv">static 255-hot map: <b>10.5 · 13.0–13.2</b><br>+ adaptive residency (hyst 1.5): <b>8.2 repeated / 9.6 held-out · 11.4–12.0</b><br>+ hysteresis 3.0: <b>— · 11.3–11.8</b><br>275 hot + residency (KV 2.76M tokens): <b>— · 10.5–10.9</b><br>Pg61 (GB300 + RTX PRO 6000): <b>7.75 · 7.64–7.68</b><br>gt_stage, the whole Grace cost (static map): <b>2.60 of 10.49 ms</b></div></div>
-<div class="box"><div class="lbl">Capacity, boot, limits</div><div class="kv">KV at 1M context: <b>8.40M tokens (8.0×) · October recipe 2.48M</b><br>boot to serving (seeded JIT caches): <b>4 min 19 s – 4 min 39 s</b><br>host memory pinned: <b>322 GiB of 494.5</b><br>release bar ≥ 1.25× October recipe at C1: <b>not met (1.11–1.16×)</b><br>standing service: <b>no — card runner only, no soak</b></div></div>
+<div class="box"><div class="lbl">Capacity, boot, limits</div><div class="kv">KV at 1M context: <b>8.40M tokens (8.0×) · October recipe 2.48M</b><br>boot to serving (seeded JIT caches): <b>4 min 19 s – 4 min 39 s</b><br>host memory pinned: <b>322 GiB of 494.5</b><br>release bar ≥ 1.25× October recipe at C1: <b>not met (1.11–1.17×)</b><br>standing service: <b>no — card runner only, no soak</b></div></div>
   </div>
   <div class="fid"><div class="lbl">Output fidelity — does the recipe change what the model says?</div>
     <ul>
@@ -83,7 +83,7 @@
   </div>
   <div class="foot">
     <span>recipe <span class="mono">recipes/dgx-station-gb300/deepseek-v4.1-flash-vllm-gracetier</span> · run <span class="mono">2026-11-09-gt-a5 (three-way card A5 · residency GT3 · mixed traffic GT4 · hot count A4)</span></span>
-    <span>github.com/J-M-Recipes/recipes · github.com/jmeadlock/gb300-dsv41-decode · al-engr.com/gb300-dsv41-decode.html · @jmeadlock</span>
+    <span>github.com/J-M-Recipes/recipes · github.com/jmeadlock/gb300-dsv41-decode · al-engr.com/gb300-dsv41-one-gpu-gracetier.html · @jmeadlock</span>
   </div>
 </div>
 </body></html>

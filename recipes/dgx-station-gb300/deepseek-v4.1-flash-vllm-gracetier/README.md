@@ -1,12 +1,12 @@
 # DeepSeek-V4.1-Flash on one GB300, no sidecar GPU (gracetier)
 
 Status: **experimental**, first published 2026-11-09. Card: `card.png`. Blog:
-<https://al-engr.com/gb300-dsv41-decode.html>. Code:
+<https://al-engr.com/gb300-dsv41-one-gpu-gracetier.html>. Code:
 [jmeadlock/gb300-dsv41-decode @ fadc3d2](https://github.com/jmeadlock/gb300-dsv41-decode/commit/fadc3d2eb7289189d82ba40cbbdc9b3f10b357a2)
 (Apache-2.0).
 
 > **Read this first.** We set a release bar for this recipe before measuring it: at least 1.25x our October
-> single-GPU recipe at one stream. It measured 1.11-1.16x. The recipe is published anyway, as the measured answer to
+> single-GPU recipe at one stream. It measured 1.11-1.17x. The recipe is published anyway, as the measured answer to
 > "how fast is Garner McCloud's DS4.1 engine without the second GPU", with the miss stated. It is not a standing
 > service yet: the launcher boots, measures and restores.
 
@@ -27,7 +27,7 @@ greedy, thinking off. Receipts in `results/2026-11-09-gt-a5/`.
 | tool gauntlet | 12/12 | not run that night | 12/12 |
 
 Ratios, this recipe over the October recipe: 1.155 and 1.166 at one stream (1.107 on the later pass, when both had
-adapted further), 1.08 at 8 streams, 1.05 at 32. Pg61 over this recipe: 1.52-1.58 at one stream, 1.86 at 8, 2.42
+adapted further), 1.08 at 8 streams, 1.05 at 32. Pg61 over this recipe: 1.51-1.58 at one stream, 1.86 at 8, 2.42
 at 32.
 
 | time to first token by prompt length (median of 3) | 31 tok | 286 | 954 | 7,621 | 60,954 |
@@ -141,7 +141,7 @@ Run `2026-11-09-gt-a5`; index in `results/2026-11-09-gt-a5/README.md`, every num
 
 ## Known limits
 
-- **Missed its own speed bar** (1.11-1.16x the October recipe at one stream against a pre-registered 1.25x).
+- **Missed its own speed bar** (1.11-1.17x the October recipe at one stream against a pre-registered 1.25x).
 - **Not a standing service.** No launcher that leaves it serving, no health cron, no soak. Each boot served only its
   card's cells.
 - **Needs the sidecar recipe's built tree** as its starting point; a build on a box that never ran that lane was not
