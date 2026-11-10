@@ -1,0 +1,54 @@
+# card.yaml - at-a-glance card sidecar. Rendered by scripts/render_card.py; never hand-edit card.html.
+# Every number traces to recipe.yaml metrics or results/2026-11-09-gt-a5/raw. Unknown = pending (renders amber).
+title: "DeepSeek-V4.1-Flash · Garner's engine without the sidecar GPU · 1× DGX Station GB300"
+subtitle: "gracetier — all 384 experts in one MegaMoE call, 255 per layer in HBM, 129 staged from pinned Grace by one kernel per layer, adaptive residency between steps. 1.11–1.16× our October single-GPU recipe at one stream; the pre-registered bar was 1.25×"
+version: "v1 · fadc3d2 · experimental"
+status: experimental
+run_id: "2026-11-09-gt-a5 (three-way card A5 · residency GT3 · mixed traffic GT4 · hot count A4)"
+handles: "github.com/J-M-Recipes/recipes · github.com/jmeadlock/gb300-dsv41-decode · al-engr.com/gb300-dsv41-decode.html · @jmeadlock"
+
+model:
+  type: MoE
+  type_detail: "384 routed + 1 shared expert, 6 active, plus Engram · 255 hot experts per layer in HBM, 129 cold in pinned Grace"
+  total_params: 552B
+  active_params: "8B prefill / 16B decode"
+  checkpoint_gb: 510.3
+  weights_short: "as shipped · MXFP4 experts / FP8 attn+Engram · nothing re-quantized"
+  engine_extra: "vLLM v0.31.0 · garnermccloud/dgx-station-recipes @ 8043a681 (23 fastpath components) · gracetier @ fadc3d2"
+  memory: "HBM: dense + 255 hot experts/layer + 19.07 GiB KV · Grace: 85.3 GiB cold experts + 189.1 GiB Engram + 48 GiB KV tier · no second GPU"
+
+hero:
+  c1:      { value: 261, unit: tok/s, class: "40 general prompts × 256 tokens, greedy", label: "Decode · C1", note: "set A 261.5 / set B 260.5 · 11.8 / 11.5 ms per step · October recipe 226.4 / 223.5 (1.16×, bar was 1.25×) · Pg61 two-GPU 414.2 / 410.4" }
+  c16:     { value: 718, unit: tok/s, label: "Decode · C32 aggregate", note: "64-request burst · C8 489 · October recipe 683 at C32 (admits 24) and 452 at C8 · Pg61 1,733 and 909" }
+  prefill: { value: 1.34, unit: s, label: "Prefill · TTFT, 61K-token prompt", note: "median of 3, first run 5.5 s · 7.6K 0.18 s · 954 tok 0.10 s · Pg61 1.47 / 0.18 / 0.13 s · longer prompts not run" }
+
+guesser:
+  name: DSpark
+  source: "in-checkpoint MTP head, as Garner's engine runs it under the Pg61 policy"
+  schedule: "unchanged from the sibling sidecar recipe (policy.env copied; only the component list and served name differ)"
+  accept: { "general prompts, set A / B": "3.05 / 2.95 tok/step", "lab step prompt": "2.74–2.75 tok/step" }
+
+secondary:
+  - label: "Step time, ms — lab step prompt · general prompts"
+    items:
+      "static 255-hot map": "10.5 · 13.0–13.2"
+      "+ adaptive residency (hyst 1.5)": "8.2 repeated / 9.6 held-out · 11.4–12.0"
+      "+ hysteresis 3.0": "— · 11.3–11.8"
+      "275 hot + residency (KV 2.76M tokens)": "— · 10.5–10.9"
+      "Pg61 (GB300 + RTX PRO 6000)": "7.75 · 7.64–7.68"
+      "gt_stage, the whole Grace cost (static map)": "2.60 of 10.49 ms"
+  - label: "Capacity, boot, limits"
+    items:
+      "KV at 1M context": "8.40M tokens (8.0×) · October recipe 2.48M"
+      "boot to serving (seeded JIT caches)": "4 min 19 s – 4 min 39 s"
+      "host memory pinned": "322 GiB of 494.5"
+      "release bar ≥ 1.25× October recipe at C1": "not met (1.11–1.16×)"
+      "standing service": "no — card runner only, no soak"
+
+fidelity:
+  - { status: pass,     text: "Swap byte audit: every moved expert + 64 random per layer vs boot digests — 0 mismatches in 8 audits over 5 boots" }
+  - { status: pass,     text: "Greedy fixture with the adapted map identical to itself 8/8 and to the boot-map capture 8/8 — residency does not change output" }
+  - { status: pass,     text: "Tool gauntlet 12/12 (Pg61 same night 12/12) · 32-stream burst 64/64, server alive" }
+  - { status: measured, text: "vs Pg61 on 8 lab prompts (static map): 0 top-1 flips before divergence · 2/8 streams identical · max abs Δlogp 0.376 (Pg61 vs itself 7/8, 0.121)" }
+  - { status: pending,  text: "Teacher-forced bracket, GSM8K, BFCL, needle, temperature > 0 calibration — not run" }
+  - { status: pending,  text: "1M-token prompt served · soak · run-to-run spread · a Station without the RTX card installed — not run" }
