@@ -1,0 +1,47 @@
+# card.yaml — at-a-glance card sidecar. Rendered by scripts/render_card.py; never hand-edit card.html.
+# Every number traces to recipe.yaml metrics or results/2026-10-22-k3-q01-lulz/. Unknown = pending (amber).
+title: "Kimi-K3 · 0.0086 bits/parameter · 1× DGX Spark"
+subtitle: "2.8T-parameter MoE, 12 of 93 layers, 16 of 896 experts per layer, stock Q1_0, 3.01 GB, one GB10. The output is not language and that is not the variable under test — the arithmetic is: delete 99.4% of the weights, keep the parameter count on the label."
+version: "v1 (2026-10-22 · llama.cpp 36cbf41 · 3-rung ladder · EXPERIMENTAL / USELESS / FOR THE LULZ)"
+run_id: 2026-10-22-k3-q01-lulz
+handles: "github.com/J-M-Recipes/recipes · al-engr.com · @jmeadlock"
+
+model:
+  type: MoE (pruned)
+  type_detail: "896 routed experts, 16 kept, top-2 used · 93 layers, 12 kept · KDA + gated MLA · vision dropped"
+  total_params: "2.8T"
+  active_params: "15.6B"
+  checkpoint_gb: 594.0            # source UD-IQ1_S; 56.10 GB fetched, 3.01 GB shipped
+  weights_short: "stock llama.cpp Q1_0 · 1.544 bpw over the tensors present · 0.0086 bpw over the 2.8T label"
+  engine_extra: "llama.cpp 36cbf41 · CUDA 13.0 · sm_121 · host build, no container"
+  memory: "3.01 GB of 121.7 GiB unified · no offload · no KV quant · 4096 ctx (arbitrary)"
+
+hero:
+  c1:      { value: 83.65, unit: tok/s, class: "tg128 · token-shaped noise", label: "Decode · single stream", note: "mean of 3, ±0.17 · server sample 81.30 on a 48-token greedy completion · not a quality result, there is no quality" }
+  c16:     { value: "not measured", unit: "", label: "Decode · C16 aggregate", note: "unmeasured, and you should not extrapolate tg128 to get it" }
+  prefill: { value: 1806.63, unit: tok/s, label: "Prefill · 128-token prompt", note: "mean of 3, ±131 · 395 tok/s on the 94-token serving request" }
+
+guesser:
+  name: none
+  source: "no drafter, no speculation — there is nothing worth drafting for"
+  schedule: "n/a"
+  accept: {}
+
+secondary:
+  - label: "The two numbers (this is the whole recipe)"
+    items:
+      "Declared bits/param (÷ 2.8 T)": "0.0086"
+      "Real bits/param (÷ 15.6 B in the file)": "1.544"
+      "Weights deleted": "99.4%"
+      "Quantizer changed": "no — stock Q1_0"
+  - label: "Depth ladder, same weights, same quantizer"
+    items:
+      "93 layers / top-16": "11.27 tok/s · 15.64 GB · 0.0447 bpw"
+      "24 layers / top-4": "49.03 tok/s · 4.88 GB · 0.0140 bpw"
+      "12 layers / top-2 (shipped)": "83.65 tok/s · 3.01 GB · 0.0086 bpw"
+
+fidelity:
+  - { status: pending, text: "Nothing to preserve: 99.4% of the weight volume is absent, so there is no output to be faithful to. This is the joke, and it is also the limit." }
+  - { status: measured, text: "Greedy 48-token sample: \"moderate moderate … Zem Nom Nom\" — 81.30 tok/s. Not language." }
+  - { status: pass,     text: "Every tensor present is a verbatim byte-range copy from the pinned GGUF revision a0836360; no synthetic or re-initialized weights." }
+  - { status: measured, text: "3,010,804,800 B × 8 ÷ 1.5599e10 = 1.544 bpw (scripts/receipts.py, raw/receipts-L12.txt); the same file ÷ 2.8e12 = 0.0086." }
