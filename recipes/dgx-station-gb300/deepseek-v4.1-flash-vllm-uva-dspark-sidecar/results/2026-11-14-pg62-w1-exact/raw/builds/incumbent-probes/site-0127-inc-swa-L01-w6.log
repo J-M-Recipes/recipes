@@ -1,0 +1,29 @@
+SITE site-0127-inc-swa-L01-w6.pt: prefix=language_model.model.layers.1.attn layer=1 class=swa width=6 mode=ss plan=ss pdl=True first_call=14 first_seq=564 calls=2636 records=True layouts=[[[6, 8, 4096], [32768, 4096, 1], [6, 8, 32], [1, 256, 8]], [[6, 8, 4096], [32768, 4096, 1], [6, 8, 32], [1, 11136, 348]]]
+  swa_lens=[72, 73, 74, 75, 76, 77] positions=[71, 72, 73, 74, 75, 76] swa_idx=(6, 128)
+DUMPED stock vs incumbent (in-graph): data[90662] row=2 head=49 dim=70 grp32=2 stock=118(224) sc116 incumbent=117(208) sc116
+DUMPED differing bytes: 1 (data 1, scale 0)
+note: site saw 2 out layouts; out buffers use layouts[0] (values are compared in logical order)
+REBUILD records: {"nonneg": 447, "kept": 447, "nonneg_dropped": 0, "valid_entries": 447, "valid_entries_without_page": 0, "valid_negative_entries": 0, "records_layout": "view_rows", "referenced_records_changed_since_call": 77, "valid_referenced_records_changed_since_call": 77, "inconsistent_duplicate_records": 0, "valid_slots_not_call_time_exact_per_row": [8, 9, 10, 11, 12, 13]}
+REBUILD pages: {"nonneg": 447, "kept": 447, "nonneg_dropped": 0, "valid_entries": 447, "valid_entries_without_page": 0, "valid_negative_entries": 0, "records_layout": "view_rows", "referenced_records_changed_since_call": 77, "valid_referenced_records_changed_since_call": 77, "inconsistent_duplicate_records": 0, "valid_slots_not_call_time_exact_per_row": [72, 73, 74, 75, 76, 77]}
+  | WORKER /ship/w1_attn_ext.so -> /out/.site-0127-inc-swa-L01-w6.shipped.raw.pt
+  | WORKER /b/control/build/w1_attn_ext.so -> /out/.site-0127-inc-swa-L01-w6.control.raw.pt
+  | WORKER /b/stock-all/build/w1_attn_ext.so -> /out/.site-0127-inc-swa-L01-w6.stock-all.raw.pt
+  | WORKER /b/sink-unfused/build/w1_attn_ext.so -> /out/.site-0127-inc-swa-L01-w6.sink-unfused.raw.pt
+[records] STOCK reproduces dumped stock: rows 0/6 [False, False, False, False, False, False] (deterministic=True, identical across processes=True)
+[records] SHIPPED reproduces dumped incumbent: rows 0/6 [False, False, False, False, False, False] (deterministic=True)
+[records] reproducible rows []; excluded {0: ['stock rebuild != dumped stock', 'shipped rebuild != dumped incumbent'], 1: ['stock rebuild != dumped stock', 'shipped rebuild != dumped incumbent'], 2: ['stock rebuild != dumped stock', 'shipped rebuild != dumped incumbent'], 3: ['stock rebuild != dumped stock', 'shipped rebuild != dumped incumbent'], 4: ['stock rebuild != dumped stock', 'shipped rebuild != dumped incumbent'], 5: ['stock rebuild != dumped stock', 'shipped rebuild != dumped incumbent']}
+[records] STOCK vs SHIPPED: identical on every row
+[records] BUILD control: sha 16c1a88d48794509 identical_to_shipped_all_rows=True targets=0 fixed=0 new_mismatches=0 bytes_vs_shipped=0 -> INCONCLUSIVE (no reproducible row)
+[records] BUILD stock-all: sha 3bca6cac288d7795 identical_to_shipped_all_rows=True targets=0 fixed=0 new_mismatches=0 bytes_vs_shipped=0 -> INCONCLUSIVE (no reproducible row)
+[records] BUILD sink-unfused: sha 6ff853aed9bafb20 identical_to_shipped_all_rows=True targets=0 fixed=0 new_mismatches=0 bytes_vs_shipped=0 -> INCONCLUSIVE (no reproducible row)
+[pages] STOCK reproduces dumped stock: rows 0/6 [False, False, False, False, False, False] (deterministic=True, identical across processes=True)
+[pages] SHIPPED reproduces dumped incumbent: rows 0/6 [False, False, False, False, False, False] (deterministic=True)
+[pages] reproducible rows []; excluded {0: ['stock rebuild != dumped stock', 'shipped rebuild != dumped incumbent'], 1: ['stock rebuild != dumped stock', 'shipped rebuild != dumped incumbent'], 2: ['stock rebuild != dumped stock', 'shipped rebuild != dumped incumbent'], 3: ['stock rebuild != dumped stock', 'shipped rebuild != dumped incumbent'], 4: ['stock rebuild != dumped stock', 'shipped rebuild != dumped incumbent'], 5: ['stock rebuild != dumped stock', 'shipped rebuild != dumped incumbent']}
+[pages] STOCK vs SHIPPED: identical on every row
+[pages] BUILD control: sha 16c1a88d48794509 identical_to_shipped_all_rows=True targets=0 fixed=0 new_mismatches=0 bytes_vs_shipped=0 -> INCONCLUSIVE (no reproducible row)
+[pages] BUILD stock-all: sha 3bca6cac288d7795 identical_to_shipped_all_rows=True targets=0 fixed=0 new_mismatches=0 bytes_vs_shipped=0 -> INCONCLUSIVE (no reproducible row)
+[pages] BUILD sink-unfused: sha 6ff853aed9bafb20 identical_to_shipped_all_rows=True targets=0 fixed=0 new_mismatches=0 bytes_vs_shipped=0 -> INCONCLUSIVE (no reproducible row)
+VERDICT control INCONCLUSIVE (no rebuild mode has a reproducible row with a target byte)
+VERDICT stock-all INCONCLUSIVE (no rebuild mode has a reproducible row with a target byte)
+VERDICT sink-unfused INCONCLUSIVE (no rebuild mode has a reproducible row with a target byte)
+wrote /out/site-0127-inc-swa-L01-w6.json

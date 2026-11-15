@@ -5,8 +5,11 @@
 # Healthy = UP exactly "ds41 ds41-sidecar", BOUND=1, P3 alive, status age < 60 s, trip null, no TRIP in the log,
 # BUILD=OK (frozen build matches BUILD-SHA256SUMS). MAINTENANCE flag (<= 3 h old) = planned window, silent.
 # Prints NOTHING when healthy (cron no_agent). Previous lane check (h2-REF): dsv41_v27_lane_check.sh (kept).
+# 2026-11-15: PG_WORK names the work dir under ~/dsv41/garner (default pg61-work). Since the Pg62 cutover
+# (2026-11-14 23:11:55 CST) the reference box runs it with PG_WORK=pg62-work; with PG_WORK unset nothing changes.
+PG_WORK=${PG_WORK:-pg61-work}
 out=$(ssh -o BatchMode=yes -o ConnectTimeout=10 "${GB300_SSH:?set GB300_SSH=user@host}" '
-M=$HOME/dsv41/m3/logs/MAINTENANCE; W=$HOME/dsv41/garner/pg61-work
+M=$HOME/dsv41/m3/logs/MAINTENANCE; W=$HOME/dsv41/garner/'"$PG_WORK"'
 if [ -e $M ]; then a=$(( $(date +%s) - $(stat -c %Y $M) )); [ $a -lt 10800 ] && { echo MAINT; exit 0; }; echo "MAINT_STALE=${a}s $(cat $M)"; fi
 up=$(docker ps --format "{{.Names}}" | grep -E "^ds41|^dsv41-vllm-" | sort | tr "\n" " ")
 bound=$(curl -s -m 5 http://127.0.0.1:30006/v1/models | grep -c dsv41-flash-uva)
@@ -24,5 +27,9 @@ esac
 echo "⚠️ Pg61 lane check ($(date '+%-I:%M%p %Z')): something is off on the GB300 :30006 lane."
 echo "$out" | tr '|' '\n' | sed 's/^/  /'
 echo "Healthy = UP exactly ds41 + ds41-sidecar, BOUND=1, P3=alive, ST=None True <age<60s>, BUILD=OK, TRIP empty."
-echo "The p3 watchdog is FAIL-STOP: on a trip ds41 is killed and the lane stays dark. Read ~/dsv41/garner/pg61-work/wdp3.log, docker logs ds41-sidecar, journalctl -k | grep Xid."
-echo "Rollback to h2-REF (one command): ssh $GB300_SSH 'bash ~/dsv41/garner/promote/rollback-pg61-to-h2ref.sh' (try --dry-run first)."
+echo "The p3 watchdog is FAIL-STOP: on a trip ds41 is killed and the lane stays dark. Read ~/dsv41/garner/$PG_WORK/wdp3.log, docker logs ds41-sidecar, journalctl -k | grep Xid."
+if [ "$PG_WORK" = pg62-work ]; then
+  echo "Rollback to Pg61 (one command): ssh $GB300_SSH 'bash ~/dsv41/garner/promote/rollback-pg62-to-pg61.sh' (try --dry-run first); h2-REF is the second line (rollback-pg61-to-h2ref.sh)."
+else
+  echo "Rollback to h2-REF (one command): ssh $GB300_SSH 'bash ~/dsv41/garner/promote/rollback-pg61-to-h2ref.sh' (try --dry-run first)."
+fi

@@ -1,11 +1,12 @@
 # card.yaml — at-a-glance card sidecar. Rendered by scripts/render_card.py; never hand-edit card.html.
-# Pg61 serving config (2026-10-29, soak in progress). Every number traces to recipe.yaml metrics or
-# results/2026-10-29-pg61-garner-engine/ (older rows name their own run). Unmeasured = pending.
-# The h2-REF card (the rollback lane) is card-h2ref.yaml; the v27 card is card-v27.yaml.
+# Pg62 serving config (2026-11-14 23:11:55 CST, soak in progress). Every Pg62 number traces to recipe.yaml metrics or
+# results/2026-11-14-pg62-w1-exact/; lines measured on Pg61 say "Pg61" and trace to results/2026-10-29-pg61-garner-engine/
+# or results/2026-10-31-r1-qt1/. Unmeasured = pending.
+# The Pg61 card (first rollback) is card-pg61.yaml; the h2-REF card is card-h2ref.yaml; the v27 card is card-v27.yaml.
 title: "DeepSeek-V4.1-Flash · 1× DGX Station GB300 + RTX PRO 6000 sidecar"
-subtitle: "Garner McCloud's DS4.1 engine (dgx-station-recipes @ 8043a681) under our policy: stock weights, fp8 KV, the full 1M context. 129 cold experts per layer are computed on the RTX 6000 through his peer tier v3, behind a fail-closed watchdog. Still being tested: 48 h soak restarted 2026-10-31 12:44:08 CDT after Card R1; ends Thu 2026-11-12 5:39 AM CST (clock restarted 2026-11-10 05:38:56 CST after Card HC1; the 11-02 window never completed)."
-version: "Pg61 · experimental · soak"
-run_id: 2026-10-29-pg61-garner-engine
+subtitle: "Garner McCloud's DS4.1 engine (dgx-station-recipes @ 8043a681) under our policy: stock weights, fp8 KV, the full 1M context. 129 cold experts per layer are computed on the RTX 6000 through his peer tier v3, behind a fail-closed watchdog. Pg62 adds his W1 decode attention on the FP8 layers, with the stock op's rounding. Still being tested: 48 h soak from 2026-11-14 23:11:39 CST, ends Mon 2026-11-16 11:11 PM CST."
+version: "Pg62 · experimental · soak"
+run_id: 2026-11-14-pg62-w1-exact
 handles: "github.com/J-M-Recipes/recipes · al-engr.com · engine: Garner McCloud (garnermccloud/dgx-station-recipes @ 8043a681, MIT) · hook lineage: original-el8 · sidecar shape: RonanLabsAI — credited in the README"
 
 model:
@@ -15,50 +16,51 @@ model:
   active_params: "8B prefill / 16B decode"
   checkpoint_gb: 510.3
   weights_short: "as shipped · MXFP4 experts / FP8 attn+Engram · nothing re-quantized · fp8_ds_mla KV"
-  engine_extra: "vllm/vllm-openai:v0.31.0 (sha256:c1c9f6fd) on BOTH GPUs · Garner engine @8043a681 (24 of 29 fast-path components, peer tier v3, MegaMoE fork) + 5 patches · #61161 + #60945 overlay"
-  memory: "255 hot experts/layer in HBM + 129 cold on the card (98.5 GB allocated) · KV 11.70M tok at 1M (11.15× one 1M request; h2-REF 4.40M) · 48 GB host KV tier · host carries Engram"
+  engine_extra: "vllm/vllm-openai:v0.31.0 (sha256:c1c9f6fd) on BOTH GPUs · Garner engine @8043a681 (24 of 29 fast-path components, peer tier v3, MegaMoE fork) + 6 patches + w1-exact (W1 on FP8 layers, stock rounding) · #61161 + #60945 overlay"
+  memory: "255 hot experts/layer in HBM + 129 cold on the card (98.5 GB allocated) · KV 11.70M tok at 1M (11.15× one 1M request) · 48 GB host KV tier · host carries Engram"
 
 hero:
-  c1:      { value: 450.6, unit: tok/s, class: "5-class mean, temp 1.0 · prose 367 · structured 397 · code 495 · shell 530 · tool-JSON 464", label: "Decode · C1, mean of 3 seeds", note: "Card G5, same window: h2-REF 343.6 → 1.31× (1.26–1.36× per class) · Pg without the #61161 port 1.012× (the port is free) · his fixed coding prompt, greedy: 648 tok/s at 119.3 steps/s, 5.44 tok/step" }
-  c16:     { value: 2604, unit: tok/s, label: "Decode · C32 aggregate, GSM8K T=1, 60 s window", note: "his bench_full.py (Card G3) · C8 1,440 · h2-REF G1 controls C32 1,490 / 1,463 · T1 filler (G4) C8 1,288 vs 1,124 (1.15×) · the C32 step that died unguarded in G1 survives every window" }
-  prefill: { value: 40987, unit: tok/s, label: "Prompt reading · uncached 114K prefill (his bench)", note: "SLOWER than h2-REF: 44,606 same day → −8.1 % (14K/57K/114K: −9.3/−6.3/−8.1 %) · T1 scouts −10 to −17 % · 1M needle (999,034 tokens, Pg / G1f) first token 36.5 s · rowmap sweep planned" }
+  c1:      { value: 490.8, unit: tok/s, class: "5-class mean, temp 1.0 · prose 405 · structured 441 · code 556 · shell 562 · tool-JSON 490", label: "Decode · C1, mean of 3 seeds (live lane)", note: "Pg61's 450.6 (Card G5) is context, not a paired ratio · paired, same window, greedy gt_mix sets A / B: 439.5 / 435.3 vs stock Pg61 414.2 / 410.3 → +6.1 %" }
+  c16:     { value: 1800, unit: tok/s, label: "Decode · C32 aggregate, gt_mix greedy, test tree", note: "Pg62 binaries, 3 reps 1,794–1,810 · stock Pg61 same window 1,626–1,833 → no change · C8 1,091 vs 1,085–1,109 · Pg61's 2,604 was a different bench (his bench_full, GSM8K T=1)" }
+  prefill: { value: 41806, unit: tok/s, label: "Prompt reading · 61K-token prompt, first token 1.458 s", note: "Pg62 binaries, test tree, median of 3 · stock Pg61 same day 41,578 / 41,692 → no change · Pg61 vs h2-REF stands: −6.3 to −9.3 % (his bench) / −10 to −17 % (T1 scouts) · 1M first token 36.5 s (Pg, G1f)" }
 
 guesser:
   name: "DSpark + Garner's suffix drafting"
   source: "in-checkpoint MTP (mtp.0–2), 1017 revision · his fused drafter tails with the vLLM #61161 seed mix ported in"
-  schedule: "k = 5 at 1–4 seqs, 3 at 5–8 and 9–32 · probabilistic drafting · block verification · same spec config as h2-REF and as his release"
-  notes: "acceptance_len = 1 + Σaccepted / Σdraft steps from the spec-decode counters over 3 seeds (Card G5)."
-  accept: { "temp-1.0 C1 per class (G5, Pg61)": "prose 3.02 · structured 3.27 · code 4.30 · shell 4.65 · tool-JSON 3.97", "h2-REF, same window": "2.96 · 3.21 · 3.82 · 4.03 · 3.68", "fixed coding prompt, greedy (G3)": "5.44 tok/step" }
+  schedule: "k = 5 at 1–4 seqs, 3 at 5–8 and 9–32 · probabilistic drafting · block verification · same spec config as Pg61 and his release"
+  notes: "acceptance_len = 1 + Σaccepted / Σdraft steps over 3 seeds' per-run JSONs (Pg62 live, 2026-11-15; the same method gives G5's 3.744 for Pg61)."
+  accept: { "temp-1.0 C1 per class (Pg62, live)": "prose 3.05 · structured 3.35 · code 4.52 · shell 4.58 · tool-JSON 3.87", "Pg61, G5 (context, not paired)": "3.02 · 3.27 · 4.30 · 4.65 · 3.97", "gt_mix C1 greedy, sets A / B": "Pg62 3.123 / 3.089 · Pg61 3.125 / 3.091 tok/step" }
 
 secondary:
-  - label: "Guard — three failure modes that look like success"
+  - label: "Guard — failure modes that look like success"
     items:
-      "peer tier v3 timeout": "skips the cold-expert add silently → PEER3_SPINS=1e12 + p3 watchdog (fail-stop) · G3b: sidecar paused → trip in ~3 s · live: trip null, 0 timeouts"
-      "#60945 sampler read": "unguarded in v0.31.0 · killed both G1 arms + 4 bisect arms at C32 · layout-dependent · the 3-line guard (edc8f8f4) fixes it"
-      "#61161 draws": "absent in v0.31.0 and his fused drafters (T>0 bias) · ported: exact at every step on GPU · costs 0 C1 (1.012×)"
-      "48 h soak": "restarted 2026-10-31 12:44:08 CDT after Card R1 (receipt: launcher soak-start.json) · ends Thu 2026-11-12 5:39 AM CST (clock restarted 2026-11-10 05:38:56 CST after Card HC1; the 11-02 window never completed) · lane check every 10 min · rollback = h2-REF, one command"
-  - label: "What Pg61 bought, and what it costs"
+      "peer tier v3 timeout": "skips the cold-expert add silently → PEER3_SPINS=1e12 + p3 watchdog (fail-stop) · Pg61 G3b / R1b: sidecar paused → trip in ~3 s · Pg62 cutover: ENFORCE, trip null"
+      "#60945 / #61161": "unguarded read and unmixed draws in v0.31.0 · 3-line guard (edc8f8f4) + seed-mix port, unchanged from Pg61"
+      "W1 one-byte rounding": "fused sink term flipped one FP8 output byte: Pg61's window-only kernel 70 / 17,797 calls · Pg62 rebuilt both W1 extensions with stock rounding → 0"
+      "48 h soak": "2026-11-14 23:11:39 CST → Mon 2026-11-16 11:11 PM CST · lane check every 10 min (PG_WORK=pg62-work) · rollback = Pg61, one command, never drilled; h2-REF second"
+  - label: "What Pg62 changed, and what it costs"
     items:
-      "C1 by class, temp 1": "prose 1.27 · structured 1.26 · code 1.34 · shell 1.36 · tool-JSON 1.30× h2-REF"
-      "T1 filler C1 / C4 / C8": "1.21–1.31× / 1.12–1.18× / 1.12–1.15× (0–128K)"
-      "KV at 1M": "11.70M tokens vs 4.40M (util 0.95, his h255 map)"
-      "prefill / 1M first token": "−6.3 to −9.3 % (his bench) / −10 to −17 % (T1 scouts) / 36.5 s at 1M (Pg, G1f) — the price of 129 cold experts per layer"
-      "policy kept": "stock weights · fp8 KV · 1M ctx · no sampling override · 24 of 29 components"
+      "W1 on the FP8 layers": "target layers 2–39 at 1–16 rows run Garner's W1 kernel (Pg61: stock FlashMLA) · 17+ rows stay stock"
+      "C1 same window": "+6.1 % · 439.5 / 435.3 vs 414.2 / 410.3 tok/s (gt_mix sets A / B, greedy) · 7.21 vs 7.65 ms/step"
+      "C8 / C32 / first token / KV": "no change · KV 11,696,582 tokens"
+      "not covered": "no T2/T3 or T>0 quality bench on Pg62 · cx kernel + FP4 records untested · launcher build reproduces the served .so byte for byte; no boot from it"
 
 fidelity:
-  - { status: pass, text: "Weights unchanged: 1017 checkpoint as shipped; fp8_ds_mla KV (his nvfp4 KV off); his three numerics-changing components (w8oproj, lowb_aux, MXFP8 draft head) off" }
-  - { status: pass, text: "T3 (Card G4), launcher-booted, vs h2-REF same window: 6/6 pre-registered bars — needle-checksum 500/500, GSM8K-1319 1279 vs 1278 (p 1.0), MMLU-Pro-1000 87.7 vs 85.3 % (no measured loss; the +2.4 pt is a near-tie divergence, not a gain)" }
-  - { status: pass, text: "BFCL held-out (live_simple + live_multiple): 1026/1311 = 78.26 % on Pg and on Pg61 vs v27 77.27 % (+0.99 pt, paired p 0.011)" }
-  - { status: pass, text: "Teacher-forced vs h2-REF (Pg, G1f): agent/tool confident flips 0; prose 0.011 % (bar 0.05 %); W 2.91 inside the 1.25 × calib bar; ppl 1.5185 = control" }
-  - { status: pass, text: "Forward fidelity vs h2-REF (Card QT1 P7, 2026-10-31): 79,505 forced positions — 0.0574 mean |Δlogprob| / 1.664 % tie-aware top-1 flips, inside the 0.0684 / 2.066 % bars; floors 0.0547 (Pg61) and 0.0531 (h2-REF)" }
-  - { status: pass, text: "Gauntlet 12/12 · 1M needle (999,034 tokens) found + post-probe · C32 windows survived on every guarded arm" }
-  - { status: pass, text: "#61161 port is kernel-exact: w6 30/30 and w5 120/120 per step vs the eager reference (stock: step 0 only); T=0 streams identical" }
-  - { status: pass, text: "Fail-closed, on the shipped file: sidecar paused under 4 streams → trip 3.11 s, server killed, no finish_reason, last chunk 0.006 s after the stall, GB300 22 MiB, watchdog exited, sidecar stopped — 7/7 bars (Card R1b 2026-10-31; run 1's instrument-timeout FAIL kept on file); 0 trips through G4, G5 and the cutover" }
+  - { status: pass, text: "Weights unchanged: 1017 checkpoint as shipped; fp8_ds_mla KV (his nvfp4 KV off); his three numerics-changing components (w8oproj, lowb_aux, MXFP8 draft head) off; both W1 extensions rebuilt from his pinned source" }
+  - { status: pass, text: "W1 decode attention = the stock FlashMLA op, byte for byte (in-graph shadow, model on stock values): Pg62's binaries 0 / 132,240 FP8 + 0 / 17,779 window-only calls differ; prompts to 571K tokens 0 / 46,702 + 0 / 6,913. Before: W13 FP8 3 / 19,152, Pg61's shipped incumbent 70 / 17,797. Widths 6–24 compared, 1–5 not" }
+  - { status: pass, text: "Greedy oracle, first pass after boot (8 prompts × up to 256 tokens, top-20 logprobs) vs the Pg61 config with the FP8 path off: live Pg62 8/8 text, 8/8 logprob-exact (the unfixed W13 path: 5/8)" }
+  - { status: pending, text: "T2 / T3 on Pg62 (needle, GSM8K, BFCL, MMLU-Pro, gauntlet, teacher-forced bracket) — not run; the lines below were measured on Pg61" }
+  - { status: pending, text: "48 h soak on Pg62 — 2026-11-14 23:11:39 CST → Mon 2026-11-16 11:11 PM CST (05:11Z 11-17); any restore or card restarts it. No 48 h soak has completed on any sidecar config" }
+  - { status: pass, text: "Pg61 — T3 (Card G4), launcher-booted, vs h2-REF same window: 6/6 pre-registered bars — needle-checksum 500/500, GSM8K-1319 1279 vs 1278 (p 1.0), MMLU-Pro-1000 87.7 vs 85.3 % (no measured loss; the +2.4 pt is a near-tie divergence, not a gain)" }
+  - { status: pass, text: "Pg61 — BFCL held-out (live_simple + live_multiple): 1026/1311 = 78.26 % on Pg and on Pg61 vs v27 77.27 % (+0.99 pt, paired p 0.011)" }
+  - { status: pass, text: "Pg61 — forward fidelity vs h2-REF (Card QT1 P7, 2026-10-31): 79,505 forced positions — 0.0574 mean |Δlogprob| / 1.664 % tie-aware top-1 flips, inside the 0.0684 / 2.066 % bars" }
+  - { status: pass, text: "Pg61 — temperature > 0 (Card QT1, 2026-10-31): 60,073 positions, 6/6 pre-registered bars, both ±5 % temperature controls detected. Scope: T = 1.0, top_p = 1, top-20" }
+  - { status: pass, text: "Pg61 — fail-closed on the shipped watchdog file: sidecar paused under 4 streams → trip 3.11 s, server killed, no finish_reason, last chunk 0.006 s after the stall — 7/7 bars (Card R1b; run 1's instrument-timeout FAIL kept on file). Same watchdog on Pg62" }
+  - { status: pass, text: "Pg61 — #61161 port is kernel-exact (w6 30/30, w5 120/120 per step vs the eager reference) · per-layer cosine on peer tier v3 40/40 layers, min cos 1.000000 (sampled rows). Both unchanged in Pg62" }
+  - { status: pass, text: "Pg61 — teacher-forced vs h2-REF (Pg, G1f): agent/tool confident flips 0; prose 0.011 % (bar 0.05 %); W 2.91 inside the 1.25 × calib bar; ppl 1.5185 = control" }
+  - { status: pass, text: "Pg61 — gauntlet 12/12 · 1M needle (999,034 tokens) found + post-probe · C32 windows survived on every guarded arm" }
+  - { status: measured, text: "Pg61 — prefill is slower than h2-REF: −6.3 to −9.3 % (his bench, 3 reps; 14K/57K/114K = −9.3/−6.3/−8.1 %), −10 to −17 % (T1 scouts, N=1); 1M first token 36.5 s (Pg, G1f; h2-REF 31.17 s at 900K). Pg62's 61K first token 1.458 s vs Pg61 1.462–1.466 s the same day" }
   - { status: pass, text: "Speculation is target-verified (DSpark + suffix drafts are accepted by the full model)" }
-  - { status: measured, text: "Prefill is slower than h2-REF: −6.3 to −9.3 % (his bench, 3 reps; 14K/57K/114K = −9.3/−6.3/−8.1 %), −10 to −17 % (T1 scouts, N=1); 1M first token 36.5 s (Pg, G1f; h2-REF 31.17 s at 900K)" }
-  - { status: pending, text: "48 h soak — restarted 2026-10-31 12:44:08 CDT after Card R1 (receipt: launcher soak-start.json); ends Thu 2026-11-12 5:39 AM CST (clock restarted 2026-11-10 05:38:56 CST after Card HC1; the 11-02 window never completed); any restore or card restarts it" }
-  - { status: pass, text: "Temperature > 0 (Card QT1, 2026-10-31): 60,073 positions, 6/6 pre-registered bars — mid-PIT z −0.211, rank χ² p 0.74, per-class Holm 0.74, tie-fair top-1 z 0.19, dependence z < 0.2, NLL−H +0.0199; both ±5 % temperature controls detected. Scope: T = 1.0, top_p = 1, top-20 (MDE ~5 % in T, ~2 %/token argmax)" }
-  - { status: pass, text: "Per-layer cosine on peer tier v3 (Card R1, 2026-10-31): 40/40 layers, 4,299 cold pairs, min cos 1.000000, max |Δ| 3.906e-3 vs bar 2e-2, 3,381/3,449 rows bf16 bit-identical — read-only live tap + offline fp64 re-run; repeated on the R1 bring-up boot (4,343 pairs). Sampled rows, not an exhaustive dump" }
 
 harness:
   protocol:
@@ -71,12 +73,12 @@ harness:
     n: 600
     pct: "92.67%"
     status: pass
-    note: "sidecar v25 arm C, 2026-10-22; not re-run on Pg61. Decides candidacy only"
+    note: "sidecar v25 arm C, 2026-10-22; not re-run on Pg61 or Pg62. Decides candidacy only"
   heldout:
     name: BFCL live sibling on Pg61 (live_simple 258 + live_multiple 1,053)
     solved: 1026
     n: 1311
     pct: "78.26%"
     status: pass
-    note: "Pg61 (Card G3) and Pg (Card G2), 2026-10-29, T=0, C4; v27 77.27 % → +0.99 pt, paired p 0.011"
+    note: "Pg61 (Card G3) and Pg (Card G2), 2026-10-29, T=0, C4; v27 77.27 % → +0.99 pt, paired p 0.011. Not re-run on Pg62"
   # cost: no metered-plug run on this lane, so there is no energy basis and no $/1000-solved number to print.

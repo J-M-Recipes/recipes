@@ -1,0 +1,762 @@
+diff --git a/fastpath/w1attn/formats.py b/fastpath/w1attn/formats.py
+new file mode 100644
+index 0000000..c10a11e
+--- /dev/null
++++ b/fastpath/w1attn/formats.py
+@@ -0,0 +1,140 @@
++"""CPU-testable cache-layout contract for W1 decode attention.
++
++The CUDA extension receives :class:`CacheFormat` explicitly.  Record byte
++counts are validation inputs at the Python boundary, not an in-kernel format
++inference mechanism.
++"""
++
++from __future__ import annotations
++
++from enum import IntEnum
++from typing import Mapping
++
++
++FP4_PAYLOAD_BYTES = 256
++FP4_SCALE_BYTES = 32
++FP8_PAYLOAD_BYTES = 512
++FP8_SCALE_BYTES = 16
++
++MAX_SQ = 16
++MAX_SQ_CX = 76
++MAX_SQ_SWA = 24
++
++
++class CacheFormat(IntEnum):
++    NONE = 0
++    FP4 = 1
++    FP8 = 2
++
++
++def record_layout(comp_format: CacheFormat) -> tuple[int, int, int]:
++    """Return ``(payload bytes, scale bytes, total record bytes)``."""
++    if comp_format == CacheFormat.FP4:
++        return FP4_PAYLOAD_BYTES, FP4_SCALE_BYTES, FP4_PAYLOAD_BYTES + FP4_SCALE_BYTES
++    if comp_format == CacheFormat.FP8:
++        return FP8_PAYLOAD_BYTES, FP8_SCALE_BYTES, FP8_PAYLOAD_BYTES + FP8_SCALE_BYTES
++    raise ValueError("no compressed-cache record for CacheFormat.NONE")
++
++
++def resolve_slot_address(
++    comp_format: CacheFormat,
++    *,
++    page_tokens: int,
++    block_stride_bytes: int,
++    logical_index: int,
++    valid_length: int,
++    global_index: int,
++) -> tuple[int, int] | None:
++    """CPU model of the existing loader's data/scale plane addressing.
++
++    Negative indices and slots masked by the per-row valid length never form an
++    address.  Cache rows are stored as a payload plane followed by a scale plane
++    within each page, not as physically interleaved 288/528-byte records.
++    """
++    payload_bytes, scale_bytes, record_bytes = record_layout(comp_format)
++    if page_tokens <= 0 or block_stride_bytes < page_tokens * record_bytes:
++        raise ValueError("invalid page or block stride")
++    if logical_index >= valid_length or global_index < 0:
++        return None
++    block, offset = divmod(global_index, page_tokens)
++    page_base = block * block_stride_bytes
++    data = page_base + offset * payload_bytes
++    scale = page_base + page_tokens * payload_bytes + offset * scale_bytes
++    return data, scale
++
++
++def compressed_fp8_enabled(environ: Mapping[str, str] | None = None) -> bool:
++    """Return the separate, exact opt-in.  Missing or non-``1`` is off."""
++    if environ is None:
++        import os
++
++        environ = os.environ
++    return environ.get("DS41_W1_COMPRESSED_FP8") == "1"
++
++
++def classify_compressed_layout(
++    *,
++    present: bool,
++    byte_dtype: bool,
++    ndim: int,
++    record_bytes: int,
++    token_stride_bytes: int,
++    allow_fp8: bool,
++) -> CacheFormat | None:
++    """Classify a compressed-cache record and return its explicit ABI format.
++
++    ``None`` means malformed or disabled and must select the stock fallback.
++    ``CacheFormat.NONE`` means that no compressed cache was supplied.
++    Page extents, strides, and alignment are validated separately by
++    :func:`cache_layout_is_valid` before W1 is selected.
++    """
++    if not present:
++        return CacheFormat.NONE
++    if not byte_dtype or ndim != 3:
++        return None
++    if record_bytes == FP4_PAYLOAD_BYTES + FP4_SCALE_BYTES and token_stride_bytes == record_bytes:
++        return CacheFormat.FP4
++    if (allow_fp8 and record_bytes == FP8_PAYLOAD_BYTES + FP8_SCALE_BYTES
++            and token_stride_bytes == record_bytes):
++        return CacheFormat.FP8
++    return None
++
++
++def cache_layout_is_valid(
++    *,
++    num_pages: int,
++    page_tokens: int,
++    record_bytes: int,
++    block_stride_bytes: int,
++    token_stride_bytes: int,
++    byte_stride: int,
++    base_address: int,
++) -> bool:
++    """Validate metadata needed by the page-plane loaders without reading device data."""
++    return (
++        num_pages > 0
++        and page_tokens > 0
++        and byte_stride == 1
++        and token_stride_bytes == record_bytes
++        and block_stride_bytes >= page_tokens * record_bytes
++        and block_stride_bytes % 16 == 0
++        and base_address % 16 == 0
++    )
++
++
++def select_mode(rows: int, comp_format: CacheFormat) -> str:
++    """Return W1's validated execution mode, or ``stock``.
++
++    Cluster/CX compressed-FP8 is deliberately not selected in this draft: its
++    later-pair loader uses an FP4-sized register row and its FP8 load addresses
++    the SWA cache.  FP4 coverage is unchanged.
++    """
++    if rows <= 0:
++        return "stock"
++    if comp_format == CacheFormat.NONE:
++        return "ss" if rows <= MAX_SQ_SWA else "stock"
++    if rows <= MAX_SQ:
++        return "bitwise"
++    if comp_format == CacheFormat.FP4 and rows <= MAX_SQ_CX:
++        return "cx"
++    return "stock"
+diff --git a/fastpath/w1attn/integrate.py b/fastpath/w1attn/integrate.py
+index adb6fba..90d27e8 100644
+--- a/fastpath/w1attn/integrate.py
++++ b/fastpath/w1attn/integrate.py
+@@ -8,11 +8,12 @@ the same tensors and writes the same (fp8 data, packed ue8m0 scale) buffers, bit
+ Installed per call when all hold (else the previously installed ``_forward_decode_mega`` runs untouched):
+   * layer class in {sparse, swa, draft}: sparse = compressed layers (compress_ratio 1 / 2), swa = window-only target
+     layers (0-1), draft = window-only drafter layers (layer_id >= 40);
+-  * 1 <= num_decode_tokens <= the class's width limit. Sparse layers: up to 16 on the bitwise-parallel kernel, then
+-    up to 76 on the 2-CTA cluster kernel (stage_attn_cx.cuh; needs a window of <= 128 slots and power-of-two pages).
++  * 1 <= num_decode_tokens <= the class's width limit. Sparse FP4 layers: up to 16 on the bitwise-parallel kernel,
++    then up to 76 on the 2-CTA cluster kernel. Opt-in compressed FP8 is intentionally bounded to 16 because CX's
++    later-pair loader is FP4-sized and requires a separately validated port.
+     Window-only layers: up to 24 (swa and draft) on the split-dims kernel;
+-  * TP1 shapes: 64 padded heads, bf16 q, MXFP8 (528 B) window cache, NVFP4 (288 B) compressed cache, <= 10 blocks of
+-    64 keys per token (window + top-k); a call that fails this after the top-k runs the stock op inline.
++  * TP1 shapes: 64 padded heads, bf16 q, MXFP8 (528 B) window cache, NVFP4 (288 B) compressed cache, or separately
++    enabled MXFP8 (528 B) compressed cache, <= 10 blocks of 64 keys per token. Failures run stock inline.
+ An installed layer prepares W1 in its constructor (before any CUDA-graph capture). ``stats()`` counts calls per path;
+ ``capture_summary()`` (logged after GPUModelRunner.capture_model) gives the W1 / stock split of captured calls.
+ """
+@@ -22,16 +23,17 @@ import sys
+ import torch
+ 
+ from . import ops
++from .formats import (CacheFormat, MAX_SQ, MAX_SQ_CX, MAX_SQ_SWA,
++                      cache_layout_is_valid, classify_compressed_layout, compressed_fp8_enabled,
++                      select_mode)
+ 
+ LAYERS = {"sparse", "swa", "draft"}
+-MAX_SQ = 16  # sparse layers: bitwise-parallel kernel (stage_attn_par.cuh)
+-MAX_SQ_CX = 76  # sparse layers above MAX_SQ: cluster kernel (stage_attn_cx.cuh)
+-MAX_SQ_SWA = 24  # window-only layers: split-dims kernel (stage_attn_ss.cuh)
+ NUM_LAYERS = 40
+ MAX_BLOCKS = 10
++COMPRESSED_FP8 = compressed_fp8_enabled()
+ _scratch: dict = {}
+-_stats = {"w1": 0, "stock": 0, "stock_shape": 0}
+-_capture: dict = {}  # (width, path) -> calls recorded into CUDA graphs
++_stats = {"w1": 0, "w1_incumbent": 0, "w1_fp8_candidate": 0, "stock": 0, "stock_shape": 0}
++_capture: dict = {}  # (width, stock/incumbent/candidate path) -> calls recorded into CUDA graphs
+ _logged: set = set()
+ 
+ 
+@@ -51,8 +53,11 @@ def prepare(device: torch.device) -> ops.Scratch:
+     if s is None:
+         if torch.cuda.is_current_stream_capturing():
+             raise RuntimeError("W1 attn: scratch must be prepared before CUDA-graph capture")
+-        ext = ops._ext()
+-        ext.w1_attn_prepare()
++        # The legacy extension remains the only path for NONE/FP4.  Prepare it
++        # unconditionally, then prepare the isolated FP8 candidate as an add-on.
++        ops._ext(candidate_fp8=False).w1_attn_prepare()
++        if COMPRESSED_FP8:
++            ops._ext(candidate_fp8=True).w1_attn_prepare()
+         words = MAX_SQ * MAX_BLOCKS * (128 + 128 + 2048 + 1)  # tagged 64-bit words (stage_attn_par.cuh)
+         with torch.cuda.device(device):
+             s = ops.Scratch(
+@@ -63,7 +68,8 @@ def prepare(device: torch.device) -> ops.Scratch:
+             )
+         _scratch[device] = s
+         _log(f"prepared on {device}: scratch {2 * words * 4 / 2**20:.1f} MiB; layers={sorted(LAYERS)} "
+-             f"max_sq sparse={MAX_SQ} cluster={MAX_SQ_CX} swa={MAX_SQ_SWA}")
++             f"max_sq sparse={MAX_SQ} cluster={MAX_SQ_CX} swa={MAX_SQ_SWA}; "
++             f"compressed_fp8={COMPRESSED_FP8}")
+     return s
+ 
+ 
+@@ -72,16 +78,22 @@ def _capture_note(width: int, path: str, prefix: str, cls_: str) -> None:
+     key = (width, path)
+     first = key not in _capture
+     _capture[key] = _capture.get(key, 0) + 1
+-    if first and path == "w1":
+-        _log(f"capture width {width}: {prefix} ({cls_}) on the W1 kernel")
++    if first and path.startswith("w1_"):
++        _log(f"capture width {width}: {prefix} ({cls_}) on {path}")
+ 
+ 
+ def capture_summary() -> str:
+     widths = sorted({w for w, _ in _capture})
+-    parts = [f"{w}:{_capture.get((w, 'w1'), 0)}/{_capture.get((w, 'stock'), 0)}" for w in widths]
++    parts = []
++    for width in widths:
++        incumbent = _capture.get((width, "w1_incumbent"), 0)
++        candidate = _capture.get((width, "w1_fp8_candidate"), 0)
++        stock = sum(v for (w, path), v in _capture.items() if w == width and not path.startswith("w1_"))
++        parts.append(f"{width}:{incumbent + candidate}/{stock}"
++                     f"[incumbent={incumbent},candidate_fp8={candidate}]")
+     return (f"captured decode attention calls, W1/stock per width: {' '.join(parts) or 'none'} "
+-            f"(total W1 {sum(v for (w, p), v in _capture.items() if p == 'w1')}, "
+-            f"stock {sum(v for (w, p), v in _capture.items() if p != 'w1')})")
++            f"(total W1 {sum(v for (w, p), v in _capture.items() if p.startswith('w1_'))}, "
++            f"stock {sum(v for (w, p), v in _capture.items() if not p.startswith('w1_'))})")
+ 
+ 
+ def _u8(t: torch.Tensor | None) -> torch.Tensor | None:
+@@ -97,14 +109,53 @@ def _layer_class(self) -> str:
+     return "draft" if getattr(self, "layer_id", 0) >= NUM_LAYERS else "swa"
+ 
+ 
+-def _shapes_ok(self, q: torch.Tensor, comp: torch.Tensor | None, swa_idx: torch.Tensor, extra_idx) -> bool:
+-    if q.shape[1] != 64 or q.shape[2] != 512 or q.dtype != torch.bfloat16 or q.stride(-1) != 1:
++def _comp_format(comp: torch.Tensor | None) -> CacheFormat | None:
++    if comp is None:
++        return CacheFormat.NONE
++    # Rank and dtype must be checked before any indexed shape/stride access.
++    if comp.dtype != torch.uint8 or comp.dim() != 3:
++        return None
++    comp_format = classify_compressed_layout(
++        present=True,
++        byte_dtype=True,
++        ndim=3,
++        record_bytes=comp.shape[-1],
++        token_stride_bytes=comp.stride(1),
++        allow_fp8=COMPRESSED_FP8,
++    )
++    if comp_format is None or not _cache_layout_ok(comp, comp.shape[-1]):
++        return None
++    return comp_format
++
++
++def _cache_layout_ok(cache: torch.Tensor, record_bytes: int) -> bool:
++    """Metadata-only page-layout check; safe to call during graph capture."""
++    if cache.dtype != torch.uint8 or cache.dim() != 3 or cache.shape[-1] != record_bytes:
++        return False
++    return cache_layout_is_valid(
++        num_pages=cache.shape[0],
++        page_tokens=cache.shape[1],
++        record_bytes=record_bytes,
++        block_stride_bytes=cache.stride(0),
++        token_stride_bytes=cache.stride(1),
++        byte_stride=cache.stride(-1),
++        base_address=cache.data_ptr(),
++    )
++
++
++def _shapes_ok(self, q: torch.Tensor, comp: torch.Tensor | None, comp_format: CacheFormat,
++               swa_idx: torch.Tensor, extra_idx, extra_len) -> bool:
++    if (q.dim() != 3 or q.shape[1] != 64 or q.shape[2] != 512
++            or q.dtype != torch.bfloat16 or q.stride(-1) != 1):
+         return False
+     swa = _u8(self.swa_cache_layer.kv_cache)
+-    if swa.dtype != torch.uint8 or swa.dim() != 3 or swa.shape[-1] != 528 or swa.stride(1) != 528:
++    if not _cache_layout_ok(swa, 528):
++        return False
++    if (comp is None) != (comp_format == CacheFormat.NONE):
++        return False
++    if swa_idx is None or swa_idx.dim() != 2:
+         return False
+-    if comp is not None and (comp.dtype != torch.uint8 or comp.dim() != 3 or comp.shape[-1] != 288
+-                             or comp.stride(1) != 288):
++    if comp is not None and (extra_idx is None or extra_idx.dim() != 2 or extra_len is None):
+         return False
+     total = swa_idx.shape[-1] + (0 if comp is None else extra_idx.shape[-1])
+     return (total + 63) // 64 <= MAX_BLOCKS
+@@ -123,12 +174,6 @@ def _width_limit(cls_: str) -> int:
+     return max(MAX_SQ, MAX_SQ_CX) if cls_ == "sparse" else MAX_SQ_SWA
+ 
+ 
+-def _mode(n: int, comp: torch.Tensor | None) -> str:
+-    if comp is None:
+-        return "ss"
+-    return "bitwise" if n <= MAX_SQ else "cx"
+-
+-
+ def _stock(mod, self, q, positions_int32, swa_metadata, extra_cache, extra_idx, extra_len, out) -> None:
+     """The stock decode call, verbatim from _forward_decode_mega (top-k already computed)."""
+     torch.ops._flashmla_C.fused_norm_rope_attn_rope_cast_decode(
+@@ -177,22 +222,28 @@ def make_forward_decode_mega(mod, orig):
+         assert swa_metadata.decode_swa_indices is not None
+         swa_idx = swa_metadata.decode_swa_indices.view(n, -1)
+         comp = None if extra_cache is None else _u8(extra_cache.squeeze(-2))
+-        mode = _mode(n, comp)
+-        if not _shapes_ok(self, q, comp, swa_idx, extra_idx) or (mode == "cx" and not _cx_ok(self, comp, swa_idx)):
++        comp_format = _comp_format(comp)
++        mode = "stock" if comp_format is None else select_mode(n, comp_format)
++        if (comp_format is None or mode == "stock"
++                or not _shapes_ok(self, q, comp, comp_format, swa_idx, extra_idx, extra_len)
++                or (mode == "cx" and not _cx_ok(self, comp, swa_idx))):
+             _stats["stock_shape"] += 1
+             if capturing:
+                 _capture_note(n, "stock_shape", getattr(self, "prefix", "?"), cls_)
+             _stock(mod, self, q, positions_int32, swa_metadata, extra_cache, extra_idx, extra_len, out)
+             return
+         _stats["w1"] += 1
++        extension_path = "w1_fp8_candidate" if comp_format == CacheFormat.FP8 else "w1_incumbent"
++        _stats[extension_path] += 1
+         if capturing:
+-            _capture_note(n, "w1", getattr(self, "prefix", "?"), cls_)
++            _capture_note(n, extension_path, getattr(self, "prefix", "?"), cls_)
+         elif cls_ not in _logged:
+             _logged.add(cls_)
+             _log(f"{getattr(self, 'prefix', '?')} ({cls_}) on the W1 kernel ({n} tokens, eager)")
+         ops.attn_decode(q, positions_int32, self.rotary_emb.cos_sin_cache, self.attn_sink, self.scale,
+                         _u8(self.swa_cache_layer.kv_cache), swa_idx, swa_metadata.decode_swa_lens, comp, extra_idx,
+-                        extra_len, out.data, out.scale, scratch, mode)
++                        extra_len, out.data, out.scale, scratch, plan=mode, comp_format=comp_format,
++                        candidate_fp8=(comp_format == CacheFormat.FP8))
+ 
+     return _forward_decode_mega
+ 
+diff --git a/fastpath/w1attn/ops.py b/fastpath/w1attn/ops.py
+index a27314f..a1ee8e1 100644
+--- a/fastpath/w1attn/ops.py
++++ b/fastpath/w1attn/ops.py
+@@ -7,42 +7,45 @@ from dataclasses import dataclass
+ import numpy as np
+ import torch
+ 
++from .formats import CacheFormat
++
+ _ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+-_mod = None
++_mods = {}
+ 
+ 
+-def _load_prebuilt(path: str):
++def _load_prebuilt(path: str, name: str):
+     """Import an already built extension .so (read-only deployments: no JIT, no lock file)."""
+     import importlib.machinery
+     import importlib.util
+ 
+-    loader = importlib.machinery.ExtensionFileLoader("w1_attn_ext", path)
+-    spec = importlib.util.spec_from_loader("w1_attn_ext", loader)
++    loader = importlib.machinery.ExtensionFileLoader(name, path)
++    spec = importlib.util.spec_from_loader(name, loader)
+     mod = importlib.util.module_from_spec(spec)
+     loader.exec_module(mod)
+     return mod
+ 
+ 
+-def _prebuilt_path() -> str | None:
+-    """The prebuilt w1_attn_ext.so inside this package; the release ships it."""
+-    cand = os.path.join(os.path.dirname(os.path.abspath(__file__)), "w1_attn_ext.so")
++def _prebuilt_path(candidate_fp8: bool = False) -> str | None:
++    """Select the shipped legacy binary or the separately built FP8 candidate."""
++    filename = "w1_attn_fp8_ext.so" if candidate_fp8 else "w1_attn_ext.so"
++    cand = os.path.join(os.path.dirname(os.path.abspath(__file__)), filename)
+     return cand if os.path.exists(cand) else None
+ 
+ 
+-def _ext():
++def _ext(candidate_fp8: bool = False):
+     """The prebuilt extension. A missing .so raises: runtime never JIT-builds."""
+-    global _mod
+-    if _mod is not None:
+-        return _mod
+-    pre = _prebuilt_path()
++    name = "w1_attn_fp8_ext" if candidate_fp8 else "w1_attn_ext"
++    if name in _mods:
++        return _mods[name]
++    pre = _prebuilt_path(candidate_fp8)
+     if pre is None:
+-        raise RuntimeError("w1_attn_ext.so not found next to w1attn/ops.py")
+-    _mod = _load_prebuilt(pre)
+-    return _mod
++        raise RuntimeError(f"{name}.so not found next to w1attn/ops.py")
++    _mods[name] = _load_prebuilt(pre, name)
++    return _mods[name]
+ 
+ 
+ def build():
+-    """Build w1_attn_ext.so from csrc/ + include/ (kernels/w1-attn/build.sh only; never called at runtime)."""
++    """Build the separately named FP8 candidate (never called at runtime)."""
+     from torch.utils.cpp_extension import load
+ 
+     os.environ["TORCH_CUDA_ARCH_LIST"] = "10.3a"
+@@ -52,13 +55,16 @@ def build():
+     nvcc = nvcc134 if os.path.exists(nvcc134) else ""
+     if nvcc:
+         os.environ["PYTORCH_NVCC"] = nvcc
+-    build_dir = os.path.join(_ROOT, "build", "w1_attn")
++    build_dir = os.path.join(_ROOT, "build", "w1_attn_fp8")
+     os.makedirs(build_dir, exist_ok=True)
+     return load(
+-        name="w1_attn_ext",
++        name="w1_attn_fp8_ext",
+         sources=[os.path.join(_ROOT, "csrc", "w1_attn.cu")],
+         extra_include_paths=[os.path.join(_ROOT, "include")],
+-        extra_cuda_cflags=["-O3", "-std=c++20", "-lineinfo", "-DCCCL_DISABLE_CTK_COMPATIBILITY_CHECK", "-Xptxas=-v"],
++        extra_cflags=["-O3", "-std=c++20", "-fvisibility=hidden"],
++        extra_cuda_cflags=["-O3", "-std=c++20", "-lineinfo", "-DCCCL_DISABLE_CTK_COMPATIBILITY_CHECK",
++                           "-Xptxas=-v", "-Xcompiler=-fvisibility=hidden"],
++        extra_ldflags=["-Wl,-Bsymbolic"],
+         build_directory=build_dir,
+         verbose=False,
+     )
+@@ -131,16 +137,29 @@ def attn_decode(
+     prefetch_table: torch.Tensor | None = None,
+     max_ctas: int = 0,
+     dbg_ts: torch.Tensor | None = None,
++    comp_format: CacheFormat = CacheFormat.NONE,
++    candidate_fp8: bool = False,
+ ) -> None:
+     """Drop-in for ``fused_norm_rope_attn_rope_cast_decode`` at TP1 / 64 heads (no q norm, GPT-J RoPE, MXFP8 out).
+ 
+     Shapes as at the vLLM call site: q [s_q, 64, 512] bf16 in the fused layout; swa_cache [nb, page, 528] uint8
+-    (page stride via stride(0)); swa_idx [s_q, W] int32 global slots; swa_lens [s_q]; comp_cache [nb, page, 288]
+-    uint8; comp_idx [s_q, K] int32 global slots; comp_lens [s_q]; out_data [s_q, 8, 4096] fp8; out_scale int32
++    (page stride via stride(0)); swa_idx [s_q, W] int32 global slots; swa_lens [s_q]; comp_cache FP4
++    [nb, page, 288] or FP8 [nb, page, 528] uint8 with explicit ``comp_format``; comp_idx [s_q, K] int32 global
++    slots; comp_lens [s_q]; out_data [s_q, 8, 4096] fp8; out_scale int32
+     [s_q, 8, 32] MN-major view; positions int32 or int64. prefetch_table: optional int64 [n, 2] (address, bytes)
+     of weights to pull into L2 (W7).
++
++    Trusted producer invariants are intentionally not repaired here: device
++    lengths must be within their declared index widths, and every nonnegative
++    slot must be within its cache allocation.  The kernels mask negative slot
++    sentinels and positions beyond valid lengths, but do not clamp corrupt
++    lengths or remap corrupt positive slots.  ``comp_lens`` is required with a
++    compressed cache; validation checks only host-visible tensor metadata and
++    never reads device length values.
+     """
+     s_q = q.shape[0]
++    if comp_cache is not None and (comp_idx is None or comp_lens is None):
++        raise RuntimeError("compressed cache requires comp_idx and comp_lens metadata")
+     total = swa_idx.shape[-1] + (comp_idx.shape[-1] if comp_cache is not None else 0)
+     if plan == "ss":  # bitwise split-dims sequential: dim tiles per task by width (tasks <= SMs)
+         plan = Plan(-2, 1 if 8 * s_q <= NUM_SMS else (2 if 4 * s_q <= NUM_SMS else 4))
+@@ -152,8 +171,21 @@ def attn_decode(
+         plan = Plan(0, 0)
+     elif plan is None:
+         plan = make_plan(s_q, total)
+-    _ext().w1_attn_decode(
++    args_before_format = (
+         q, positions, cos_sin, sink, sm_scale_log2(sm_scale), swa_cache, swa_idx, swa_lens, comp_cache, comp_idx,
+-        comp_lens, out_data, out_scale, scratch.part_o, scratch.part_ml, scratch.flags, scratch.epoch,
++        comp_lens,
++    )
++    args_after_format = (
++        out_data, out_scale, scratch.part_o, scratch.part_ml, scratch.flags, scratch.epoch,
+         prefetch_table, plan.n_chunks, plan.nsub, pdl, max_ctas, dbg_ts,
+     )
++    if candidate_fp8:
++        if comp_format != CacheFormat.FP8:
++            raise RuntimeError("the candidate extension is only valid for compressed FP8")
++        _ext(candidate_fp8=True).w1_attn_decode(
++            *args_before_format, int(comp_format), *args_after_format,
++        )
++    else:
++        if comp_format == CacheFormat.FP8:
++            raise RuntimeError("compressed FP8 requires DS41_W1_COMPRESSED_FP8=1 and the candidate extension")
++        _ext(candidate_fp8=False).w1_attn_decode(*args_before_format, *args_after_format)
+diff --git a/kernels/w1-attn/build.sh b/kernels/w1-attn/build.sh
+index ea7b7a2..a7671f2 100755
+--- a/kernels/w1-attn/build.sh
++++ b/kernels/w1-attn/build.sh
+@@ -1,5 +1,5 @@
+ #!/usr/bin/env bash
+-# w1_attn_ext.so: W1 decode attention.  JIT-built with the image's torch + nvcc 13.4, sm_103a.
++# w1_attn_fp8_ext.so: separately named W1 compressed-FP8 draft candidate.
+ set -euo pipefail
+ HERE=$(cd "$(dirname "$0")" && pwd)
+ . "$HERE/../common.sh"
+@@ -11,5 +11,5 @@ mkdir -p "$TMP/build"
+ run_docker -v "$TMP:/w" -w /w -e TORCH_CUDA_ARCH_LIST=10.3a \
+   --entrypoint python3 "$IMAGE" -c "import sys; sys.path.insert(0,'/w'); import w1attn.ops as o; print(o.build().__file__)"
+ [ "$DRY_RUN" = 1 ] && exit 0
+-cp "$TMP/build/w1_attn/w1_attn_ext.so" "$OUT/w1attn/w1_attn_ext.so"
+-sha256sum "$OUT/w1attn/w1_attn_ext.so"
++cp "$TMP/build/w1_attn_fp8/w1_attn_fp8_ext.so" "$OUT/w1attn/w1_attn_fp8_ext.so"
++sha256sum "$OUT/w1attn/w1_attn_fp8_ext.so"
+diff --git a/kernels/w1-attn/csrc/w1_attn.cu b/kernels/w1-attn/csrc/w1_attn.cu
+index fa83e3c..e1569a5 100644
+--- a/kernels/w1-attn/csrc/w1_attn.cu
++++ b/kernels/w1-attn/csrc/w1_attn.cu
+@@ -354,19 +354,35 @@ const int32_t* opt_i32(const c10::optional<torch::Tensor>& t) {
+     return t.has_value() ? t->data_ptr<int32_t>() : nullptr;
+ }
+ 
++bool cache_layout_ok(const torch::Tensor& cache, int64_t record_bytes) {
++    if (cache.scalar_type() != torch::kUInt8 || cache.dim() != 3 || cache.size(0) <= 0 || cache.size(1) <= 0 ||
++        cache.size(2) != record_bytes || cache.stride(2) != 1 || cache.stride(1) != record_bytes)
++        return false;
++    const int64_t block_stride = cache.stride(0);
++    return block_stride >= cache.size(1) * record_bytes && block_stride % 16 == 0 &&
++           reinterpret_cast<uintptr_t>(cache.data_ptr()) % 16 == 0;
++}
++
+ }  // namespace
+ 
++namespace {
++
+ // One decode attention call (split + combine). See w1attn/ops.py for the argument contract.
+ void w1_attn_decode(torch::Tensor q, torch::Tensor positions, torch::Tensor cos_sin, torch::Tensor sink,
+                     double sm_scale_log2, torch::Tensor swa_cache, torch::Tensor swa_idx, torch::Tensor swa_lens,
+                     c10::optional<torch::Tensor> comp_cache, c10::optional<torch::Tensor> comp_idx,
+-                    c10::optional<torch::Tensor> comp_lens, torch::Tensor out_fp8, torch::Tensor out_sf,
++                    c10::optional<torch::Tensor> comp_lens, int64_t comp_format, torch::Tensor out_fp8, torch::Tensor out_sf,
+                     torch::Tensor part_o, torch::Tensor part_ml, torch::Tensor flags, torch::Tensor epoch,
+                     c10::optional<torch::Tensor> prefetch_table, int64_t n_chunks, int64_t nsub, bool pdl,
+                     int64_t max_ctas, c10::optional<torch::Tensor> dbg_ts) {
++    TORCH_CHECK(q.dim() == 3 && q.scalar_type() == torch::kBFloat16 && q.stride(-1) == 1 && q.size(1) == 64 &&
++                q.size(2) == 512);
+     const int S = (int)q.size(0);
+-    TORCH_CHECK(q.scalar_type() == torch::kBFloat16 && q.stride(-1) == 1 && q.size(1) == 64 && q.size(2) == 512);
+-    TORCH_CHECK(swa_cache.scalar_type() == torch::kUInt8 && swa_cache.size(-1) == 528 && swa_cache.stride(1) == 528);
++    TORCH_CHECK(comp_format == (int64_t)w1::CacheFormat::kFp8,
++                "the candidate extension is only valid for compressed FP8");
++    TORCH_CHECK(cache_layout_ok(swa_cache, 528),
++                "SWA cache needs positive pages, contiguous 528-byte records, aligned/minimum block stride, "
++                "and a 16-byte-aligned base");
+     const bool bitwise = n_chunks == 0;
+     const bool ss = n_chunks == -2;
+     const bool par = n_chunks == -1;
+@@ -389,9 +405,18 @@ void w1_attn_decode(torch::Tensor q, torch::Tensor positions, torch::Tensor cos_
+     p.swa_idx_stride = swa_idx.stride(0);
+     p.swa_width = (int)swa_idx.size(-1);
+     p.swa_lens = swa_lens.data_ptr<int32_t>();
++    TORCH_CHECK(comp_format >= (int64_t)w1::CacheFormat::kNone && comp_format <= (int64_t)w1::CacheFormat::kFp8,
++                "invalid compressed-cache format");
++    p.comp_format = static_cast<w1::CacheFormat>(comp_format);
+     if (comp_cache.has_value()) {
+-        TORCH_CHECK(comp_cache->scalar_type() == torch::kUInt8 && comp_cache->size(-1) == 288 &&
+-                    comp_cache->stride(1) == 288);
++        TORCH_CHECK(p.comp_format == w1::CacheFormat::kFp4 || p.comp_format == w1::CacheFormat::kFp8,
++                    "compressed cache requires an explicit FP4 or FP8 format");
++        const int64_t record_bytes = p.comp_format == w1::CacheFormat::kFp8 ? 528 : 288;
++        TORCH_CHECK(cache_layout_ok(*comp_cache, record_bytes),
++                    "compressed cache needs positive pages, contiguous format-sized records, aligned/minimum "
++                    "block stride, and a 16-byte-aligned base");
++        TORCH_CHECK(comp_idx.has_value(), "compressed cache requires indices");
++        TORCH_CHECK(comp_lens.has_value(), "compressed cache requires comp_lens metadata");
+         p.comp = comp_cache->data_ptr<uint8_t>();
+         p.comp_block_stride = comp_cache->stride(0);
+         p.comp_page = (int)comp_cache->size(1);
+@@ -399,6 +424,9 @@ void w1_attn_decode(torch::Tensor q, torch::Tensor positions, torch::Tensor cos_
+         p.comp_idx_stride = comp_idx->stride(0);
+         p.comp_width = (int)comp_idx->size(-1);
+         p.comp_lens = opt_i32(comp_lens);
++    } else {
++        TORCH_CHECK(p.comp_format == w1::CacheFormat::kNone,
++                    "no compressed cache requires CacheFormat::kNone");
+     }
+     const int total = p.swa_width + (p.comp ? p.comp_width : 0);
+     TORCH_CHECK(bitwise || par || ss || cx || (int64_t)n_chunks * nsub * 64 >= total, "plan does not cover all slots");
+@@ -409,7 +437,10 @@ void w1_attn_decode(torch::Tensor q, torch::Tensor positions, torch::Tensor cos_
+     TORCH_CHECK(part_o.numel() >= (int64_t)S * std::max<int64_t>(n_chunks, 0) * 64 * 512 &&
+                 part_ml.numel() >= (int64_t)S * std::max<int64_t>(n_chunks, 0) * 128);
+     TORCH_CHECK(flags.numel() >= (int64_t)S * std::max<int64_t>(n_chunks, 0) * 4 && epoch.numel() >= 2);
+-    TORCH_CHECK(!bitwise || comp_lens.has_value() || !comp_cache.has_value());
++    // Trusted producer invariants: device lengths stay within their host-declared
++    // widths and every nonnegative slot is below num_pages * page_tokens.  Do not
++    // clamp a corrupt length or turn an out-of-range positive slot into a masked
++    // slot here; either would hide producer corruption and can zero the wrong key.
+     p.part_o = part_o.data_ptr<float>();
+     p.part_ml = part_ml.data_ptr<float>();
+     p.flags = reinterpret_cast<uint32_t*>(flags.data_ptr());
+@@ -426,6 +457,8 @@ void w1_attn_decode(torch::Tensor q, torch::Tensor positions, torch::Tensor cos_
+     p.dbg_ts = dbg_ts.has_value() ? reinterpret_cast<unsigned long long*>(dbg_ts->data_ptr()) : nullptr;
+ 
+     if (cx) {
++        TORCH_CHECK(p.comp_format != w1::CacheFormat::kFp8,
++                    "compressed FP8 is not enabled for CX; use stock above 16 rows");
+         TORCH_CHECK((total + 63) / 64 <= w1::AttnCX::kMaxBlocks, "too many key blocks for the CX mode");
+         TORCH_CHECK(p.swa_width <= 128, "CX: window slots must fit the first key pair");
+         TORCH_CHECK((p.swa_page & (p.swa_page - 1)) == 0 && (!p.comp || (p.comp_page & (p.comp_page - 1)) == 0),
+@@ -528,6 +561,8 @@ void w1_attn_prepare() {
+     configure_ss<4>();
+ }
+ 
++}  // namespace
++
+ PYBIND11_MODULE(TORCH_EXTENSION_NAME, m) {
+     m.def("w1_attn_decode", &w1_attn_decode);
+     m.def("w1_attn_prepare", &w1_attn_prepare);
+diff --git a/kernels/w1-attn/include/w1/attn_params.cuh b/kernels/w1-attn/include/w1/attn_params.cuh
+index 8c9153f..579eefb 100644
+--- a/kernels/w1-attn/include/w1/attn_params.cuh
++++ b/kernels/w1-attn/include/w1/attn_params.cuh
+@@ -12,6 +12,8 @@ constexpr int kWvGroup = 8;        // heads per wo_a group
+ constexpr float kL2E = 1.4426950408889634f;
+ constexpr float kMaxInit = -1e30f;  // FlashMLA's MAX_INIT_VAL
+ 
++enum class CacheFormat : int32_t { kNone = 0, kFp4 = 1, kFp8 = 2 };
++
+ struct AttnParams {
+     // ---- query, rope, sink
+     const uint16_t* q;        // bf16 [s_q, 64 * 512], FlashMLA chunk-interleaved layout, token stride below
+@@ -32,8 +34,9 @@ struct AttnParams {
+     int swa_width;
+     const int32_t* swa_lens;   // [s_q]
+ 
+-    // ---- compressed cache (cr > 0): V4.1 NVFP4 records, [nb, page, 288]; null when the layer is window-only
++    // ---- compressed cache (cr > 0): explicit V4.1 FP4 [nb,page,288] or FP8 [nb,page,528]
+     const uint8_t* comp;
++    CacheFormat comp_format;
+     int64_t comp_block_stride;
+     int comp_page;
+     const int32_t* comp_idx;   // [s_q, comp_width] global slots, < 0 invalid (or local indices if comp_block_table)
+@@ -78,6 +81,17 @@ struct AttnParams {
+     unsigned long long* dbg_ts;  // optional: phase timestamps of task 0 (debug builds)
+ };
+ 
++// SWA is always FP8. Compressed format is an explicit host-validated ABI field.
++__host__ __device__ __forceinline__ bool cache_is_fp8(const AttnParams& p, bool swa) {
++    return swa || p.comp_format == CacheFormat::kFp8;
++}
++__host__ __device__ __forceinline__ int cache_payload_bytes(const AttnParams& p, bool swa) {
++    return cache_is_fp8(p, swa) ? 512 : 256;
++}
++__host__ __device__ __forceinline__ int cache_scale_bytes(const AttnParams& p, bool swa) {
++    return cache_is_fp8(p, swa) ? 16 : 32;
++}
++
+ __device__ __forceinline__ void dbg_stamp(const AttnParams& p, int task, int& k) {
+     if (p.dbg_ts != nullptr && task == 0 && threadIdx.x == 0) {
+         unsigned long long t;
+diff --git a/kernels/w1-attn/include/w1/stage_attn_cx.cuh b/kernels/w1-attn/include/w1/stage_attn_cx.cuh
+index 4d94517..8ec930c 100644
+--- a/kernels/w1-attn/include/w1/stage_attn_cx.cuh
++++ b/kernels/w1-attn/include/w1/stage_attn_cx.cuh
+@@ -737,7 +737,8 @@ struct AttnCX {
+                 const bool swa = j < p.swa_width;
+                 const int jj = swa ? j : j - p.swa_width;
+                 if (jj < len[k] && idx[k] >= 0) {
+-                    f = swa ? AttnSeq::kFp8 : AttnSeq::kFp4;
++                    const bool fp8 = cache_is_fp8(p, swa);
++                    f = fp8 ? AttnSeq::kFp8 : AttnSeq::kFp4;
+                     gidx = idx[k];
+                 }
+             }
+diff --git a/kernels/w1-attn/include/w1/stage_attn_par.cuh b/kernels/w1-attn/include/w1/stage_attn_par.cuh
+index 7f7b095..f7943f1 100644
+--- a/kernels/w1-attn/include/w1/stage_attn_par.cuh
++++ b/kernels/w1-attn/include/w1/stage_attn_par.cuh
+@@ -285,12 +285,13 @@ struct ParScore {
+                 const int blk = sidx / page_tokens, off = sidx - blk * page_tokens;
+                 const uint8_t* page =
+                     (swa ? p.swa : p.comp) + (int64_t)blk * (swa ? p.swa_block_stride : p.comp_block_stride);
+-                const int row = swa ? 512 : 256, srow = swa ? 16 : 32;
+-                f = swa ? AttnSeq::kFp8 : AttnSeq::kFp4;
++                const bool fp8 = cache_is_fp8(p, swa);
++                const int row = cache_payload_bytes(p, swa), srow = cache_scale_bytes(p, swa);
++                f = fp8 ? AttnSeq::kFp8 : AttnSeq::kFp4;
+                 data = page + off * row;
+                 const uint8_t* scale = page + (int64_t)page_tokens * row + off * srow;
+                 cp_async16(sdst, scale);
+-                if (!swa) cp_async16(sdst + 16, scale + 16);
++                if (!fp8) cp_async16(sdst + 16, scale + 16);
+             } else {
+                 *reinterpret_cast<uint4*>(sdst) = make_uint4(0, 0, 0, 0);
+                 *reinterpret_cast<uint4*>(sdst + 16) = make_uint4(0, 0, 0, 0);
+@@ -580,11 +581,12 @@ struct ParPV {
+             const int blk = idx / page_tokens, off = idx - blk * page_tokens;
+             const uint8_t* page =
+                 (swa ? p.swa : p.comp) + (int64_t)blk * (swa ? p.swa_block_stride : p.comp_block_stride);
+-            const int row = swa ? 512 : 256, srow = swa ? 16 : 32;
+-            f = swa ? AttnSeq::kFp8 : AttnSeq::kFp4;
+-            data = page + off * row + (swa ? 128 * mt : 64 * mt);
++            const bool fp8 = cache_is_fp8(p, swa);
++            const int row = cache_payload_bytes(p, swa), srow = cache_scale_bytes(p, swa);
++            f = fp8 ? AttnSeq::kFp8 : AttnSeq::kFp4;
++            data = page + off * row + (fp8 ? 128 * mt : 64 * mt);
+             const uint8_t* scale = page + (int64_t)page_tokens * row + off * srow;
+-            cp_async16(sdst, scale + (swa ? 0 : ((8 * mt) & ~15)));  // fp8: all 16; fp4: the 16 holding ours
++            cp_async16(sdst, scale + (fp8 ? 0 : ((8 * mt) & ~15)));  // fp8: all 16; fp4: our 16 B
+         } else {
+             *reinterpret_cast<uint4*>(sdst) = make_uint4(0, 0, 0, 0);
+         }
+diff --git a/kernels/w1-attn/include/w1/stage_attn_seq.cuh b/kernels/w1-attn/include/w1/stage_attn_seq.cuh
+index b1ff112..2da3664 100644
+--- a/kernels/w1-attn/include/w1/stage_attn_seq.cuh
++++ b/kernels/w1-attn/include/w1/stage_attn_seq.cuh
+@@ -93,10 +93,11 @@ struct AttnSeq {
+         const int page_tokens = swa ? p.swa_page : p.comp_page;
+         const int blk = idx / page_tokens, off = idx - blk * page_tokens;
+         const uint8_t* page = (swa ? p.swa : p.comp) + (int64_t)blk * (swa ? p.swa_block_stride : p.comp_block_stride);
+-        const int row = swa ? 512 : 256, srow = swa ? 16 : 32;
++        const bool fp8 = cache_is_fp8(p, swa);
++        const int row = cache_payload_bytes(p, swa), srow = cache_scale_bytes(p, swa);
+         data = page + off * row;
+         scale = page + (int64_t)page_tokens * row + off * srow;
+-        fmt = swa ? kFp8 : kFp4;
++        fmt = fp8 ? kFp8 : kFp4;
+     }
+ 
+     // FlashMLA decode: num_kv_blocks = ceil(topk + extra_len, 64) with the extra cache, ceil(topk_len, 64) without
+diff --git a/kernels/w1-attn/include/w1/stage_attn_split.cuh b/kernels/w1-attn/include/w1/stage_attn_split.cuh
+index 4853a24..719e265 100644
+--- a/kernels/w1-attn/include/w1/stage_attn_split.cuh
++++ b/kernels/w1-attn/include/w1/stage_attn_split.cuh
+@@ -102,13 +102,15 @@ struct AttnSplit {
+         const int page_tokens = swa ? p.swa_page : p.comp_page;
+         const int blk = idx / page_tokens, off = idx - blk * page_tokens;
+         const uint8_t* page = (swa ? p.swa : p.comp) + (int64_t)blk * (swa ? p.swa_block_stride : p.comp_block_stride);
+-        const int row = swa ? 512 : 256, srow = swa ? 16 : 32;
++        const bool fp8 = cache_is_fp8(p, swa);
++        const int row = cache_payload_bytes(p, swa), srow = cache_scale_bytes(p, swa);
+         data = page + off * row;
+         scale = page + (int64_t)page_tokens * row + off * srow;
+-        fmt = swa ? kFp8 : kFp4;
++        fmt = fp8 ? kFp8 : kFp4;
+     }
+ 
+     __host__ __device__ static int sub_kind(const Params& p, int slot_begin) {
++        if (p.comp_format == CacheFormat::kFp8) return kSbFp8;
+         if (slot_begin + 64 <= p.swa_width) return kSbFp8;
+         if (slot_begin >= p.swa_width) return kSbFp4;
+         return kSbMixed;
+diff --git a/kernels/w1-attn/include/w1/stage_attn_ss.cuh b/kernels/w1-attn/include/w1/stage_attn_ss.cuh
+index 96b2c5a..6a1325b 100644
+--- a/kernels/w1-attn/include/w1/stage_attn_ss.cuh
++++ b/kernels/w1-attn/include/w1/stage_attn_ss.cuh
+@@ -277,8 +277,9 @@ struct AttnSS {
+                 const int blk = idx[k] / page_tokens, off = idx[k] - blk * page_tokens;
+                 const uint8_t* page =
+                     (swa ? p.swa : p.comp) + (int64_t)blk * (swa ? p.swa_block_stride : p.comp_block_stride);
+-                const int row = swa ? 512 : 256, srow = swa ? 16 : 32;
+-                f = swa ? AttnSeq::kFp8 : AttnSeq::kFp4;
++                const bool fp8 = cache_is_fp8(p, swa);
++                const int row = cache_payload_bytes(p, swa), srow = cache_scale_bytes(p, swa);
++                f = fp8 ? AttnSeq::kFp8 : AttnSeq::kFp4;
+                 data = page + off * row;
+                 scale = page + (int64_t)page_tokens * row + off * srow;
+             }

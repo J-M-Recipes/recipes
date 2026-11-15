@@ -1,0 +1,56 @@
+W1114 23:14:25.052000 1 torch/utils/cpp_extension.py:178] No CUDA runtime is found, using CUDA_HOME='/usr/local/cuda'
+W1_EXTRA_CFLAGS ["-DW1_VARIANT_EX2_NOFTZ"]
+[1/2] /usr/local/lib/python3.12/dist-packages/nvidia/cu13/bin/nvcc -MD -MF w1_attn.cuda.o.d -DTORCH_EXTENSION_NAME=w1_attn_fp8_ext -DTORCH_API_INCLUDE_EXTENSION_H -I/work/source/kernels/w1-attn/include -isystem /usr/local/lib/python3.12/dist-packages/torch/include -isystem /usr/local/lib/python3.12/dist-packages/torch/include/torch/csrc/api/include -isystem /usr/local/cuda/include -isystem /usr/include/python3.12 -D__CUDA_NO_HALF_OPERATORS__ -D__CUDA_NO_HALF_CONVERSIONS__ -D__CUDA_NO_BFLOAT16_CONVERSIONS__ -D__CUDA_NO_HALF2_OPERATORS__ --expt-relaxed-constexpr -gencode=arch=compute_103a,code=sm_103a --compiler-options '-fPIC' -O3 -std=c++20 -lineinfo -DCCCL_DISABLE_CTK_COMPATIBILITY_CHECK -Xptxas=-v -Dw1=w1_fp8_candidate -Xcompiler=-fvisibility=hidden -DW1_VARIANT_EX2_NOFTZ -c /work/source/kernels/w1-attn/csrc/w1_attn.cu -o w1_attn.cuda.o 
+/work/source/kernels/w1-attn/include/w1/variants.cuh(80): remark #20200-D: #pragma message: "W1 desk-F variant active: EX2_NOFTZ"
+  #pragma message("W1 desk-F variant active: EX2_NOFTZ")
+                                                        ^
+
+ptxas info    : 40 bytes gmem
+ptxas info    : Compiling entry function '_ZN43_GLOBAL__N__7aae9c98_10_w1_attn_cu_fc4a70ed14attn_ss_kernelILi4EEEvN16w1_fp8_candidate10AttnParamsE' for 'sm_103a'
+ptxas info    : Function properties for _ZN43_GLOBAL__N__7aae9c98_10_w1_attn_cu_fc4a70ed14attn_ss_kernelILi4EEEvN16w1_fp8_candidate10AttnParamsE
+    0 bytes stack frame, 0 bytes spill stores, 0 bytes spill loads
+ptxas info    : Used 136 registers, used 3 barriers, 144 bytes smem
+ptxas info    : Compile time = 297.098 ms
+ptxas info    : Compiling entry function '_ZN43_GLOBAL__N__7aae9c98_10_w1_attn_cu_fc4a70ed14attn_ss_kernelILi2EEEvN16w1_fp8_candidate10AttnParamsE' for 'sm_103a'
+ptxas info    : Function properties for _ZN43_GLOBAL__N__7aae9c98_10_w1_attn_cu_fc4a70ed14attn_ss_kernelILi2EEEvN16w1_fp8_candidate10AttnParamsE
+    0 bytes stack frame, 0 bytes spill stores, 0 bytes spill loads
+ptxas info    : Used 139 registers, used 3 barriers, 144 bytes smem
+ptxas info    : Compile time = 288.690 ms
+ptxas info    : Compiling entry function '_ZN43_GLOBAL__N__7aae9c98_10_w1_attn_cu_fc4a70ed14attn_ss_kernelILi1EEEvN16w1_fp8_candidate10AttnParamsE' for 'sm_103a'
+ptxas info    : Function properties for _ZN43_GLOBAL__N__7aae9c98_10_w1_attn_cu_fc4a70ed14attn_ss_kernelILi1EEEvN16w1_fp8_candidate10AttnParamsE
+    0 bytes stack frame, 0 bytes spill stores, 0 bytes spill loads
+ptxas info    : Used 137 registers, used 3 barriers, 144 bytes smem
+ptxas info    : Compile time = 282.022 ms
+ptxas info    : Compiling entry function '_ZN43_GLOBAL__N__7aae9c98_10_w1_attn_cu_fc4a70ed14attn_cx_kernelEN16w1_fp8_candidate10AttnParamsE' for 'sm_103a'
+ptxas info    : Function properties for _ZN43_GLOBAL__N__7aae9c98_10_w1_attn_cu_fc4a70ed14attn_cx_kernelEN16w1_fp8_candidate10AttnParamsE
+    8 bytes stack frame, 16 bytes spill stores, 12 bytes spill loads
+ptxas info    : Used 128 registers, used 16 barriers, 8 bytes cumulative stack size, 736 bytes smem
+ptxas info    : Compile time = 445.334 ms
+ptxas info    : Compiling entry function '_ZN43_GLOBAL__N__7aae9c98_10_w1_attn_cu_fc4a70ed15attn_par_kernelEN16w1_fp8_candidate10AttnParamsE' for 'sm_103a'
+ptxas info    : Function properties for _ZN43_GLOBAL__N__7aae9c98_10_w1_attn_cu_fc4a70ed15attn_par_kernelEN16w1_fp8_candidate10AttnParamsE
+    32 bytes stack frame, 8 bytes spill stores, 8 bytes spill loads
+ptxas info    : Used 168 registers, used 4 barriers, 32 bytes cumulative stack size, 32 bytes smem
+ptxas info    : Compile time = 243.248 ms
+ptxas info    : Function properties for _ZN16w1_fp8_candidate10tw_timeoutEPKmj
+    0 bytes stack frame, 0 bytes spill stores, 0 bytes spill loads
+ptxas info    : Compiling entry function '_ZN43_GLOBAL__N__7aae9c98_10_w1_attn_cu_fc4a70ed15attn_seq_kernelEN16w1_fp8_candidate10AttnParamsE' for 'sm_103a'
+ptxas info    : Function properties for _ZN43_GLOBAL__N__7aae9c98_10_w1_attn_cu_fc4a70ed15attn_seq_kernelEN16w1_fp8_candidate10AttnParamsE
+    0 bytes stack frame, 0 bytes spill stores, 0 bytes spill loads
+ptxas info    : Used 168 registers, used 3 barriers, 16 bytes smem
+ptxas info    : Compile time = 188.950 ms
+ptxas info    : Compiling entry function '_ZN43_GLOBAL__N__7aae9c98_10_w1_attn_cu_fc4a70ed11attn_kernelEN16w1_fp8_candidate10AttnParamsE' for 'sm_103a'
+ptxas info    : Function properties for _ZN43_GLOBAL__N__7aae9c98_10_w1_attn_cu_fc4a70ed11attn_kernelEN16w1_fp8_candidate10AttnParamsE
+    144 bytes stack frame, 0 bytes spill stores, 0 bytes spill loads
+ptxas info    : Used 168 registers, used 3 barriers, 144 bytes cumulative stack size, 16 bytes smem
+ptxas info    : Compile time = 699.056 ms
+ptxas info    : Function properties for _ZN16w1_fp8_candidate9AttnSplitILi16ELi2EE4bodyILi0ELi0EN2w814StandaloneSyncEEEvRKNS_10AttnParamsEiRT1_Phj
+    0 bytes stack frame, 128 bytes spill stores, 64 bytes spill loads
+ptxas info    : Function properties for _ZN16w1_fp8_candidate9AttnSplitILi16ELi2EE4bodyILi1ELi1EN2w814StandaloneSyncEEEvRKNS_10AttnParamsEiRT1_Phj
+    0 bytes stack frame, 128 bytes spill stores, 64 bytes spill loads
+ptxas info    : Function properties for _ZN16w1_fp8_candidate9AttnSplitILi16ELi2EE4bodyILi2ELi2EN2w814StandaloneSyncEEEvRKNS_10AttnParamsEiRT1_Phj
+    0 bytes stack frame, 120 bytes spill stores, 88 bytes spill loads
+/work/source/kernels/w1-attn/include/w1/variants.cuh:80:57: note: ‘#pragma message: W1 desk-F variant active: EX2_NOFTZ’
+   80 | #pragma message("W1 desk-F variant active: EX2_NOFTZ")
+      |                                                         ^
+[2/2] c++ w1_attn.cuda.o -shared -Wl,-Bsymbolic -L/usr/local/lib/python3.12/dist-packages/torch/lib -lc10 -lc10_cuda -ltorch_cpu -ltorch_cuda -ltorch -ltorch_python -L/usr/local/cuda/lib64 -lcudart -o w1_attn_fp8_ext.so
+{"status": "COMPILED_AND_CPU_IMPORTED", "path": "/work/build/w1_attn_fp8_ext.so", "extra_cuda_cflags": ["-DW1_VARIANT_EX2_NOFTZ"], "sha256": "ad5d3114e2cebf6010b8f42dac6208eebe90d53138bca3c2d7739fd7093c7d07", "gpu_execution": false, "numerics_verified": false}

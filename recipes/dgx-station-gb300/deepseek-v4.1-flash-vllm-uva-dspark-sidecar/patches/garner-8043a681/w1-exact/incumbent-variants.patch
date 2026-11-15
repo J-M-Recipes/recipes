@@ -1,0 +1,256 @@
+DRAFT (desk I, 2026-11-14). Base: Pg61 incumbent source, milo-takeover/results/I/pg61-src/kernels/w1-attn
+(= Station $HOME/dsv41/garner/pg61-work/tree/kernels/w1-attn; build_incumbent.sh checks every file hash). Base sha256 prefixes:
+  include/w1/ptx.cuh 346fc8ba3cb9ef04
+  include/w1/stage_attn_ss.cuh ce673e2b5caeee4c
+  include/w1/stage_attn_seq.cuh bc463cf4044ce009
+  include/w1/stage_attn_par.cuh ab76952275cf9266
+  include/w1/stage_attn_cx.cuh 2d3b043f19f88bda
+  include/w1/stage_attn_combine.cuh 94ece5a1e5131ca3
+Apply from that kernels/w1-attn directory (or the /w build root, which has the same csrc/ include/ layout):
+  patch -p1 --dry-run < incumbent_variants.DRAFT.diff && patch -p1 < incumbent_variants.DRAFT.diff
+Same switches and expansions as results/F/variants.DRAFT.diff (FP8 candidate), plus the combine kernel; F's seq-only
+W1_DIAG is not carried. Adds include/w1/variants.cuh. No -D = Pg61 arithmetic (same expressions; .so bytes differ
+through -lineinfo line numbers and the new header). w1_attn.cu (module name, pybind signature) is not touched.
+Not compiled with nvcc on the desk (no CUDA toolchain); macro expansions checked with host clang++ (test_variants_host.cpp).
+
+diff -ruN a/include/w1/ptx.cuh b/include/w1/ptx.cuh
+--- a/include/w1/ptx.cuh	2026-11-14 21:30:49
++++ b/include/w1/ptx.cuh	2026-11-14 21:31:28
+@@ -4,6 +4,7 @@
+ #include <cstdint>
+ #include <cuda_bf16.h>
+ #include <cuda_fp16.h>
++#include "variants.cuh"  // desk I: compile-time stock-behaviour switches (no -D = Pg61 arithmetic)
+ 
+ namespace w1 {
+ 
+@@ -248,7 +249,7 @@
+ }
+ __device__ __forceinline__ float ex2_approx(float x) {
+     float r;
+-    asm("ex2.approx.ftz.f32 %0, %1;" : "=f"(r) : "f"(x));
++    asm(W1_EX2_ASM : "=f"(r) : "f"(x));  // desk I: W1_VARIANT_EX2_NOFTZ -> ex2.approx.f32
+     return r;
+ }
+ // two floats -> e4m3x2 (low byte = first), round-to-nearest, satfinite
+diff -ruN a/include/w1/stage_attn_combine.cuh b/include/w1/stage_attn_combine.cuh
+--- a/include/w1/stage_attn_combine.cuh	2026-11-14 21:30:49
++++ b/include/w1/stage_attn_combine.cuh	2026-11-14 21:31:28
+@@ -32,11 +32,16 @@
+     __host__ __device__ static constexpr uint32_t tmem_cols(int) { return 0; }
+     __host__ __device__ static int num_tasks(const Params&, int S) { return S * (kHeads / CH); }
+ 
+-    __device__ static float div_approx(float a, float b) {
++    __device__ static float div_approx(float a, float b) {  // desk I: osc divide (W1_VARIANT_OSC_DIV_NOFTZ)
+         float r;
+-        asm("div.approx.ftz.f32 %0, %1, %2;" : "=f"(r) : "f"(a), "f"(b));
++        asm(W1_OSC_DIV_ASM : "=f"(r) : "f"(a), "f"(b));
+         return r;
+     }
++    __device__ static float div_sf(float a, float b) {  // desk I: amax / 448 (W1_VARIANT_OUT_DIV_RN)
++        float r;
++        asm(W1_OUT_DIV_ASM : "=f"(r) : "f"(a), "f"(b));
++        return r;
++    }
+ 
+     // Split tasks this combine task reads: (t, c, g) for c = 0..n_chunks-1, g = quad / (heads per split task / 4)
+     __host__ __device__ static w8::Dep dep(const Params& p, int task, int split_heads, int& stride) {
+@@ -92,8 +97,8 @@
+                 wsm[c * CH + tid] = w;
+                 L = fmaf(w, ml[c * CH + tid].y, L);
+             }
+-            const float sink_l2 = __ldg(p.sink + h0 + tid) * kL2E;
+-            scm[tid] = L == 0.f ? 0.f : div_approx(1.0f, L + ex2_approx(sink_l2 - M));
++            const float sink_arg = W1_SINK_ARG(__ldg(p.sink + h0 + tid), M);  // desk I
++            scm[tid] = L == 0.f ? 0.f : div_approx(1.0f, L + ex2_approx(sink_arg));
+         }
+         w8::compute_sync();
+         mbar_wait(bar, 0);
+@@ -135,7 +140,7 @@
+                 for (int s = 16; s >= 1; s >>= 1) amax = fmaxf(amax, __shfl_xor_sync(0xffffffffu, amax, s));
+                 const float osc = scm[h];
+                 amax = fmaxf(1e-4f, amax * osc);
+-                const float sf = div_approx(amax, 448.0f);
++                const float sf = div_sf(amax, 448.0f);
+                 const uint32_t sfb = __float_as_uint(sf);
+                 const int exp_sf = (int)((sfb - 1u) >> 23) + (1 - 127);
+                 const float sf_inv = __uint_as_float((uint32_t)(127 - exp_sf) << 23);
+diff -ruN a/include/w1/stage_attn_cx.cuh b/include/w1/stage_attn_cx.cuh
+--- a/include/w1/stage_attn_cx.cuh	2026-11-14 21:30:49
++++ b/include/w1/stage_attn_cx.cuh	2026-11-14 21:31:28
+@@ -405,7 +405,7 @@
+             const int hh = lane + 32 * k;
+             const float lh = lfin[hh];
+             float osc;
+-            asm("div.approx.ftz.f32 %0, %1, %2;" : "=f"(osc) : "f"(1.0f), "f"(lh + ex2_approx(sink[hh] * kL2E - mfin[hh])));
++            asm(W1_OSC_DIV_ASM : "=f"(osc) : "f"(1.0f), "f"(lh + ex2_approx(W1_SINK_ARG(sink[hh], mfin[hh]))));  // desk I
+             oscv[hh] = lh == 0.f ? 0.f : osc;
+         }
+         __syncwarp();
+@@ -882,7 +882,7 @@
+                 const float osc = oscv[hh];
+                 const float amax = fmaxf(1e-4f, am[0] * osc);
+                 float sf;
+-                asm("div.approx.ftz.f32 %0, %1, %2;" : "=f"(sf) : "f"(amax), "f"(448.0f));
++                asm(W1_OUT_DIV_ASM : "=f"(sf) : "f"(amax), "f"(448.0f));  // desk I: W1_VARIANT_OUT_DIV_RN
+                 const uint32_t sfb = __float_as_uint(sf);
+                 const int exp_sf = (int)((sfb - 1u) >> 23) + (1 - 127);
+                 mu = osc * __uint_as_float((uint32_t)(127 - exp_sf) << 23);
+diff -ruN a/include/w1/stage_attn_par.cuh b/include/w1/stage_attn_par.cuh
+--- a/include/w1/stage_attn_par.cuh	2026-11-14 21:30:49
++++ b/include/w1/stage_attn_par.cuh	2026-11-14 21:31:28
+@@ -843,9 +843,9 @@
+         if (tid < 32) {
+             const float l = lbuf[tid] + lbuf[32 + tid];
+             const float m = M[tid];
+-            const float sink_l2 = reinterpret_cast<const float*>(smem + kSinkOff)[tid] * kL2E;
++            const float sink_arg = W1_SINK_ARG(reinterpret_cast<const float*>(smem + kSinkOff)[tid], m);  // desk I
+             float osc;
+-            asm("div.approx.ftz.f32 %0, %1, %2;" : "=f"(osc) : "f"(1.0f), "f"(l + ex2_approx(sink_l2 - m)));
++            asm(W1_OSC_DIV_ASM : "=f"(osc) : "f"(1.0f), "f"(l + ex2_approx(sink_arg)));
+             reinterpret_cast<float*>(smem + kOscOff)[tid] = l == 0.f ? 0.f : osc;
+         }
+         w8::compute_sync();
+@@ -901,7 +901,7 @@
+                 const float osc = oscv[h];
+                 const float amax = fmaxf(1e-4f, amax_raw * osc);
+                 float sf;
+-                asm("div.approx.ftz.f32 %0, %1, %2;" : "=f"(sf) : "f"(amax), "f"(448.0f));
++                asm(W1_OUT_DIV_ASM : "=f"(sf) : "f"(amax), "f"(448.0f));  // desk I: W1_VARIANT_OUT_DIV_RN
+                 const uint32_t sfb = __float_as_uint(sf);
+                 const int exp_sf = (int)((sfb - 1u) >> 23) + (1 - 127);
+                 MU[lane] = osc * __uint_as_float((uint32_t)(127 - exp_sf) << 23);
+diff -ruN a/include/w1/stage_attn_seq.cuh b/include/w1/stage_attn_seq.cuh
+--- a/include/w1/stage_attn_seq.cuh	2026-11-14 21:30:49
++++ b/include/w1/stage_attn_seq.cuh	2026-11-14 21:31:28
+@@ -415,9 +415,9 @@
+         if (tid < NH) {
+             const float l = lbuf[tid] + lbuf[NH + tid];
+             const float m = reinterpret_cast<float*>(smem + kMOff)[tid];
+-            const float sink_l2 = __ldg(p.sink + h0 + tid) * kL2E;
++            const float sink_arg = W1_SINK_ARG(__ldg(p.sink + h0 + tid), m);  // desk I
+             float osc;
+-            asm("div.approx.ftz.f32 %0, %1, %2;" : "=f"(osc) : "f"(1.0f), "f"(l + ex2_approx(sink_l2 - m)));
++            asm(W1_OSC_DIV_ASM : "=f"(osc) : "f"(1.0f), "f"(l + ex2_approx(sink_arg)));
+             reinterpret_cast<float*>(smem + kOscOff)[tid] = l == 0.f ? 0.f : osc;
+         }
+         w8::compute_sync();
+@@ -461,7 +461,7 @@
+                 const float osc = oscv[h];
+                 const float amax = fmaxf(1e-4f, amax_raw * osc);
+                 float sf;
+-                asm("div.approx.ftz.f32 %0, %1, %2;" : "=f"(sf) : "f"(amax), "f"(448.0f));
++                asm(W1_OUT_DIV_ASM : "=f"(sf) : "f"(amax), "f"(448.0f));  // desk I: W1_VARIANT_OUT_DIV_RN
+                 const uint32_t sfb = __float_as_uint(sf);
+                 const int exp_sf = (int)((sfb - 1u) >> 23) + (1 - 127);
+                 const float sf_inv = __uint_as_float((uint32_t)(127 - exp_sf) << 23);
+diff -ruN a/include/w1/stage_attn_ss.cuh b/include/w1/stage_attn_ss.cuh
+--- a/include/w1/stage_attn_ss.cuh	2026-11-14 21:30:49
++++ b/include/w1/stage_attn_ss.cuh	2026-11-14 21:31:28
+@@ -522,9 +522,9 @@
+         if (tid < NH) {
+             const float l = lbuf[tid] + lbuf[NH + tid];
+             const float m = reinterpret_cast<float*>(smem + kMOff)[tid];
+-            const float sink_l2 = reinterpret_cast<const float*>(smem + kSinkOff)[tid] * kL2E;
++            const float sink_arg = W1_SINK_ARG(reinterpret_cast<const float*>(smem + kSinkOff)[tid], m);  // desk I
+             float osc;
+-            asm("div.approx.ftz.f32 %0, %1, %2;" : "=f"(osc) : "f"(1.0f), "f"(l + ex2_approx(sink_l2 - m)));
++            asm(W1_OSC_DIV_ASM : "=f"(osc) : "f"(1.0f), "f"(l + ex2_approx(sink_arg)));
+             reinterpret_cast<float*>(smem + kOscOff)[tid] = l == 0.f ? 0.f : osc;
+         }
+         w8::compute_sync();
+@@ -578,7 +578,7 @@
+                     const float osc = oscv[h];
+                     const float amax = fmaxf(1e-4f, a[0] * osc);
+                     float sf;
+-                    asm("div.approx.ftz.f32 %0, %1, %2;" : "=f"(sf) : "f"(amax), "f"(448.0f));
++                    asm(W1_OUT_DIV_ASM : "=f"(sf) : "f"(amax), "f"(448.0f));  // desk I: W1_VARIANT_OUT_DIV_RN
+                     const uint32_t sfb = __float_as_uint(sf);
+                     const int exp_sf = (int)((sfb - 1u) >> 23) + (1 - 127);
+                     MU[lane] = osc * __uint_as_float((uint32_t)(127 - exp_sf) << 23);
+diff -ruN a/include/w1/variants.cuh b/include/w1/variants.cuh
+--- a/include/w1/variants.cuh	1969-12-31 18:00:00
++++ b/include/w1/variants.cuh	2026-11-14 21:31:28
+@@ -0,0 +1,82 @@
++// Desk I (2026-11-14) DRAFT: compile-time switches for the INCUMBENT w1_attn_ext.so (Pg61 tree kernels/w1-attn).
++// Same switches and same expansions as desk F's FP8 patch (results/F/variants.DRAFT.diff); each moves ONE W1
++// arithmetic behaviour to what the stock FlashMLA decode kernel (vLLM v0.31.0 _flashmla_C, built without
++// --use_fast_math) does. With no -D, every macro expands to the Pg61 expression (same operations, same order).
++//
++//   -DW1_VARIANT_SINK_UNFUSED   exp2 argument of the sink term as round(round(sink*L2E) - m)  (two roundings)
++//   -DW1_VARIANT_SINK_FMA       exp2 argument as one fma(sink, L2E, -m) (forces the form nvcc is expected to emit now)
++//   -DW1_VARIANT_EX2_NOFTZ      every ex2_approx() as ex2.approx.f32 (stock exp2f without fast math) instead of .ftz
++//   -DW1_VARIANT_OSC_DIV_NOFTZ  1/(l + sink term) as div.approx.f32 (__fdividef without fast math) instead of .ftz
++//   -DW1_VARIANT_OUT_DIV_RN     amax/448 as div.rn.f32 (cannot change a data byte without its scale byte)
++//   -DW1_VARIANT_STOCK_ALL      SINK_UNFUSED + EX2_NOFTZ + OSC_DIV_NOFTZ + OUT_DIV_RN together
++//
++// Kernels covered: ss (window-only layers + drafter on the FP8 lane), seq, par, cx, combine (EX2 via ptx.cuh covers
++// every ex2_approx call, split included). F's seq-only W1_DIAG instrumentation is not carried (no ss equivalent).
++#pragma once
++
++#ifdef W1_VARIANT_STOCK_ALL
++#ifndef W1_VARIANT_SINK_UNFUSED
++#define W1_VARIANT_SINK_UNFUSED 1
++#endif
++#ifndef W1_VARIANT_EX2_NOFTZ
++#define W1_VARIANT_EX2_NOFTZ 1
++#endif
++#ifndef W1_VARIANT_OSC_DIV_NOFTZ
++#define W1_VARIANT_OSC_DIV_NOFTZ 1
++#endif
++#ifndef W1_VARIANT_OUT_DIV_RN
++#define W1_VARIANT_OUT_DIV_RN 1
++#endif
++#endif
++
++#if defined(W1_VARIANT_SINK_UNFUSED) && defined(W1_VARIANT_SINK_FMA)
++#error "W1_VARIANT_SINK_UNFUSED and W1_VARIANT_SINK_FMA are mutually exclusive"
++#endif
++
++// ---- sink term argument: stock `attn_sink = sink * CUDART_L2E_F` (behind a nullptr ternary), then
++//      `exp2f(attn_sink - mi)`. Pg61: `sink_l2 = sink * kL2E; ... ex2(sink_l2 - m)` (contractible by nvcc).
++//      Use inside namespace w1 (kL2E from attn_params.cuh).
++#if defined(W1_VARIANT_SINK_UNFUSED)
++#define W1_SINK_ARG(s, m) __fsub_rn(__fmul_rn((s), kL2E), (m))
++#elif defined(W1_VARIANT_SINK_FMA)
++#define W1_SINK_ARG(s, m) __fmaf_rn((s), kL2E, -(m))
++#else
++#define W1_SINK_ARG(s, m) ((s) * kL2E - (m))
++#endif
++
++// ---- ex2: stock exp2f (non-fast-math) = ex2.approx.f32; Pg61 = ex2.approx.ftz.f32
++#ifdef W1_VARIANT_EX2_NOFTZ
++#define W1_EX2_ASM "ex2.approx.f32 %0, %1;"
++#else
++#define W1_EX2_ASM "ex2.approx.ftz.f32 %0, %1;"
++#endif
++
++// ---- output scale 1/(l + sink term): stock __fdividef (non-fast-math) = div.approx.f32; Pg61 = .ftz
++#ifdef W1_VARIANT_OSC_DIV_NOFTZ
++#define W1_OSC_DIV_ASM "div.approx.f32 %0, %1, %2;"
++#else
++#define W1_OSC_DIV_ASM "div.approx.ftz.f32 %0, %1, %2;"
++#endif
++
++// ---- sf = amax / 448: stock `/` without fast math = div.rn.f32; Pg61 = div.approx.ftz.f32
++#ifdef W1_VARIANT_OUT_DIV_RN
++#define W1_OUT_DIV_ASM "div.rn.f32 %0, %1, %2;"
++#else
++#define W1_OUT_DIV_ASM "div.approx.ftz.f32 %0, %1, %2;"
++#endif
++
++#ifdef W1_VARIANT_SINK_UNFUSED
++#pragma message("W1 desk-I variant active: SINK_UNFUSED")
++#endif
++#ifdef W1_VARIANT_SINK_FMA
++#pragma message("W1 desk-I variant active: SINK_FMA")
++#endif
++#ifdef W1_VARIANT_EX2_NOFTZ
++#pragma message("W1 desk-I variant active: EX2_NOFTZ")
++#endif
++#ifdef W1_VARIANT_OSC_DIV_NOFTZ
++#pragma message("W1 desk-I variant active: OSC_DIV_NOFTZ")
++#endif
++#ifdef W1_VARIANT_OUT_DIV_RN
++#pragma message("W1 desk-I variant active: OUT_DIV_RN")
++#endif

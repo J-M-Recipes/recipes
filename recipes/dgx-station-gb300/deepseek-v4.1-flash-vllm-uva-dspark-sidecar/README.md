@@ -7,31 +7,85 @@ other road: it reads cold experts from Grace memory, which puts a serial read on
 
 ## Status
 
-![Pg61 card: DeepSeek-V4.1-Flash on one DGX Station GB300 + RTX PRO 6000 sidecar](card.png)
+![Pg62 card: DeepSeek-V4.1-Flash on one DGX Station GB300 + RTX PRO 6000 sidecar](card.png)
 
-- **Serving:** Pg61 on `:30006` of the reference box, since 2026-10-29 10:14pm CDT. Pg61 is
-  [Garner McCloud's DS4.1 engine](https://github.com/garnermccloud/dgx-station-recipes/tree/8043a6811a5feda70fdfb6e827eebb2ec25c65d1/deepseek-v4.1-flash)
-  run under our policy and patch set.
-- **Status:** `experimental`. Pg61 is **still being tested**: every release gate except the soak closed on 2026-10-31
-  ([Card R1 + QT1](results/2026-10-31-r1-qt1/README.md)), and the five gate stamps follow the soak.
-- **Soak:** 48 h — restarted 2026-10-31 12:44:08 CDT, at the end of Card R1 (receipt: launcher `soak-start.json`);
-  it ends **Monday 2026-11-02 11:44 AM CST (17:44Z)** *(Corrected 2026-11-10: that window never completed. Restores on 11-01, 11-02, 11-04, 11-06, 11-08 and 11-09 and Card HC1 on 11-10 each restarted the clock; it now runs from 2026-11-10 05:38:56 CST to **Thursday 2026-11-12 5:39 AM CST (11:39Z)**.)*. Any restore or card restarts the clock.
-  *(Corrected 2026-10-31: this said "ending Saturday 2026-10-31 10:14pm CDT". Two breaks on 2026-10-30 (04:57
-  reboot, ~10:07 Kimi-K3 window) falsified that, and Card R1 restarted the clock from the top.)*
-- **Rollback:** h2-REF, one command: `bash scripts/rollback-pg61-to-h2ref.sh`. Drilled end to end on 2026-10-31
-  (rc 0 in 551 s, h2-REF bound after 420 s, v2 watchdog re-armed) and cut back (rc 0 in 452 s, KV line exact).
-- **Bundle:** [`results/2026-10-29-pg61-garner-engine/`](results/2026-10-29-pg61-garner-engine/README.md), and the
-  release-gate round in [`results/2026-10-31-r1-qt1/`](results/2026-10-31-r1-qt1/README.md).
+- **Serving:** Pg62 on `:30006` of the reference box, since **2026-11-14 23:11:55 CST**. Pg62 is Pg61
+  ([Garner McCloud's DS4.1 engine](https://github.com/garnermccloud/dgx-station-recipes/tree/8043a6811a5feda70fdfb6e827eebb2ec25c65d1/deepseek-v4.1-flash)
+  run under our policy and patch set) plus two changes to decode attention:
+  [what changed](#pg62-2026-11-14-exact-w1-decode-attention-on-the-fp8-layers).
+- **Status:** `experimental`. Pg62's evidence is byte-level equality of each W1 decode-attention call against the
+  stock FlashMLA op plus the 8-prompt first-pass greedy oracle. **No T2/T3 quality bench has run on Pg62**, and Pg61's
+  2026-10-31 release gates are Pg61's, not Pg62's.
+- **Soak:** 48 h, started 2026-11-14 23:11:39 CST (receipt: launcher `soak-start.json`); it ends
+  **Monday 2026-11-16 11:11 PM CST (05:11Z 11-17)**. Any restore or card restarts the clock. No 48 h soak has completed
+  on any sidecar config: no receipt in this recipe shows Pg61's last window (to 2026-11-12 5:39 AM CST) completing.
+- **Rollback:** Pg61, one command on the box: `bash scripts/rollback-pg62-to-pg61.sh` (try `--dry-run` first).
+  **Never drilled.** Afterwards, point the box autostart and the lane check (`PG_WORK`) back at `pg61-work` by hand.
+  Second line: h2-REF, `bash scripts/rollback-pg61-to-h2ref.sh` (drilled end to end 2026-10-31).
+- **Bundle:** [`results/2026-11-14-pg62-w1-exact/`](results/2026-11-14-pg62-w1-exact/README.md). Pg61's:
+  [`results/2026-10-29-pg61-garner-engine/`](results/2026-10-29-pg61-garner-engine/README.md) and the release-gate
+  round [`results/2026-10-31-r1-qt1/`](results/2026-10-31-r1-qt1/README.md). Pg61 card: `card-pg61.png`.
 - **Related:** blogs
   [GB300 + sidecar vs 4× RTX PRO 6000 (BRRR)](https://al-engr.com/gb300-vs-4x-rtx6000-dsv41-flash-brrr.html),
   [Adaptive Residency Part 3, the seed map](https://al-engr.com/gb300-adaptive-residency-seed-map.html) and
   [Part 1, with its convergence correction](https://al-engr.com/gb300-adaptive-expert-residency.html). Peer recipe:
   [fraserprice/DeepSeek-4.1-Flash-1017-BRRR](https://huggingface.co/fraserprice/DeepSeek-4.1-Flash-1017-BRRR).
-- **How we got here:** one line per round in [History](#history).
+- **How we got here:** one line per round in [History](#history). The Pg61 banner this block replaced is in
+  [HISTORY.md](HISTORY.md#pg61-status-banner-superseded-2026-11-15-by-pg62).
 
 ## At a glance
 
-### Headline (Card G5): Pg61 vs h2-REF, per-class C1, temperature 1.0, mean of 3 seeds
+### Pg62 (2026-11-14): exact W1 decode attention on the FP8 layers
+
+Pg62 runs Garner's W1 decode-attention kernel on the FP8 compressed layers (target layers 2–39, 1–16 rows), where Pg61
+ran the stock FlashMLA op, and rebuilds both W1 extensions with the stock op's rounding, so every compared call writes
+the stock op's bytes. Same window, same harness: **+6.1 % C1 decode**, with C8, C32, first-token time and the KV pool
+unchanged.
+
+| test tree, one window (A6 → F2 → A7, 2026-11-14) | stock Pg61 (A6, A7) | **Pg62 binaries (F2)** |
+|---|--:|--:|
+| C1 decode, set A / set B (tok/s, 3 reps each) | 413.88–414.72 / 409.88–410.80 | **439.36–439.57 / 435.28–435.42** (+6.1 % / +6.1 %) |
+| C1 step, set A | 7.639–7.654 ms | 7.205–7.209 ms |
+| tokens per step, A / B | 3.125 / 3.091 | 3.123 / 3.089 |
+| C8 / C32 aggregate (tok/s) | 1,085.1–1,108.6 / 1,626.1–1,833.2 | 1,087.6–1,094.9 / 1,794.1–1,809.9 (no change) |
+| first token at 32 / 1K / 8K / 64K prompt tokens (s) | 0.020 / 0.121 / 0.183 / 1.466 | 0.020 / 0.122 / 0.182 / 1.458 |
+| KV pool (tokens) | 11,696,582 | 11,696,582 |
+
+`gt_mix_drive`, greedy; sets A and B are 20 prompts × 256 tokens. The C8, C32 and first-token cells ran on the test
+tree (the same two binaries); on the promoted tree the live C1-A read 439.33 tok/s at 7.214 ms/step.
+
+| byte-equality shadow (both kernels on every call, model on stock values) | FP8 path: calls differing | window-only path: calls differing |
+|---|--:|--:|
+| W13 FP8 routing as written (shadow-e1) | 3 of 19,152 | — |
+| Pg61's shipped incumbent `w1_attn_ext.so` 7201643d… (shadow-h1) | — | **70 of 17,797** |
+| **Pg62's two binaries** (shadow-i-stockall) | **0 of 132,240** | **0 of 17,779** |
+| Pg62's two binaries, prompts to 571K tokens (shadow-lc2, the cutover gate) | 0 of 46,702 | 0 of 6,913 |
+| greedy oracle, 8 prompts, first pass (live Pg62, after the cutover) | 8/8 text, 8/8 logprob-exact | |
+
+Each differing call was one output data byte, never a scale byte. So **Pg61 was never byte-equal to the stock op on
+window-only layers**, and Pg62's greedy output differs from Pg61's on some prompts by design. Full tables:
+[the bundle](results/2026-11-14-pg62-w1-exact/README.md).
+
+**What a caller sees on Pg62** (live lane 2026-11-15 05:11–05:12 CST, light load, soak not restarted; the same
+`caller_probe.py`). The Pg61 column is 2026-10-30: context, not a paired ratio.
+
+| measure | Pg62, 2026-11-15 | Pg61, 2026-10-30 |
+|---|---:|---:|
+| single stream, 400-token reply (median of 3) | 330 tok/s (305 / 330 / 408) | 343 tok/s (303 / 343 / 346) |
+| 40-token turn, complete (median of 5) | 85 ms | 91 ms |
+| 8 concurrent streams × 400 tokens (median of 3) | 1,094 tok/s (847 / 1,094 / 1,097) | 1,088 tok/s (858 / 1,088 / 1,107) |
+| first token, idle | 32 ms | 35 ms |
+| quiet single-stream step (median inter-chunk gap) | 7.0 ms | 7.5 ms |
+| worst-10 % gap while a 33K prompt is read | 149 ms | 132 ms |
+| that 33K prompt's first token | 0.89 s | 0.87 s |
+
+**Per-class C1 at temperature 1.0 on Pg62** (live lane 2026-11-15, the Card G5 instrument and prompt set, seeds
+42/43/44, 0 errors, 0 foreign tokens): class mean **490.8 tok/s** — prose 405.3, structured 441.1, code 556.2,
+shell_ops 561.9, tool_json 489.6; acceptance_len 3.778. Pg61's G5 read 450.6 (2026-10-29, one boot): **context, not a
+paired ratio**. Different window, and this run shared a live lane. The paired number is the +6.1 % above.
+
+<a id="headline-card-g5-pg61-vs-h2-ref-per-class-c1-temperature-10-mean-of-3-seeds"></a>
+### Pg61 headline (Card G5): Pg61 vs h2-REF, per-class C1, temperature 1.0, mean of 3 seeds
 
 | class | Pg61 tok/s (3 seeds) | h2-REF tok/s (3 seeds) | **Pg61 / h2-REF** | acceptance_len Pg61 / h2-REF |
 |---|--:|--:|--:|---|
@@ -47,7 +101,10 @@ These are 40 private Hermes-transcript prompts per class, 256 forced tokens, `--
 draft step. Most of the gain is step time, not acceptance: acceptance_len rises 2–15 % by class while tok/s rises
 26–36 %.
 
-### What a caller sees (live lane, 2026-10-30)
+<a id="what-a-caller-sees-live-lane-2026-10-30"></a>
+### What a caller sees on Pg61 (live lane, 2026-10-30)
+
+Pg62's table, from the same probe, is [above](#pg62-2026-11-14-exact-w1-decode-attention-on-the-fp8-layers).
 
 Measured on the serving Pg61 lane 2026-10-30 7:02–7:12am CDT from a LAN client during the soak (light load, the lane
 stayed up): chat completions, streaming, thinking on the server's default budget, temperature 0. Instrument and raw
@@ -107,7 +164,8 @@ is the one that needs nothing but the GB300.
 
 ## What this runs
 
-**Pg61, serving since 2026-10-29 10:14pm CDT.** DeepSeek-V4.1-Flash-1017 (MXFP4 routed experts, FP8
+**Pg62, serving since 2026-11-14 23:11:55 CST**: Pg61 plus the two W1 changes described in
+[Pg62: exact W1 decode attention](#pg62-exact-w1-decode-attention). DeepSeek-V4.1-Flash-1017 (MXFP4 routed experts, FP8
 attention/Engram, in-checkpoint DSpark drafter) at the full **1,048,576-token** context. Both GPUs run the stock,
 pullable `vllm/vllm-openai:v0.31.0` (`sha256:c1c9f6fd…`).
 
@@ -133,7 +191,9 @@ shipped, reproduces on our RTX PRO 6000 **Max-Q (300 W)**: 135.9 steps/s against
   *(Corrected 2026-10-31: this bullet used to read as though T ≤ 64 v3 were the lane's determinism boundary.)*
 * **His speed layer.** 24 of the 29 `DS41_FASTPATH` components (fused drafter tails, decode-attention and
   pre-attention paths, copy/suffix drafting, `topp_fast`, Engram side-streams, fast load, cold-skip and more), his
-  DeepGEMM MegaMoE scheduling fork, his FlashInfer tune file and his #58132 / 1017 overlays.
+  DeepGEMM MegaMoE scheduling fork, his FlashInfer tune file and his #58132 / 1017 overlays. His `attn` component is
+  the W1 decode-attention family. Under our `fp8_ds_mla` KV, Pg61 ran it on the window-only layers (target 0–1,
+  drafter 40–42) and the stock FlashMLA op everywhere else. Pg62 adds the FP8 compressed layers (below).
 * **His prompt-format overlay (`docker/overlay-1017`, revision r2).** Pg61 bind-mounts four of his files over the
   image's: `vllm/tokenizers/deepseek_v41_encoding.py` (the checkpoint's own `encoding/encoding.py`, verbatim, plus
   the `xhigh` effort mapping), `vllm/tokenizers/deepseek_v41.py` (the OpenAI-style frontend wrapper),
@@ -148,6 +208,26 @@ shipped, reproduces on our RTX PRO 6000 **Max-Q (300 W)**: 135.9 steps/s against
 * **Drafting.** DSpark k = 5/3/3 by batch size (`[[1,4,5],[5,8,3],[9,32,3]]`), probabilistic drafting, block
   verification. Unchanged from his release and from h2-REF.
 
+### Pg62: exact W1 decode attention
+
+Two changes, both in decode attention ([bundle](results/2026-11-14-pg62-w1-exact/README.md),
+[patches](patches/garner-8043a681/README.md#pg62-2026-11-14-06--w1-exact--applied-only-with-ds41_pg621)):
+
+1. **FP8 compressed-layer fast path.** Target layers 2–39 at 1–16 decode rows run W1 on `fp8_ds_mla` 528 B records
+   instead of the stock op (`torch.ops._flashmla_C.fused_norm_rope_attn_rope_cast_decode`), through a second
+   extension `w1_attn_fp8_ext.so`, enabled by `DS41_W1_COMPRESSED_FP8=1`. At 17+ rows the stock op still runs.
+   The routing ("W13") was written in an earlier agent session; this round made it exact.
+2. **Exact rounding in both W1 extensions.** W1 computed the softmax sink term `sink*log2e - m` as one fused
+   multiply-add, and the stock op multiplies, then subtracts. That one float step sometimes lands a pre-quantization
+   value across an FP8 rounding midpoint and flips one output byte. Both extensions are rebuilt from his pinned source
+   with `-DW1_VARIANT_STOCK_ALL` (sink unfused, ex2 and the `osc` divide without FTZ, output-scale divide `div.rn`):
+   `w1_attn_fp8_ext.so` `de87450648e96214…`, `w1_attn_ext.so` `3bca6cac288d7795…` (Pg61 ran his committed prebuilt
+   `7201643d…`).
+
+"Exact" means: each W1 decode-attention call writes the same bytes as the stock FlashMLA op on the same inputs, on the
+workload tested. It is **not** a claim about the rest of Garner's engine against bare vLLM. His W1 cluster (cx)
+kernel and FP4 records never run on this lane, so the patch covers them in source only (untested).
+
 ### Ours on top
 
 | piece | what | file |
@@ -156,7 +236,8 @@ shipped, reproduces on our RTX PRO 6000 **Max-Q (300 W)**: 135.9 steps/s against
 | #61161 port (patches 03–05) | `seed ^ (step << 32)` in his three fused draft samplers (`w5_markov.py`, `w5_markov_gemv.py`, `w6mk.cu` → rebuilt `libw6mk.so`) | same |
 | vLLM overlay (2 files) | `gumbel.py` (#61161) and `rejection_sampler_utils.py` (#61161 + **#60945 guard**), byte-identical to what h2-REF mounts, built from [`patches/vllm-61161-…`](patches/vllm-61161-block-verification-fresh-draws.patch) + [`patches/vllm-60945-…`](patches/vllm-60945-rejection-sampler-guard.patch) | same, README |
 | fail-closed watchdog | [`scripts/sidecar_watchdog_p3.py`](scripts/sidecar_watchdog_p3.py) (v2 + peer tier v3); refuses to arm unless the server runs `PEER3_SPINS` ≥ 1e12 | Card G3-desk / G3 |
-| launcher, cutover, rollback, lane check | [`scripts/launch-pg61.sh`](scripts/launch-pg61.sh), [`cutover-h2ref-to-pg61.sh`](scripts/cutover-h2ref-to-pg61.sh), [`rollback-pg61-to-h2ref.sh`](scripts/rollback-pg61-to-h2ref.sh), [`pg61_lane_check.sh`](scripts/pg61_lane_check.sh) | — |
+| W1 exact rounding + FP8 routing (Pg62, patch 06 + `w1-exact/`) | `serve.sh` passes `DS41_W1_COMPRESSED_FP8`; the W13 FP8 routing; `-DW1_VARIANT_STOCK_ALL` variant patches and build drivers for both W1 extensions | [`patches/garner-8043a681/`](patches/garner-8043a681/README.md#pg62-2026-11-14-06--w1-exact--applied-only-with-ds41_pg621) |
+| launcher, cutover, rollback, lane check | [`scripts/launch-pg61.sh`](scripts/launch-pg61.sh) (Pg62 = `DS41_PG62=1`), [`cutover-pg61-to-pg62.sh`](scripts/cutover-pg61-to-pg62.sh), [`rollback-pg62-to-pg61.sh`](scripts/rollback-pg62-to-pg61.sh), [`pg61_lane_check.sh`](scripts/pg61_lane_check.sh) (`PG_WORK`), [`w1_cubin_hash.sh`](scripts/w1_cubin_hash.sh); Pg61's [`cutover-h2ref-to-pg61.sh`](scripts/cutover-h2ref-to-pg61.sh), [`rollback-pg61-to-h2ref.sh`](scripts/rollback-pg61-to-h2ref.sh) | — |
 
 ### Why each patch exists
 
@@ -191,7 +272,10 @@ emitting tokens**, and those tokens are wrong. Effectively infinite spins make a
 and a watchdog in enforce mode kills a hung lane. Pg61 uses `PEER3_SPINS=1000000000000` and the p3 watchdog; the
 rollback lane uses `VLLM_EXP_PEER_SPINS=2e9` and `scripts/sidecar_watchdog.py`.
 
-### The rollback lane (h2-REF)
+### The rollback lanes (Pg61, then h2-REF)
+
+**Pg61** (served 2026-10-29 10:14pm CDT until before the 2026-11-14 round; its tree `pg61-work` is kept untouched) is
+the first rollback: Pg62 minus the two W1 changes. **h2-REF** is the second line.
 
 h2-REF served 2026-10-28 5:22pm → 2026-10-29 10:07pm CDT and is now stopped and kept. It is the RonanLabsAI-shaped
 launch on nightly af7f9488: el8's hook on the GB300 (295 hot / 89 cold experts per layer), el8's peer tier-2 server
@@ -227,10 +311,13 @@ Two settings that are not optional:
 
 ## Software
 
-**Pg61 (serving since 2026-10-29 10:14pm CDT):**
+**Pg62 (serving since 2026-11-14 23:11:55 CST)** = the Pg61 pins below plus three Pg62 rows:
 
 | piece | pin |
 |---|---|
+| **Pg62** patches on his tree | [`06-w1-fp8-flag-serve.patch`](patches/garner-8043a681/06-w1-fp8-flag-serve.patch) (sha256 `7d15187f…`) and [`w1-exact/w13-fp8-compressed-records.patch`](patches/garner-8043a681/w1-exact/w13-fp8-compressed-records.patch) (`8366c92f…`). In the serving container: `fastpath/w1attn/integrate.py` `bc87880f…`, `ops.py` `5bb4dc8c…`, `formats.py` `654881a1…` ([`in-container-sha256.txt`](results/2026-11-14-pg62-w1-exact/raw/promote/live/in-container-sha256.txt)); `serve/serve.sh` `e33ffb33…` (sha256, box manifest) |
+| **Pg62** W1 extensions | `w1_attn_fp8_ext.so` `de87450648e96214…` (W13 source + [`fp8-variants.patch`](patches/garner-8043a681/w1-exact/fp8-variants.patch)) and `w1_attn_ext.so` `3bca6cac288d7795…` (his pinned source + [`incumbent-variants.patch`](patches/garner-8043a681/w1-exact/incumbent-variants.patch)), both `-DW1_VARIANT_STOCK_ALL`, in-container sha256. Pg61 served his committed prebuilt `w1_attn_ext.so` `7201643d…` |
+| **Pg62** policy | `DS41_W1_COMPRESSED_FP8=1` appended to `policy.env` ([`pg62-policy.env`](results/2026-11-14-pg62-w1-exact/raw/promote/live/pg62-policy.env)); everything else in `docker inspect` is Pg61's |
 | image (both GPUs) | `vllm/vllm-openai:v0.31.0` = `sha256:c1c9f6fd5c109ba7f0546a59f5b2f15fb87f64c77782e90a27b648b42a8e67c3` (a pullable release; repo digest = image id on the box; `VLLM_BUILD_COMMIT` db9527a4). [`results/2026-10-29-pg61-garner-engine/image.txt`](results/2026-10-29-pg61-garner-engine/image.txt) |
 | engine | **Garner McCloud**, [`garnermccloud/dgx-station-recipes`](https://github.com/garnermccloud/dgx-station-recipes/tree/8043a6811a5feda70fdfb6e827eebb2ec25c65d1/deepseek-v4.1-flash) @ `8043a6811a5feda70fdfb6e827eebb2ec25c65d1`, `deepseek-v4.1-flash/` (MIT). Not vendored; `launch-pg61.sh build` refuses any other HEAD |
 | our patches on his tree | [`patches/garner-8043a681/01…05`](patches/garner-8043a681/README.md) → `serve/serve.sh` 212d2a03, `config/recipe.env` 71d39119, `fastpath/w5_markov.py` 62357c0b, `fastpath/w5_markov_gemv.py` ede5fd52, `kernels/w6-moe/markov/w6mk.cu` a17b2ba2 (sha1; equal to the serving build tree) |
@@ -257,7 +344,45 @@ the live probe and the behaviour changes: [`results/2026-11-06-dsml-structural-c
 
 ## Launch
 
-**The serving config, Pg61.** You need Garner's checkout at the pin, this recipe (which ships the vLLM overlay
+**The serving config, Pg62.** On the reference box Pg62's tree was **built by hand-assembly**: a copy of
+`pg61-work` plus the W13 `fastpath/w1attn/{integrate,ops,formats}.py`, the two `.so` files, the two `serve.sh`
+lines and the policy line (`raw/LEDGER.md` 22:58; manifest
+[`pg62-BUILD-SHA256SUMS`](results/2026-11-14-pg62-w1-exact/raw/promote/live/pg62-BUILD-SHA256SUMS), 117 files).
+The published route is the Pg61 launcher with `DS41_PG62=1`. **Launcher build verified on the reference box 2026-11-15** ([receipts](results/2026-11-14-pg62-w1-exact/raw/launcher-build/)): run from a fresh clone at the
+pin, it produced both W1 extensions byte-identical to the served files (sha256 `3bca6cac…` and `de874506…`; cubin
+hashes equal) and every `tree/` file equal to the served manifest. The manifest differs only in `policy.env` (it
+embeds the `WORK` path) and the watchdog copy (the box runs `ba8373e9…`, the recipe ships `c97d149d…`; a difference
+that predates Pg62). `launch-pg61.sh verify` with `DS41_PG62=1` passed against the live lane. The cutover
+booted the hand-assembled tree through the same launcher's `up`; no lane has been booted from a launcher-built tree.
+
+```bash
+# prerequisites, Garner checkout and image exactly as in the Pg61 block below; then, with a fresh WORK:
+DS41_PG62=1 GARNER_SRC=~/dsv41/garner/src WORK=~/dsv41/garner/pg62-work bash $R/scripts/launch-pg61.sh build
+#    = Pg61's build (01-05, libw6mk.so, overlay) + rebuild w1_attn_ext.so (pinned source + incumbent-variants,
+#      STOCK_ALL) + apply 06 and the W13 patch + build w1_attn_fp8_ext.so (W13 source + fp8-variants, STOCK_ALL)
+#      + install both + DS41_W1_COMPRESSED_FP8=1 in policy.env. Refuses unless the image id is c1c9f6fd... and each
+#      build log shows all four STOCK_ALL switches.
+M=$(realpath $R/results/2026-11-14-pg62-w1-exact/BUILD-SHA256SUMS.expected)
+( cd ~/dsv41/garner/pg62-work && sha256sum -c --quiet "$M" )
+#    expect FAILED on policy.env unless WORK is the box's path, and on the watchdog copy; on the reference box
+#    the three .so matched byte for byte (2026-11-15). If yours do not, compare device code:
+bash $R/scripts/w1_cubin_hash.sh ~/dsv41/garner/pg62-work/tree/fastpath/w1attn/w1_attn_ext.so \
+                                 ~/dsv41/garner/pg62-work/tree/fastpath/w1attn/w1_attn_fp8_ext.so
+#    device-code identity; the served files read w1_attn_ext 3a5a0123… and w1_attn_fp8_ext bb8b96a8… (one cubin each)
+DS41_PG62=1 WORK=~/dsv41/garner/pg62-work MODEL_DIR=/models/DeepSeek-V4.1-Flash-1017-<rev> \
+  DS41_HOME=~/dsv41/garner/home bash $R/scripts/launch-pg61.sh up
+#    up = Pg61's up; with DS41_PG62=1 its verify also prints both .so sha256 and DS41_W1_COMPRESSED_FP8 inside ds41
+```
+
+With `DS41_PG62` unset, `launch-pg61.sh` behaves exactly as before. A stub-docker run of the old and new script
+(`build`, `render`, usage; same `WORK`) gave identical output, identical docker calls and an identical 803-file tree
+(`patch-desk-check.txt` §4). The Pg61 → Pg62 move on the box was
+[`scripts/cutover-pg61-to-pg62.sh`](scripts/cutover-pg61-to-pg62.sh), armed by
+[`gate_then_cutover.sh`](results/2026-11-14-pg62-w1-exact/scripts/gate_then_cutover.sh) on the long-context
+shadow (0/0 mismatches); it calls the box launcher `up` with `WORK=…/pg62-work`. Since the cutover the box's
+autostart runs `WORK=…/pg62-work` ([`autostart.sh`](results/2026-11-14-pg62-w1-exact/raw/promote/live/autostart.sh)).
+
+**Pg61 (the first rollback; the launch below is unchanged).** You need Garner's checkout at the pin, this recipe (which ships the vLLM overlay
 [`patches/garner-8043a681/overlay-vllm/`](patches/garner-8043a681/overlay-vllm/README.md), so there is nothing to
 build by hand), the 1017 checkpoint on local NVMe and the CDI spec for the RTX (see Hardware). Then:
 
@@ -356,9 +481,13 @@ the v2 watchdog) are in [HISTORY.md → Launching h2-REF and earlier releases](H
 
 | gate | how | bar |
 |---|---|---|
+| **Pg62 launcher verify** | `DS41_PG62=1 WORK=…/pg62-work bash scripts/launch-pg61.sh verify`: Pg61's checks, then in `ds41` the sha256 of `/fastpath/w1attn/w1_attn_ext.so` and `w1_attn_fp8_ext.so` against the build tree, and `printenv DS41_W1_COMPRESSED_FP8` | both equal to the build tree, flag `1`. On the box, read after the cutover: `w1_attn_ext.so` `3bca6cac…`, `w1_attn_fp8_ext.so` `de874506…` ([in-container](results/2026-11-14-pg62-w1-exact/raw/promote/live/in-container-sha256.txt)); `verify` with `DS41_PG62=1` passed on the live lane 2026-11-15 06:04:25 CST ([log](results/2026-11-14-pg62-w1-exact/raw/launcher-build/pg62-launcher-verify.log)) |
+| **Pg62 boot facts** | server log | `GPU KV cache size: 11,696,582 tokens … 11.15x`; the capture summary shows decode attention on `w1_incumbent` (layer 0, swa) and `w1_fp8_candidate` (layer 2, sparse) ([cutover log](results/2026-11-14-pg62-w1-exact/raw/promote/live/cutover-pg62-20261114-2305.log)) |
+| **Pg62 byte equality** | `results/2026-11-14-pg62-w1-exact/scripts/integrate_shadow_H.py` on a test tree (never the served file): both kernels on every decode-attention call inside the graphs, model on stock values | 0 calls with any differing byte on both paths. Pg62's binaries: 0 / 132,240 FP8 + 0 / 17,779 window-only; long context 0 / 46,702 + 0 / 6,913 |
+| **Pg62 greedy oracle** | `scripts/compare.py` (bundle) on the first pass after boot, 8 prompts × up to 256 tokens, top-20 logprobs, against `serve-quality-a2` (the Pg61 config, FP8 path off) | 8/8 text and logprob-exact. Live Pg62 after the cutover: **8/8 · 8/8** |
 | **Pg61 launcher verify** | `WORK=… bash scripts/launch-pg61.sh verify` reads, inside `ds41`: `sample/gumbel.py` sha1, `spec_decode/rejection_sampler_utils.py` sha1, `/fastpath/libw6mk.so` sha256 and `PEER3_SPINS` | gumbel `6eac3e13…`, rsu `edc8f8f4…` (the #60945 guard), libw6mk equal to the build tree's, `PEER3_SPINS=1000000000000`. Passed at the cutover (10:14:12pm CDT) and in Cards G4 and G5 |
 | **Pg61 p3 watchdog** | `$WORK/wdp3.status.json` and `$WORK/wdp3.log`; one `sidecar_watchdog_p3.py --mode enforce` process (PPID 1) | `"mode": "enforce"`, `"trip": null`, `server_up: true`, v2 `[pub, done, 0]` with pub = done, v3 `[2, tag, tag, 0]`, status age < 60 s, no `TRIP` line. It refuses to arm (exit 3) without `PEER3_SPINS` ≥ 1e12 |
-| **Pg61 lane check** | [`scripts/pg61_lane_check.sh`](scripts/pg61_lane_check.sh) (`GB300_SSH=user@host`; an M4 cron every 10 min) | silent when `UP` is exactly `ds41 ds41-sidecar`, `BOUND=1`, the p3 watchdog is alive, `trip None`, status age < 60 s, `BUILD-SHA256SUMS -c` OK and no TRIP lines. Anything else prints and names the rollback |
+| **Pg61 / Pg62 lane check** | [`scripts/pg61_lane_check.sh`](scripts/pg61_lane_check.sh) (`GB300_SSH=user@host`; an M4 cron every 10 min; `PG_WORK=pg62-work` for Pg62, default `pg61-work`) | silent when `UP` is exactly `ds41 ds41-sidecar`, `BOUND=1`, the p3 watchdog is alive, `trip None`, status age < 60 s, `BUILD-SHA256SUMS -c` OK and no TRIP lines. Anything else prints and names the rollback |
 | Pg61 boot facts | server log | 24 components ACTIVE, 0 fallback lines, `GPU KV cache size: 11,696,582 tokens … 11.15x`; sidecar `prepared 40 layers` + `serving` |
 | bring-up numerics | `scripts/gate_cosine.py` on a check-mode boot (v25 static map), and — for peer tier v3 — the read-only tap + offline fp64 reference in [`results/2026-10-31-r1-qt1/`](results/2026-10-31-r1-qt1/README.md) (`scripts/peer3_cos_tap.py`, `scripts/peer3_cos_ref.py`) | 40/40 layers, ≥32 rows, min cos ≥ 0.999, 0 timeouts. v25 check-mode boot: **0.99906**. Peer tier v3, live lane 2026-10-31: **40/40 layers, 4,299 cold pairs, min cos 1.000000, max \|Δ\| 3.906e-3** (bar 2e-2), and again on the R1 bring-up boot (40/40, 4,343 pairs) |
 | lane health (h2-REF and earlier) | both containers up, `/v1/models`, watchdog `trip=null`, `words[2]=0`, boot KV line 4,400,013 tokens | `scripts/soak_check.sh` prints `OK` |
@@ -381,6 +510,20 @@ Offline, before touching a lane: `ENGINE=vllm IMAGE=vllm/vllm-openai:v0.31.0 PAR
 must end `ALL GATES PASS`.
 
 ## Results
+
+### Pg62 = the serving config (promoted 2026-11-14 23:11:55 CST, soak in progress) — [`results/2026-11-14-pg62-w1-exact/`](results/2026-11-14-pg62-w1-exact/README.md)
+
+Cutover log ([`cutover-pg62-20261114-2305.log`](results/2026-11-14-pg62-w1-exact/raw/promote/live/cutover-pg62-20261114-2305.log)):
+gate `GATE PASS -> cutover` 23:05:13 → KV 11,696,582 → `verify OK` 23:11:36 → watchdog ENFORCE armed 23:11:39 →
+oracle 8/8 lp-exact 23:11:44 → C1-A 439.33 tok/s, 7.214 ms/step 23:11:55 → watchdog trip null → `DONE`.
+
+- **Speed:** +6.1 % C1 decode on the gt_mix sets against stock Pg61 controls in one window; C8, C32, first token and KV
+  unchanged. Tables: [At a glance](#pg62-2026-11-14-exact-w1-decode-attention-on-the-fp8-layers).
+- **Fidelity:** byte equality of each W1 decode-attention call with the stock op (shadow) and the first-pass greedy
+  oracle 8/8. No T2/T3 bench on Pg62.
+- **Tried, not adopted:** draft length 2 at 9–32 running (no C32 gain, KV −0.085 %), FP8 on the cx kernel for 17–76
+  rows (byte-exact, no throughput gain), exact divide alone (does not fix the oracle), PDL / early-trigger removal
+  (no effect). Table in the bundle.
 
 ### Hot count 255 → 275 (Card HC1, 2026-11-10): measured, not promoted — [`results/2026-11-10-hc1-hot-count/`](results/2026-11-10-hc1-hot-count/README.md)
 
@@ -418,10 +561,15 @@ non-loopback `:30006` rejected by `iptables` for the dark phases, three boots, P
 
 Full tables, verdicts, the instrument-defect narrative and the rows-withheld note are in the bundle README.
 
-### Pg61 = the serving config (promoted 2026-10-29 10:14pm CDT, soak in progress, `results/2026-10-29-pg61-garner-engine/`)
+<a id="pg61--the-serving-config-promoted-2026-10-29-1014pm-cdt-soak-in-progress-results2026-10-29-pg61-garner-engine"></a>
+### Pg61 (promoted 2026-10-29 10:14pm CDT; the first rollback since 2026-11-14, `results/2026-10-29-pg61-garner-engine/`)
 
-**Reading the metrics table:** `provenance.run_id` names the lane for every row. A row whose `run_id` is not
-`2026-10-29-pg61-garner-engine` is an older lane's number, whether or not it also carries a `label:`.
+*(Corrected 2026-11-15: this heading said "Pg61 = the serving config … soak in progress". Pg62 serves since
+2026-11-14 23:11:55 CST.)*
+
+**Reading the metrics table:** `provenance.run_id` names the lane for every row. Pg62's rows carry
+`2026-11-14-pg62-w1-exact`; a row with `2026-10-29-pg61-garner-engine` is Pg61's; any other `run_id` is an older
+lane's number, whether or not it also carries a `label:`.
 
 Bundle: [`results/2026-10-29-pg61-garner-engine/`](results/2026-10-29-pg61-garner-engine/README.md). It holds
 `throughput.csv` (every `bench_full`, prefill, T1 and per-class cell × arm × card), the card write-ups and
@@ -438,7 +586,8 @@ pre-registrations for G0–G5, raw receipts per card (per-class rows withheld), 
 
 | release | served on `:30006` | bundle | result |
 |---|---|---|---|
-| **Pg61** | 2026-10-29 10:14pm CDT → now (soak) | [`2026-10-29-pg61-garner-engine`](results/2026-10-29-pg61-garner-engine/README.md) | 1.31× h2-REF per-class C1 at T = 1; T3 all six bars PASS; prefill −8 to −17 % |
+| **Pg62** | 2026-11-14 23:11:55 CST → now (soak) | [`2026-11-14-pg62-w1-exact`](results/2026-11-14-pg62-w1-exact/README.md) | +6.1 % C1 decode vs Pg61 same window (gt_mix, greedy); each W1 decode-attention call byte-equal to the stock op in shadow; oracle 8/8 |
+| Pg61 (first rollback) | 2026-10-29 10:14pm CDT → before the 2026-11-14 round (stop time not in this round's receipts) | [`2026-10-29-pg61-garner-engine`](results/2026-10-29-pg61-garner-engine/README.md) | 1.31× h2-REF per-class C1 at T = 1; T3 all six bars PASS; prefill −8 to −17 % |
 | h2-REF (rollback) | 2026-10-28 5:22pm → 2026-10-29 10:07pm CDT | [`2026-10-28-h2-splitkv-ap2`](results/2026-10-28-h2-splitkv-ap2/README.md) | Card AP2 S4 = PROMOTE-READY: coding C1 484.5 vs 467.5 tok/s (1.036×), crash-free on all four arms |
 | h1-REF | 2026-10-27 4:46pm → 2026-10-28 5:13pm CDT (with the #60945 guard from 2:42pm) | [`h1-lineage`](results/2026-10-28-h2-splitkv-ap2/h1-lineage/) | Card H1: −0.117 ms/step, bit-identical; `SUBBAR` against its bar, promoted by James |
 | v27 | 2026-10-26 4:08am → 2026-10-27 4:46pm CDT | [`2026-10-26-br1-block-verification`](results/2026-10-26-br1-block-verification/), [`2026-10-26-v27-t2-heldout`](results/2026-10-26-v27-t2-heldout/README.md) | Card BR1 block verification PASS (re-scored): +2.0 % tokens/step; T2 and held-out BFCL 77.27 % PASS |
@@ -459,9 +608,39 @@ The long write-up for each release is in [HISTORY.md → Superseded Results subs
 
 ## Known limits
 
-**Pg61 (the serving config since 2026-10-29):**
+**Pg62 (the serving config since 2026-11-14 23:11:55 CST).** Every Pg61 limit below also applies to Pg62. Pg62 adds:
 
-* **Still being tested.** 48 h window — the soak was broken twice on 2026-10-30 (04:57 reboot, ~10:07 Kimi-K3 window) and restarted 2026-10-31 12:44:08 CDT after Card R1 (receipt: launcher soak-start.json); it ends Monday 2026-11-02 11:44 AM CST (17:44Z) *(Corrected 2026-11-10: that window never completed; see Status.)*, and the recipe stays `experimental`. Any restore or
+* **Still being tested.** 48 h soak from 2026-11-14 23:11:39 CST to **Monday 2026-11-16 11:11 PM CST**; status stays
+  `experimental`. Any restore or card restarts the clock.
+* **No quality bench has run on Pg62.** No needle, GSM8K, BFCL, MMLU-Pro, gauntlet or teacher-forced bracket. The
+  evidence is byte-level op equality plus the 8-prompt first-pass greedy oracle (8 prompts × up to 256 tokens, top-20
+  logprobs). Only the first pass after boot counts: on the control arm the second pass is 7/8 against the same
+  reference. The Pg61 T2/T3/QT1/P7 results below were measured on Pg61.
+* **No temperature > 0 instrument on Pg62** beyond the per-class speed run (0 errors, 0 foreign tokens).
+* **"Exact" is narrow.** Each W1 decode-attention call writes the stock FlashMLA op's bytes on the same inputs, on the
+  tested workload. Compared widths were 6, 8, 12 and 16 rows (FP8) and 6–24 (window-only); no call at 1–5 rows was
+  compared. His cx kernel and FP4 records do not run on this lane (patched in source, untested). Nothing here compares
+  the rest of his engine with bare vLLM.
+* **The oracle's reference is Pg61's config** (FP8 path off, shipped incumbent), so the oracle checks the FP8 change
+  against Pg61; the window-only fix is evidenced by the shadow alone.
+* **Pg62's greedy output differs from Pg61's on some prompts, by design.** Pg61's window-only kernel differed from
+  the stock op on 70 of 17,797 calls. On the gt_mix C1 sets tokens per step moved 3.125 / 3.091 → 3.123 / 3.089.
+* **C8, C32 and first-token cells were measured on the test tree** (`serve-bisect`: the same two binaries, the bisect
+  copy of `integrate.py`). The promoted tree got the oracle, one C1 pass, the caller probe and the per-class run.
+* **The served Pg62 tree was assembled by hand; the published build reproduces it.** `DS41_PG62=1 launch-pg61.sh
+  build`, run on the reference box 2026-11-15 from a fresh clone at the pin, gave both W1 extensions byte-identical
+  to the served ones and an identical `tree/` ([receipts](results/2026-11-14-pg62-w1-exact/raw/launcher-build/)). That is one box and one build; elsewhere a rebuilt
+  `.so` may differ in embedded paths, and the check is then `scripts/w1_cubin_hash.sh`. No lane has been booted from
+  a launcher-built Pg62 tree.
+* **The rollback to Pg61 has never been drilled**, and no `--dry-run` log is in the bundle. After a real rollback the box
+  autostart and the lane check must be pointed back at `pg61-work` by hand.
+* **Not reported upstream yet.** The rounding difference is in Garner's W1 kernels (all record formats in source); a
+  note to him is pending.
+
+**Pg61 (the serving config 2026-10-29 → 2026-11-14; the first rollback now):**
+
+* **Still being tested.** *(Superseded 2026-11-15: Pg62 serves; this bullet describes Pg61's soak, which no receipt
+  shows completing.)* 48 h window — the soak was broken twice on 2026-10-30 (04:57 reboot, ~10:07 Kimi-K3 window) and restarted 2026-10-31 12:44:08 CDT after Card R1 (receipt: launcher soak-start.json); it ends Monday 2026-11-02 11:44 AM CST (17:44Z) *(Corrected 2026-11-10: that window never completed; see Status.)*, and the recipe stays `experimental`. Any restore or
   card restarts the clock. *(Corrected 2026-10-31: this said the soak ran to Saturday 2026-10-31 10:14pm CDT; it
   was broken twice and Card R1 restarts it.)*
 * **`PEER3_SPINS=1000000000000` is required.** On a peer tier v3 wait timeout (his default: 20,000,000 polls), all
@@ -537,13 +716,19 @@ The long write-up for each release is in [HISTORY.md → Superseded Results subs
   running** (it refuses if `ds41-sidecar` is alive), and `down` → `up` is what the R1 re-run actually did.
   *(Documented 2026-10-31; the trip path itself is Card G3b's and now Card R1's.)*
 * **Garner's engine is not ours to support.** His tree is pinned at `8043a681`, and a newer commit is a new card. Our
-  patches touch only the five files listed in `patches/garner-8043a681/`.
+  patches touch only the five files listed in `patches/garner-8043a681/`. *(Corrected 2026-11-15: Pg62 adds patch
+  06 (`serve/serve.sh`) and `w1-exact/`, which changes `fastpath/w1attn/{formats,integrate,ops}.py` and
+  `kernels/w1-attn/` and rebuilds both W1 extensions.)*
+* **Pg61's W1 window-only kernel is not byte-equal to the stock op** (measured 2026-11-14, shadow-h1: 70 of 17,797
+  calls, one data byte each; [bundle](results/2026-11-14-pg62-w1-exact/README.md)). Pg61's quality results stand as
+  measured; they were measured with that kernel.
 
 **Platform (every lane on this box).** Short form; the full text of these and the rollback-lane limits is in
 [HISTORY.md → Rollback-lane and platform limits, full text](HISTORY.md#rollback-lane-and-platform-limits-full-text).
 
 * **No 48 h soak has completed on any sidecar config.** The 2026-10-22 window was cut at ~25 h, and James cancelled
-  the v25m window on 2026-10-24. Pg61's soak is running.
+  the v25m window on 2026-10-24. Pg61's soak is running. *(Corrected 2026-11-15: no receipt shows Pg61's last window
+  completing; Pg62's soak runs to Monday 2026-11-16 11:11 PM CST.)*
 * **A silent sidecar timeout is wrong output.** Infinite-spin + watchdog, or do not serve. Do not run the lane
   in `--mode report` and call it production.
 * **The power cap binds in prefill**, on the GB300-only incumbent too. Every number here was measured under that
@@ -608,7 +793,21 @@ Limits that described only superseded configs are in [HISTORY.md → Superseded 
 
 ## Rollback
 
-**Pg61 → h2-REF (one command, on the Station):**
+**Pg62 → Pg61 (one command, on the Station):**
+
+```bash
+bash scripts/rollback-pg62-to-pg61.sh --dry-run   # checks pg61-work's BUILD-SHA256SUMS, lists containers; no changes
+bash scripts/rollback-pg62-to-pg61.sh
+```
+
+[`scripts/rollback-pg62-to-pg61.sh`](scripts/rollback-pg62-to-pg61.sh) aborts if `pg61-work` fails its own
+`BUILD-SHA256SUMS`. Otherwise it runs `launch-pg61.sh down` on `pg62-work`, refuses if any container is still running,
+drops caches, then runs `launch-pg61.sh up` on `pg61-work` (in-container hash verify, p3 watchdog ENFORCE) and writes
+an owner line. **It has never been drilled**, not even its `--dry-run` has a receipt in the bundle. It does not move
+the box autostart (`WORK=…/pg62-work` since the cutover) or the lane check (`PG_WORK`); point both back at
+`pg61-work` by hand. The Pg61 tree was left untouched by the cutover (`raw/LEDGER.md` 22:58).
+
+**Pg61 → h2-REF (one command, on the Station; the second line):**
 
 ```bash
 bash scripts/rollback-pg61-to-h2ref.sh --dry-run   # plan + preconditions; no docker changes
@@ -675,6 +874,9 @@ and b12x notices his tree requires us to pass on.
   - **What is ours on top:** policy hooks, the #61161 port into his fused drafters, the #60945 guard overlay, the
     p3 watchdog and `PEER3_SPINS`, the gates, and the launcher/cutover/rollback scripts
     ([`patches/garner-8043a681/`](patches/garner-8043a681/README.md)).
+  - **W1 is his.** The W1 decode-attention kernel family is Garner's, and Pg62 runs it on more layers. The
+    rounding difference (the fused sink term) was found in his kernels, and the fix is a patch on his source
+    (`patches/garner-8043a681/w1-exact/`). **It has not been reported to him yet**; a note is pending.
   - **Upstream.** We reported the #60945 crash and the missing #61161 seed mix to him in
     [issue #1](https://github.com/garnermccloud/dgx-station-recipes/issues/1) (opened by jmeadlock, with two
     follow-up comments). He was never listed here as a measured-against peer; he appears only as the engine we run.
@@ -729,7 +931,10 @@ fail-stop serving policy; the bracketed control→candidate→control discipline
 quality gates (teacher-forced flips, BFCL, per-class decode) applied to a sidecar lane at all. For Pg61:
 the crash bisect that tied his C32 deaths to the unguarded #60945 read, the #61161 port into his fused drafters, the
 finding that a peer tier v3 timeout fails open and the `PEER3_SPINS` + p3 watchdog that close it, the policy hooks,
-and the G0–G5 gates. Measurements, gate design and the write-up: **J&M Recipes** (James Meadlock, Milo). Session
+and the G0–G5 gates. For Pg62: the W13 FP8 routing was written by an earlier agent session (GPT-6 "Astra") under
+James; the diagnosis (bisect, in-graph shadow compare, fixture probes), the exact-rounding fix to both extensions and
+the promotion were done by Milo with Claude Opus/Sonnet desk workers. Measurements, gate design and the write-up:
+**J&M Recipes** (James Meadlock, Milo). Session
 note: the numbers were produced with a Claude Opus 5.5 orchestrator on the research side; the recipe was written
 from the receipts. The 2026-10-31 release gates (Cards R1 and QT1) were orchestrated by Claude Opus 5.5, with
 Fable 5.1 as advisor.
@@ -745,6 +950,7 @@ Fable 5.1 as advisor.
 One line per dated round, newest first. The full text of each is in [HISTORY.md](HISTORY.md). The anchors on each
 line keep old links into this README working.
 
+- <a id="pg61-status-banner"></a>**2026-11-14** — Pg62 promoted 23:11:55 CST: an exact FP8 decode-attention fast path (W13 routing + the stock op's rounding in both W1 extensions), +6.1 % C1, each W1 call byte-equal to the stock op in shadow; Pg61 found never byte-equal on window-only layers (70 of 17,797 calls). [Bundle](results/2026-11-14-pg62-w1-exact/README.md) · [the Pg61 status banner it replaced](HISTORY.md#pg61-status-banner-superseded-2026-11-15-by-pg62)
 - **2026-11-10** — Card HC1: 275 hot experts per layer measured against 255 (61K first token 11–12 % sooner, C1 0.9796×, KV 5,524,336 tokens); not promoted; soak clock restarted. [Bundle](results/2026-11-10-hc1-hot-count/README.md)
 - <a id="2026-10-31-cards-r1-and-qt1--release-gates-closed"></a><a id="release-gates-closed-2026-10-31"></a>**2026-10-31** — Cards R1 + QT1 closed the release gates in one 38-minute dark window: peer tier v3 cosine PASS (40/40 layers, min cos 1.000000), shipped watchdog fault-injected 7/7 (run 1's FAIL kept as an instrument defect), rollback drilled and cut back, P7 forward fidelity PASS, T>0 sampler calibration PASS on a fresh pre-registered run; soak restarted 12:44:08 CDT, ends Monday 2026-11-02 11:44 AM CST. [Round](results/2026-10-31-r1-qt1/README.md)
 - <a id="2026-10-29-pg61--garners-ds41-engine-under-our-policy-promoted-soak-in-progress"></a><a id="what-pg61-is"></a><a id="cards-g0--g5"></a><a id="known-costs"></a><a id="not-exercised"></a><a id="promotion-2026-10-29"></a>**2026-10-29** — Pg61 (Garner's engine under our policy) promoted after Cards G0–G5: T3 all six bars PASS, 1.31× h2-REF. [Round](HISTORY.md#2026-10-29-pg61--garners-ds41-engine-under-our-policy-promoted-soak-in-progress)
@@ -763,7 +969,22 @@ line keep old links into this README working.
 
 ## Finalisation checklist
 
-What stands between Pg61 and `status: verified` (2026-10-29):
+What stands between **Pg62** and `status: verified` (2026-11-15):
+
+| item | state |
+|---|---|
+| 48 h soak | **pending** — 2026-11-14 23:11:39 CST → **Monday 2026-11-16 11:11 PM CST (05:11Z 11-17)**, lane check (`PG_WORK=pg62-work`) silent throughout |
+| T2 (needle-checksum, GSM8K-200 paired) + held-out BFCL on Pg62 | **pending** — not run |
+| T3 promotion bench on Pg62 | **pending** — not run |
+| temperature > 0 quality on Pg62 | **pending** — only the per-class speed run (0 errors, 0 foreign tokens) |
+| byte equality of W1 decode attention vs the stock op | **DONE 2026-11-14** (shadow, test tree): 0 / 132,240 FP8 + 0 / 17,779 window-only; long context 0 / 46,702 + 0 / 6,913 |
+| greedy oracle on the promoted tree | **DONE 2026-11-14 23:11:44** — 8/8 text, 8/8 logprob-exact (first pass) |
+| launcher `DS41_PG62=1 build` on a box + cubin identity of the two `.so` | **DONE 2026-11-15**: byte-identical `.so` and identical `tree/` from a fresh clone ([receipts](results/2026-11-14-pg62-w1-exact/raw/launcher-build/)); `verify` passed on the live lane. Not done: a boot from the launcher-built tree |
+| rollback Pg62 → Pg61 drilled | **pending** — script exists, never run for real |
+| upstream note to Garner (fused sink term) | **pending** — not yet sent |
+| gate stamps | **not stamped.** Nothing new is stamped this round |
+
+<a id="finalisation-checklist-pg61"></a>What stood between Pg61 and `status: verified` (2026-10-29; kept as the record — Pg61 is now the first rollback):
 
 | item | state |
 |---|---|

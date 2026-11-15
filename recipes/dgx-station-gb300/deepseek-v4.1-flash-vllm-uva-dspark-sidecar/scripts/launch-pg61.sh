@@ -31,6 +31,9 @@ COMPONENTS=tail_markov_fused,tail_swa_meta,tail_dflash_prep,tail_ctxkv,tail_repl
 WANT_GUMBEL=6eac3e1348339d157ba0e2184114859aca207df1
 WANT_RSU=edc8f8f4c425f51a962840fc2e0e7aa32059f57a
 VP=/usr/local/lib/python3.12/dist-packages/vllm/v1/worker/gpu
+# Pg62 (2026-11-14, default OFF; see pg62_build below). The image must be this digest for the two W1 builds.
+W1X=$PATCHES/w1-exact
+IMAGE_ID=sha256:c1c9f6fd5c109ba7f0546a59f5b2f15fb87f64c77782e90a27b648b42a8e67c3
 log(){ printf '%s [pg61] %s\n' "$(date '+%F %T %Z')" "$*"; }
 die(){ log "FAIL: $*"; exit 1; }
 
@@ -48,6 +51,80 @@ DS41_FASTPATH_COMPONENTS_OVERRIDE=$COMPONENTS
 DS41_OVERLAY_58132_DIR=$OVL
 DS41_PEER3_SPINS=1000000000000
 EOF
+  if [ "${DS41_PG62:-0}" = 1 ]; then echo "DS41_W1_COMPRESSED_FP8=1"; fi
+}
+
+# Pg62 build block (DS41_PG62=1 only). Runs after 01-05 and the libw6mk.so rebuild, before the manifest.
+#   1. incumbent w1_attn_ext.so: his pinned fastpath/w1attn + kernels/w1-attn/{csrc,include} copied to a /w build root,
+#      + w1-exact/incumbent-variants.patch, his own ops.build() via w1-exact/build_incumbent_driver.py with
+#      -DW1_VARIANT_STOCK_ALL (the docker flags of results/2026-11-14-pg62-w1-exact/scripts/build_incumbent.sh)
+#   2. patches 06 (serve.sh passes DS41_W1_COMPRESSED_FP8) and w1-exact/w13-fp8-compressed-records.patch on the tree
+#   3. FP8 w1_attn_fp8_ext.so: the W13-patched kernels/w1-attn + w1-exact/fp8-variants.patch, built by
+#      w1-exact/build_candidate_F.py with -DW1_VARIANT_STOCK_ALL (the docker flags of scripts/build_variant.sh there)
+#   4. both .so installed into tree/fastpath/w1attn/
+# A rebuilt .so is never byte-identical to the one that served (nvcc embeds paths); compare device code with
+# scripts/w1_cubin_hash.sh. The FP8 build container runs as root (as it did on the box), so pg62-build/fp8 is
+# root-owned; a FORCE=1 rebuild removes it through the image.
+pg62_build(){
+  local b=$WORK/pg62-build f h got sw
+  [ "$(docker image inspect -f '{{.Id}}' "$IMAGE")" = "$IMAGE_ID" ] || die "Pg62: $IMAGE is not $IMAGE_ID"
+  if [ -e "$b" ]; then
+    [ "${FORCE:-0}" = 1 ] || die "$b exists (FORCE=1 to rebuild)"
+    docker run --rm -v "$WORK:/x" --entrypoint /bin/rm "$IMAGE" -rf /x/pg62-build
+  fi
+  # base = his pinned W1 source (01-05 do not touch it); same files build_incumbent.sh checks
+  for h in 4eb957de25fd53c5597e658039c4f79ea97432364b4ea6abdeb9d979c311a90d:kernels/w1-attn/csrc/w1_attn.cu \
+           346fc8ba3cb9ef04f5c89a91895bb109b58cfd1d341c6d54e9f04662db2c83ad:kernels/w1-attn/include/w1/ptx.cuh \
+           ce673e2b5caeee4c11e105d87d93663ff26b54dda1fcf737c7a8e232fdf3452f:kernels/w1-attn/include/w1/stage_attn_ss.cuh \
+           bc463cf4044ce009dd7f114f700a86c5077a4b97e7b30a2ae44812d65699ea3a:kernels/w1-attn/include/w1/stage_attn_seq.cuh \
+           ab76952275cf9266487e6e32c13a907062f1b3e39f42dc83faa205698228b177:kernels/w1-attn/include/w1/stage_attn_par.cuh \
+           2d3b043f19f88bda33b6c505cebb85d1fc61fbe5996e0e164246e5ef0a503ad0:kernels/w1-attn/include/w1/stage_attn_cx.cuh \
+           94ece5a1e5131ca337916504ba5643e1be75583984d100c5bdbe0eb71516c753:kernels/w1-attn/include/w1/stage_attn_combine.cuh \
+           5b32712f3c12bc1b0a6ae117d435bc6ec65d96d1d231005e8fcac532c87e23b9:fastpath/w1attn/ops.py \
+           c3018d0b5b080850b7bdf6d733d7dba80f9d76fdf91ee09ab01c8b723421503e:fastpath/w1attn/integrate.py; do
+    got=$(sha256sum < "$TREE/${h#*:}" | cut -c1-64); [ "$got" = "${h%%:*}" ] || die "Pg62 base mismatch ${h#*:}: $got"
+  done
+  # 1. incumbent
+  mkdir -p "$b/inc/w/build"
+  cp -a "$TREE/fastpath/w1attn" "$TREE/kernels/w1-attn/csrc" "$TREE/kernels/w1-attn/include" "$b/inc/w/"
+  chmod -R u+w "$b/inc/w"
+  ( cd "$b/inc/w" && patch -p1 --dry-run -s < "$W1X/incumbent-variants.patch" \
+      && patch -p1 -s --no-backup-if-mismatch < "$W1X/incumbent-variants.patch" ) || die "patch incumbent-variants"
+  log "building w1_attn_ext.so (incumbent + STOCK_ALL, CPU only, ~1 min)"
+  docker run --rm --name dsv41-pg62-build-inc --network none --user "$(id -u):$(id -g)" --runtime runc --cpus 4 \
+    --memory 12g --memory-swap 12g --pids-limit 256 --ulimit core=0 -e NVIDIA_VISIBLE_DEVICES=void -e CUDA_VISIBLE_DEVICES= \
+    -e MAX_JOBS=2 -e TORCH_CUDA_ARCH_LIST=10.3a -e "W1_EXTRA_CFLAGS=-DW1_VARIANT_STOCK_ALL" \
+    -v "$b/inc/w:/w" -v "$W1X:/i:ro" -w /w --entrypoint python3 "$IMAGE" /i/build_incumbent_driver.py \
+    > "$b/inc-compile.log" 2>&1 || die "incumbent build failed (see $b/inc-compile.log)"
+  sw=$( { grep -ao 'W1 desk-I variant active: [A-Z_0-9]*' "$b/inc-compile.log" || true; } | sort -u | wc -l)
+  [ "$sw" -eq 4 ] || die "incumbent build saw $sw of the 4 STOCK_ALL switches"
+  # 2. serve.sh flag passthrough + W13 FP8 routing on the tree
+  patch -d "$TREE" -p1 --forward --no-backup-if-mismatch < "$PATCHES/06-w1-fp8-flag-serve.patch" >/dev/null || die "patch 06"
+  log "applied 06-w1-fp8-flag-serve.patch"
+  patch -d "$TREE" -p1 --forward --no-backup-if-mismatch < "$W1X/w13-fp8-compressed-records.patch" >/dev/null || die "patch w13"
+  log "applied w1-exact/w13-fp8-compressed-records.patch"
+  # 3. FP8 extension; same three W13 base hashes build_variant.sh checks
+  for h in 346fc8ba3cb9ef04f5c89a91895bb109b58cfd1d341c6d54e9f04662db2c83ad:ptx.cuh \
+           a23889be55c658d11bf439ce52cd4e4750d7a1d12827ca32926b23a75f02f7d9:stage_attn_seq.cuh \
+           4ff15c0124b89c414482125ef5654800d2e15ba4471f6a3cdedacb831e142f25:stage_attn_par.cuh; do
+    got=$(sha256sum < "$TREE/kernels/w1-attn/include/w1/${h#*:}" | cut -c1-64); [ "$got" = "${h%%:*}" ] || die "W13 base mismatch ${h#*:}"
+  done
+  mkdir -p "$b/fp8/source/kernels"
+  cp -a "$TREE/kernels/w1-attn" "$b/fp8/source/kernels/w1-attn"
+  chmod -R u+w "$b/fp8/source"
+  ( cd "$b/fp8/source/kernels/w1-attn" && patch -p1 -s --no-backup-if-mismatch < "$W1X/fp8-variants.patch" ) || die "patch fp8-variants"
+  cp "$W1X/build_candidate_F.py" "$b/fp8/"
+  log "building w1_attn_fp8_ext.so (W13 + STOCK_ALL, CPU only, ~1 min)"
+  docker run --rm --name dsv41-pg62-build-fp8 --network none --runtime runc --cpus 4 --memory 12g --memory-swap 12g \
+    --pids-limit 256 --ulimit core=0 -e NVIDIA_VISIBLE_DEVICES=void -e CUDA_VISIBLE_DEVICES= -e MAX_JOBS=2 \
+    -e CUDA_HOME=/usr/local/cuda -e "W1_EXTRA_CFLAGS=-DW1_VARIANT_STOCK_ALL" -v "$b/fp8:/work" -w /work --entrypoint python3 \
+    "$IMAGE" /work/build_candidate_F.py > "$b/fp8-compile.log" 2>&1 || die "fp8 build failed (see $b/fp8-compile.log)"
+  sw=$( { grep -ao 'W1 desk-F variant active: [A-Z_0-9]*' "$b/fp8-compile.log" || true; } | sort -u | wc -l)
+  [ "$sw" -eq 4 ] || die "fp8 build saw $sw of the 4 STOCK_ALL switches"
+  # 4. install
+  cp "$b/inc/w/build/w1_attn/w1_attn_ext.so" "$TREE/fastpath/w1attn/w1_attn_ext.so"
+  cp "$b/fp8/build/w1_attn_fp8_ext.so" "$TREE/fastpath/w1attn/w1_attn_fp8_ext.so"
+  for f in w1_attn_ext.so w1_attn_fp8_ext.so; do log "Pg62 $f $(sha256sum < "$TREE/fastpath/w1attn/$f" | cut -c1-64)"; done
 }
 
 cmd_build(){
@@ -56,7 +133,7 @@ cmd_build(){
   [ -e "$TREE" ] && [ "${FORCE:-0}" != 1 ] && die "$TREE exists (FORCE=1 to rebuild)"
   rm -rf "$TREE" "$OVL"; mkdir -p "$WORK"
   cp -a "$src/deepseek-v4.1-flash" "$TREE"
-  local p; for p in "$PATCHES"/0*.patch; do patch -d "$TREE" -p1 --forward --no-backup-if-mismatch < "$p" >/dev/null || die "patch $(basename "$p")"; log "applied $(basename "$p")"; done
+  local p; for p in "$PATCHES"/0[1-5]-*.patch; do patch -d "$TREE" -p1 --forward --no-backup-if-mismatch < "$p" >/dev/null || die "patch $(basename "$p")"; log "applied $(basename "$p")"; done
   log "building libw6mk.so (nvcc sm_103a in $IMAGE, CPU only)"
   docker run --rm --network none -v "$TREE/kernels/w6-moe/markov:/w" -w /w --entrypoint bash "$IMAGE" -c \
     "nvcc -O3 -std=c++17 -gencode=arch=compute_103a,code=sm_103a -Xcompiler -fPIC -shared w6mk.cu -o /w/libw6mk.so 2>/dev/null"
@@ -65,6 +142,7 @@ cmd_build(){
   cp -a "$PATCHES/overlay-vllm/." "$OVL/"
   [ "$(sha1sum < "$OVL/v1/worker/gpu/sample/gumbel.py" | cut -c1-40)" = $WANT_GUMBEL ] || die "overlay gumbel.py hash"
   [ "$(sha1sum < "$OVL/v1/worker/gpu/spec_decode/rejection_sampler_utils.py" | cut -c1-40)" = $WANT_RSU ] || die "overlay rsu hash"
+  if [ "${DS41_PG62:-0}" = 1 ]; then pg62_build; fi
   cp "$WATCHDOG" "$WORK/sidecar_watchdog_p3.py"
   policy_env > "$WORK/policy.env"
   ( cd "$WORK" && find tree/fastpath tree/serve tree/config overlay-vllm sidecar_watchdog_p3.py policy.env -type f \
@@ -115,6 +193,16 @@ cmd_verify(){
   [ "$g" = $WANT_GUMBEL ] && [ "$r" = $WANT_RSU ] && [ "$l" = "$(sha256sum < "$TREE/fastpath/libw6mk.so" | cut -c1-64)" ] \
     && [ "$s" = 1000000000000 ] || die "in-container check: gumbel $g rsu $r libw6mk ${l:0:16} PEER3_SPINS=$s"
   log "verify OK: gumbel ${g:0:12} rsu ${r:0:12} libw6mk ${l:0:16} PEER3_SPINS=$s"
+  if [ "${DS41_PG62:-0}" = 1 ]; then
+    local i f e
+    i=$(docker exec ds41 sha256sum /fastpath/w1attn/w1_attn_ext.so | cut -c1-64)
+    f=$(docker exec ds41 sha256sum /fastpath/w1attn/w1_attn_fp8_ext.so | cut -c1-64)
+    e=$(docker exec ds41 printenv DS41_W1_COMPRESSED_FP8 || true)
+    [ "$i" = "$(sha256sum < "$TREE/fastpath/w1attn/w1_attn_ext.so" | cut -c1-64)" ] \
+      && [ "$f" = "$(sha256sum < "$TREE/fastpath/w1attn/w1_attn_fp8_ext.so" | cut -c1-64)" ] && [ "$e" = 1 ] \
+      || die "in-container Pg62 check: w1_attn_ext ${i:0:16} w1_attn_fp8_ext ${f:0:16} DS41_W1_COMPRESSED_FP8=$e"
+    log "verify Pg62 OK: w1_attn_ext.so $i w1_attn_fp8_ext.so $f DS41_W1_COMPRESSED_FP8=$e"
+  fi
 }
 
 cmd_down(){

@@ -1,0 +1,74 @@
+# Pg62 patch desk check, 2026-11-15 05:44:11 CST (Mac desk; no box, no docker). Commands and their output.
+
+## 1. 06-w1-fp8-flag-serve.patch reproduces the box diff
+06 applies after 01-05 (patch --forward rc 0)
+diff(pg61 serve.sh, patched) == raw/promote/live/serve.sh.pg61-to-pg62.diff (cmp rc 0)
+serve.sh after 01-06: e33ffb3308474be5e4c745108d601d60114fb0ae8065883ffdfea4489cc2c2b9
+box pg62-BUILD-SHA256SUMS: e33ffb3308474be5e4c745108d601d60114fb0ae8065883ffdfea4489cc2c2b9  tree/serve/serve.sh
+
+## 2. w13-fp8-compressed-records.patch: Pg61 W1 source + patch == W13 source
+base = milo-takeover/results/I/pg61-src (the Pg61 tree's kernels/w1-attn + fastpath/w1attn/*.py; 17 files)
+patch -p1 rc 0
+  SAME ./fastpath/w1attn/__init__.py
+  SAME ./fastpath/w1attn/formats.py
+  SAME ./fastpath/w1attn/integrate.py
+  SAME ./fastpath/w1attn/ops.py
+  NOT CHECKED (absent from W13 source/) ./kernels/build_all.sh
+  NOT CHECKED (absent from W13 source/) ./kernels/common.sh
+  SAME ./kernels/w1-attn/build.sh
+  SAME ./kernels/w1-attn/csrc/w1_attn.cu
+  SAME ./kernels/w1-attn/include/w1/attn_params.cuh
+  SAME ./kernels/w1-attn/include/w1/ptx.cuh
+  SAME ./kernels/w1-attn/include/w1/stage_attn_combine.cuh
+  SAME ./kernels/w1-attn/include/w1/stage_attn_cx.cuh
+  SAME ./kernels/w1-attn/include/w1/stage_attn_par.cuh
+  SAME ./kernels/w1-attn/include/w1/stage_attn_seq.cuh
+  SAME ./kernels/w1-attn/include/w1/stage_attn_split.cuh
+  SAME ./kernels/w1-attn/include/w1/stage_attn_ss.cuh
+  SAME ./kernels/w1-attn/include/w7/w7_prefetch.cuh
+  SAME ./kernels/w1-attn/include/w8/w8_shim.cuh
+  W13 source/ files absent from pg61-src: ./fastpath/w1attn/w1_attn_ext.so 
+
+## 3. Patched tree vs the box's pg62 manifest (stub docker build, DS41_PG62=1)
+  DIFF policy.env
+  DIFF sidecar_watchdog_p3.py
+  DIFF tree/fastpath/libw6mk.so
+  DIFF tree/fastpath/w1attn/w1_attn_ext.so
+  DIFF tree/fastpath/w1attn/w1_attn_fp8_ext.so
+  match=112 differ_or_absent=5 of      117
+  39bf0d06f1912ffd83d37535b553d2406cb5d28d1872bb37720cf6b8ac96384b  policy.env with WORK=$HOME/dsv41/garner/pg62-work (the box path; this build sha256)
+  39bf0d06f1912ffd83d37535b553d2406cb5d28d1872bb37720cf6b8ac96384b  policy.env (box pg62-BUILD-SHA256SUMS)
+  extra lines in this build's manifest:
+  overlay-vllm/README.md
+  (the stub writes placeholder .so files and has no nvcc, so libw6mk.so and both w1 .so differ by construction; the box's
+   sidecar_watchdog_p3.py is ba8373e9..., the published copy c97d149d... differs only in default log paths, as for Pg61;
+   policy.env matches once WORK is the box's path; overlay-vllm/README.md is in the recipe's overlay dir, not on the box)
+
+## 4. DS41_PG62 unset: old (HEAD) vs new launcher, stub docker, same WORK
+IDENTICAL build.norm (       8 lines)
+IDENTICAL render.out (      13 lines)
+IDENTICAL usage.out (      24 lines)
+IDENTICAL tree.sha (     803 lines)
+IDENTICAL docker.log (       1 lines)
+
+## 5. patch sha256
+7d15187fc99cbd8a2494c2778399099facd2f2fd73c9072e5deb6b7b853aecaf  06-w1-fp8-flag-serve.patch
+587514df4036f396acd4f6b42e2f775c000b90f3cf66bcc180e46bc1c8e83065  w1-exact/build_candidate_F.py
+fce6d1b67bd9504afea8043268f9457ba7ec600c9c32c0c2e0889c4993fa4303  w1-exact/build_incumbent_driver.py
+758f25a4b8edacfbb218918ff132d44dd546c159d904a086c40e822df109d58b  w1-exact/fp8-variants.patch
+eac3d5003d8cb9411c752b67cb3d61b478a7c4e74a57fcf894dc2b66fbcabd3d  w1-exact/incumbent-variants.patch
+8366c92ff21ac50f716ea0e68bb0966c56a7c0f4f8bda9721b324cfc2e8bc0aa  w1-exact/w13-fp8-compressed-records.patch
+
+## 6. BUILD-SHA256SUMS.expected (this bundle) = the box's pg62 manifest with the shipped watchdog hash
+diff raw/promote/live/pg62-BUILD-SHA256SUMS BUILD-SHA256SUMS.expected:
+10c10
+< ba8373e9bdd9a0225620142ea93330a99caa597826910399ab4c741ee8eabc9f  sidecar_watchdog_p3.py
+---
+> c97d149d967bde16417b4b900fd6ced269c0be684a61b010b874e3b116b220e1  sidecar_watchdog_p3.py
+sha256sum -c --quiet against the stub DS41_PG62=1 build (desk WORK path):
+policy.env: FAILED
+tree/fastpath/libw6mk.so: FAILED
+tree/fastpath/w1attn/w1_attn_ext.so: FAILED
+tree/fastpath/w1attn/w1_attn_fp8_ext.so: FAILED
+(policy.env matches when WORK is the box's path, section 3; the three .so are stubs here. On a real build the three
+ .so still fail by sha256 - nvcc embeds paths - and are compared by cubin with scripts/w1_cubin_hash.sh.)

@@ -10,6 +10,7 @@ For what serves today, read [README.md](README.md). Dated rounds are newest firs
 
 ## Contents
 
+- [Pg61 status banner (superseded 2026-11-15 by Pg62)](#pg61-status-banner-superseded-2026-11-15-by-pg62)
 - [Status banners and intro before the 2026-10-30 rewrite](#status-banners-and-intro-before-the-2026-10-30-rewrite)
 - [2026-10-29: Pg61 promoted](#2026-10-29-pg61--garners-ds41-engine-under-our-policy-promoted-soak-in-progress)
 - [2026-10-28: h2-REF promoted](#2026-10-28-h2-ref--the-60945-guard-and-split-kv-attention-card-ap2-promoted)
@@ -27,6 +28,33 @@ For what serves today, read [README.md](README.md). Dated rounds are newest firs
 - [Superseded limits](#superseded-limits)
 - [Older rollback pairs](#older-rollback-pairs)
 - [Finalisation checklist (2026-10-26)](#finalisation-checklist-2026-10-26)
+
+## Pg61 status banner, superseded 2026-11-15 by Pg62
+
+Moved from `README.md` `## Status` on 2026-11-15, when Pg62 took the lane (promoted 2026-11-14 23:11:55 CST).
+Verbatim, except two links the move breaks: the card image now points at `card-pg61.png` (the Pg61 card; `card.png` is Pg62's) and `#history` at `README.md#history`.
+
+![Pg61 card: DeepSeek-V4.1-Flash on one DGX Station GB300 + RTX PRO 6000 sidecar](card-pg61.png)
+
+- **Serving:** Pg61 on `:30006` of the reference box, since 2026-10-29 10:14pm CDT. Pg61 is
+  [Garner McCloud's DS4.1 engine](https://github.com/garnermccloud/dgx-station-recipes/tree/8043a6811a5feda70fdfb6e827eebb2ec25c65d1/deepseek-v4.1-flash)
+  run under our policy and patch set.
+- **Status:** `experimental`. Pg61 is **still being tested**: every release gate except the soak closed on 2026-10-31
+  ([Card R1 + QT1](results/2026-10-31-r1-qt1/README.md)), and the five gate stamps follow the soak.
+- **Soak:** 48 h — restarted 2026-10-31 12:44:08 CDT, at the end of Card R1 (receipt: launcher `soak-start.json`);
+  it ends **Monday 2026-11-02 11:44 AM CST (17:44Z)** *(Corrected 2026-11-10: that window never completed. Restores on 11-01, 11-02, 11-04, 11-06, 11-08 and 11-09 and Card HC1 on 11-10 each restarted the clock; it now runs from 2026-11-10 05:38:56 CST to **Thursday 2026-11-12 5:39 AM CST (11:39Z)**.)*. Any restore or card restarts the clock.
+  *(Corrected 2026-10-31: this said "ending Saturday 2026-10-31 10:14pm CDT". Two breaks on 2026-10-30 (04:57
+  reboot, ~10:07 Kimi-K3 window) falsified that, and Card R1 restarted the clock from the top.)*
+- **Rollback:** h2-REF, one command: `bash scripts/rollback-pg61-to-h2ref.sh`. Drilled end to end on 2026-10-31
+  (rc 0 in 551 s, h2-REF bound after 420 s, v2 watchdog re-armed) and cut back (rc 0 in 452 s, KV line exact).
+- **Bundle:** [`results/2026-10-29-pg61-garner-engine/`](results/2026-10-29-pg61-garner-engine/README.md), and the
+  release-gate round in [`results/2026-10-31-r1-qt1/`](results/2026-10-31-r1-qt1/README.md).
+- **Related:** blogs
+  [GB300 + sidecar vs 4× RTX PRO 6000 (BRRR)](https://al-engr.com/gb300-vs-4x-rtx6000-dsv41-flash-brrr.html),
+  [Adaptive Residency Part 3, the seed map](https://al-engr.com/gb300-adaptive-residency-seed-map.html) and
+  [Part 1, with its convergence correction](https://al-engr.com/gb300-adaptive-expert-residency.html). Peer recipe:
+  [fraserprice/DeepSeek-4.1-Flash-1017-BRRR](https://huggingface.co/fraserprice/DeepSeek-4.1-Flash-1017-BRRR).
+- **How we got here:** one line per round in [History](README.md#history).
 
 ## Status banners and intro before the 2026-10-30 rewrite
 
