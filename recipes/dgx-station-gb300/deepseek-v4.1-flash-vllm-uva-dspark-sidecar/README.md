@@ -14,8 +14,10 @@ other road: it reads cold experts from Grace memory, which puts a serial read on
   run under our policy and patch set) plus two changes to decode attention:
   [what changed](#pg62-2026-11-14-exact-w1-decode-attention-on-the-fp8-layers).
 - **Status:** `experimental`. Pg62's evidence is byte-level equality of each W1 decode-attention call against the
-  stock FlashMLA op plus the 8-prompt first-pass greedy oracle. **No T2/T3 quality bench has run on Pg62**, and Pg61's
-  2026-10-31 release gates are Pg61's, not Pg62's.
+  stock FlashMLA op plus the 8-prompt first-pass greedy oracle. The T2/T3 quality suite ran on the live lane 2026-11-15 and passed all six
+  pre-registered bars against Pg61's stored per-item results (needle-checksum EXACT 500/500, GSM8K-1319 1284 vs Pg61's 1279, BFCL held-out 1024 vs 1026 of 1,311, MMLU-Pro-1000 871 vs 877; [round](results/2026-11-15-pg62-t2-t3/README.md)).
+  Pg61's 2026-10-31 release gates are Pg61's, not Pg62's. *(Corrected 2026-11-15: this said no T2/T3 bench had run
+  on Pg62.)*
 - **Soak:** 48 h, started 2026-11-14 23:11:39 CST (receipt: launcher `soak-start.json`); it ends
   **Monday 2026-11-16 11:11 PM CST (05:11Z 11-17)**. Any restore or card restarts the clock. No 48 h soak has completed
   on any sidecar config: no receipt in this recipe shows Pg61's last window (to 2026-11-12 5:39 AM CST) completing.
@@ -520,7 +522,7 @@ oracle 8/8 lp-exact 23:11:44 → C1-A 439.33 tok/s, 7.214 ms/step 23:11:55 → w
 - **Speed:** +6.1 % C1 decode on the gt_mix sets against stock Pg61 controls in one window; C8, C32, first token and KV
   unchanged. Tables: [At a glance](#pg62-2026-11-14-exact-w1-decode-attention-on-the-fp8-layers).
 - **Fidelity:** byte equality of each W1 decode-attention call with the stock op (shadow) and the first-pass greedy
-  oracle 8/8. No T2/T3 bench on Pg62.
+  oracle 8/8. T2/T3 suite on the live lane 2026-11-15: six of six bars pass vs Pg61's stored items ([round](results/2026-11-15-pg62-t2-t3/README.md)).
 - **Tried, not adopted:** draft length 2 at 9–32 running (no C32 gain, KV −0.085 %), FP8 on the cx kernel for 17–76
   rows (byte-exact, no throughput gain), exact divide alone (does not fix the oracle), PDL / early-trigger removal
   (no effect). Table in the bundle.
@@ -950,6 +952,7 @@ Fable 5.1 as advisor.
 One line per dated round, newest first. The full text of each is in [HISTORY.md](HISTORY.md). The anchors on each
 line keep old links into this README working.
 
+- **2026-11-15** — T2/T3 quality suite on the live Pg62 lane: six of six pre-registered bars pass against Pg61's stored items (needle 500/500, GSM8K-1319 1284 vs 1279, BFCL held-out 1024 vs 1026, MMLU-Pro-1000 871 vs 877); cross-day reference, not a same-window control. [Bundle](results/2026-11-15-pg62-t2-t3/README.md)
 - <a id="pg61-status-banner"></a>**2026-11-14** — Pg62 promoted 23:11:55 CST: an exact FP8 decode-attention fast path (W13 routing + the stock op's rounding in both W1 extensions), +6.1 % C1, each W1 call byte-equal to the stock op in shadow; Pg61 found never byte-equal on window-only layers (70 of 17,797 calls). [Bundle](results/2026-11-14-pg62-w1-exact/README.md) · [the Pg61 status banner it replaced](HISTORY.md#pg61-status-banner-superseded-2026-11-15-by-pg62)
 - **2026-11-10** — Card HC1: 275 hot experts per layer measured against 255 (61K first token 11–12 % sooner, C1 0.9796×, KV 5,524,336 tokens); not promoted; soak clock restarted. [Bundle](results/2026-11-10-hc1-hot-count/README.md)
 - <a id="2026-10-31-cards-r1-and-qt1--release-gates-closed"></a><a id="release-gates-closed-2026-10-31"></a>**2026-10-31** — Cards R1 + QT1 closed the release gates in one 38-minute dark window: peer tier v3 cosine PASS (40/40 layers, min cos 1.000000), shipped watchdog fault-injected 7/7 (run 1's FAIL kept as an instrument defect), rollback drilled and cut back, P7 forward fidelity PASS, T>0 sampler calibration PASS on a fresh pre-registered run; soak restarted 12:44:08 CDT, ends Monday 2026-11-02 11:44 AM CST. [Round](results/2026-10-31-r1-qt1/README.md)
@@ -974,8 +977,8 @@ What stands between **Pg62** and `status: verified` (2026-11-15):
 | item | state |
 |---|---|
 | 48 h soak | **pending** — 2026-11-14 23:11:39 CST → **Monday 2026-11-16 11:11 PM CST (05:11Z 11-17)**, lane check (`PG_WORK=pg62-work`) silent throughout |
-| T2 (needle-checksum, GSM8K-200 paired) + held-out BFCL on Pg62 | **pending** — not run |
-| T3 promotion bench on Pg62 | **pending** — not run |
+| T2 (needle-checksum, GSM8K paired) + held-out BFCL on Pg62 | **DONE 2026-11-15** on the live lane: needle EXACT 500/500; GSM8K-1319 1284 vs 1279 (p 0.30); BFCL held-out 1024 vs 1026 of 1,311 (−0.15 pt, bar −1.0) — [round](results/2026-11-15-pg62-t2-t3/README.md) |
+| T3 promotion bench on Pg62 | **PARTLY DONE 2026-11-15**: needle, GSM8K-1319 and MMLU-Pro-1000 (871 vs 877, p 0.38) pass against Pg61's stored 2026-10-29 items. Not a full T3: no same-window control, no T1 cells, no launcher-booted arm — [round](results/2026-11-15-pg62-t2-t3/README.md) |
 | temperature > 0 quality on Pg62 | **pending** — only the per-class speed run (0 errors, 0 foreign tokens) |
 | byte equality of W1 decode attention vs the stock op | **DONE 2026-11-14** (shadow, test tree): 0 / 132,240 FP8 + 0 / 17,779 window-only; long context 0 / 46,702 + 0 / 6,913 |
 | greedy oracle on the promoted tree | **DONE 2026-11-14 23:11:44** — 8/8 text, 8/8 logprob-exact (first pass) |
