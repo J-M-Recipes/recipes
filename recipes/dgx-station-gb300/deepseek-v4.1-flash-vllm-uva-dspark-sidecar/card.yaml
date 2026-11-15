@@ -43,13 +43,14 @@ secondary:
       "W1 on the FP8 layers": "target layers 2–39 at 1–16 rows run Garner's W1 kernel (Pg61: stock FlashMLA) · 17+ rows stay stock"
       "C1 same window": "+6.1 % · 439.5 / 435.3 vs 414.2 / 410.3 tok/s (gt_mix sets A / B, greedy) · 7.21 vs 7.65 ms/step"
       "C8 / C32 / first token / KV": "no change · KV 11,696,582 tokens"
-      "not covered": "no T2/T3 or T>0 quality bench on Pg62 · cx kernel + FP4 records untested · launcher build reproduces the served .so byte for byte; no boot from it"
+      "not covered": "no T>0 quality, TF bracket or gauntlet on Pg62 · cx kernel + FP4 records untested · launcher build reproduces the served .so byte for byte; no boot from it"
 
 fidelity:
   - { status: pass, text: "Weights unchanged: 1017 checkpoint as shipped; fp8_ds_mla KV (his nvfp4 KV off); his three numerics-changing components (w8oproj, lowb_aux, MXFP8 draft head) off; both W1 extensions rebuilt from his pinned source" }
   - { status: pass, text: "W1 decode attention = the stock FlashMLA op, byte for byte (in-graph shadow, model on stock values): Pg62's binaries 0 / 132,240 FP8 + 0 / 17,779 window-only calls differ; prompts to 571K tokens 0 / 46,702 + 0 / 6,913. Before: W13 FP8 3 / 19,152, Pg61's shipped incumbent 70 / 17,797. Widths 6–24 compared, 1–5 not" }
   - { status: pass, text: "Greedy oracle, first pass after boot (8 prompts × up to 256 tokens, top-20 logprobs) vs the Pg61 config with the FP8 path off: live Pg62 8/8 text, 8/8 logprob-exact (the unfixed W13 path: 5/8)" }
-  - { status: pending, text: "T2 / T3 on Pg62 (needle, GSM8K, BFCL, MMLU-Pro, gauntlet, teacher-forced bracket) — not run; the lines below were measured on Pg61" }
+  - { status: pass, text: "T2/T3 suite on the live Pg62 lane (2026-11-15, C4, bars written first) vs Pg61's stored items: needle-checksum 500/500 · GSM8K-1319 1284 vs 1279 (p 0.30) · BFCL held-out 1024 vs 1026 of 1,311 (−0.15 pt) · MMLU-Pro-1000 871 vs 877 (p 0.38) · tool-eval 93. Cross-day reference, not a same-window control" }
+  - { status: pending, text: "Not run on Pg62: gauntlet, teacher-forced bracket, temperature > 0 quality — the Pg61 lines below were measured on Pg61" }
   - { status: pending, text: "48 h soak on Pg62 — 2026-11-14 23:11:39 CST → Mon 2026-11-16 11:11 PM CST (05:11Z 11-17); any restore or card restarts it. No 48 h soak has completed on any sidecar config" }
   - { status: pass, text: "Pg61 — T3 (Card G4), launcher-booted, vs h2-REF same window: 6/6 pre-registered bars — needle-checksum 500/500, GSM8K-1319 1279 vs 1278 (p 1.0), MMLU-Pro-1000 87.7 vs 85.3 % (no measured loss; the +2.4 pt is a near-tie divergence, not a gain)" }
   - { status: pass, text: "Pg61 — BFCL held-out (live_simple + live_multiple): 1026/1311 = 78.26 % on Pg and on Pg61 vs v27 77.27 % (+0.99 pt, paired p 0.011)" }
@@ -75,10 +76,10 @@ harness:
     status: pass
     note: "sidecar v25 arm C, 2026-10-22; not re-run on Pg61 or Pg62. Decides candidacy only"
   heldout:
-    name: BFCL live sibling on Pg61 (live_simple 258 + live_multiple 1,053)
-    solved: 1026
+    name: BFCL live sibling on Pg62 (live_simple 258 + live_multiple 1,053)
+    solved: 1024
     n: 1311
-    pct: "78.26%"
+    pct: "78.11%"
     status: pass
-    note: "Pg61 (Card G3) and Pg (Card G2), 2026-10-29, T=0, C4; v27 77.27 % → +0.99 pt, paired p 0.011. Not re-run on Pg62"
+    note: "Pg62 live lane, 2026-11-15, T=0, C4; Pg61 (Card G3) 1026/1311 = 78.26 % → −0.15 pt, 17 lost / 15 gained, paired p 0.86 (bar −1.0 pt)"
   # cost: no metered-plug run on this lane, so there is no energy basis and no $/1000-solved number to print.

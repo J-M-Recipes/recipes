@@ -2,7 +2,8 @@
 
 **Verdict: PROMOTED 2026-11-14 23:11:55 CST** (James: "both together tonight"). Pg62 serves `:30006` on the reference
 box. Status stays `experimental`: the 48 h soak started 2026-11-14 23:11:39 CST (`raw/promote/live/soak-start.json`) and
-ends **Monday 2026-11-16 11:11 PM CST (05:11Z 11-17)**. No T2/T3 quality bench has run on Pg62.
+ends **Monday 2026-11-16 11:11 PM CST (05:11Z 11-17)**. No T2/T3 quality bench had run on Pg62 at this round; one ran
+2026-11-15 and passed ([`../2026-11-15-pg62-t2-t3/`](../2026-11-15-pg62-t2-t3/README.md)).
 
 Pg62 = Pg61 + two changes to decode attention. Nothing else changes: same image, same args except one env, same
 1M context, same 32 seats, same speculation schedule, same KV pool (11,696,582 tokens).
@@ -188,7 +189,8 @@ had the same flaw (70 of 17,797). Timeline: `raw/LEDGER.md`.
   patch changes those kernels too, in source only (untested).
 - **Oracle:** 8 prompts, greedy, first pass only. Its reference A2 is the Pg61 config with the FP8 path off, so it
   carries the shipped incumbent: it checks the FP8 change against Pg61, not against bare vLLM.
-- **Quality:** no T2/T3 bench on Pg62 (no needle, GSM8K, BFCL, MMLU-Pro, gauntlet, TF bracket). No temperature > 0
+- **Quality:** *(Corrected 2026-11-15: a T2/T3 suite has since run on the live lane and passed —
+  [`../2026-11-15-pg62-t2-t3/`](../2026-11-15-pg62-t2-t3/README.md).)* At this round: no T2/T3 bench on Pg62 (no needle, GSM8K, BFCL, MMLU-Pro, gauntlet, TF bracket). No temperature > 0
   instrument beyond the per-class speed run.
 - **Tree:** C8, C32 and TTFT were measured on the test tree (`serve-bisect`, the same two binaries, bisect
   `integrate.py`), not on the promoted tree.

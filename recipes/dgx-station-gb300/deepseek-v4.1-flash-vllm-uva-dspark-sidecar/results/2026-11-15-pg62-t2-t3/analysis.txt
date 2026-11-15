@@ -1,0 +1,15 @@
+Paired analysis, Pg62 (2026-11-15, live lane) vs Pg61 stored per-item results (2026-10-29, Cards G3/G4).
+Exact two-sided McNemar on discordant pairs. Computed by the orchestrator from the per-item files.
+
+GSM8K-1319 (bench --compare-baseline, t3-gsm8k1319.stdout.txt): Pg61 1279/1319 = 96.97 %, Pg62 1284/1319 = 97.35 %;
+  5 correct only in Pg61, 10 only in Pg62; delta +0.38 pt; p = 0.3018; completion tokens mean 492 -> 324; hit max_tokens 2 -> 0.
+MMLU-Pro-1000 (item_id pairing of runs[] in t3-mmlupro1000.json vs results/2026-10-29-pg61-garner-engine/raw/G4/m4/Pg61/):
+  Pg61 877/1000, Pg62 871/1000; 19 correct only in Pg61, 13 only in Pg62; delta -0.6 pt; p = 0.3771; Pg62 TRUNC 4 (stdout).
+BFCL held-out 1,311 (id pairing of bfcl-pg62-heldout.jsonl vs the Pg61 Card G3 jsonl):
+  Pg61 1026/1311 = 78.26 %, Pg62 1024/1311 = 78.11 %; 17 lost, 15 gained; delta -0.15 pt; p = 0.8601; 0 errors.
+needle-checksum: EXACT 500/500.
+tool-eval hardmode x1: 93/100 (172/184 points); fail TC-43, TC-68; partial TC-57, 58, 62, 67, 81, 85, 89, 90.
+  Pg61 Card G4: 89 (163/184) and 91.
+Engine load during the window (/metrics every 5 s, engine-load.tsv): running 4 in 569 samples, 3 in 67, 2 in 12, 1 in 7,
+  0 in 2; waiting 0 in every sample. No other client is visible beyond this suite's 4 streams.
+After the suite (lane-after.txt): ds41 + ds41-sidecar up, p3 watchdog enforce, trip null, v2/v3 timeout counters 0, 0 TRIP lines.
