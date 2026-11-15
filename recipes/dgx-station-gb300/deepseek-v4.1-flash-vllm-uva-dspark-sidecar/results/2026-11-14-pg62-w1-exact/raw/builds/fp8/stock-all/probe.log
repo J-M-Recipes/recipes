@@ -1,0 +1,15 @@
+SITE site-0088-L14-w8.pt: layer=14 width=8 cr=2 plan=bitwise pdl=True first_call=13 first_seq=4763 calls=63 layouts=[[[8, 8, 4096], [32768, 4096, 1], [8, 8, 32], [1, 256, 8]]]
+  swa_lens=[92, 93, 94, 95, 96, 97, 98, 99] extra_len=[46, 46, 47, 47, 48, 48, 49, 49] positions=[91, 92, 93, 94, 95, 96, 97, 98]
+DUMPED stock vs W1 (in-graph outputs): DIFF data_bytes=1 scale_bytes=0 first data byte 47356 row=1 head=31 grp32=8 dim=284 stock=110 w1=111 scale_byte_differs=False max|d|=0.015625 per_row_data=[0, 1, 0, 0, 0, 0, 0, 0] per_row_scale=[0, 0, 0, 0, 0, 0, 0, 0] heads=[31]
+REBUILD records: swa {'nonneg': 764, 'kept': 764, 'nonneg_dropped': 0, 'valid_entries': 764, 'valid_entries_without_page': 0, 'valid_negative_entries': 0, 'referenced_slots_changed_since_call': 99, 'valid_referenced_slots_changed_since_call': 99, 'inconsistent_duplicate_records': 0} | extra {'nonneg': 380, 'kept': 380, 'nonneg_dropped': 0, 'valid_entries': 380, 'valid_entries_without_page': 0, 'valid_negative_entries': 0, 'referenced_slots_changed_since_call': 3, 'valid_referenced_slots_changed_since_call': 3, 'inconsistent_duplicate_records': 0}
+W1 ext /fastpath/w1attn/w1_attn_fp8_ext.so sha256=de87450648e96214b4ae9da893c00c8d0178ceea3fdb725297602165dd26ab0e
+[records] STOCK reproduces dumped stock: False (deterministic=True) :: DIFF data_bytes=48953 scale_bytes=322 first data byte 163864 row=5 head=0 grp32=0 dim=24 stock=231 w1=232 scale_byte_differs=False max|d|=0.875 per_row_data=[0, 0, 0, 0, 0, 9326, 19441, 20186] per_row_scale=[0, 0, 0, 0, 0, 20, 145, 157] heads=[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]
+[records] W1[bitwise] reproduces dumped W1: False (deterministic=True) :: DIFF data_bytes=48954 scale_bytes=322 first data byte 47356 row=1 head=31 grp32=8 dim=284 stock=111 w1=110 scale_byte_differs=False max|d|=0.875 per_row_data=[0, 1, 0, 0, 0, 9326, 19441, 20186] per_row_scale=[0, 0, 0, 0, 0, 20, 145, 157] heads=[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]
+[records] STOCK vs W1[bitwise]: IDENTICAL
+[records] W1[bitwise_seq] reproduces dumped W1: False (deterministic=True) :: DIFF data_bytes=48954 scale_bytes=322 first data byte 47356 row=1 head=31 grp32=8 dim=284 stock=111 w1=110 scale_byte_differs=False max|d|=0.875 per_row_data=[0, 1, 0, 0, 0, 9326, 19441, 20186] per_row_scale=[0, 0, 0, 0, 0, 20, 145, 157] heads=[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]
+[records] STOCK vs W1[bitwise_seq]: IDENTICAL
+wrote /vb/F-probe.repro.json
+TARGET byte 47356 (row 1 head 31 dim 284): stock 110 (dumped 110)  W13 W1 dumped 111
+PLAN bitwise: byte 110  rows0-4: data!=stock 0 scale!=stock 0 | data!=W13 1 [47356] scale!=W13 0  VERDICT CONFIRMS
+PLAN bitwise_seq: byte 110  rows0-4: data!=stock 0 scale!=stock 0 | data!=W13 1 [47356] scale!=W13 0  VERDICT CONFIRMS
+wrote /vb/F-probe.json and /vb/F-probe.repro.json

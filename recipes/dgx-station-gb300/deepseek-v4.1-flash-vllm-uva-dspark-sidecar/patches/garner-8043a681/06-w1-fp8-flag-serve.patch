@@ -1,0 +1,11 @@
+--- a/serve/serve.sh
++++ b/serve/serve.sh
+@@ -320,6 +320,8 @@
+               -e "DS41_GPU_RESERVE_MIB=$DS41_GPU_RESERVE_MIB"
+               -e PEER3_PREBUILT=/fastpath/peer3/prebuilt -e VLLM_EXP_PEER3_SHM=/dev/shm/vllm_peer_tier3)
+   [ -n "${DS41_PEER3_SPINS:-}" ] && envs+=(-e "PEER3_SPINS=$DS41_PEER3_SPINS")
++  case "${DS41_W1_COMPRESSED_FP8:-0}" in 0|1) ;; *) echo "invalid W1 FP8 flag" >&2; return 1 ;; esac
++  envs+=(-e "DS41_W1_COMPRESSED_FP8=${DS41_W1_COMPRESSED_FP8:-0}")
+   local envf; envf=$(mktemp); trap "rm -f '$envf'" RETURN
+   chmod 600 "$envf"; echo "VLLM_API_KEY=$(cat "$DS41_API_KEY_FILE")" > "$envf"
+   local keyargs=(--env-file "$envf"); [ "${DS41_NO_KEY:-0}" = 1 ] && keyargs=()

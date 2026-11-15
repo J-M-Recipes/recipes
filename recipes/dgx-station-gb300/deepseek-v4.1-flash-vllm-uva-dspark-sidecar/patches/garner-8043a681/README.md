@@ -1,4 +1,4 @@
-# Patches on Garner McCloud's DS4.1 release (Pg61)
+# Patches on Garner McCloud's DS4.1 release (Pg61; Pg62 adds `06` + `w1-exact/`)
 
 The engine these patches apply to is **Garner McCloud's**
 [`garnermccloud/dgx-station-recipes`](https://github.com/garnermccloud/dgx-station-recipes) at
@@ -62,6 +62,51 @@ k-schedule (`[[1,4,5],[5,8,3],[9,32,3]]` + block verification), a full 32-reques
 It killed both G1 arms and four bisect arms (Cards G1–G1e), and turning off an inert component (`lowb_aux`) was enough
 to flip it. The 3-line guard fixed it with nothing else changed (Card G1f V1). Reported upstream to Garner as
 [issue #1](https://github.com/garnermccloud/dgx-station-recipes/issues/1).
+
+## Pg62 (2026-11-14): `06` + `w1-exact/` — applied only with `DS41_PG62=1`
+
+Pg62 = Pg61 + two changes to W1 decode attention (round bundle:
+[`results/2026-11-14-pg62-w1-exact/`](../../results/2026-11-14-pg62-w1-exact/README.md)). `launch-pg61.sh build` applies
+`01`–`05` only (its glob is `0[1-5]-*.patch`); `DS41_PG62=1 launch-pg61.sh build` then runs the Pg62 block, which uses
+the files below. Nothing here vendors Garner's source or binaries: the two `.so` files are rebuilt from his pinned source
+in the pinned image.
+
+| file | applies to | what it does | sha256 |
+|---|---|---|---|
+| `06-w1-fp8-flag-serve.patch` | `serve/serve.sh`, after `01` | Two lines: passes `DS41_W1_COMPRESSED_FP8` (0 or 1, anything else refuses) into the server container. Reproduces the box's `raw/promote/live/serve.sh.pg61-to-pg62.diff` byte for byte. | `7d15187f…` |
+| `w1-exact/w13-fp8-compressed-records.patch` | `deepseek-v4.1-flash/` (`-p1`), after `01`–`06` | The "W13" FP8 routing: `fastpath/w1attn/{formats,integrate,ops}.py`, `kernels/w1-attn/{build.sh, csrc/w1_attn.cu, include/w1/*.cuh}`. With `DS41_W1_COMPRESSED_FP8=1`, target layers 2–39 at 1–16 decode rows run W1 on `fp8_ds_mla` 528 B records through a second extension `w1_attn_fp8_ext.so`; 17+ rows stay on the stock op. | `8366c92f…` |
+| `w1-exact/fp8-variants.patch` | the W13-patched `kernels/w1-attn/` (`-p1`) | Compile-time switches for the FP8 extension. `-DW1_VARIANT_STOCK_ALL` = sink term unfused + ex2 without FTZ + the `osc` normalizer divide (`1/(l + 2^(sink·log2e − m))`) without FTZ + output-scale divide `div.rn`: the stock op's rounding. | `758f25a4…` |
+| `w1-exact/incumbent-variants.patch` | a copy of the pinned `fastpath/w1attn` + `kernels/w1-attn/{csrc,include}` (`-p1`) | The same switches for his incumbent extension `w1_attn_ext.so` (window-only layers 0–1 and drafter layers 40–42). | `eac3d500…` |
+| `w1-exact/build_candidate_F.py` | — | Builds `w1_attn_fp8_ext.so` (CPU only, `W1_EXTRA_CFLAGS`). | `587514df…` |
+| `w1-exact/build_incumbent_driver.py` | — | Builds `w1_attn_ext.so` through his own `ops.build()` (CPU only, `W1_EXTRA_CFLAGS`). | `fce6d1b6…` |
+
+Both served extensions were built with `-DW1_VARIANT_STOCK_ALL`: `w1_attn_fp8_ext.so` `de87450648e96214…` and
+`w1_attn_ext.so` `3bca6cac288d7795…` (in-container sha256 after the cutover:
+`raw/promote/live/in-container-sha256.txt`). The served Pg61 incumbent was his committed prebuilt `7201643d…`.
+
+**Why.** W1 computed the softmax sink term `sink*log2e - m` as one fused multiply-add; the stock FlashMLA op multiplies,
+then subtracts. Sometimes that one float step puts a pre-quantization value on the other side of an FP8 rounding
+midpoint, and ONE output data byte flips. The fixture probe (`raw/builds/fp8/*/F-probe.json`) shows the sink switch on
+its own moves the failing byte from 111 back to stock's 110 (`CONFIRMS`). The other three switches, each on its own,
+leave it at 111 (`NO-CHANGE`). In the served shadow the sink-only incumbent build was also clean (0 of 17,733 calls).
+Only the STOCK_ALL builds were speed-measured and promoted.
+
+**Desk check** ([`patch-desk-check.txt`](../../results/2026-11-14-pg62-w1-exact/patch-desk-check.txt)):
+- `06` applies after `01`–`05` and reproduces the box diff. Resulting `serve.sh` sha256 = the box manifest's.
+- The Pg61 W1 source (`milo-takeover/results/I/pg61-src`, 17 files) plus `w13-fp8-compressed-records.patch` equals
+  the W13 source tree for all 15 files both trees have. Not checkable: `kernels/build_all.sh` and `kernels/common.sh`
+  (not in the W13 source copy; the patch does not touch them).
+- A stub-docker `DS41_PG62=1` build matches the box's `pg62-BUILD-SHA256SUMS` on 112 of 117 files. The five
+  misses: three `.so` (the stub has no nvcc), the watchdog (known published-copy difference) and `policy.env` (equal
+  once `WORK` is the box path).
+- **Launcher build verified 2026-11-15 on the reference box.** The real `DS41_PG62=1 build` (two nvcc builds in the
+  image), from a fresh clone at the pin, produced both `.so` byte-identical to the served files (`3bca6cac…`,
+  `de874506…`; cubins `3a5a0123…`, `bb8b96a8…`) and an identical `tree/`:
+  [`raw/launcher-build/`](../../results/2026-11-14-pg62-w1-exact/raw/launcher-build/). The served tree itself was
+  assembled by hand; no lane has been booted from the launcher-built one.
+
+Not in the recipe: the cluster-kernel (cx) FP8 port for 17–76 rows (byte-exact in shadow, no throughput gain; the
+`results/G/` drafts stay in the research tree).
 
 ## Not in this directory
 

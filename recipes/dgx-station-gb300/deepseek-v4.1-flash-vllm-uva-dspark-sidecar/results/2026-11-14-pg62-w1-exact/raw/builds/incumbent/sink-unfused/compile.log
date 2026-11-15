@@ -1,0 +1,56 @@
+W1_EXTRA_CFLAGS ["-DW1_VARIANT_SINK_UNFUSED"]
+W1115 03:51:29.646000 1 torch/utils/cpp_extension.py:178] No CUDA runtime is found, using CUDA_HOME='/usr/local/cuda'
+[1/2] /usr/local/lib/python3.12/dist-packages/nvidia/cu13/bin/nvcc -MD -MF w1_attn.cuda.o.d -DTORCH_EXTENSION_NAME=w1_attn_ext -DTORCH_API_INCLUDE_EXTENSION_H -I/w/include -isystem /usr/local/lib/python3.12/dist-packages/torch/include -isystem /usr/local/lib/python3.12/dist-packages/torch/include/torch/csrc/api/include -isystem /usr/local/cuda/include -isystem /usr/include/python3.12 -D__CUDA_NO_HALF_OPERATORS__ -D__CUDA_NO_HALF_CONVERSIONS__ -D__CUDA_NO_BFLOAT16_CONVERSIONS__ -D__CUDA_NO_HALF2_OPERATORS__ --expt-relaxed-constexpr -gencode=arch=compute_103a,code=sm_103a --compiler-options '-fPIC' -O3 -std=c++20 -lineinfo -DCCCL_DISABLE_CTK_COMPATIBILITY_CHECK -Xptxas=-v -DW1_VARIANT_SINK_UNFUSED -c /w/csrc/w1_attn.cu -o w1_attn.cuda.o 
+/w/include/w1/variants.cuh(69): remark #20200-D: #pragma message: "W1 desk-I variant active: SINK_UNFUSED"
+  #pragma message("W1 desk-I variant active: SINK_UNFUSED")
+                                                           ^
+
+ptxas info    : 40 bytes gmem
+ptxas info    : Compiling entry function '_ZN43_GLOBAL__N__d3f07bd6_10_w1_attn_cu_6cee4f8f14attn_ss_kernelILi4EEEvN2w110AttnParamsE' for 'sm_103a'
+ptxas info    : Function properties for _ZN43_GLOBAL__N__d3f07bd6_10_w1_attn_cu_6cee4f8f14attn_ss_kernelILi4EEEvN2w110AttnParamsE
+    0 bytes stack frame, 0 bytes spill stores, 0 bytes spill loads
+ptxas info    : Used 137 registers, used 3 barriers, 144 bytes smem
+ptxas info    : Compile time = 291.935 ms
+ptxas info    : Compiling entry function '_ZN43_GLOBAL__N__d3f07bd6_10_w1_attn_cu_6cee4f8f14attn_ss_kernelILi2EEEvN2w110AttnParamsE' for 'sm_103a'
+ptxas info    : Function properties for _ZN43_GLOBAL__N__d3f07bd6_10_w1_attn_cu_6cee4f8f14attn_ss_kernelILi2EEEvN2w110AttnParamsE
+    0 bytes stack frame, 0 bytes spill stores, 0 bytes spill loads
+ptxas info    : Used 141 registers, used 3 barriers, 144 bytes smem
+ptxas info    : Compile time = 284.893 ms
+ptxas info    : Compiling entry function '_ZN43_GLOBAL__N__d3f07bd6_10_w1_attn_cu_6cee4f8f14attn_ss_kernelILi1EEEvN2w110AttnParamsE' for 'sm_103a'
+ptxas info    : Function properties for _ZN43_GLOBAL__N__d3f07bd6_10_w1_attn_cu_6cee4f8f14attn_ss_kernelILi1EEEvN2w110AttnParamsE
+    0 bytes stack frame, 0 bytes spill stores, 0 bytes spill loads
+ptxas info    : Used 139 registers, used 3 barriers, 144 bytes smem
+ptxas info    : Compile time = 278.907 ms
+ptxas info    : Compiling entry function '_ZN43_GLOBAL__N__d3f07bd6_10_w1_attn_cu_6cee4f8f14attn_cx_kernelEN2w110AttnParamsE' for 'sm_103a'
+ptxas info    : Function properties for _ZN43_GLOBAL__N__d3f07bd6_10_w1_attn_cu_6cee4f8f14attn_cx_kernelEN2w110AttnParamsE
+    8 bytes stack frame, 16 bytes spill stores, 12 bytes spill loads
+ptxas info    : Used 128 registers, used 16 barriers, 8 bytes cumulative stack size, 736 bytes smem
+ptxas info    : Compile time = 443.938 ms
+ptxas info    : Compiling entry function '_ZN43_GLOBAL__N__d3f07bd6_10_w1_attn_cu_6cee4f8f15attn_par_kernelEN2w110AttnParamsE' for 'sm_103a'
+ptxas info    : Function properties for _ZN43_GLOBAL__N__d3f07bd6_10_w1_attn_cu_6cee4f8f15attn_par_kernelEN2w110AttnParamsE
+    32 bytes stack frame, 8 bytes spill stores, 8 bytes spill loads
+ptxas info    : Used 168 registers, used 4 barriers, 32 bytes cumulative stack size, 32 bytes smem
+ptxas info    : Compile time = 241.814 ms
+ptxas info    : Function properties for _ZN2w110tw_timeoutEPKmj
+    0 bytes stack frame, 0 bytes spill stores, 0 bytes spill loads
+ptxas info    : Compiling entry function '_ZN43_GLOBAL__N__d3f07bd6_10_w1_attn_cu_6cee4f8f15attn_seq_kernelEN2w110AttnParamsE' for 'sm_103a'
+ptxas info    : Function properties for _ZN43_GLOBAL__N__d3f07bd6_10_w1_attn_cu_6cee4f8f15attn_seq_kernelEN2w110AttnParamsE
+    0 bytes stack frame, 0 bytes spill stores, 0 bytes spill loads
+ptxas info    : Used 168 registers, used 3 barriers, 16 bytes smem
+ptxas info    : Compile time = 186.695 ms
+ptxas info    : Compiling entry function '_ZN43_GLOBAL__N__d3f07bd6_10_w1_attn_cu_6cee4f8f11attn_kernelEN2w110AttnParamsE' for 'sm_103a'
+ptxas info    : Function properties for _ZN43_GLOBAL__N__d3f07bd6_10_w1_attn_cu_6cee4f8f11attn_kernelEN2w110AttnParamsE
+    144 bytes stack frame, 0 bytes spill stores, 0 bytes spill loads
+ptxas info    : Used 168 registers, used 3 barriers, 144 bytes cumulative stack size, 16 bytes smem
+ptxas info    : Compile time = 670.323 ms
+ptxas info    : Function properties for _ZN2w19AttnSplitILi16ELi2EE4bodyILi0ELi0EN2w814StandaloneSyncEEEvRKNS_10AttnParamsEiRT1_Phj
+    0 bytes stack frame, 128 bytes spill stores, 64 bytes spill loads
+ptxas info    : Function properties for _ZN2w19AttnSplitILi16ELi2EE4bodyILi1ELi1EN2w814StandaloneSyncEEEvRKNS_10AttnParamsEiRT1_Phj
+    0 bytes stack frame, 128 bytes spill stores, 64 bytes spill loads
+ptxas info    : Function properties for _ZN2w19AttnSplitILi16ELi2EE4bodyILi2ELi2EN2w814StandaloneSyncEEEvRKNS_10AttnParamsEiRT1_Phj
+    0 bytes stack frame, 120 bytes spill stores, 88 bytes spill loads
+/w/include/w1/variants.cuh:69:60: note: ‘#pragma message: W1 desk-I variant active: SINK_UNFUSED’
+   69 | #pragma message("W1 desk-I variant active: SINK_UNFUSED")
+      |                                                            ^
+[2/2] c++ w1_attn.cuda.o -shared -L/usr/local/lib/python3.12/dist-packages/torch/lib -lc10 -lc10_cuda -ltorch_cpu -ltorch_cuda -ltorch -ltorch_python -L/usr/local/cuda/lib64 -lcudart -o w1_attn_ext.so
+{"status": "COMPILED_AND_CPU_IMPORTED", "path": "/w/build/w1_attn/w1_attn_ext.so", "sha256": "6ff853aed9bafb209ecf8c375b8f11f91f2f801711c3375fe4a2040e4f2acb05", "extra_cuda_cflags_appended": ["-DW1_VARIANT_SINK_UNFUSED"], "load_kwargs_from_ops_build": {"name": "w1_attn_ext", "sources": ["/w/csrc/w1_attn.cu"], "extra_include_paths": ["/w/include"], "extra_cuda_cflags": ["-O3", "-std=c++20", "-lineinfo", "-DCCCL_DISABLE_CTK_COMPATIBILITY_CHECK", "-Xptxas=-v"], "build_directory": "/w/build/w1_attn", "verbose": false}, "PYTORCH_NVCC": "/usr/local/lib/python3.12/dist-packages/nvidia/cu13/bin/nvcc", "TORCH_CUDA_ARCH_LIST": "10.3a", "CUDA_HOME_env": "/usr/local/cuda", "torch": "2.13.0+cu130", "exports": ["w1_attn_decode", "w1_attn_prepare"], "w1_attn_decode_doc": "w1_attn_decode(arg0: torch.Tensor, arg1: torch.Tensor, arg2: torch.Tensor, arg3: torch.Tensor, arg4: typing.SupportsFloat | typing.SupportsIndex, arg5: torch.Tensor, arg6: torch.Tensor, arg7: torch.Tensor, arg8: torch.Tensor | None, arg9: torch.Tensor | None, arg10: torch.Tensor | None, arg11: torch.Tensor, arg12: torch.Tensor, arg13: torch.Tensor, arg14: torch.Tensor, arg15: torch.Tensor, arg16: torch.Tensor, arg17: torch.Tensor | None, arg18: typing.SupportsInt | typing.SupportsIndex, arg19: typing.SupportsInt | typing.SupportsIndex, arg20: bool, arg21: typing.SupportsInt | typing.SupportsIndex, arg22: torch.Tensor | None) -> None", "gpu_execution": false, "numerics_verified": false}

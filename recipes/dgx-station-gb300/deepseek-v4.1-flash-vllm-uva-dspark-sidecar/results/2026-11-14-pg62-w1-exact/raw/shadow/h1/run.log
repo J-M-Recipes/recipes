@@ -1,0 +1,52 @@
+2026-11-14 21:00:49 SHADOW START
+cp: warning: behavior of -n is non-portable and may change in future; use --update=none instead
+cp: warning: behavior of -n is non-portable and may change in future; use --update=none instead
+cp: warning: behavior of -n is non-portable and may change in future; use --update=none instead
+2026-11-14 21:00:49 so de87450648e96214
+2026-11-14 21:01:15 A1 a8be566e4407265db7fd109c7ad9e8a5e61265dd2813e6465a590b8e41399c5d overlay: 
+2026-11-14 21:01:15 A2/A3 16:: "${DS41_CACHE_DIR:=$DS41_HOME/state}"|305:                -v "$DS41_CACHE_DIR/prof:/prof" -v "$DS41_CACHE_DIR/flashinfer:/root/.cache/flashinfer"|310:                -v "$DS41_FASTPATH_DIR:/fastpath:ro"|
+2026-11-14 21:01:47 boot
+2026-11-14 21:07:25 KV GPU KV cache size: 11,401,354 tokens
+DS41_FASTPATH attn: FP8_MASK loaded label=shadow-h1 layers=all widths=all fp8_pdl=True fp8_plan=None fp8_extra=shadow shadow_incumbent=True
+DS41_FASTPATH attn: FP8_SHADOW installed pid=1 compressed_fp8=True snapshot_widths=[6, 8] records=True valid_only=True dir=/prof/shadow; W1->alt, stock->out, device compare; RESET/DUMP sentinels after capture_model
+DS41_FASTPATH attn: FP8_SHADOW incumbent installed pid=1 compressed_fp8=True fp8_shadow=True snapshot_widths=[6, 8] records=True valid_only=True rows=24 max_sites=1024 dir=/prof/shadow; incumbent W1 (candidate_fp8=False)->alt, stock->out, device compare
+DS41_FASTPATH attn: FP8_MASK loaded label=shadow-h1 layers=all widths=all fp8_pdl=True fp8_plan=None fp8_extra=shadow shadow_incumbent=True
+DS41_FASTPATH attn: FP8_SHADOW installed pid=403 compressed_fp8=True snapshot_widths=[6, 8] records=True valid_only=True dir=/prof/shadow; W1->alt, stock->out, device compare; RESET/DUMP sentinels after capture_model
+DS41_FASTPATH attn: FP8_SHADOW incumbent installed pid=403 compressed_fp8=True fp8_shadow=True snapshot_widths=[6, 8] records=True valid_only=True rows=24 max_sites=1024 dir=/prof/shadow; incumbent W1 (candidate_fp8=False)->alt, stock->out, device compare
+DS41_FASTPATH attn: FP8_SHADOW poller started pid=403 dir=/prof/shadow (acts only after capture_model)
+DS41_FASTPATH attn: FP8_SHADOW first call path=incumbent mode=ss comp_format=NONE language_model.model.layers.0.attn n=24 out=QuantizedActivation data=torch.float8_e4m3fn(24, 8, 4096)/(32768, 4096, 1) scale=torch.int32(24, 8, 32)/(1, 768, 24) swa=(32, 32, 528)/(262144, 528, 1) comp=None swa_idx=(24, 128) extra_idx=None swa_lens=(24,) extra_len=None plan=ss pdl=True capturing=False
+DS41_FASTPATH attn: FP8_SHADOW first call language_model.model.layers.2.attn n=16 out=QuantizedActivation data=torch.float8_e4m3fn(16, 8, 4096)/(32768, 4096, 1) scale=torch.int32(16, 8, 32)/(1, 512, 16) swa=(32, 32, 528)/(262144, 528, 1) comp=(32, 64, 528)/(262144, 528, 1) swa_idx=(16, 128) extra_idx=(16, 512) swa_lens=(16,) extra_len=(16,) plan=bitwise pdl=True capturing=False
+DS41_FASTPATH attn: captured decode attention calls, W1/stock per width: 3:3/0[incumbent=3,candidate_fp8=0] 5:3/0[incumbent=3,candidate_fp8=0] 6:3/0[incumbent=3,candidate_fp8=0] 7:3/0[incumbent=3,candidate_fp8=0] 9:3/0[incumbent=3,candidate_fp8=0] 10:3/0[incumbent=3,candidate_fp8=0] 12:3/0[incumbent=3,candidate_fp8=0] 14:3/0[incumbent=3,candidate_fp8=0] 15:3/0[incumbent=3,candidate_fp8=0] 18:3/0[i
+DS41_FASTPATH attn: FP8_MASK label=shadow-h1 fp8_on_pairs=684 fp8_off_pairs=0 on_layers=[2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39] on_widths=[1, 2, 4, 6, 8, 12, 16, 18, 20, 24, 28, 32, 36, 40, 48, 56, 64, 72]
+DS41_FASTPATH attn: FP8_SHADOW capture done: cuda:0: sites=325 snapshot_sites=83 snapshot_bytes=261830752 alt_bytes=6614940 overflow=0 widths=[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 12, 14, 15, 16, 18, 20, 21, 24] layers=43 by_path={'incumbent': {'sites': 59, 'snapshot_sites': 7}, 'fp8': {'sites': 266, 'snapshot_sites': 76}} overflow_by_path={'fp8': 0, 'incumbent': 0}
+DS41_FASTPATH attn: captured decode attention calls, W1/stock per width: 3:6/0[incumbent=6,candidate_fp8=0] 4:40/0[incumbent=2,candidate_fp8=38] 5:6/0[incumbent=6,candidate_fp8=0] 6:46/0[incumbent=8,candidate_fp8=38] 7:6/0[incumbent=6,candidate_fp8=0] 8:80/0[incumbent=4,candidate_fp8=76] 9:6/0[incumbent=6,candidate_fp8=0] 10:6/0[incumbent=6,candidate_fp8=0] 12:86/0[incumbent=10,candidate_fp8=76] 1
+DS41_FASTPATH attn: FP8_MASK label=shadow-h1 fp8_on_pairs=874 fp8_off_pairs=0 on_layers=[2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39] on_widths=[1, 2, 4, 6, 8, 12, 16, 18, 20, 24, 28, 30, 32, 33, 36, 40, 42, 48, 56, 60, 64, 66, 72]
+DS41_FASTPATH attn: FP8_SHADOW capture done: cuda:0: sites=325 snapshot_sites=83 snapshot_bytes=261830752 alt_bytes=6614940 overflow=0 widths=[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 12, 14, 15, 16, 18, 20, 21, 24] layers=43 by_path={'incumbent': {'sites': 59, 'snapshot_sites': 7}, 'fp8': {'sites': 266, 'snapshot_sites': 76}} overflow_by_path={'fp8': 0, 'incumbent': 0}
+2026-11-14 21:07:27 RESET: FP8_SHADOW reset at 2026-11-15 03:07:27: cuda:0: sites=325 snapshot_sites=83 snapshot_bytes=261830752 alt_bytes=6614940 overflow=0 widths=[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 12, 14, 15, 16, 18, 20, 21, 24] layers=43 by_path={'incumbent': {'sites': 59, 'snapshot_sites': 7}, 'fp8': {'sites': 266, 'snapsho
+PROSE16 tokens 16 identical_to_A2_r0_prefix True first_diff None
+2026-11-14 21:07:29 DUMP: FP8_SHADOW dump-0: sites=325 shadow_calls=261 sites_with_any_mismatch=0 sites_with_valid_row_mismatch=0 flagged=0 snapshots_saved=0 dir=/prof/shadow/dump-0 by_path=fp8:sites=266,calls=228,any=0,valid=0,flagged=0 incumbent:sites=59,calls=33,any=0,valid=0,flagged=0 overflow=fp8:0,incumbent:0
+TOTALS {"sites": 325, "calls": 261, "calls_any": 0, "calls_valid": 0, "flagged": 0, "saved": 0}
+sites_with_mismatch 0
+2026-11-14 21:07:31 RESET: FP8_SHADOW reset at 2026-11-15 03:07:31: cuda:0: sites=325 snapshot_sites=83 snapshot_bytes=261830752 alt_bytes=6614940 overflow=0 widths=[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 12, 14, 15, 16, 18, 20, 21, 24] layers=43 by_path={'incumbent': {'sites': 59, 'snapshot_sites': 7}, 'fp8': {'sites': 266, 'snapsho
+2026-11-14 21:07:39 full w0 rc=0
+2026-11-14 21:08:00 gt [pass --set A] rc=0
+2026-11-14 21:08:22 gt [pass --set B] rc=0
+2026-11-14 21:08:33 gt [conc --n 8 --tag shadow-h1-c8] rc=0
+2026-11-14 21:08:33 VERDICT r0 text 8/8 lp-exact 8/8 bad=- ~193 tok/s
+2026-11-14 21:08:35 DUMP: FP8_SHADOW dump-1: sites=329 shadow_calls=150075 sites_with_any_mismatch=8 sites_with_valid_row_mismatch=8 flagged=8 snapshots_saved=3 dir=/prof/shadow/dump-1 by_path=fp8:sites=266,calls=132278,any=0,valid=0,flagged=0 incumbent:sites=63,calls=17797,any=8,valid=8,flagged=8 overflow=fp8:0,incumbent:0
+TOTALS {"sites": 329, "calls": 150075, "calls_any": 8, "calls_valid": 8, "flagged": 8, "saved": 3}
+sites_with_mismatch 8
+{'path': 'incumbent', 'mode': 'ss', 'prefix': 'language_model.model.layers.1.attn', 'layer': 1, 'width': 6, 'calls': 2636, 'calls_with_any_mismatch': 13, 'calls_with_valid_row_mismatch': 13, 'mismatching_data_bytes': 13, 'mismatching_scale_bytes': 0, 'first_mismatch_seq': 564, 'row_mismatch_calls': [2, 5, 3, 0, 1, 2], 'snapshot_file': 'site-0127-inc-swa-L01-w6.pt'}
+{'path': 'incumbent', 'mode': 'ss', 'prefix': 'model.layers.40.attn', 'layer': 40, 'width': 7, 'calls': 3528, 'calls_with_any_mismatch': 7, 'calls_with_valid_row_mismatch': 7, 'mismatching_data_bytes': 7, 'mismatching_scale_bytes': 0, 'first_mismatch_seq': 646, 'row_mismatch_calls': [0, 0, 0, 1, 1, 2, 3], 'snapshot_file': None}
+{'path': 'incumbent', 'mode': 'ss', 'prefix': 'model.layers.42.attn', 'layer': 42, 'width': 7, 'calls': 3528, 'calls_with_any_mismatch': 30, 'calls_with_valid_row_mismatch': 30, 'mismatching_data_bytes': 30, 'mismatching_scale_bytes': 0, 'first_mismatch_seq': 1852, 'row_mismatch_calls': [7, 3, 4, 9, 2, 1, 4], 'snapshot_file': None}
+{'path': 'incumbent', 'mode': 'ss', 'prefix': 'model.layers.41.attn', 'layer': 41, 'width': 7, 'calls': 3528, 'calls_with_any_mismatch': 14, 'calls_with_valid_row_mismatch': 14, 'mismatching_data_bytes': 14, 'mismatching_scale_bytes': 0, 'first_mismatch_seq': 28931, 'row_mismatch_calls': [1, 1, 1, 5, 1, 5, 0], 'snapshot_file': None}
+{'path': 'incumbent', 'mode': 'ss', 'prefix': 'language_model.model.layers.1.attn', 'layer': 1, 'width': 8, 'calls': 844, 'calls_with_any_mismatch': 3, 'calls_with_valid_row_mismatch': 3, 'mismatching_data_bytes': 3, 'mismatching_scale_bytes': 0, 'first_mismatch_seq': 44560, 'row_mismatch_calls': [0, 0, 0, 0, 1, 1, 1, 0], 'snapshot_file': 'site-0087-inc-swa-L01-w8.pt'}
+{'path': 'incumbent', 'mode': 'ss', 'prefix': 'language_model.model.layers.0.attn', 'layer': 0, 'width': 6, 'calls': 2636, 'calls_with_any_mismatch': 1, 'calls_with_valid_row_mismatch': 1, 'mismatching_data_bytes': 1, 'mismatching_scale_bytes': 0, 'first_mismatch_seq': 66206, 'row_mismatch_calls': [0, 0, 0, 0, 0, 1], 'snapshot_file': 'site-0126-inc-swa-L00-w6.pt'}
+{'path': 'incumbent', 'mode': 'ss', 'prefix': 'model.layers.41.attn', 'layer': 41, 'width': 21, 'calls': 25, 'calls_with_any_mismatch': 1, 'calls_with_valid_row_mismatch': 1, 'mismatching_data_bytes': 1, 'mismatching_scale_bytes': 0, 'first_mismatch_seq': 149706, 'row_mismatch_calls': [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0], 'snapshot_file': None}
+{'path': 'incumbent', 'mode': 'ss', 'prefix': 'language_model.model.layers.1.attn', 'layer': 1, 'width': 18, 'calls': 25, 'calls_with_any_mismatch': 1, 'calls_with_valid_row_mismatch': 1, 'mismatching_data_bytes': 1, 'mismatching_scale_bytes': 0, 'first_mismatch_seq': 149789, 'row_mismatch_calls': [0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0], 'snapshot_file': None}
+DS41_FASTPATH attn: FP8_SHADOW dump-0: sites=325 shadow_calls=261 sites_with_any_mismatch=0 sites_with_valid_row_mismatch=0 flagged=0 snapshots_saved=0 dir=/prof/shadow/dump-0 by_path=fp8:sites=266,calls=228,any=0,valid=0,flagged=0 incumbent:sites=59,calls=33,any=0,valid=0,flagged=0 overflow=fp8:0,i
+DS41_FASTPATH attn: FP8_SHADOW dump-1: sites=329 shadow_calls=150075 sites_with_any_mismatch=8 sites_with_valid_row_mismatch=8 flagged=8 snapshots_saved=3 dir=/prof/shadow/dump-1 by_path=fp8:sites=266,calls=132278,any=0,valid=0,flagged=0 incumbent:sites=63,calls=17797,any=8,valid=8,flagged=8 overflo
+2026-11-14 21:08:35 WATCHDOG-OK
+2026-11-14 21:09:16 DOWN running=[]
+2026-11-14 21:09:16 ROLLED BACK tree (so left as stockall)
+2026-11-14 21:09:16 SHADOW END ok

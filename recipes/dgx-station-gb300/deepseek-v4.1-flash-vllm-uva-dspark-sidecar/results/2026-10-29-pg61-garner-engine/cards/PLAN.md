@@ -19,7 +19,7 @@ Local checkout `~/hermes/research/garner/dgx-station-recipes`; box copy `$HOME/d
 
 | component | needs | our policy |
 |---|---|---|
-| `attn` (W1 decode attention) | `nvfp4_ds_mla` KV: MXFP8 window (528 B) + NVFP4 compressed (288 B) | ruled out (KV quantization). Under `fp8_ds_mla` every call falls to stock → we keep our split-KV ATT2b |
+| `attn` (W1 decode attention) | `nvfp4_ds_mla` KV: MXFP8 window (528 B) + NVFP4 compressed (288 B) | ruled out (KV quantization). Under `fp8_ds_mla` every call falls to stock → we keep our split-KV ATT2b *(Corrected 2026-11-15: not every call. Under `fp8_ds_mla` the window-only layers (target 0–1, drafter 40–42) still run W1 on their MXFP8 528 B window records, and Pg61's W1 kernel there was not byte-equal to the stock op: 70 of 17,797 calls differed by one data byte, `results/2026-11-14-pg62-w1-exact/`. Only the compressed layers fell to stock.)* |
 | `preattn*` (W3) | written for `nvfp4_ds_mla` + MXFP4 indexer K; patches fall through when conditions fail | partly applies — **unknown how much until a boot reports its ACTIVE/stock split** |
 | `lowb_aux` | MXFP4 indexer K store path | indexer K MXFP4 ruled out |
 | `ds41_sampling` / `--override-generation-config` | forces T=1.0 / top_p 0.95 on thinking requests | policy change not agreed — drop |
@@ -48,7 +48,7 @@ narrows to peer3 alone. ~1.5 h dark (first boot JITs ~15 min).
 
 **G1 — his tree under our policy ("bit-identical subset"), bracketed against h2-REF (A → C → A2).** v0.31.0 or our
 af7f9488 image (both pass), `fp8_ds_mla`, default indexer, 1M, `--kv-cache-memory 9126805504`, 48 GiB host prefix tier,
-no sampling override, components minus {`attn` (no-op here), `ds41_sampling`, `ds41_stop`, `w8oproj`, `lowb_aux`,
+no sampling override, components minus {`attn` (no-op here *(Corrected 2026-11-15: not a no-op; it runs W1 on the window-only layers, see the table above. Pg61 kept `attn` in its 24 components)*), `ds41_sampling`, `ds41_stop`, `w8oproj`, `lowb_aux`,
 `tail_drafthead_mxfp8`}. Gates = the sidecar recipe's own: TF flips ≤ control+1 (0 confident on agent/tool),
 gauntlet 12/12, per-class C1/C8 temp 1.0, C32 survives in one process (the ATT2 lesson), 1M needle, watchdog
 counters 0. Win bar: C1 ≥ +10% on the per-class mean with no class < 0.98 and C8 ≥ 1.0.

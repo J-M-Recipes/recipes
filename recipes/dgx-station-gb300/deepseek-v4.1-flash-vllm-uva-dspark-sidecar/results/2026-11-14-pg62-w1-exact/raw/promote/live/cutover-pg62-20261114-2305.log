@@ -1,0 +1,31 @@
+2026-11-14 23:05:13 CST [cutover-pg62] start; receipts ~/dsv41/allround-20261112/milo-takeover/promote/cutover-20261114-2305
+0, NVIDIA RTX PRO 6000 Blackwell Max-Q Workstation Edition, 120 MiB
+1, NVIDIA GB300, 22 MiB
+/dev/md0        1.9T  1.4T  438G  76% /
+Mem:             494          43         269           0         214         451
+[ds41] starting RTX sidecar on NVIDIA RTX PRO 6000 Blackwell Max-Q Workstation Edition (GPU-<uuid>)
+prepared 40 layers in 60s; 98.5 GB allocated
+serving; v3 call statistics -> /var/lib/ds41/sidecar/peer3_stats.json
+[ds41] starting GB300 vLLM on NVIDIA GB300 (GPU-<uuid>); util=0.95, reserve=0 MiB, rowmap=rowmap-mix-v1-h255.json, maxlen=1048576
+MEGA_PEER finalize layer 39: done
+(EngineCore pid=403) INFO 11-15 05:10:02 [interface.py:692] Setting kv cache block size to 128 for FLASHMLA_MEGA_ATTN_DSV41/DEEPSEEK_SPARSE_SWA/DEEPSEEK_V41_INDEXER/CompressorBackend backend(s).
+MEGA_PEER ACTIVE peer tier v2: max_rows=8192, small-row routing <= 64
+(EngineCore pid=403) INFO 11-15 05:10:25 [kv_cache_utils.py:2464] GPU KV cache size: 11,696,582 tokens, Maximum concurrency for 1,048,576 tokens per request: 11.15x
+A12_INSTALL_MEMORY {"phase": "after_capture_warmup_gc", "reason": null, "retirement": {"alternate_graphs_retained": 0, "candidate_allocated_bytes": 11752439808, "checked_graph_managers": [{"full_count": 36, "manager": "ModelCudaGraphManager
+[ds41] ready: http://127.0.0.1:30006/v1  (model dsv41-flash-uva)
+2026-11-14 23:11:36 CST [pg61] verify OK: gumbel 6eac3e134833 rsu edc8f8f4c425 libw6mk b54168223847560b PEER3_SPINS=1000000000000
+2026-11-14 23:11:39 CST [pg61] UP on :30006; watchdog ENFORCE armed (status ~/dsv41/garner/pg62-work/wdp3.status.json)
+2026-11-14 23:11:39 CST [pg61] soak clock started: {"soak_start_utc": "2026-11-15T05:11:39Z", "soak_start_local": "2026-11-14 23:11:39 CST", "epoch": 1794719499}
+2026-11-14 23:11:39 CST [cutover-pg62] UP
+
+Capturing CUDA graphs (FULL):  92%|█████████▏| 33/36 [00:07<00:01,  2.60it/s]
+Capturing CUDA graphs (FULL):  94%|█████████▍| 34/36 [00:08<00:01,  1.84it/s]DS41_FASTPATH attn: capture width 6: language_model.model.layers.2.attn (sparse) on w1_fp8_candidate
+
+Capturing CUDA graphs (FULL):  97%|█████████▋| 35/36 [00:09<00:00,  1.56it/s]DS41_FASTPATH attn: capture width 4: language_model.model.layers.0.attn (swa) on w1_incumbent
+DS41_FASTPATH attn: capture width 4: language_model.model.layers.2.attn (sparse) on w1_fp8_candidate
+DS41_FASTPATH attn: captured decode attention calls, W1/stock per width: 3:6/0[incumbent=6,candidate_fp8=0] 4:40/0[incumbent=2,candidate_fp8=38] 5:6/0[incumbent=6,candidate_fp8=0] 6:46/0[incumbent=8,candidate_fp8=38] 7:6/0[incumbent=6,candidate_fp8=0] 8:80/0[incumbent=4,candidate_fp8=76] 9:6/0[incumbent=6,candidate_fp8=0] 10:6/0[incumbent=6,candidate_fp8=0] 12:86/0[incumbent=10,candidate_fp8=76] 14:6/0[incumbent=6,candidate_fp8=0] 15:6/0[incumbent=6,candidate_fp8=0] 16:40/0[incumbent=2,candidate_fp8=38] 18:8/38[incumbent=8,candidate_fp8=0] 20:8/38[incumbent=8,candidate_fp8=0] 21:12/0[incumbent
+2026-11-14 23:11:44 CST ORACLE VERDICT r0 text 8/8 lp-exact 8/8 bad=- ~348 tok/s KV=11696582
+2026-11-14 23:11:55 CST C1-A {'decode_tok_s': 439.33, 'step_ms': 7.214, 'tokens_per_step': 3.126, 'errors': 0}
+2026-11-14 23:11:55 CST watchdog trip null
+3486501       1 python3         python3 ~/dsv41/garner/pg62-work/sidecar_watchdog_p3.py --server ds41 --sidecar ds41-sidecar --mode enforce --status ~/dsv41/garner/pg62-work/wdp3.sta
+2026-11-14 23:11:55 CST [cutover-pg62] DONE

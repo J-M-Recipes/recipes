@@ -1,0 +1,53 @@
+2026-11-14 19:55:14 SHADOW START (waiting for prefill runner)
+attn_cx_kernel<0>
+    8 bytes stack frame, 16 bytes spill stores, 12 bytes spill loads
+ptxas info    : Used 128 registers, used 16 barriers, 8 bytes cumulative stack size, 736 bytes smem
+attn_cx_kernel<1>
+    0 bytes stack frame, 0 bytes spill stores, 0 bytes spill loads
+ptxas info    : Used 128 registers, used 16 barriers, 736 bytes smem
+cbdcea864cc266b04a3d3c7c78a754e3db67be0fe11f56be95de23a30bf9896c  ~/dsv41/allround-20261112/milo-takeover/G-builds/cxfp8-stockall/build/w1_attn_fp8_ext.so
+BUILD cxfp8-stockall done 2026-11-14 19:57:06
+cp: warning: behavior of -n is non-portable and may change in future; use --update=none instead
+cp: warning: behavior of -n is non-portable and may change in future; use --update=none instead
+cp: warning: behavior of -n is non-portable and may change in future; use --update=none instead
+cp: warning: behavior of -n is non-portable and may change in future; use --update=none instead
+2026-11-14 19:57:06 so cbdcea864cc266b0
+2026-11-14 19:57:30 A1 a8be566e4407265db7fd109c7ad9e8a5e61265dd2813e6465a590b8e41399c5d overlay: 
+2026-11-14 19:57:30 A2/A3 16:: "${DS41_CACHE_DIR:=$DS41_HOME/state}"|305:                -v "$DS41_CACHE_DIR/prof:/prof" -v "$DS41_CACHE_DIR/flashinfer:/root/.cache/flashinfer"|310:                -v "$DS41_FASTPATH_DIR:/fastpath:ro"|
+2026-11-14 19:58:01 boot
+2026-11-14 20:03:40 KV GPU KV cache size: 11,404,581 tokens
+DS41_FASTPATH attn: FP8_MASK loaded label=shadow-g1 layers=all widths=all fp8_pdl=True fp8_plan=None fp8_extra=shadow fp8_cx_max_rows=32
+DS41_FASTPATH attn: FP8_SHADOW installed pid=1 compressed_fp8=True snapshot_widths=[32] records=True valid_only=True dir=/prof/shadow; W1->alt, stock->out, device compare; RESET/DUMP sentinels after capture_model
+DS41_FASTPATH attn: FP8_MASK loaded label=shadow-g1 layers=all widths=all fp8_pdl=True fp8_plan=None fp8_extra=shadow fp8_cx_max_rows=32
+DS41_FASTPATH attn: FP8_SHADOW installed pid=404 compressed_fp8=True snapshot_widths=[32] records=True valid_only=True dir=/prof/shadow; W1->alt, stock->out, device compare; RESET/DUMP sentinels after capture_model
+DS41_FASTPATH attn: FP8_SHADOW poller started pid=404 dir=/prof/shadow (acts only after capture_model)
+DS41_FASTPATH attn: FP8_SHADOW first call language_model.model.layers.2.attn n=32 out=QuantizedActivation data=torch.float8_e4m3fn(32, 8, 4096)/(32768, 4096, 1) scale=torch.int32(32, 8, 32)/(1, 1024, 32) swa=(32, 32, 528)/(262144, 528, 1) comp=(32, 64, 528)/(262144, 528, 1) swa_idx=(32, 128) extra_idx=(32, 512) swa_lens=(32,) extra_len=(32,) plan=cx pdl=True capturing=False
+DS41_FASTPATH attn: captured decode attention calls, W1/stock per width: 3:3/0[incumbent=3,candidate_fp8=0] 5:3/0[incumbent=3,candidate_fp8=0] 6:3/0[incumbent=3,candidate_fp8=0] 7:3/0[incumbent=3,candidate_fp8=0] 9:3/0[incumbent=3,candidate_fp8=0] 10:3/0[incumbent=3,candidate_fp8=0] 12:3/0[incumbent=3,candidate_fp8=0] 14:3/0[incumbent=3,candidate_fp8=0] 15:3/0[incumbent=3,candidate_fp8=0] 18:3/0[i
+DS41_FASTPATH attn: FP8_MASK label=shadow-g1 fp8_on_pairs=684 fp8_off_pairs=0 on_layers=[2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39] on_widths=[1, 2, 4, 6, 8, 12, 16, 18, 20, 24, 28, 32, 36, 40, 48, 56, 64, 72]
+DS41_FASTPATH attn: FP8_SHADOW capture done: cuda:0: sites=456 snapshot_sites=38 snapshot_bytes=575912192 alt_bytes=5787612 overflow=0 widths=[1, 2, 4, 6, 8, 12, 16, 18, 20, 24, 28, 32] layers=38
+DS41_FASTPATH attn: captured decode attention calls, W1/stock per width: 3:6/0[incumbent=6,candidate_fp8=0] 4:40/0[incumbent=2,candidate_fp8=38] 5:6/0[incumbent=6,candidate_fp8=0] 6:46/0[incumbent=8,candidate_fp8=38] 7:6/0[incumbent=6,candidate_fp8=0] 8:80/0[incumbent=4,candidate_fp8=76] 9:6/0[incumbent=6,candidate_fp8=0] 10:6/0[incumbent=6,candidate_fp8=0] 12:86/0[incumbent=10,candidate_fp8=76] 1
+DS41_FASTPATH attn: FP8_MASK label=shadow-g1 fp8_on_pairs=874 fp8_off_pairs=0 on_layers=[2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39] on_widths=[1, 2, 4, 6, 8, 12, 16, 18, 20, 24, 28, 30, 32, 33, 36, 40, 42, 48, 56, 60, 64, 66, 72]
+DS41_FASTPATH attn: FP8_SHADOW capture done: cuda:0: sites=494 snapshot_sites=38 snapshot_bytes=575912192 alt_bytes=6803412 overflow=0 widths=[1, 2, 4, 6, 8, 12, 16, 18, 20, 24, 28, 30, 32] layers=38
+2026-11-14 20:03:42 RESET: RuntimeError: Inplace update to inference tensor outside InferenceMode is not allowed.You can make a clone to get a normal tensor before doing inplace update.See https://github.com/pytorch/rfcs/pull/17 for more details.
+2026-11-14 20:03:42 RESET not acknowledged
+PROSE16 tokens 16 identical_to_A2_r0_prefix True first_diff None
+2026-11-14 20:03:44 DUMP: FP8_SHADOW dump-0: sites=494 shadow_calls=228 sites_with_any_mismatch=0 sites_with_valid_row_mismatch=0 flagged=0 snapshots_saved=0 dir=/prof/shadow/dump-0
+TOTALS {'sites': 494, 'calls': 228, 'calls_any': 0, 'calls_valid': 0, 'flagged': 0, 'saved': 0}
+calls_by_width {1: 0, 2: 0, 4: 0, 6: 114, 8: 114, 12: 0, 16: 0, 18: 0, 20: 0, 24: 0, 28: 0, 30: 0, 32: 0}
+sites_with_mismatch 0
+2026-11-14 20:03:46 RESET: RuntimeError: Inplace update to inference tensor outside InferenceMode is not allowed.You can make a clone to get a normal tensor before doing inplace update.See https://github.com/pytorch/rfcs/pull/17 for more details.
+2026-11-14 20:03:51 full w0 rc=0
+2026-11-14 20:04:08 gt [pass --set A] rc=0
+2026-11-14 20:04:24 gt [pass --set B] rc=0
+2026-11-14 20:04:38 gt [conc --n 8 --tag shadow-g1-c8] rc=0
+2026-11-14 20:04:38 VERDICT r0 text 8/8 lp-exact 8/8 bad=- ~258 tok/s
+2026-11-14 20:04:39 DUMP: FP8_SHADOW dump-1: sites=760 shadow_calls=152342 sites_with_any_mismatch=0 sites_with_valid_row_mismatch=0 flagged=0 snapshots_saved=0 dir=/prof/shadow/dump-1
+TOTALS {'sites': 760, 'calls': 152342, 'calls_any': 0, 'calls_valid': 0, 'flagged': 0, 'saved': 0}
+calls_by_width {1: 0, 2: 0, 4: 0, 6: 101042, 8: 32186, 12: 342, 16: 38, 18: 38, 19: 38, 20: 2470, 22: 38, 24: 608, 25: 114, 26: 38, 27: 76, 28: 2052, 29: 76, 30: 114, 31: 76, 32: 12996}
+sites_with_mismatch 0
+DS41_FASTPATH attn: FP8_SHADOW dump-0: sites=494 shadow_calls=228 sites_with_any_mismatch=0 sites_with_valid_row_mismatch=0 flagged=0 snapshots_saved=0 dir=/prof/shadow/dump-0
+DS41_FASTPATH attn: FP8_SHADOW dump-1: sites=760 shadow_calls=152342 sites_with_any_mismatch=0 sites_with_valid_row_mismatch=0 flagged=0 snapshots_saved=0 dir=/prof/shadow/dump-1
+2026-11-14 20:04:40 WATCHDOG-OK
+2026-11-14 20:05:20 DOWN running=[]
+2026-11-14 20:05:20 ROLLED BACK tree incl formats.py and .so (de87450648e9)
+2026-11-14 20:05:20 SHADOW END ok
