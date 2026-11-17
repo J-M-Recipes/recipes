@@ -1,0 +1,26 @@
+image=spark-ds41f:candidate-60 overlay=./overlay/vllm/parser/deepseek_v41.py model=/home/milo/models/DeepSeek-V4.1-Flash-1017 tree=/opt/spark-ds41f/candidate/vllm
+labels: vllm.tree=afcaac3594acdea245d9543dbbea2376104470ba
+--- preflight ---
+stock       {"preflight": {"mode": "1", "overlay_id": "stock-file", "structural_active": null, "vllm": "/opt/spark-ds41f/candidate/vllm/vllm/__init__.py", "parser_file": "/opt/spark-ds41f/candidate/vllm/vllm/parser/deepseek_v41.py", "parser_sha256": "844e47009c9607fe11a1d801e43519d318dc75c6fd545ddc2f08b33fdcc074a7", "serving_parser": true, "model_dir": "/model", "python": "3.12.3"}}
+patched     {"preflight": {"mode": "1", "overlay_id": "dsv41-structural-dsml-v1", "structural_active": true, "vllm": "/opt/spark-ds41f/candidate/vllm/vllm/__init__.py", "parser_file": "/opt/spark-ds41f/candidate/vllm/vllm/parser/deepseek_v41.py", "parser_sha256": "8a8b293708eb15b763ed6fd4c6f52e85bff830e254f3029b69a194951d0c35c6", "serving_parser": true, "model_dir": "/model", "python": "3.12.3"}}
+killswitch  {"preflight": {"mode": "0", "overlay_id": "dsv41-structural-dsml-v1", "structural_active": false, "vllm": "/opt/spark-ds41f/candidate/vllm/vllm/__init__.py", "parser_file": "/opt/spark-ds41f/candidate/vllm/vllm/parser/deepseek_v41.py", "parser_sha256": "8a8b293708eb15b763ed6fd4c6f52e85bff830e254f3029b69a194951d0c35c6", "serving_parser": true, "model_dir": "/model", "python": "3.12.3"}}
+cases=25 overlay=dsv41-structural-dsml-v1
+CHANGE N_omit_param_close_then_invoke_end:
+    stock   [('write_file', {'path': 'a.txt'})] content=None
+    patched [('write_file', {'path': 'a.txt', 'content': 'hello\n'})] content=None
+CHANGE N2_omit_param_close_then_invoke_end_eos:
+    stock   [('write_file', {'path': 'a.txt'})] content=None
+    patched [('write_file', {'path': 'a.txt', 'content': 'hello\n'})] content=None
+CHANGE O2_truncated_after_literal_closer:
+    stock   [('write_file', {'path': 'a.txt'})] content=None
+    patched [('write_file', {'path': 'a.txt'})] content=None
+CHANGE Q_ambiguous_value_holds_closer_plus_head:
+    stock   [('write_file', {'path': 'x.md', 'content': 'a', 'z': 'b'})] content=None
+    patched [('write_file', {'path': 'x.md', 'content': 'a', 'z': 'b'})] content=None
+CHANGE R_value_ends_with_literal_param_closer:
+    stock   [('write_file', {'path': 'x.md', 'content': 'the tag is '})] content=None
+    patched [('write_file', {'path': 'x.md', 'content': 'the tag is </｜DSML｜ parameter>'})] content=None
+CHANGE U2_json_body_holds_invoke_closer:
+    stock   [('write_file', {})] content=None
+    patched [('write_file', {})] content=None
+ALL GATES PASS

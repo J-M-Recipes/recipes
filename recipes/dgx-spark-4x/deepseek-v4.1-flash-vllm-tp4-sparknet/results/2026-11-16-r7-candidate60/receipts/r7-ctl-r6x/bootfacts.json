@@ -1,0 +1,68 @@
+{
+ "schema": "dsv41-5way/phase/v1",
+ "lane": "r7-ctl-r6x",
+ "phase": "bootfacts",
+ "status": "ok",
+ "method": "KV pool from --kv-pool-tokens > boot-log regex > /get_server_info; 1M sessions = pool / 1,048,576 (TensorFold: streams line); MemAvailable via ssh /proc/meminfo",
+ "started": "2026-11-16T18:49:33-0600",
+ "finished": "2026-11-16T18:49:33-0600",
+ "wall_s": 0.1,
+ "params": {
+  "api_root": "http://192.168.1.55:8002",
+  "model": "deepseek-v4.1-flash-spark-vllm",
+  "engine": "vllm"
+ },
+ "summary": {
+  "v1_models": {
+   "object": "list",
+   "data": [
+    {
+     "id": "deepseek-v4.1-flash-spark-vllm",
+     "object": "model",
+     "created": 1794876573,
+     "owned_by": "vllm",
+     "root": "/models",
+     "parent": null,
+     "max_model_len": 1048576,
+     "permission": [
+      {
+       "id": "modelperm-b2a6ff546235f13e",
+       "object": "model_permission",
+       "created": 1794876573,
+       "allow_create_engine": false,
+       "allow_sampling": true,
+       "allow_logprobs": true,
+       "allow_search_indices": false,
+       "allow_view": true,
+       "allow_fine_tuning": false,
+       "organization": "*",
+       "group": null,
+       "is_blocking": false
+      }
+     ]
+    }
+   ]
+  },
+  "server_info": {
+   "http": 404
+  },
+  "metrics_excerpt": [
+   "vllm:cache_config_info{_block_size_resolved=\"True\",block_size=\"128\",cache_dtype=\"auto\",enable_mamba_fine_grained_prefix_cache=\"False\",enable_prefix_caching=\"True\",engine=\"0\",gpu_memory_utilization=\"0.82\",is_attention_free=\"False\",kv_cache_dtype_skip_layers=\"[]\",kv_cache_layout=\"None\",kv_cache_max_concurrency=\"8.183065983132131\",kv_cache_memory_bytes=\"11274289152\",kv_cache_size_tokens=\"8580566\",kv_offloading_backend=\"native\",kv_offloading_size=\"None\",kv_sharing_fast_prefill=\"False\",mamba_block_size=\"None\",mamba_cache_dtype=\"auto\",mamba_cache_mode=\"none\",mamba_page_size_padded=\"None\",mamba_ssm_cache_dtype=\"auto\",num_cpu_blocks=\"None\",num_gpu_blocks=\"49483\",num_gpu_blocks_override=\"None\",prefix_cache_retention_interval=\"8192\",prefix_caching_hash_algo=\"sha256\",prefix_match_unit=\"None\",recurrent_checkpoint_policy=\"auto\",replayssm_buffer_len=\"16\",skip_page_size_padded=\"None\",sliding_window=\"128\",swa_block_size=\"None\",use_kda_recoverssm=\"False\",use_replayssm=\"False\",user_specified_block_size=\"True\",user_specified_mamba_block_size=\"False\"} 1.0"
+  ],
+  "boot_log": "/Users/jamesmeadlock/hermes/work/spark-recipe-r7-2026-11-16/boot/r7-ctl-r6x.log",
+  "kv_pool_tokens": 8580566,
+  "kv_source": "boot log: vllm 'GPU KV cache size'",
+  "sessions_1m": 8.18,
+  "sessions_1m_rule": "KV pool / 1,048,576",
+  "memavail_gib": {
+   "192.168.1.55": 22.2,
+   "192.168.1.56": 23.3,
+   "192.168.1.57": 23.3,
+   "192.168.1.58": 23.3
+  },
+  "memavail_min_gib": 22.2
+ },
+ "raw": [],
+ "tools": {},
+ "error": null
+}

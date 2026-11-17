@@ -1,0 +1,33 @@
+{
+  "notes": "R1 arm A1 (port control): Owen's candidate-60 tp4-switched profile, unchanged engine behaviour, with only the material changes our lane needs - our 4 nodes' switched node map (local file), a 6.17 / 4 KiB / no-memory-saver host, our per-node snapshot+blobs model mount, our port and served name, and our two NIC-combining overrides. His sizing, his late-admission layer (30) and his --prefill-yield short stay as shipped.",
+  "extends": {
+    "config": "experiments/2026-11-16-c60-prefill/tp4-switched.json"
+  },
+  "set": {
+    "glp": null,
+    "model": "laneC-per-node",
+    "models": {
+      "laneC-per-node": {
+        "snapshot": "{home}/models/DeepSeek-V4.1-Flash-1017",
+        "blobs": "{home}/models/DeepSeek-V4.1-Flash-1017",
+        "notes": "Our lane's per-node copy, mounted at /models and /blobs and served from /models: the same mounts as the r6x launcher."
+      }
+    },
+    "host": {
+      "kernel": {
+        "release": "6.17.0-1031-nvidia",
+        "page_size": 4096,
+        "memory_saver_required": false
+      }
+    },
+    "nodes_config": "config/nodes-switched.laneC.local.json",
+    "environment": {
+      "NCCL_IB_MERGE_NICS": "0",
+      "NCCL_CROSS_NIC": "0"
+    }
+  },
+  "serve_options": {
+    "--port": "8002",
+    "--served-model-name": "deepseek-v4.1-flash-spark-vllm"
+  }
+}

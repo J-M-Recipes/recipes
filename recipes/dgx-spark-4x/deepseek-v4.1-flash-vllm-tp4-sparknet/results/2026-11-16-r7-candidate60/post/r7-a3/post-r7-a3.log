@@ -1,0 +1,17 @@
+== gates
+ ]
+}
+FUNCTIONAL_GATES PASS
+== greedy x2
+greedy same-boot identical 40 / 40
+== greedy under load (C16 background)
+greedy under-load identical to idle 40 / 40
+== so_probe
+{"ok_200": 64, "valid_json": 64, "exact_count": 64, "total": 64, "alive_after": true} PASS
+== dsml live probe
+{"case": "control", "stream": false, "finish": "tool_calls", "s": 0.6, "n_calls": 1, "json_ok": true, "content_arg": "hello world", "text": "I'll write that file for you.\n\n", "PASS": true}
+{"case": "control", "stream": true, "finish": "tool_calls", "s": 0.6, "n_calls": 1, "json_ok": true, "content_arg": "hello world", "text": "I'll write that file for you.\n\n", "PASS": true}
+{"case": "dsml", "stream": false, "finish": "tool_calls", "s": 1.1, "n_calls": 1, "json_ok": true, "content_arg": "DSV4.1 tool calls end with </｜DSML｜ calls>, each argument ends with </｜DSML｜ parameter>, and each invoke ends with </｜DSML｜ invoke>. Keep these tags literal.", "has_all_closers": true, "exact": true, "kept_past_closer": true, "text": "", "PASS": true}
+{"case": "dsml", "stream": true, "finish": "tool_calls", "s": 0.8, "n_calls": 1, "json_ok": true, "content_arg": "DSV4.1 tool calls end with </｜DSML｜ calls>, each argument ends with </｜DSML｜ parameter>, and each invoke ends with </｜DSML｜ invoke>. Keep these tags literal.", "has_all_closers": true, "exact": true, "kept_past_closer": true, "text": "", "PASS": true}
+{"model": "deepseek-v4.1-flash-spark-vllm", "base": "http://192.168.1.55:8002/v1", "ALL_PASS": true}
+POST_DONE r7-a3 Mon Nov 16 20:31:51 CST 2026
