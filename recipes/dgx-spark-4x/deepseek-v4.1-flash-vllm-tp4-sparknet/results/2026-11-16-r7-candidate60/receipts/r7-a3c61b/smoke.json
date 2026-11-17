@@ -1,0 +1,108 @@
+{
+ "schema": "dsv41-5way/phase/v1",
+ "lane": "r7-a3c61b",
+ "phase": "smoke",
+ "status": "ok",
+ "method": "GET /v1/models; chat (17x23); streamed chat counting reasoning deltas; encoded /v1/completions with streamed usage block; POST /tokenize at API root",
+ "started": "2026-11-16T20:06:49-0600",
+ "finished": "2026-11-16T20:06:51-0600",
+ "wall_s": 2.7,
+ "params": {
+  "request_timeout_s": 900,
+  "api_root": "http://192.168.1.51:8002",
+  "model": "deepseek-v4.1-flash-spark-vllm",
+  "engine": "vllm"
+ },
+ "summary": {
+  "models": [
+   "deepseek-v4.1-flash-spark-vllm"
+  ],
+  "model": "deepseek-v4.1-flash-spark-vllm",
+  "model_ok": true,
+  "chat_ok": true,
+  "reasoning_deltas": 0,
+  "thinking_off": true,
+  "completion_usage_ok": true,
+  "tokenize_ok": true,
+  "thinking_body": {
+   "chat_template_kwargs": {
+    "thinking": false
+   }
+  },
+  "checks": {
+   "models": {
+    "http": 200,
+    "ids": [
+     "deepseek-v4.1-flash-spark-vllm"
+    ],
+    "model_ok": true
+   },
+   "health_http": 200,
+   "chat": {
+    "http": 200,
+    "content": "391",
+    "reasoning_chars": 0,
+    "ok": true
+   },
+   "chat_stream": {
+    "reasoning_deltas": 0,
+    "reasoning_chars": 0,
+    "content_deltas": 23,
+    "think_tag_in_content": false,
+    "usage": {
+     "prompt_tokens": 14,
+     "total_tokens": 65,
+     "completion_tokens": 51,
+     "prompt_tokens_details": {
+      "cached_tokens": 0,
+      "created_cache_tokens": 0
+     },
+     "completion_tokens_details": {
+      "reasoning_tokens": 0
+     },
+     "sink_rejection": {
+      "flagged_rows": 0,
+      "flagged_draft_zero": 0,
+      "flagged_drafter": 0,
+      "flagged_prompt": 0,
+      "draft_zero_rejections": 0,
+      "draft_cuts": 0,
+      "fallthroughs": 0
+     }
+    },
+    "ttft_s": 0.09,
+    "content_head": "The sky appears blue because air molecules scatter shorter wavelengths of sunlight (blue) much more efficiently than lon"
+   },
+   "completion_stream": {
+    "text_head": "The three primary colors depend on the color model:\n\n- **Traditional (painting/p",
+    "usage": {
+     "prompt_tokens": 9,
+     "total_tokens": 33,
+     "completion_tokens": 24,
+     "prompt_tokens_details": {
+      "cached_tokens": 0
+     },
+     "sink_rejection": {
+      "flagged_rows": 0,
+      "flagged_draft_zero": 0,
+      "flagged_drafter": 0,
+      "flagged_prompt": 0,
+      "draft_zero_rejections": 0,
+      "draft_cuts": 0,
+      "fallthroughs": 0
+     }
+    },
+    "usage_ok": true,
+    "reasoning_deltas": 0
+   },
+   "tokenize": {
+    "ok": true,
+    "n": 5,
+    "ids_completion_http": 200
+   }
+  }
+ },
+ "raw": [],
+ "tools": {},
+ "error": null
+}

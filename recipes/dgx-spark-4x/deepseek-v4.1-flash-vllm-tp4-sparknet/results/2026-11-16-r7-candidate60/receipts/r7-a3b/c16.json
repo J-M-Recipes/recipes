@@ -1,0 +1,203 @@
+{
+ "schema": "dsv41-5way/phase/v1",
+ "lane": "r7-a3b",
+ "phase": "c16",
+ "status": "ok",
+ "method": "v41bench_tf.py prompt set v1, C16 (16 streams released on a barrier), mean over 8 categories",
+ "started": "2026-11-16T19:37:18-0600",
+ "finished": "2026-11-16T19:39:29-0600",
+ "wall_s": 130.7,
+ "params": {
+  "level": 16,
+  "reps": 3,
+  "per_request_timeout_s": 900,
+  "cap_s": 3600,
+  "path": "/v1/completions (encoding.py)",
+  "api_root": "http://192.168.1.51:8002",
+  "model": "deepseek-v4.1-flash-spark-vllm",
+  "engine": "vllm"
+ },
+ "summary": {
+  "level": 16,
+  "n": 3,
+  "reps": [
+   {
+    "file": "bench-r7-a3b-c16-r1.json",
+    "agg_tok_s": 522.83,
+    "per_stream_tok_s": 41.99,
+    "ttft_mean_s": 0.615
+   },
+   {
+    "file": "bench-r7-a3b-c16-r2.json",
+    "agg_tok_s": 545.31,
+    "per_stream_tok_s": 42.58,
+    "ttft_mean_s": 0.515
+   },
+   {
+    "file": "bench-r7-a3b-c16-r3.json",
+    "agg_tok_s": 541.56,
+    "per_stream_tok_s": 42.44,
+    "ttft_mean_s": 0.52
+   }
+  ],
+  "agg_tok_s": 541.56,
+  "agg_tok_s_spread": [
+   522.83,
+   545.31
+  ],
+  "per_stream_tok_s": 42.44,
+  "per_stream_tok_s_spread": [
+   41.99,
+   42.58
+  ],
+  "ttft_mean_s": 0.52,
+  "ttft_mean_s_spread": [
+   0.515,
+   0.615
+  ],
+  "per_stream_by_category": {
+   "ceiling_count": 79.0,
+   "coding": 55.21,
+   "format": 62.49,
+   "json": 45.44,
+   "math": 52.47,
+   "narrative": 23.33,
+   "prose": 30.22,
+   "reasoning": 42.01,
+   "summary": 28.45
+  },
+  "per_stream_by_category_spread": {
+   "ceiling_count": [
+    78.62,
+    79.04
+   ],
+   "coding": [
+    52.34,
+    56.13
+   ],
+   "format": [
+    62.16,
+    63.26
+   ],
+   "json": [
+    45.07,
+    46.54
+   ],
+   "math": [
+    50.23,
+    52.67
+   ],
+   "narrative": [
+    22.9,
+    24.18
+   ],
+   "prose": [
+    29.58,
+    30.96
+   ],
+   "reasoning": [
+    41.27,
+    42.21
+   ],
+   "summary": [
+    28.24,
+    28.78
+   ]
+  },
+  "coding_per_stream_tok_s": 55.21,
+  "coding_per_stream_tok_s_spread": [
+   52.34,
+   56.13
+  ],
+  "memavail_before_gib": {
+   "192.168.1.51": 25.8,
+   "192.168.1.52": 27.3,
+   "192.168.1.53": 27.3,
+   "192.168.1.54": 27.3
+  },
+  "memavail_during": {
+   "n_samples": 7,
+   "min_gib": {
+    "192.168.1.51": 24.9,
+    "192.168.1.52": 26.6,
+    "192.168.1.53": 26.5,
+    "192.168.1.54": 26.6
+   },
+   "samples": [
+    {
+     "t": "19:37:18",
+     "gib": {
+      "192.168.1.51": 25.8,
+      "192.168.1.52": 27.3,
+      "192.168.1.53": 27.3,
+      "192.168.1.54": 27.3
+     }
+    },
+    {
+     "t": "19:37:38",
+     "gib": {
+      "192.168.1.51": 25.7,
+      "192.168.1.52": 27.3,
+      "192.168.1.53": 27.3,
+      "192.168.1.54": 27.3
+     }
+    },
+    {
+     "t": "19:37:58",
+     "gib": {
+      "192.168.1.51": 25.1,
+      "192.168.1.52": 26.8,
+      "192.168.1.53": 26.7,
+      "192.168.1.54": 26.7
+     }
+    },
+    {
+     "t": "19:38:18",
+     "gib": {
+      "192.168.1.51": 25.1,
+      "192.168.1.52": 26.8,
+      "192.168.1.53": 26.7,
+      "192.168.1.54": 26.7
+     }
+    },
+    {
+     "t": "19:38:38",
+     "gib": {
+      "192.168.1.51": 24.9,
+      "192.168.1.52": 26.7,
+      "192.168.1.53": 26.6,
+      "192.168.1.54": 26.7
+     }
+    },
+    {
+     "t": "19:38:58",
+     "gib": {
+      "192.168.1.51": 24.9,
+      "192.168.1.52": 26.7,
+      "192.168.1.53": 26.6,
+      "192.168.1.54": 26.7
+     }
+    },
+    {
+     "t": "19:39:18",
+     "gib": {
+      "192.168.1.51": 24.9,
+      "192.168.1.52": 26.6,
+      "192.168.1.53": 26.5,
+      "192.168.1.54": 26.6
+     }
+    }
+   ]
+  }
+ },
+ "raw": [
+  "raw/bench-r7-a3b-c16-r1.json",
+  "raw/bench-r7-a3b-c16-r2.json",
+  "raw/bench-r7-a3b-c16-r3.json"
+ ],
+ "tools": {
+  "v41bench_tf.py": "17ac10e86b534d08",
+  "encoding/encoding.py": "13231c592e958fb3"
+ },
+ "error": null
+}

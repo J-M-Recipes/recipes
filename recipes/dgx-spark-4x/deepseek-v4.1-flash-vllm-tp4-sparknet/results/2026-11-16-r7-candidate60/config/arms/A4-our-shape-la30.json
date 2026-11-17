@@ -1,0 +1,11 @@
+{
+  "notes": "R1 arm A4 (A2 + Owen's late-admission layer): identical to A2 except VLLM_LATE_ADMISSION_LAYER=30 (his shipped value) instead of 20 (ours). Isolates the layer choice on our fabric; he publishes no layer measurement, only the K=30 lead arithmetic.",
+  "extends": {
+    "config": "experiments/2026-11-16-c60-prefill/arms/A2-our-shape-yield-off.json"
+  },
+  "set": {
+    "environment": {
+      "VLLM_LATE_ADMISSION_LAYER": "30"
+    }
+  }
+}

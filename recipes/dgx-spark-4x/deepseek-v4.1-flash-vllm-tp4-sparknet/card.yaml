@@ -1,9 +1,9 @@
 # card.yaml — at-a-glance card sidecar. Rendered by scripts/render_card.py; never hand-edit card.html.
-# Every number traces to recipe.yaml metrics or results/2026-10-19-vllm-ladder-r2/. Unknown = pending (amber).
-title: "DeepSeek-V4.1-Flash-1017 · 4× DGX Spark · vLLM fork"
-subtitle: "Native 1017 weights, TP4 across four GB10s on one CRS804: Owen's spark-ds41f r6x (LIL vLLM fork + TileLang + sparknet) on our switch / 4 KiB-page shape. 1M context. Lane C; the SGLang sibling is Lane B."
-version: "v2 (2026-10-23 · 1017 @ 1bae0e10 · image c1c93733e852 · spark-ds41f fc3ee36d · late admission @ layer 20 + sparknet 0.5.0 @ ed6af327, mounted)"
-run_id: 2026-10-23-adopted-l20-net
+# Every number traces to recipe.yaml metrics or results/2026-11-16-r7-candidate60/. Unknown = pending (amber).
+title: "DeepSeek-V4.1-Flash-1017 · 4× DGX Spark · vLLM fork (candidate 60)"
+subtitle: "Native 1017 weights, TP4 across four GB10s on one CRS804: Christopher Owen's spark-ds41f candidate 60 (LIL vLLM fork + TileLang + sparknet 0.5.0) on our switch / 4 KiB-page shape — 32 seats, prefill yield short, late admission at layer 20. 1M context. Lane C; the SGLang sibling is Lane B."
+version: "v3 · candidate 60 · image 2f2bf6e1091b"
+run_id: 2026-11-16-r7-candidate60
 handles: "github.com/J-M-Recipes/recipes · al-engr.com · @jmeadlock"
 
 model:
@@ -13,39 +13,44 @@ model:
   active_params: "8B prefill / 16B decode"   # model card
   checkpoint_gb: 510.3              # 48 shards 510,296,708,312 B + small files; identical size on spark5-8
   weights_short: "as shipped · MXFP4 experts / FP8 attention+dense+Engram · nothing re-quantized"
-  engine_extra: "vLLM 0.29.1rc1 fork (LIL karmic-kraken-beta 19f2c20e) · TileLang attn/linear/MoE · sparknet one-shot RoCE ≤2 MiB · local build"
-  memory: "72.19 GiB/rank weights+draft · KV 10.5 GiB/rank = 8,580,566-token pool (8.18× at 1M) · graphs 1.98 GiB · head host floor 20.70 GiB"
+  engine_extra: "vLLM 0.29.1rc1 fork (LIL karmic-kraken-beta, tree afcaac35) · TileLang attn/linear/MoE · sparknet 0.5.0 one-shot RoCE ≤2 MiB · local build"
+  memory: "72.19 GiB/rank weights+draft · KV 10.5 GiB/rank = 12,034,343-token engine line (11.48× at 1M) · graphs ~2 GiB (203-row copy-draft capture) · head host floor 25.2 GiB"
 
 hero:
-  c1:      { value: 105.2, unit: tok/s, class: "8-category v1 mix, per stream", label: "Decode · C1, adopted config", note: "105.21 per stream / 93.89 aggregate, 2026-10-23 · T=0, thinking off · +0.9% vs the 2026-10-20 control 104.27 · SGLang sibling 95.6" }
-  c16:     { value: 292, unit: tok/s, label: "Decode · C6 aggregate", note: "291.75 single run 2026-10-23 · C4 233.16 · 57.3 per stream · mean TTFT 0.286 s · 32 seats · SGLang sibling 252.8" }
-  prefill: { value: 5.3K, unit: tok/s, label: "Cold prefill · 93K prompt", note: "5,338 (2026-10-23, 32 seats / chunk 3856) · 5,998 at 16 seats / 8096 on 2026-10-20 · the seat change is the difference, not drift · SGLang 6,219" }
+  c1:      { value: 123.2, unit: tok/s, class: "8-category v1 mix, per stream", label: "Decode · C1, promoted config", note: "123.18 mean of 3 (123.02–125.36), 2026-11-16 · T=0, thinking off · +19.2% vs the same-night r6x control 103.33 · aggregate over all requests 105.1" }
+  c16:     { value: 546, unit: tok/s, label: "Decode · C16 aggregate", note: "545.67 mean of 3 (535.74–556.48) · mean TTFT 0.518 s · +15.7% vs control 471.76 · this row is ±2% boot-to-boot" }
+  prefill: { value: 8.7K, unit: tok/s, label: "Cold prefill · 131K prompt", note: "8,725.7 median of 3 · 32K 8,554.5 · 300K 8,554.0 · 1M 7,848.8 (1 rep) · control 5,314.8 · +64% at 131K" }
 
 guesser:
   name: DSpark
   source: "in-checkpoint MTP draft, 1017 revision"
-  schedule: "k = 5 · greedy draft · block rejection · adaptive verify (row cost 0.035)"
-  accept: { coding: 83%, format: 91%, math: 70%, json: 56%, prose: 41%, narrative: 31%, "all, C1": 61% }
+  schedule: "k = 5 · greedy draft · block rejection · adaptive verify (row cost 0.035) · c60 widens copy-draft verify to 203 capture rows"
+  # accept is deliberately absent: acceptance was NOT measured on this engine build.
 
 secondary:
   - label: "Long context, mixed traffic & boot"
     items:
-      "needles 20K · 131K · 300K×3": "PASS · 5.8K / 5.7K / 5.46K tok/s · no first-touch dip"
-      "short-chat TTFT behind cold 93K": "3.03 s (SGLang sibling 1.7–1.8 s)"
-      "warm boot → HTTP ready": "101 s (2026-10-23); 89–101 s across the 2026-10-20 boots; cold JIT cache 351 s"
-      "C8 TTFT, late admission @ layer 20": "0.463 s vs 0.359–0.364 s on three controls — unresolved, needs the interleaved harness"
-  - label: "Round-2 ladder — one change per boot, keep bar +2%: nothing kept"
+      "1M needle 3/3": "131.2 s (control 263.3 s) · one sequence, retrieval — not 11 concurrent 1M"
+      "short turn behind cold 413K": "0.704 s (control 1.012 s; yield-off arm 1.511 s — why yield is in)"
+      "warm-cache turn, 68K + 1.5K": "2.048 s median (control 2.063 s) · tail runs to 3.0 s"
+      "agent turn, 200K cached ctx": "0.511 s (control 0.791 s)"
+      "warm boot → HTTP ready": "135 s · first boot on an empty JIT cache 1,392 s (~23 min)"
+      "kv pool, engine line": "12,034,343 tokens (11.48×) — same 10.5 GiB/rank as r6x's 8,580,566 (8.18×); concurrent capacity not tested"
+  - label: "What was declined (2026-11-16)"
     items:
-      "CED skip overlay (Owen)": "93K +0.9% · 300K +1.6% · outputs identical → revert"
-      "max-parallel-prefills 2": "C4 −8.3% · C6 −10.8% → revert"
-      "NVFP4 draft head + Markov": "C1 +1.7% · C6 −2.8% → revert"
-      "cross-pod contention (93K)": "5,993 → 6,009 with SGLang pod prefilling: none"
+      "prefill yield off (A2)": "C1 123.18 · C16 551.22 · but mixed 1.511 s / 2.343 s vs control 1.012 / 2.063 → declined"
+      "c61 decode overlay": "C1 +0.81% (inside spread) · C16 −2.41% → not adopted"
+      "teacher-forced vs r6x": "not run — needs a fresh reference boot on this engine"
+      "spec acceptance, tokens/step": "not measured this round"
 
 fidelity:
-  - { status: pass,     text: "Weights as shipped: 48/48 shard sha256 == Hub LFS etags (spark5 bytes, re-verified after copy); sparks 6–8 size-identical" }
+  - { status: pass,     text: "Weights as shipped and unchanged from r6x: 48 shards, 510,296,708,312 B, sha256 == Hub LFS etags (verified 2026-10-19, not re-hashed tonight)" }
   - { status: pass,     text: "Speculation is target-verified (block rejection against the full model)" }
-  - { status: pass,     text: "Teacher-forced Δlogprob vs the 8 GiB control container, 5,485 forced positions: p99 and max 0.0, perplexity identical, self-repeat 0.0 — lossless vs what the lane already served" }
-  - { status: measured, text: "Arm-to-arm identity: greedy probe 40/40, qeval content 75/75, bench C1 signature 9/9 vs control — reproducibility" }
-  - { status: pass,     text: "Tool calling: get_weather call + tool-result round on every boot (1/1 per boot — small sample)" }
-  - { status: measured, text: "Guest-turn latency: 2.147 s median warm-cache (68K resident prefix + 1.5K suffix), from ~3.14 s; 1.196 s behind a 413K cold prefill with late admission" }
+  - { status: pass,     text: "Determinism: greedy 40/40 byte-identical on one boot, 40/40 under 15 background streams, and 40/40 across two boots of the same config on different nodes" }
+  - { status: measured, text: "qeval content 71/75, the same four misses as the control — the instrument does not discriminate this change" }
+  - { status: pass,     text: "Tool calling: get_weather call + tool-result round every boot (0 preemptions) and the DSML live probe ALL_PASS" }
+  - { status: pass,     text: "DSML overlay in-image gate: 25 cases ALL GATES PASS — stock c60 fails exactly B/C/D/E/E2/J, overlay fixes all six, changes only N/N2/O2/Q/R" }
+  - { status: measured, text: "so_probe 64/64 (the spark-ds41f#1194 guard) on r6x and on c60 with the fix; stock c60 not probed, crash not reproduced here" }
+  - { status: pending,  text: "Teacher-forced Δlogprob vs r6x on this engine build" }
+  - { status: pending,  text: "Speculative-decoding acceptance_len (the C1 headline carries none)" }
   - { status: pending,  text: "Public benchmark run by us" }

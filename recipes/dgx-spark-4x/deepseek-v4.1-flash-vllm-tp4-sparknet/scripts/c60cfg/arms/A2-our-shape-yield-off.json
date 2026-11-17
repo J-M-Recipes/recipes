@@ -1,0 +1,19 @@
+{
+  "notes": "R1 arm A2 (our shape, r6x scheduling behaviour): A1 plus the sizing our lane serves guests at - 32 seats, 8,192 batched tokens, long-prefill threshold 3,856, CUDA-graph ladder to 192 rows - with late admission at layer 20 and --prefill-yield off, so the only difference from our r6x lane is the engine (c59->c60 lineage).",
+  "extends": {
+    "config": "experiments/2026-11-16-c60-prefill/arms/A1-port-control.json"
+  },
+  "set": {
+    "environment": {
+      "VLLM_LATE_ADMISSION_LAYER": "20"
+    }
+  },
+  "serve_options": {
+    "--max-num-seqs": "32",
+    "--max-num-batched-tokens": "8192",
+    "--long-prefill-token-threshold": "3856",
+    "--max-cudagraph-capture-size": "192",
+    "--compilation-config": "{\"cudagraph_mode\":\"FULL_AND_PIECEWISE\",\"custom_ops\":[\"all\"],\"cudagraph_capture_sizes\":[1,2,3,4,6,8,12,16,20,24,28,32,40,48,56,64,72,80,88,96,104,112,120,128,136,144,152,160,168,176,184,192]}",
+    "--prefill-yield": "off"
+  }
+}
