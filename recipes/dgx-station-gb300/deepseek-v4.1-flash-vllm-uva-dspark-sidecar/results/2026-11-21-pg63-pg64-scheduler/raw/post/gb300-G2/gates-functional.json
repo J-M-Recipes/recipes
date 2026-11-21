@@ -1,0 +1,43 @@
+{
+ "models": {
+  "ids": [
+   "dsv41-flash-uva",
+   "deepseek-v4.1-flash"
+  ],
+  "max_model_len": 1048576,
+  "pass": true
+ },
+ "smoke": {
+  "content": "LAN",
+  "reasoning": "We need answer exactly LANE_C_OK nothing else. Need comply.",
+  "usage": {
+   "prompt_tokens": 41,
+   "total_tokens": 57,
+   "completion_tokens": 16,
+   "prompt_tokens_details": null,
+   "completion_tokens_details": {
+    "reasoning_tokens": 14
+   }
+  },
+  "seconds": 0.06,
+  "pass": false
+ },
+ "tool": {
+  "tool_calls": [
+   {
+    "id": "chatcmpl-tool-beaa3c65bbb34e0f",
+    "type": "function",
+    "function": {
+     "name": "get_weather",
+     "arguments": "{\"city\": \"Paris\"}"
+    }
+   }
+  ],
+  "finish_reason": "tool_calls",
+  "final": "Right now in Paris it's **17\u00b0C with light rain** \u2014 you'd want an umbrella if you're heading out.",
+  "pass": true
+ },
+ "preemptions": [
+  "vllm:num_preemptions_total{engine=\"0\",model_name=\"dsv41-flash-uva\"} 0.0"
+ ]
+}

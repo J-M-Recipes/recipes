@@ -1,0 +1,46 @@
+2026-11-21T06:40:28-0600 ARM gb300-pg62-A3 start api_root=http://gb300:30006 engine=vllm phases=smoke,c1,c16,prefill,needle,mixed_short,mixed_warm,agent_turn,qeval
+2026-11-21T06:40:28-0600 PHASE smoke start cap=600s
+2026-11-21T06:40:28-0600 PHASE smoke end status=ok wall=0.8s
+2026-11-21T06:40:28-0600 ARM gb300-pg62-A3 phase=smoke end status=ok
+2026-11-21T06:40:28-0600 PHASE c1 start cap=2400s
+2026-11-21T06:40:28-0600   exec /Library/Developer/CommandLineTools/usr/bin/python3 ~/hermes/work/dsv41-5way-2026-10-26/tools/v41bench_tf.py --base http://gb300:30006/v1 --model deepseek-v4.1-flash --label gb300-pg62-A3-c1-r1 --out ~/hermes/research/dsv41-gb300-owen-transfer-20261121/cards/receipts/gb300-pg62-A3/raw --levels 1 --prefill '' --notes 'dsv41-5way gb300-pg62-A3 c1 rep 1/3'  (cwd=~/hermes/research/dsv41-gb300-owen-transfer-20261121/cards/receipts/gb300-pg62-A3/raw, cap=2399.9999539852142s)
+2026-11-21T06:40:34-0600   exec /Library/Developer/CommandLineTools/usr/bin/python3 ~/hermes/work/dsv41-5way-2026-10-26/tools/v41bench_tf.py --base http://gb300:30006/v1 --model deepseek-v4.1-flash --label gb300-pg62-A3-c1-r2 --out ~/hermes/research/dsv41-gb300-owen-transfer-20261121/cards/receipts/gb300-pg62-A3/raw --levels 1 --prefill '' --notes 'dsv41-5way gb300-pg62-A3 c1 rep 2/3'  (cwd=~/hermes/research/dsv41-gb300-owen-transfer-20261121/cards/receipts/gb300-pg62-A3/raw, cap=2394.618746995926s)
+2026-11-21T06:40:38-0600   exec /Library/Developer/CommandLineTools/usr/bin/python3 ~/hermes/work/dsv41-5way-2026-10-26/tools/v41bench_tf.py --base http://gb300:30006/v1 --model deepseek-v4.1-flash --label gb300-pg62-A3-c1-r3 --out ~/hermes/research/dsv41-gb300-owen-transfer-20261121/cards/receipts/gb300-pg62-A3/raw --levels 1 --prefill '' --notes 'dsv41-5way gb300-pg62-A3 c1 rep 3/3'  (cwd=~/hermes/research/dsv41-gb300-owen-transfer-20261121/cards/receipts/gb300-pg62-A3/raw, cap=2390.4193890094757s)
+2026-11-21T06:40:42-0600 PHASE c1 end status=ok wall=13.3s
+2026-11-21T06:40:42-0600 ARM gb300-pg62-A3 phase=c1 end status=ok
+2026-11-21T06:40:42-0600 PHASE c16 start cap=3600s
+2026-11-21T06:40:42-0600   exec /Library/Developer/CommandLineTools/usr/bin/python3 ~/hermes/work/dsv41-5way-2026-10-26/tools/v41bench_tf.py --base http://gb300:30006/v1 --model deepseek-v4.1-flash --label gb300-pg62-A3-c16-r1 --out ~/hermes/research/dsv41-gb300-owen-transfer-20261121/cards/receipts/gb300-pg62-A3/raw --levels 16 --prefill '' --notes 'dsv41-5way gb300-pg62-A3 c16 rep 1/3'  (cwd=~/hermes/research/dsv41-gb300-owen-transfer-20261121/cards/receipts/gb300-pg62-A3/raw, cap=3599.9994218349457s)
+2026-11-21T06:40:54-0600   exec /Library/Developer/CommandLineTools/usr/bin/python3 ~/hermes/work/dsv41-5way-2026-10-26/tools/v41bench_tf.py --base http://gb300:30006/v1 --model deepseek-v4.1-flash --label gb300-pg62-A3-c16-r2 --out ~/hermes/research/dsv41-gb300-owen-transfer-20261121/cards/receipts/gb300-pg62-A3/raw --levels 16 --prefill '' --notes 'dsv41-5way gb300-pg62-A3 c16 rep 2/3'  (cwd=~/hermes/research/dsv41-gb300-owen-transfer-20261121/cards/receipts/gb300-pg62-A3/raw, cap=3587.3574635982513s)
+2026-11-21T06:41:04-0600   exec /Library/Developer/CommandLineTools/usr/bin/python3 ~/hermes/work/dsv41-5way-2026-10-26/tools/v41bench_tf.py --base http://gb300:30006/v1 --model deepseek-v4.1-flash --label gb300-pg62-A3-c16-r3 --out ~/hermes/research/dsv41-gb300-owen-transfer-20261121/cards/receipts/gb300-pg62-A3/raw --levels 16 --prefill '' --notes 'dsv41-5way gb300-pg62-A3 c16 rep 3/3'  (cwd=~/hermes/research/dsv41-gb300-owen-transfer-20261121/cards/receipts/gb300-pg62-A3/raw, cap=3577.1988899707794s)
+2026-11-21T06:41:14-0600 PHASE c16 end status=ok wall=32.5s
+2026-11-21T06:41:14-0600 ARM gb300-pg62-A3 phase=c16 end status=ok
+2026-11-21T06:41:14-0600 PHASE prefill start cap=7200s
+2026-11-21T06:41:14-0600   exec /Library/Developer/CommandLineTools/usr/bin/python3 ~/hermes/work/dsv41-5way-2026-10-26/tools/prefill_reps.py http://gb300:30006 deepseek-v4.1-flash 3 32768  (cwd=~/hermes/research/dsv41-gb300-owen-transfer-20261121/cards/receipts/gb300-pg62-A3/raw/prefill-32768, cap=7199.9999277591705s)
+2026-11-21T06:41:17-0600   exec /Library/Developer/CommandLineTools/usr/bin/python3 ~/hermes/work/dsv41-5way-2026-10-26/tools/prefill_reps.py http://gb300:30006 deepseek-v4.1-flash 3 131072  (cwd=~/hermes/research/dsv41-gb300-owen-transfer-20261121/cards/receipts/gb300-pg62-A3/raw/prefill-131072, cap=7197.346609830856s)
+2026-11-21T06:41:27-0600   exec /Library/Developer/CommandLineTools/usr/bin/python3 ~/hermes/work/dsv41-5way-2026-10-26/tools/prefill_reps.py http://gb300:30006 deepseek-v4.1-flash 3 300000  (cwd=~/hermes/research/dsv41-gb300-owen-transfer-20261121/cards/receipts/gb300-pg62-A3/raw/prefill-300000, cap=7186.8723757267s)
+2026-11-21T06:41:52-0600   exec /Library/Developer/CommandLineTools/usr/bin/python3 ~/hermes/work/dsv41-5way-2026-10-26/tools/prefill_reps.py http://gb300:30006 deepseek-v4.1-flash 1 1000000  (cwd=~/hermes/research/dsv41-gb300-owen-transfer-20261121/cards/receipts/gb300-pg62-A3/raw/prefill-1000000, cap=8961.627454996109s)
+2026-11-21T06:42:32-0600 PHASE prefill end status=ok wall=77.6s
+2026-11-21T06:42:32-0600 ARM gb300-pg62-A3 phase=prefill end status=ok
+2026-11-21T06:42:32-0600 PHASE needle start cap=2700s
+2026-11-21T06:43:11-0600   needle rep 1: 3/3 in 36.1s
+2026-11-21T06:43:11-0600 PHASE needle end status=ok wall=39.7s
+2026-11-21T06:43:11-0600 ARM gb300-pg62-A3 phase=needle end status=ok
+2026-11-21T06:43:11-0600 PHASE mixed_short start cap=3000s
+2026-11-21T06:43:11-0600   exec /Library/Developer/CommandLineTools/usr/bin/python3 ~/hermes/work/dsv41-5way-2026-10-26/tools/mixed_probe.py http://gb300:30006 deepseek-v4.1-flash 413000 3  (cwd=~/hermes/research/dsv41-gb300-owen-transfer-20261121/cards/receipts/gb300-pg62-A3/raw/mixed_short, cap=3000s)
+2026-11-21T06:43:50-0600 PHASE mixed_short end status=ok wall=38.6s
+2026-11-21T06:43:50-0600 ARM gb300-pg62-A3 phase=mixed_short end status=ok
+2026-11-21T06:43:50-0600 PHASE mixed_warm start cap=4500s
+2026-11-21T06:43:50-0600   exec /Library/Developer/CommandLineTools/usr/bin/python3 ~/hermes/work/dsv41-5way-2026-10-26/tools/mixed_warm.py http://gb300:30006 deepseek-v4.1-flash 68000 413000 4  (cwd=~/hermes/research/dsv41-gb300-owen-transfer-20261121/cards/receipts/gb300-pg62-A3/raw/mixed_warm, cap=4500s)
+2026-11-21T06:44:45-0600 PHASE mixed_warm end status=ok wall=55.0s
+2026-11-21T06:44:45-0600 ARM gb300-pg62-A3 phase=mixed_warm end status=ok
+2026-11-21T06:44:45-0600 PHASE agent_turn start cap=2400s
+2026-11-21T06:44:51-0600   agent turn 1: ttft 0.274s at 201541 tokens
+2026-11-21T06:44:51-0600   agent turn 2: ttft 0.277s at 203057 tokens
+2026-11-21T06:44:52-0600   agent turn 3: ttft 0.258s at 204573 tokens
+2026-11-21T06:44:52-0600 PHASE agent_turn end status=ok wall=6.5s
+2026-11-21T06:44:52-0600 ARM gb300-pg62-A3 phase=agent_turn end status=ok
+2026-11-21T06:44:52-0600 PHASE qeval start cap=4800s
+2026-11-21T06:44:52-0600   exec /Library/Developer/CommandLineTools/usr/bin/python3 ~/hermes/work/dsv41-5way-2026-10-26/tools/qeval.py run gb300-pg62-A3 --url http://gb300:30006/v1/chat/completions --timeout 900  (cwd=~/hermes/research/dsv41-gb300-owen-transfer-20261121/cards/receipts/gb300-pg62-A3/raw/qeval, cap=4800s)
+2026-11-21T06:45:10-0600 PHASE qeval end status=ok wall=18.3s
+2026-11-21T06:45:10-0600 ARM gb300-pg62-A3 phase=qeval end status=ok
+2026-11-21T06:45:10-0600 ARM gb300-pg62-A3 end

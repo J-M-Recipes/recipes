@@ -1,0 +1,92 @@
+diff --git a/vllm/v1/core/sched/scheduler.py b/vllm/v1/core/sched/scheduler.py
+index 8b188de..fab16af 100644
+--- a/vllm/v1/core/sched/scheduler.py
++++ b/vllm/v1/core/sched/scheduler.py
+@@ -342,6 +342,21 @@ class Scheduler(SchedulerInterface):
+         # prefill batch fully drained the waiting queue. Prefill throttling
+         # is disabled in this case.
+         self.prefill_capacity_bound = False
++        # xfer-20261121 prefill cadence (env-gated; unset or 1 == stock): run prefill
++        # compute only on every Nth schedule() while a decode is running, reusing the
++        # stock DP prefill-throttle path (defer_prefills) on the other steps.
++        import os as _os
++        self._prefill_cadence = max(1, int(_os.environ.get("VLLM_PREFILL_CADENCE", "1") or "1"))
++        self._prefill_cadence_tick = 0
++        self._prefill_cadence_deferred = 0
++        self._prefill_cadence_steps = 0
++        # Only defer prefill work whose request still has more than this many
++        # uncomputed prompt tokens (0 = defer every prefill, the X1 behaviour).
++        # Short prompts and cached-prefix suffixes are then never delayed.
++        self._prefill_cadence_min_rem = max(0, int(_os.environ.get("VLLM_PREFILL_CADENCE_MIN_REMAINING", "0") or "0"))
++        if self._prefill_cadence > 1:
++            logger.info("xfer prefill cadence enabled: N=%d min_remaining=%d",
++                        self._prefill_cadence, self._prefill_cadence_min_rem)
+         self.scheduler_reserve_full_isl = (
+             self.scheduler_config.scheduler_reserve_full_isl
+         )
+@@ -560,6 +575,20 @@ class Scheduler(SchedulerInterface):
+         return max(num_new_tokens, 0)
+ 
+     def schedule(self, throttle_prefills: bool = False) -> SchedulerOutput:
++        if self._prefill_cadence > 1:
++            # X3: the cadence only runs while a long prefill is in flight (a running
++            # request with > min_remaining uncomputed prompt tokens). Otherwise the
++            # scheduler is untouched: the tick does not advance and throttle stays off.
++            if any(
++                r.is_prefill_chunk
++                and r.num_tokens - r.num_computed_tokens > self._prefill_cadence_min_rem
++                for r in self.running
++            ):
++                self._prefill_cadence_tick = (self._prefill_cadence_tick + 1) % self._prefill_cadence
++                if self._prefill_cadence_tick != 0:
++                    throttle_prefills = True
++            else:
++                self._prefill_cadence_tick = 0
+         self.current_step += 1
+         # NOTE(woosuk) on the scheduling algorithm:
+         # There's no "decoding phase" nor "prefill phase" in the scheduler.
+@@ -607,6 +636,14 @@ class Scheduler(SchedulerInterface):
+         defer_prefills = (
+             throttle_prefills and not self.prefill_capacity_bound
+         ) and any(not r.is_prefill_chunk for r in self.running)
++        if self._prefill_cadence > 1:
++            self._prefill_cadence_steps += 1
++            if defer_prefills:
++                self._prefill_cadence_deferred += 1
++                if self._prefill_cadence_deferred % 500 == 1:
++                    logger.info("xfer prefill cadence N=%d: deferred %d of %d steps",
++                                self._prefill_cadence, self._prefill_cadence_deferred,
++                                self._prefill_cadence_steps)
+ 
+         # `long_prefill_token_threshold` exists to stop a long prefill from
+         # starving other requests of the token budget. When it is the only
+@@ -654,7 +691,11 @@ class Scheduler(SchedulerInterface):
+                 req_index += 1
+                 continue
+ 
+-            if defer_prefills and request.is_prefill_chunk:
++            if defer_prefills and request.is_prefill_chunk and (
++                self._prefill_cadence_min_rem == 0
++                or request.num_tokens - request.num_computed_tokens
++                > self._prefill_cadence_min_rem
++            ):
+                 # DP prefill balancing: defer this in-progress prefill chunk to a
+                 # cadence-aligned step; decodes still run to fill this step.
+                 req_index += 1
+@@ -1065,7 +1106,15 @@ class Scheduler(SchedulerInterface):
+                     # KVTransfer: loading remote KV, do not allocate for new work.
+                     assert num_external_computed_tokens > 0
+                     num_new_tokens = 0
+-                elif defer_prefills and num_computed_tokens < request.num_tokens - 1:
++                elif (
++                    defer_prefills
++                    and num_computed_tokens < request.num_tokens - 1
++                    and (
++                        self._prefill_cadence_min_rem == 0
++                        or request.num_tokens - num_computed_tokens
++                        > self._prefill_cadence_min_rem
++                    )
++                ):
+                     # DP prefill balancing: defer this step's local prefill
+                     # compute to a cadence-aligned step.
+                     break

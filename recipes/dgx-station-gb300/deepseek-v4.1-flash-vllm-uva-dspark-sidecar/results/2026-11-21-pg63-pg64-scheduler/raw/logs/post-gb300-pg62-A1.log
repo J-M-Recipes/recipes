@@ -1,0 +1,30 @@
+== mixed_trace (short chat, thinking on, 32 tok) x4
+{"short_sent": 6.694, "short_first": 7.189, "short_completion_tokens": 32, "short_done": 9.991, "long_done": 10.875, "long_tokens": 413000, "short_ttft": 0.495, "short_total": 3.297, "short_decode_tok_s": 11.1, "maxtok": 32, "think": true, "decode_during_prefill_tok_s": 10.7, "tokens_during_prefill": 32}
+{"short_sent": 7.539, "short_first": 8.064, "short_completion_tokens": 32, "short_done": 10.574, "long_done": 10.849, "long_tokens": 413000, "short_ttft": 0.525, "short_total": 3.035, "short_decode_tok_s": 12.4, "maxtok": 32, "think": true, "decode_during_prefill_tok_s": 11.8, "tokens_during_prefill": 32}
+{"short_sent": 8.286, "short_first": 8.806, "short_completion_tokens": 32, "long_done": 10.855, "long_tokens": 413000, "short_done": 10.855, "short_ttft": 0.52, "short_total": 2.569, "short_decode_tok_s": 15.1, "maxtok": 32, "think": true, "decode_during_prefill_tok_s": 14.4, "tokens_during_prefill": 32}
+{"short_sent": 9.035, "short_first": 9.484, "long_done": 10.774, "long_tokens": 413000, "short_completion_tokens": 32, "short_done": 10.775, "short_ttft": 0.449, "short_total": 1.74, "short_decode_tok_s": 24.0, "maxtok": 32, "think": true, "decode_during_prefill_tok_s": 22.0, "tokens_during_prefill": 32}
+== decode during 413K prefill (thinking off, 400 tok) x3
+{"short_sent": 2.093, "short_first": 2.518, "long_done": 11.386, "long_tokens": 413000, "short_completion_tokens": 390, "short_done": 12.273, "short_ttft": 0.425, "short_total": 10.18, "short_decode_tok_s": 39.9, "maxtok": 400, "think": false, "decode_during_prefill_tok_s": 12.6, "tokens_during_prefill": 114}
+{"short_sent": 4.078, "short_first": 4.472, "long_done": 11.147, "long_tokens": 413000, "short_completion_tokens": 400, "short_done": 12.17, "short_ttft": 0.394, "short_total": 8.092, "short_decode_tok_s": 51.8, "maxtok": 400, "think": false, "decode_during_prefill_tok_s": 12.2, "tokens_during_prefill": 83}
+{"short_sent": 6.021, "short_first": 6.544, "long_done": 10.999, "long_tokens": 413000, "short_completion_tokens": 380, "short_done": 11.962, "short_ttft": 0.523, "short_total": 5.941, "short_decode_tok_s": 70.0, "maxtok": 400, "think": false, "decode_during_prefill_tok_s": 12.9, "tokens_during_prefill": 60}
+== decode during 1M prefill (thinking off, 400 tok) x1
+{"short_sent": 4.115, "short_first": 4.576, "long_done": 37.541, "long_tokens": 1000000, "short_completion_tokens": 338, "short_done": 37.542, "short_ttft": 0.461, "short_total": 33.427, "short_decode_tok_s": 10.2, "maxtok": 400, "think": false, "decode_during_prefill_tok_s": 10.2, "tokens_during_prefill": 338}
+== C32 stress (v41bench levels 32, 1 rep)
+| summary | 107.09 |
+| format | 199.57 |
+| ceiling_count | 217.0 |
+wrote ./bench-gb300-pg62-A1-c32.json and .md
+== gates
+ ]
+}
+FUNCTIONAL_GATES FAIL
+== greedy x2
+greedy same-boot identical 40 / 40
+== so_probe
+{"ok_200": 64, "valid_json": 64, "exact_count": 64, "total": 64, "alive_after": true} PASS
+== dsml live probe
+{"case": "dsml", "stream": false, "finish": "tool_calls", "s": 0.6, "n_calls": 1, "json_ok": true, "content_arg": "DSV4.1 tool calls end with </｜DSML｜ calls>, each argument ends with </｜DSML｜ parameter>, and each invoke ends with </｜DSML｜ invoke>. Keep these tags literal.", "has_all_closers": true, "exact": true, "kept_past_closer": true, "text": "", "PASS": true}
+{"case": "dsml", "stream": true, "finish": "tool_calls", "s": 0.2, "n_calls": 1, "json_ok": true, "content_arg": "DSV4.1 tool calls end with </｜DSML｜ calls>, each argument ends with </｜DSML｜ parameter>, and each invoke ends with </｜DSML｜ invoke>. Keep these tags literal.", "has_all_closers": true, "exact": true, "kept_past_closer": true, "text": "", "PASS": true}
+{"model": "deepseek-v4.1-flash", "base": "http://gb300:30006/v1", "ALL_PASS": true}
+ALIVE after suite
+POST_DONE gb300-pg62-A1 Sat Nov 21 04:59:15 CST 2026

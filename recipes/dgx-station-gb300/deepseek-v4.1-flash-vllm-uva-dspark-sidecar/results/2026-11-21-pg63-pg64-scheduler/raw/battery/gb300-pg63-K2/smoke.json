@@ -1,0 +1,85 @@
+{
+ "schema": "dsv41-5way/phase/v1",
+ "lane": "gb300-pg63-K2",
+ "phase": "smoke",
+ "status": "ok",
+ "method": "GET /v1/models; chat (17x23); streamed chat counting reasoning deltas; encoded /v1/completions with streamed usage block; POST /tokenize at API root",
+ "started": "2026-11-21T11:03:28-0600",
+ "finished": "2026-11-21T11:03:29-0600",
+ "wall_s": 0.8,
+ "params": {
+  "request_timeout_s": 900,
+  "api_root": "http://gb300:30006",
+  "model": "deepseek-v4.1-flash",
+  "engine": "vllm"
+ },
+ "summary": {
+  "models": [
+   "dsv41-flash-uva",
+   "deepseek-v4.1-flash"
+  ],
+  "model": "deepseek-v4.1-flash",
+  "model_ok": true,
+  "chat_ok": true,
+  "reasoning_deltas": 0,
+  "thinking_off": true,
+  "completion_usage_ok": true,
+  "tokenize_ok": true,
+  "thinking_body": {
+   "chat_template_kwargs": {
+    "thinking": false
+   }
+  },
+  "checks": {
+   "models": {
+    "http": 200,
+    "ids": [
+     "dsv41-flash-uva",
+     "deepseek-v4.1-flash"
+    ],
+    "model_ok": true
+   },
+   "health_http": 200,
+   "chat": {
+    "http": 200,
+    "content": "391",
+    "reasoning_chars": 0,
+    "ok": true
+   },
+   "chat_stream": {
+    "reasoning_deltas": 0,
+    "reasoning_chars": 0,
+    "content_deltas": 16,
+    "think_tag_in_content": false,
+    "usage": {
+     "prompt_tokens": 14,
+     "total_tokens": 52,
+     "completion_tokens": 38,
+     "completion_tokens_details": {
+      "reasoning_tokens": 0
+     }
+    },
+    "ttft_s": 0.475,
+    "content_head": "Sunlight scatters off air molecules, and shorter blue wavelengths scatter much more than longer red ones. That scattered"
+   },
+   "completion_stream": {
+    "text_head": "The three primary colors depend on the color model:\n\n- **Traditional (RYB) model",
+    "usage": {
+     "prompt_tokens": 9,
+     "total_tokens": 33,
+     "completion_tokens": 24
+    },
+    "usage_ok": true,
+    "reasoning_deltas": 0
+   },
+   "tokenize": {
+    "ok": true,
+    "n": 5,
+    "ids_completion_http": 200
+   }
+  }
+ },
+ "raw": [],
+ "tools": {},
+ "error": null
+}

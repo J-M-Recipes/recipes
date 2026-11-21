@@ -10,6 +10,7 @@ For what serves today, read [README.md](README.md). Dated rounds are newest firs
 
 ## Contents
 
+- [Pg62 status banner (superseded 2026-11-21 by Pg64)](#pg62-status-banner-superseded-2026-11-21-by-pg64)
 - [Pg61 status banner (superseded 2026-11-15 by Pg62)](#pg61-status-banner-superseded-2026-11-15-by-pg62)
 - [Status banners and intro before the 2026-10-30 rewrite](#status-banners-and-intro-before-the-2026-10-30-rewrite)
 - [2026-10-29: Pg61 promoted](#2026-10-29-pg61--garners-ds41-engine-under-our-policy-promoted-soak-in-progress)
@@ -28,6 +29,39 @@ For what serves today, read [README.md](README.md). Dated rounds are newest firs
 - [Superseded limits](#superseded-limits)
 - [Older rollback pairs](#older-rollback-pairs)
 - [Finalisation checklist (2026-10-26)](#finalisation-checklist-2026-10-26)
+
+## Pg62 status banner, superseded 2026-11-21 by Pg64
+
+Moved from `README.md` `## Status` on 2026-11-21, when Pg64 took the lane (Pg63 promoted 09:31:08 CST, Pg64 12:08:42 CST).
+Verbatim, except two links the move breaks: the card image now points at `card-pg62.png` (the Pg62 card; `card.png` is Pg64's) and `#history` at `README.md#history`.
+
+![Pg62 card: DeepSeek-V4.1-Flash on one DGX Station GB300 + RTX PRO 6000 sidecar](card-pg62.png)
+
+- **Serving:** Pg62 on `:30006` of the reference box, since **2026-11-14 23:11:55 CST**. Pg62 is Pg61
+  ([Garner McCloud's DS4.1 engine](https://github.com/garnermccloud/dgx-station-recipes/tree/8043a6811a5feda70fdfb6e827eebb2ec25c65d1/deepseek-v4.1-flash)
+  run under our policy and patch set) plus two changes to decode attention:
+  [what changed](#pg62-2026-11-14-exact-w1-decode-attention-on-the-fp8-layers).
+- **Status:** `experimental`. Pg62's evidence is byte-level equality of each W1 decode-attention call against the
+  stock FlashMLA op plus the 8-prompt first-pass greedy oracle. The T2/T3 quality suite ran on the live lane 2026-11-15 and passed all six
+  pre-registered bars against Pg61's stored per-item results (needle-checksum EXACT 500/500, GSM8K-1319 1284 vs Pg61's 1279, BFCL held-out 1024 vs 1026 of 1,311, MMLU-Pro-1000 871 vs 877; [round](results/2026-11-15-pg62-t2-t3/README.md)).
+  Pg61's 2026-10-31 release gates are Pg61's, not Pg62's. *(Corrected 2026-11-15: this said no T2/T3 bench had run
+  on Pg62.)*
+- **Soak:** 48 h, started 2026-11-14 23:11:39 CST (receipt: launcher `soak-start.json`); it ends
+  **Monday 2026-11-16 11:11 PM CST (05:11Z 11-17)**. Any restore or card restarts the clock. No 48 h soak has completed
+  on any sidecar config: no receipt in this recipe shows Pg61's last window (to 2026-11-12 5:39 AM CST) completing.
+- **Rollback:** Pg61, one command on the box: `bash scripts/rollback-pg62-to-pg61.sh` (try `--dry-run` first).
+  **Never drilled.** Afterwards, point the box autostart and the lane check (`PG_WORK`) back at `pg61-work` by hand.
+  Second line: h2-REF, `bash scripts/rollback-pg61-to-h2ref.sh` (drilled end to end 2026-10-31).
+- **Bundle:** [`results/2026-11-14-pg62-w1-exact/`](results/2026-11-14-pg62-w1-exact/README.md). Pg61's:
+  [`results/2026-10-29-pg61-garner-engine/`](results/2026-10-29-pg61-garner-engine/README.md) and the release-gate
+  round [`results/2026-10-31-r1-qt1/`](results/2026-10-31-r1-qt1/README.md). Pg61 card: `card-pg61.png`.
+- **Related:** blogs
+  [GB300 + sidecar vs 4× RTX PRO 6000 (BRRR)](https://al-engr.com/gb300-vs-4x-rtx6000-dsv41-flash-brrr.html),
+  [Adaptive Residency Part 3, the seed map](https://al-engr.com/gb300-adaptive-residency-seed-map.html) and
+  [Part 1, with its convergence correction](https://al-engr.com/gb300-adaptive-expert-residency.html). Peer recipe:
+  [fraserprice/DeepSeek-4.1-Flash-1017-BRRR](https://huggingface.co/fraserprice/DeepSeek-4.1-Flash-1017-BRRR).
+- **How we got here:** one line per round in [History](README.md#history). The Pg61 banner this block replaced is in
+  [HISTORY.md](HISTORY.md#pg61-status-banner-superseded-2026-11-15-by-pg62).
 
 ## Pg61 status banner, superseded 2026-11-15 by Pg62
 

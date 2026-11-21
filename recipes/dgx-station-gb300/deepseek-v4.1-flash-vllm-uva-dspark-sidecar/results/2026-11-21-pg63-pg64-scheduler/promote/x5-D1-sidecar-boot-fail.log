@@ -1,0 +1,34 @@
+Traceback (most recent call last):
+  File "/opt/ds41/peer3/sidecar/peer_server3.py", line 421, in <module>
+    main()
+  File "/opt/ds41/peer3/sidecar/peer_server3.py", line 294, in main
+    session.prepare((request_for_capacity(
+  File "/opt/ds41/b12x/b12x/preparation/session.py", line 453, in prepare
+    state = job.advance(**authorization)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/ds41/b12x/b12x/preparation/session.py", line 811, in advance
+    return self._advance(collective_key=collective_key, tuning=tuning, cache=cache)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/ds41/b12x/b12x/preparation/session.py", line 906, in _advance
+    signal = self._steps.send(send_value)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/ds41/b12x/b12x/preparation/session.py", line 1778, in _run
+    result = yield from self._race(obligation)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/ds41/b12x/b12x/preparation/session.py", line 1407, in _race
+    yield from self._compile(obligation, config, required=False)
+  File "/opt/ds41/b12x/b12x/preparation/session.py", line 1190, in _compile
+    for job in plan._compile_jobs(config, self.session.device):
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/ds41/b12x/b12x/moe/fused_moe/_preparation.py", line 1043, in compile_jobs
+    for payload in _dynamic_route_plan_payloads(launch_plan, caps)
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/ds41/b12x/b12x/moe/fused_moe/_preparation.py", line 1138, in _dynamic_route_plan_payloads
+    dynamic = _dynamic_program_arguments(plan, caps)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/ds41/b12x/b12x/moe/fused_moe/_preparation.py", line 531, in _dynamic_program_arguments
+    and _impl._dynamic_direct_routing_selected(
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/ds41/b12x/b12x/moe/fused_moe/_impl.py", line 2119, in _dynamic_direct_routing_selected
+    raise RuntimeError(
+RuntimeError: planned dynamic direct routing is unsupported for this launch shape
