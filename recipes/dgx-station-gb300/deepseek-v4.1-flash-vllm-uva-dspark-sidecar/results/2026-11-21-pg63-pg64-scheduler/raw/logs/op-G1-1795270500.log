@@ -1,0 +1,26 @@
+2026-11-21 08:15:01 CST [xfer] arm G1 prepared: ovsets=cadence3 armenv='VLLM_PREFILL_CADENCE=3 VLLM_PREFILL_CADENCE_MIN_REMAINING=8192'; tree diffs=1 (expect 1: serve.sh); overlay diffs=1 (expect 1)
+Files ~/dsv41/garner/pg62-work/tree/serve/serve.sh and ~/dsv41/xfer-20261121/work-G1/tree/serve/serve.sh differ
+Only in ~/dsv41/xfer-20261121/work-G1/overlay-vllm/v1: core
+2026-11-21 08:15:01 CST [xfer] down via WORK=~/dsv41/garner/pg62-work
+[ds41] returned ~/dsv41/garner/home/state to 1001:1001
+[ds41] stopped
+[ds41] removed ds41 and ds41-sidecar
+2026-11-21 08:15:42 CST [pg61] down; peer shm removed (verified absent), containers stopped, watchdog stopped
+Mem:             494          32         479           0           0         461
+/dev/md0        1.9T  1.4T  387G  79% /
+[ds41] starting RTX sidecar on NVIDIA RTX PRO 6000 Blackwell Max-Q Workstation Edition (GPU-d07eb6e6-7053-42a7-6811-7bb833266182)
+prepared 40 layers in 58s; 98.5 GB allocated
+serving; v3 call statistics -> /var/lib/ds41/sidecar/peer3_stats.json
+[ds41] starting GB300 vLLM on NVIDIA GB300 (GPU-1c1855c8-dd10-0247-583e-3c3880ddbf55); util=0.95, reserve=0 MiB, rowmap=rowmap-mix-v1-h255.json, maxlen=1048576
+MEGA_PEER finalize layer 39: done
+(EngineCore pid=403) INFO 11-21 14:20:31 [interface.py:692] Setting kv cache block size to 128 for FLASHMLA_MEGA_ATTN_DSV41/DEEPSEEK_SPARSE_SWA/DEEPSEEK_V41_INDEXER/CompressorBackend backend(s).
+MEGA_PEER ACTIVE peer tier v2: max_rows=8192, small-row routing <= 64
+(EngineCore pid=403) INFO 11-21 14:20:53 [kv_cache_utils.py:2464] GPU KV cache size: 11,696,582 tokens, Maximum concurrency for 1,048,576 tokens per request: 11.15x
+A12_INSTALL_MEMORY {"phase": "after_capture_warmup_gc", "reason": null, "retirement": {"alternate_graphs_retained": 0, "candidate_allocated_bytes": 11752439808, "checked_graph_managers": [{"full_count": 36, "manager": "ModelCudaGraphManager
+[ds41] ready: http://127.0.0.1:30006/v1  (model dsv41-flash-uva)
+[ds41] sample: curl -s http://127.0.0.1:30006/v1/models -H "Authorization: Bearer *** ~/dsv41/garner/home/api-key)"
+2026-11-21 08:22:05 CST [pg61] verify OK: gumbel 6eac3e134833 rsu edc8f8f4c425 libw6mk b54168223847560b PEER3_SPINS=1000000000000
+2026-11-21 08:22:08 CST [pg61] UP on :30006; watchdog ENFORCE armed (status ~/dsv41/xfer-20261121/work-G1/wdp3.status.json)
+2026-11-21 08:22:08 CST [pg61] soak clock started: {"soak_start_utc": "2026-11-21T14:22:08Z", "soak_start_local": "2026-11-21 08:22:08 CST", "epoch": 1795270928}
+2026-11-21 08:22:08 CST [xfer] overlay verified in container: ./v1/core/sched/scheduler.py d5f97ee89d06476c
+2026-11-21 08:22:08 CST [xfer] OP arm G1 END rc=0

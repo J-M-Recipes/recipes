@@ -1,0 +1,32 @@
+[gb300-pg62-A2-c32] warmup
+  C32 coding        agg 5400.55 tok/s  per-stream 201.37  ttft 0.178s
+  C32 json          agg 3125.69 tok/s  per-stream 136.02  ttft 0.159s
+  C32 narrative     agg 2159.10 tok/s  per-stream 81.3  ttft 0.179s
+  C32 prose         agg 2892.69 tok/s  per-stream 114.56  ttft 0.154s
+  C32 math          agg 4937.23 tok/s  per-stream 190.9  ttft 0.19s
+  C32 reasoning     agg 4176.87 tok/s  per-stream 153.8  ttft 0.17s
+  C32 summary       agg 2107.06 tok/s  per-stream 104.58  ttft 0.452s
+  C32 format        agg 4349.52 tok/s  per-stream 198.83  ttft 0.178s
+  C32 ceiling_count agg 5834.13 tok/s  per-stream 210.1  ttft 0.143s
+Prompt set `v1` (identical across boots), temperature 0, thinking off. Tokens from the server's usage block; TTFT = first token delta.
+
+### Throughput by concurrency (8 categories; the counting ceiling is excluded)
+
+| C | aggregate tok/s | per-stream tok/s | mean TTFT (s) |
+|---|---|---|---|
+| C32 | 3643.59 | 147.67 | 0.207 |
+
+### Per-stream tok/s by category
+
+| category | C32 |
+|---|---|
+| coding | 201.37 |
+| json | 136.02 |
+| narrative | 81.3 |
+| prose | 114.56 |
+| math | 190.9 |
+| reasoning | 153.8 |
+| summary | 104.58 |
+| format | 198.83 |
+| ceiling_count | 210.1 |
+wrote ./bench-gb300-pg62-A2-c32.json and .md

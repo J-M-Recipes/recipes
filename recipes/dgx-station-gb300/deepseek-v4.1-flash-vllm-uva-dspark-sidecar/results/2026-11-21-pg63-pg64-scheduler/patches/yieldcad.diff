@@ -1,0 +1,370 @@
+diff --git a/vllm/v1/core/sched/scheduler.py b/vllm/v1/core/sched/scheduler.py
+index 8b188de..ae457ae 100644
+--- a/vllm/v1/core/sched/scheduler.py
++++ b/vllm/v1/core/sched/scheduler.py
+@@ -1,6 +1,7 @@
+ # SPDX-License-Identifier: Apache-2.0
+ # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+ import itertools
++import os
+ import time
+ from collections import defaultdict, deque
+ from collections.abc import Iterable
+@@ -76,6 +77,24 @@ from vllm.v1.utils import record_function_or_nullcontext
+ logger = init_logger(__name__)
+ 
+ 
++def _prefill_yield_from_env() -> tuple[bool, float]:
++    """Prefill yield settings from the environment.
++
++    ``VLLM_PREFILL_YIELD=short`` enables it; unset or any other value leaves
++    scheduling stock. ``VLLM_PREFILL_YIELD_LIMIT_S`` (default 10) is how long a
++    long prefill may keep yielding before its next chunk runs regardless.
++    """
++    enabled = os.environ.get("VLLM_PREFILL_YIELD", "off").strip().lower() == "short"
++    raw = os.environ.get("VLLM_PREFILL_YIELD_LIMIT_S", "10")
++    try:
++        limit_s = float(raw)
++    except (TypeError, ValueError):
++        limit_s = 10.0
++    if not limit_s > 0 or limit_s != limit_s:  # non-positive or NaN
++        limit_s = 10.0
++    return enabled, limit_s
++
++
+ class Scheduler(SchedulerInterface):
+     def __init__(
+         self,
+@@ -342,9 +361,34 @@ class Scheduler(SchedulerInterface):
+         # prefill batch fully drained the waiting queue. Prefill throttling
+         # is disabled in this case.
+         self.prefill_capacity_bound = False
++        # xfer-20261121 prefill cadence (env-gated; unset or 1 == stock): run prefill
++        # compute only on every Nth schedule() while a decode is running, reusing the
++        # stock DP prefill-throttle path (defer_prefills) on the other steps.
++        import os as _os
++        self._prefill_cadence = max(1, int(_os.environ.get("VLLM_PREFILL_CADENCE", "1") or "1"))
++        self._prefill_cadence_tick = 0
++        self._prefill_cadence_deferred = 0
++        self._prefill_cadence_steps = 0
++        # Only defer prefill work whose request still has more than this many
++        # uncomputed prompt tokens (0 = defer every prefill, the X1 behaviour).
++        # Short prompts and cached-prefix suffixes are then never delayed.
++        self._prefill_cadence_min_rem = max(0, int(_os.environ.get("VLLM_PREFILL_CADENCE_MIN_REMAINING", "0") or "0"))
++        if self._prefill_cadence > 1:
++            logger.info("xfer prefill cadence enabled: N=%d min_remaining=%d",
++                        self._prefill_cadence, self._prefill_cadence_min_rem)
+         self.scheduler_reserve_full_isl = (
+             self.scheduler_config.scheduler_reserve_full_isl
+         )
++        # Prefill yield (env-gated port of spark-ds41f vLLM patch 0545,
++        # `--prefill-yield short`): a long prompt's chunk gives its step to
++        # waiting prompts whose prefill finishes within one chunk. Off by
++        # default; with the env vars unset every code path below is skipped and
++        # scheduling is stock.
++        self.prefill_yield, self.prefill_yield_limit_s = _prefill_yield_from_env()
++        # Long prefills that yielded, by request id: when they first yielded
++        # since their last scheduled chunk. A prefill that has yielded for
++        # `prefill_yield_limit_s` stops yielding until its next chunk runs.
++        self._yielding_since: dict[str, float] = {}
+ 
+         self.has_mamba_layers = kv_cache_config.has_mamba_layers
+         self.needs_kv_cache_zeroing = kv_cache_config.needs_kv_cache_zeroing
+@@ -559,7 +603,79 @@ class Scheduler(SchedulerInterface):
+             num_new_tokens -= self.num_prefill_lookahead - remaining
+         return max(num_new_tokens, 0)
+ 
++    # --- Prefill yield (port of spark-ds41f 0545) --------------------------
++    def _prefill_finishes_in_chunk(
++        self, num_computed_tokens: int, num_tokens: int
++    ) -> bool:
++        """Whether a prompt's next chunk ends its prefill.
++
++        Mirrors the chunk cap the scheduling loops apply
++        (`long_prefill_token_threshold`), measured from the prompt's own
++        computed tokens, prefix-cache hits included.
++        """
++        threshold = self.scheduler_config.long_prefill_token_threshold
++        if threshold <= 0:
++            return True
++        return num_tokens - num_computed_tokens <= threshold
++
++    def _prefill_yield_expired(self, request_id: str, now: float) -> bool:
++        since = self._yielding_since.get(request_id)
++        return since is not None and now - since >= self.prefill_yield_limit_s
++
++    def _short_prefill_waiting(self, now: float, scan: int = 16) -> bool:
++        """Whether one of the first ``scan`` waiting requests can be admitted
++        and prefills within one chunk.
++
++        A KV connector's remote hit or an async load is not consulted (the scan
++        must not start a transfer to answer a scheduling question), so a request
++        whose local prefix-cache hit makes it short is not recognised here when
++        a connector is configured: the scan then errs towards stock behaviour.
++        """
++        lookup = self.connector is None
++        checked = 0
++        for queue in (self.kv_holding_waiting, self.waiting):
++            for request in queue:
++                if checked >= scan:
++                    return False
++                checked += 1
++                if self._is_blocked_waiting_status(request.status):
++                    continue
++                computed = request.num_computed_tokens
++                if computed == 0 and lookup:
++                    computed = self.kv_cache_manager.get_computed_blocks(request)[1]
++                if self._prefill_finishes_in_chunk(computed, request.num_tokens):
++                    return True
++        return False
++
++    def _deferrable_long_prefill(self, request: Request) -> bool:
++        """A running prefill chunk the yield may hold back for one step.
++
++        Requests whose chunk needs encoder inputs, Mamba block alignment or
++        speculative placeholders are never deferred: the catch-up pass below
++        re-runs only the plain running-prefill path.
++        """
++        return (
++            request.is_prefill_chunk
++            and not request.has_encoder_inputs
++            and request.num_output_placeholders == 0
++            and not self.need_mamba_block_aligned_split
++        )
++
+     def schedule(self, throttle_prefills: bool = False) -> SchedulerOutput:
++        if self._prefill_cadence > 1:
++            # X3: the cadence only runs while a long prefill is in flight (a running
++            # request with > min_remaining uncomputed prompt tokens). Otherwise the
++            # scheduler is untouched: the tick does not advance and throttle stays off.
++            if any(
++                r.is_prefill_chunk
++                and r.num_tokens - r.num_computed_tokens > self._prefill_cadence_min_rem
++                for r in self.running
++            ):
++                self._prefill_cadence_tick = (self._prefill_cadence_tick + 1) % self._prefill_cadence
++                if self._prefill_cadence_tick != 0:
++                    throttle_prefills = True
++            else:
++                self._prefill_cadence_tick = 0
+         self.current_step += 1
+         # NOTE(woosuk) on the scheduling algorithm:
+         # There's no "decoding phase" nor "prefill phase" in the scheduler.
+@@ -607,6 +723,14 @@ class Scheduler(SchedulerInterface):
+         defer_prefills = (
+             throttle_prefills and not self.prefill_capacity_bound
+         ) and any(not r.is_prefill_chunk for r in self.running)
++        if self._prefill_cadence > 1:
++            self._prefill_cadence_steps += 1
++            if defer_prefills:
++                self._prefill_cadence_deferred += 1
++                if self._prefill_cadence_deferred % 500 == 1:
++                    logger.info("xfer prefill cadence N=%d: deferred %d of %d steps",
++                                self._prefill_cadence, self._prefill_cadence_deferred,
++                                self._prefill_cadence_steps)
+ 
+         # `long_prefill_token_threshold` exists to stop a long prefill from
+         # starving other requests of the token budget. When it is the only
+@@ -626,6 +750,23 @@ class Scheduler(SchedulerInterface):
+             )
+ 
+         # First, schedule the RUNNING requests.
++        # Prefill yield: a long prompt's chunk waits while a waiting prompt can
++        # prefill whole in this step. Otherwise this step schedules exactly as
++        # without the option.
++        yield_now = time.monotonic() if self.prefill_yield else 0.0
++        admission_open = (
++            self._pause_state == PauseState.UNPAUSED
++            and len(self.running) + self.num_waiting_for_streaming_input
++            < self.max_num_active_reqs
++        )
++        yield_long = self.prefill_yield and (
++            admission_open
++            and bool(self.waiting or self.kv_holding_waiting)
++            and self._short_prefill_waiting(yield_now)
++        )
++        deferred_long: list[Request] = []
++        admitted_short = False
++
+         req_index = 0
+         while req_index < len(self.running) and token_budget > 0:
+             request = self.running[req_index]
+@@ -654,7 +795,11 @@ class Scheduler(SchedulerInterface):
+                 req_index += 1
+                 continue
+ 
+-            if defer_prefills and request.is_prefill_chunk:
++            if defer_prefills and request.is_prefill_chunk and (
++                self._prefill_cadence_min_rem == 0
++                or request.num_tokens - request.num_computed_tokens
++                > self._prefill_cadence_min_rem
++            ):
+                 # DP prefill balancing: defer this in-progress prefill chunk to a
+                 # cadence-aligned step; decodes still run to fill this step.
+                 req_index += 1
+@@ -671,6 +816,23 @@ class Scheduler(SchedulerInterface):
+                 req_index += 1
+                 continue
+ 
++            if (
++                yield_long
++                and request not in deferred_long
++                and self._deferrable_long_prefill(request)
++                and not self._prefill_finishes_in_chunk(
++                    request.num_computed_tokens, request.num_tokens
++                )
++                and not self._prefill_yield_expired(request.request_id, yield_now)
++            ):
++                # Prefill yield: the chunk keeps its boundaries and waits for
++                # the work that needs this step; the catch-up pass after the
++                # waiting pass runs it if none of that work took the step.
++                deferred_long.append(request)
++                self._yielding_since.setdefault(request.request_id, yield_now)
++                req_index += 1
++                continue
++
+             num_new_tokens = (
+                 request.num_tokens_with_spec
+                 + request.num_output_placeholders
+@@ -1051,6 +1213,24 @@ class Scheduler(SchedulerInterface):
+                         skip_request(request_queue)
+                         continue
+ 
++                if (
++                    yield_long
++                    and not load_kv_async
++                    and not self._prefill_finishes_in_chunk(
++                        num_computed_tokens, request.num_tokens
++                    )
++                    and not self._prefill_yield_expired(request_id, yield_now)
++                ):
++                    # Prefill yield: a long prompt waits behind this step's short
++                    # work without holding up the requests queued after it.
++                    self._yielding_since.setdefault(request_id, yield_now)
++                    request_queue.pop_request()
++                    if request_queue is self.kv_holding_waiting:
++                        step_skipped_kv_holding.appendleft(request)
++                    else:
++                        step_skipped_waiting.appendleft(request)
++                    continue
++
+                 encoder_inputs_to_schedule = None
+                 external_load_encoder_input = []
+                 new_encoder_compute_budget = encoder_compute_budget
+@@ -1065,7 +1245,15 @@ class Scheduler(SchedulerInterface):
+                     # KVTransfer: loading remote KV, do not allocate for new work.
+                     assert num_external_computed_tokens > 0
+                     num_new_tokens = 0
+-                elif defer_prefills and num_computed_tokens < request.num_tokens - 1:
++                elif (
++                    defer_prefills
++                    and num_computed_tokens < request.num_tokens - 1
++                    and (
++                        self._prefill_cadence_min_rem == 0
++                        or request.num_tokens - num_computed_tokens
++                        > self._prefill_cadence_min_rem
++                    )
++                ):
+                     # DP prefill balancing: defer this step's local prefill
+                     # compute to a cadence-aligned step.
+                     break
+@@ -1290,6 +1478,7 @@ class Scheduler(SchedulerInterface):
+                 request = request_queue.pop_request()
+                 self.deferred_waiting.discard(request)
+                 self.running.append(request)
++                admitted_short = admitted_short or yield_long
+                 if num_external_computed_tokens > 0:
+                     # load_kv_async is False here
+                     has_sync_kv_loads = True
+@@ -1344,6 +1533,62 @@ class Scheduler(SchedulerInterface):
+             if step_skipped_waiting:
+                 self.waiting.prepend_requests(step_skipped_waiting)
+ 
++            if (
++                deferred_long
++                and not admitted_short
++                and token_budget > 0
++                and input_budget > draft_slots
++            ):
++                # Prefill yield: nothing short was admitted after all, so the
++                # deferred long chunks take the step's budget as they would
++                # have. Only `_deferrable_long_prefill` requests are here, so
++                # this pass re-runs the plain running-prefill path.
++                for request in deferred_long:
++                    if token_budget <= 0 or input_budget <= draft_slots:
++                        break
++                    if request.status != RequestStatus.RUNNING:
++                        continue
++                    num_new_tokens = (
++                        request.num_tokens_with_spec
++                        + request.num_output_placeholders
++                        - request.num_computed_tokens
++                    )
++                    if 0 < long_prefill_token_threshold < num_new_tokens:
++                        num_new_tokens = long_prefill_token_threshold
++                    num_new_tokens = min(
++                        num_new_tokens, token_budget, input_budget - draft_slots
++                    )
++                    num_new_tokens = min(
++                        num_new_tokens,
++                        self.max_model_len
++                        - request.num_computed_tokens
++                        - self.num_sampled_tokens_per_step,
++                    )
++                    if num_new_tokens <= 0:
++                        continue
++                    new_blocks = self.kv_cache_manager.allocate_slots(
++                        request,
++                        num_new_tokens,
++                        num_lookahead_tokens=self.num_lookahead_tokens,
++                    )
++                    if new_blocks is None:
++                        continue
++                    request_id = request.request_id
++                    scheduled_running_reqs.append(request)
++                    prefill_scheduled = True
++                    req_to_new_blocks[request_id] = new_blocks
++                    num_scheduled_tokens[request_id] = num_new_tokens
++                    token_budget -= num_new_tokens
++                    input_budget -= num_new_tokens + draft_slots
++                    self._yielding_since.pop(request_id, None)
++                    # Only track requests that will still be prefilling after
++                    # this chunk.
++                    if (
++                        request.num_computed_tokens + num_new_tokens
++                        < request.num_tokens
++                    ):
++                        self._inflight_prefills.add(request)
++
+             # DP prefill balancing: on a step that admitted prefills (release),
+             # record whether it was capacity-bound.
+             if not defer_prefills:
+@@ -1556,6 +1801,9 @@ class Scheduler(SchedulerInterface):
+         self._free_request_blocks(request)
+         self.encoder_cache_manager.free(request)
+         self._inflight_prefills.discard(request)
++        if self.prefill_yield:
++            # The re-prefill after a preemption is a new yield window.
++            self._yielding_since.pop(request.request_id, None)
+         request.status = RequestStatus.PREEMPTED
+         request.num_computed_tokens = 0
+         if request.spec_token_ids:
+@@ -1593,6 +1841,9 @@ class Scheduler(SchedulerInterface):
+         num_scheduled_tokens = scheduler_output.num_scheduled_tokens
+         for req_id, num_scheduled_token in num_scheduled_tokens.items():
+             request = self.requests[req_id]
++            if self.prefill_yield:
++                # A scheduled chunk ends its yield window.
++                self._yielding_since.pop(req_id, None)
+             request.num_computed_tokens += num_scheduled_token
+             request.num_in_flight_tokens += num_scheduled_token
+             if self.defer_block_free:
+@@ -2655,6 +2906,8 @@ class Scheduler(SchedulerInterface):
+         if self.aux_output_connector is not None:
+             self.aux_output_connector.request_finished(request)
+         self._inflight_prefills.discard(request)
++        if self.prefill_yield:
++            self._yielding_since.pop(request.request_id, None)
+         connector_delay_free_blocks, kv_xfer_params = self._connector_finished(request)
+ 
+         # EC Connector: mirror the KV hook. The contract requires firing

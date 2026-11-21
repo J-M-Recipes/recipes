@@ -1,0 +1,123 @@
+{
+ "schema": "dsv41-5way/phase/v1",
+ "lane": "gb300-GR",
+ "phase": "c1",
+ "status": "ok",
+ "method": "v41bench_tf.py prompt set v1, /v1/completions (DeepSeek encoding.py, thinking off), T=0, usage-block tokens, C1",
+ "started": "2026-11-21T05:37:16-0600",
+ "finished": "2026-11-21T05:37:29-0600",
+ "wall_s": 13.1,
+ "params": {
+  "level": 1,
+  "reps": 3,
+  "per_request_timeout_s": 900,
+  "cap_s": 2400,
+  "path": "/v1/completions (encoding.py)",
+  "api_root": "http://gb300:30006",
+  "model": "deepseek-v4.1-flash",
+  "engine": "vllm"
+ },
+ "summary": {
+  "level": 1,
+  "n": 3,
+  "reps": [
+   {
+    "file": "bench-gb300-GR-c1-r1.json",
+    "agg_tok_s": 461.44,
+    "per_stream_tok_s": 552.58,
+    "ttft_mean_s": 0.164
+   },
+   {
+    "file": "bench-gb300-GR-c1-r2.json",
+    "agg_tok_s": 455.55,
+    "per_stream_tok_s": 538.63,
+    "ttft_mean_s": 0.097
+   },
+   {
+    "file": "bench-gb300-GR-c1-r3.json",
+    "agg_tok_s": 482.73,
+    "per_stream_tok_s": 547.51,
+    "ttft_mean_s": 0.033
+   }
+  ],
+  "agg_tok_s": 461.44,
+  "agg_tok_s_spread": [
+   455.55,
+   482.73
+  ],
+  "per_stream_tok_s": 547.51,
+  "per_stream_tok_s_spread": [
+   538.63,
+   552.58
+  ],
+  "ttft_mean_s": 0.097,
+  "ttft_mean_s_spread": [
+   0.033,
+   0.164
+  ],
+  "per_stream_by_category": {
+   "ceiling_count": 1044.33,
+   "coding": 794.27,
+   "format": 789.73,
+   "json": 573.05,
+   "math": 630.14,
+   "narrative": 311.18,
+   "prose": 335.01,
+   "reasoning": 557.44,
+   "summary": 371.27
+  },
+  "per_stream_by_category_spread": {
+   "ceiling_count": [
+    1019.7,
+    1045.13
+   ],
+   "coding": [
+    793.78,
+    826.22
+   ],
+   "format": [
+    714.54,
+    857.63
+   ],
+   "json": [
+    531.63,
+    574.83
+   ],
+   "math": [
+    628.98,
+    656.06
+   ],
+   "narrative": [
+    310.75,
+    312.16
+   ],
+   "prose": [
+    333.93,
+    335.27
+   ],
+   "reasoning": [
+    552.08,
+    570.54
+   ],
+   "summary": [
+    359.9,
+    389.4
+   ]
+  },
+  "coding_per_stream_tok_s": 794.27,
+  "coding_per_stream_tok_s_spread": [
+   793.78,
+   826.22
+  ]
+ },
+ "raw": [
+  "raw/bench-gb300-GR-c1-r1.json",
+  "raw/bench-gb300-GR-c1-r2.json",
+  "raw/bench-gb300-GR-c1-r3.json"
+ ],
+ "tools": {
+  "v41bench_tf.py": "17ac10e86b534d08",
+  "encoding/encoding.py": "13231c592e958fb3"
+ },
+ "error": null
+}

@@ -7,35 +7,72 @@ other road: it reads cold experts from Grace memory, which puts a serial read on
 
 ## Status
 
-![Pg62 card: DeepSeek-V4.1-Flash on one DGX Station GB300 + RTX PRO 6000 sidecar](card.png)
+![Pg64 card: DeepSeek-V4.1-Flash on one DGX Station GB300 + RTX PRO 6000 sidecar](card.png)
 
-- **Serving:** Pg62 on `:30006` of the reference box, since **2026-11-14 23:11:55 CST**. Pg62 is Pg61
-  ([Garner McCloud's DS4.1 engine](https://github.com/garnermccloud/dgx-station-recipes/tree/8043a6811a5feda70fdfb6e827eebb2ec25c65d1/deepseek-v4.1-flash)
-  run under our policy and patch set) plus two changes to decode attention:
-  [what changed](#pg62-2026-11-14-exact-w1-decode-attention-on-the-fp8-layers).
-- **Status:** `experimental`. Pg62's evidence is byte-level equality of each W1 decode-attention call against the
-  stock FlashMLA op plus the 8-prompt first-pass greedy oracle. The T2/T3 quality suite ran on the live lane 2026-11-15 and passed all six
-  pre-registered bars against Pg61's stored per-item results (needle-checksum EXACT 500/500, GSM8K-1319 1284 vs Pg61's 1279, BFCL held-out 1024 vs 1026 of 1,311, MMLU-Pro-1000 871 vs 877; [round](results/2026-11-15-pg62-t2-t3/README.md)).
-  Pg61's 2026-10-31 release gates are Pg61's, not Pg62's. *(Corrected 2026-11-15: this said no T2/T3 bench had run
-  on Pg62.)*
-- **Soak:** 48 h, started 2026-11-14 23:11:39 CST (receipt: launcher `soak-start.json`); it ends
-  **Monday 2026-11-16 11:11 PM CST (05:11Z 11-17)**. Any restore or card restarts the clock. No 48 h soak has completed
-  on any sidecar config: no receipt in this recipe shows Pg61's last window (to 2026-11-12 5:39 AM CST) completing.
-- **Rollback:** Pg61, one command on the box: `bash scripts/rollback-pg62-to-pg61.sh` (try `--dry-run` first).
-  **Never drilled.** Afterwards, point the box autostart and the lane check (`PG_WORK`) back at `pg61-work` by hand.
-  Second line: h2-REF, `bash scripts/rollback-pg61-to-h2ref.sh` (drilled end to end 2026-10-31).
-- **Bundle:** [`results/2026-11-14-pg62-w1-exact/`](results/2026-11-14-pg62-w1-exact/README.md). Pg61's:
-  [`results/2026-10-29-pg61-garner-engine/`](results/2026-10-29-pg61-garner-engine/README.md) and the release-gate
-  round [`results/2026-10-31-r1-qt1/`](results/2026-10-31-r1-qt1/README.md). Pg61 card: `card-pg61.png`.
-- **Related:** blogs
+- **Pg64 is the current config; lane stopped-and-kept since 2026-11-21 14:50 CST (James), restore =**
+  `WORK=~/dsv41/garner/pg64-work MODEL_DIR=… DS41_HOME=~/dsv41/garner/home bash scripts/launch-pg61.sh up` on the box
+  (the ledger line: `promote/lane-owner-20261121.txt` in the bundle, 14:49:50 CST; GPU freed, `garner/pg64-work` intact).
+  Pg64 served `:30006` from **2026-11-21 12:08:42 CST** to 14:49:50. Pg64 = Pg63 + prefill yield; Pg63 = Pg62 + prefill
+  cadence; both are one env-gated scheduler overlay on Pg62 and nothing else ([what changed](#pg63--pg64-2026-11-21-replies-during-a-long-prompt)).
+- **Status:** `experimental`. The round's evidence is pre-registered bars on two boots per lever against same-window
+  controls ([bundle](results/2026-11-21-pg63-pg64-scheduler/README.md)): beside a 413K-token prompt a streaming reply decodes
+  at 33 tok/s instead of 12–13; a short chat arriving during that prompt gets its first token in 0.16–0.22 s instead of
+  0.27–0.58 s. **No 48 h soak has completed on Pg63 or Pg64, and no T2/T3 quality suite has run on either**; the fidelity
+  evidence is the card battery (qeval 71/75, 3-needle at 1M, greedy same-boot 40/40, JSON burst, DSML live) on every arm.
+  Pg62's T2/T3 pass (2026-11-15) is Pg62's.
+- **Soak:** none in progress. Pg64's clock started 12:08:21 CST and stopped with the lane at 14:49:50 (2 h 41 min). It
+  restarts at the next `up`.
+- **Rollback:** Pg64 → Pg63 `bash scripts/rollback-pg64-to-pg63.sh`, Pg63 → Pg62 `bash scripts/rollback-pg63-to-pg62.sh`
+  (box scripts, in the bundle's `promote/`; neither has been run). Pg62 → Pg61 `scripts/rollback-pg62-to-pg61.sh` (never
+  drilled); Pg61 → h2-REF `scripts/rollback-pg61-to-h2ref.sh` (drilled 2026-10-31). What did run for real on 2026-11-21: the
+  Pg63 promotion's own failure path restored Pg62 at 09:22 after a false FAIL ([Rollback](#rollback)).
+- **Bundle:** [`results/2026-11-21-pg63-pg64-scheduler/`](results/2026-11-21-pg63-pg64-scheduler/README.md). Pg62's:
+  [`results/2026-11-14-pg62-w1-exact/`](results/2026-11-14-pg62-w1-exact/README.md) and
+  [`results/2026-11-15-pg62-t2-t3/`](results/2026-11-15-pg62-t2-t3/README.md). Pg61's:
+  [`results/2026-10-29-pg61-garner-engine/`](results/2026-10-29-pg61-garner-engine/README.md),
+  [`results/2026-10-31-r1-qt1/`](results/2026-10-31-r1-qt1/README.md). Cards: `card-pg62.png`, `card-pg61.png`.
+- **Related:** [why we did not port Owen's spark-ds41f engine to the GB300, and what we tried instead](https://al-engr.com/gb300-why-not-port-spark-ds41f.html)
+  (the post this round came out of); blogs
   [GB300 + sidecar vs 4× RTX PRO 6000 (BRRR)](https://al-engr.com/gb300-vs-4x-rtx6000-dsv41-flash-brrr.html),
   [Adaptive Residency Part 3, the seed map](https://al-engr.com/gb300-adaptive-residency-seed-map.html) and
   [Part 1, with its convergence correction](https://al-engr.com/gb300-adaptive-expert-residency.html). Peer recipe:
   [fraserprice/DeepSeek-4.1-Flash-1017-BRRR](https://huggingface.co/fraserprice/DeepSeek-4.1-Flash-1017-BRRR).
-- **How we got here:** one line per round in [History](#history). The Pg61 banner this block replaced is in
-  [HISTORY.md](HISTORY.md#pg61-status-banner-superseded-2026-11-15-by-pg62).
+- **How we got here:** one line per round in [History](#history). The Pg62 banner this block replaced is in
+  [HISTORY.md](HISTORY.md#pg62-status-banner-superseded-2026-11-21-by-pg64).
 
 ## At a glance
+
+<a id="pg63--pg64-2026-11-21-replies-during-a-long-prompt"></a>
+### Pg63 + Pg64 (2026-11-21): replies during a long prompt
+
+Two scheduler-only overlays on Pg62, each promoted on pre-registered bars passed on two boots against same-window
+controls. Nothing below the scheduler changes: same image, same tree, same args, same KV pool (11,696,582 tokens).
+
+| cell (controls plain, arms bold; medians) | Pg62 (A6 / A7, same window as X4) | **Pg63 = cadence3 (G1 / G2)** | Pg63 (K1 / K2, same window as X5) | **Pg64 = + yield (Y1 / Y2 / Y3)** |
+|---|--:|--:|--:|--:|
+| decode of a 400-token reply **during** a 413K prefill, tok/s | 12.2 / 12.5 | **33.3 / 33.1** (2.7×) | 33.6 / 32.5 | **34.4 / 32.2 / 32.6** (no change) |
+| decode during a 1M prefill, tok/s (1 trace) | 10.4 / 10.6 | **28.7 / 30.4** (2.7–2.9×) | 29.1 / 27.9 | **28.3 / 28.2 / 29.9** |
+| true first token, 32-token chat behind 413K, s (median of 4) | 0.487 / 0.493 | **0.329 / 0.362** | 0.418 / 0.352 | **0.211 / 0.223 / 0.185** |
+| phase-locked short chat behind 413K, first token, s (P1 median of 5) | — | — | 0.269 / 0.579 (pooled 0.327) | **0.222 / 0.161 / 0.178** (0.68× / 0.49× / 0.55×) |
+| 8,192-token prompt behind 413K, first token, s (P2 median of 2) | — | — | 1.133 / 1.010 | **1.107 / 1.102 / 1.119** (not helped) |
+| 413K prompt while a reply streams beside it, s, by reply arrival 2 / 4 / 6 s | 11.31 / 11.08 / 11.06 · 11.28 / 11.12 / 11.03 | **12.14 / 11.70 / 11.38 · 12.18 / 11.69 / 11.43** (+7.5…+7.9 / +5.3…+5.4 / +3.0…+3.5 %) | 12.01 / 11.72 / 11.35 · 12.15 / 11.71 / 11.45 | **12.21 / 11.83 / 11.40 · 12.16 / 11.71 / 11.51 · 12.16 / 11.77 / 11.38** |
+| 1M prompt while shared, s | 37.47 / 37.53 | **37.04 / 37.41** | 37.84 / 37.97 | **37.56 / 37.56 / 37.53** |
+| C1 per-stream, tok/s | 541.25 / 546.13 | **543.76 / 551.15** | 547.63 / 552.16 | **547.07 / 536.30 / 545.81** (−0.5 / −2.5 / −0.7 %) |
+| C16 aggregate, tok/s | 2,438.8 / 2,406.0 | **2,417.2 / 2,397.1** | 2,387.6 / 2,399.9 | **2,393.6 / 2,454.6 / 2,401.5** |
+| C32×5 median, warmed, tok/s | 3,973.8 / 3,891.3 (10-rep median 3,930.0) | **3,905.6 / 3,928.6** (−0.62 / −0.04 %) | 3,919.2 / 3,994.0 (10-rep median 3,956.4) | **3,908.8 / 3,966.4 / 3,884.8** (−1.2 / +0.3 / −1.8 %) |
+| cold prefill 32K · 131K · 300K · 1M, K tok/s | 45.3 · 43.5 · 41.1 · 27.5 / 45.1 · 43.4 · 41.2 · 28.1 | **44.9 · 43.2 · 41.1 · 27.9 / 45.6 · 43.6 · 41.0 · 28.1** | 45.4 · 42.9 · 41.1 · 28.0 / 45.6 · 43.1 · 41.2 · 28.2 | **45.3 · 43.1 · 41.2 · 28.1 / 45.7 · 43.2 · 41.1 · 28.0 / 45.5 · 43.7 · 41.2 · 28.1** |
+| qeval · needle 1M · greedy same-boot · JSON burst · DSML | 71 · 3/3 · 40/40 · 64/64 · pass (both) | **71 · 3/3 · 40/40 · 64/64 · pass (both)** | 71 · 3/3 · 40/40 · 64/64, 63/64 · pass | **71 · 3/3 · 40/40 · 64/64 · pass (all three)** |
+
+Instruments: the dsv41-5way battery (`v41bench_tf.py` prompt set v1 at T=0, `prefill_reps.py`, qeval 75 tasks) plus
+`mixed_trace.py` traces of a reply or probe arriving during a cold 413K / 1M prompt; the phase-locked probe sends the short
+chat at 0.8× that rep's own solo cold-413K time. Y2 missed the −2 % C1 bar by 0.47 pt and the spec sent it to James, who
+asked for a third boot (Y3, passed); Pg64 was promoted on Y1 + Y3 with Y2 on file. Cards X1–X3 failed a single-rep C32 bar
+that the X3b diagnostic then showed fails on Pg62 itself after any fresh boot (first C32 ≈ 2,700 vs ≈ 3,950 warm); X4 kept
+every bar and replaced that instrument with a warmed C32×5 on every arm, controls included. Full tables, per-card bars and
+the dead ends: [the bundle](results/2026-11-21-pg63-pg64-scheduler/README.md).
+
+**What a caller sees on Pg63/Pg64:** not measured — the `caller_probe.py` table below is Pg62's (2026-11-15) and Pg61's
+(2026-10-30). The rows a caller would notice are the first three above.
 
 ### Pg62 (2026-11-14): exact W1 decode attention on the FP8 layers
 
@@ -166,7 +203,12 @@ is the one that needs nothing but the GB300.
 
 ## What this runs
 
-**Pg62, serving since 2026-11-14 23:11:55 CST**: Pg61 plus the two W1 changes described in
+**Pg64 (the current config; served 2026-11-21 12:08:42 → 14:49:50 CST, then stopped-and-kept)**: Pg62 plus one
+env-gated scheduler overlay carrying prefill cadence (Pg63, [`patches/cadence3.diff`](results/2026-11-21-pg63-pg64-scheduler/patches/cadence3.diff))
+and Christopher Owen's prefill yield (Pg64, [`patches/yieldcad.diff`](results/2026-11-21-pg63-pg64-scheduler/patches/yieldcad.diff)),
+with `VLLM_PREFILL_CADENCE=3 VLLM_PREFILL_CADENCE_MIN_REMAINING=8192 VLLM_PREFILL_YIELD=short VLLM_PREFILL_YIELD_LIMIT_S=2` in the
+server container ([Pg63 + Pg64](#pg63--pg64-2026-11-21-replies-during-a-long-prompt)). **Pg62** (served 2026-11-14 23:11:55 →
+2026-11-21 09:24 CST; the second rollback) is Pg61 plus the two W1 changes described in
 [Pg62: exact W1 decode attention](#pg62-exact-w1-decode-attention). DeepSeek-V4.1-Flash-1017 (MXFP4 routed experts, FP8
 attention/Engram, in-checkpoint DSpark drafter) at the full **1,048,576-token** context. Both GPUs run the stock,
 pullable `vllm/vllm-openai:v0.31.0` (`sha256:c1c9f6fd…`).
@@ -239,6 +281,7 @@ kernel and FP4 records never run on this lane, so the patch covers them in sourc
 | vLLM overlay (2 files) | `gumbel.py` (#61161) and `rejection_sampler_utils.py` (#61161 + **#60945 guard**), byte-identical to what h2-REF mounts, built from [`patches/vllm-61161-…`](patches/vllm-61161-block-verification-fresh-draws.patch) + [`patches/vllm-60945-…`](patches/vllm-60945-rejection-sampler-guard.patch) | same, README |
 | fail-closed watchdog | [`scripts/sidecar_watchdog_p3.py`](scripts/sidecar_watchdog_p3.py) (v2 + peer tier v3); refuses to arm unless the server runs `PEER3_SPINS` ≥ 1e12 | Card G3-desk / G3 |
 | W1 exact rounding + FP8 routing (Pg62, patch 06 + `w1-exact/`) | `serve.sh` passes `DS41_W1_COMPRESSED_FP8`; the W13 FP8 routing; `-DW1_VARIANT_STOCK_ALL` variant patches and build drivers for both W1 extensions | [`patches/garner-8043a681/`](patches/garner-8043a681/README.md#pg62-2026-11-14-06--w1-exact--applied-only-with-ds41_pg621) |
+| scheduler overlay (Pg63 cadence3 → Pg64 yieldcad) | one file, `overlay-vllm/v1/core/sched/scheduler.py`, bind-mounted over the image's; env-gated (unset = stock). Pg63: run prefill chunks on one step in three while a running request has > 8,192 uncomputed prompt tokens (stock DP `defer_prefills` path). Pg64: + Owen's 0545 yield — a long prompt's chunk gives its step to waiting single-chunk prompts, limit 2 s. In-container sha256 = overlay source at each promotion (`d5f97ee8…` Pg63, `0b830765…` Pg64) | [`results/2026-11-21-pg63-pg64-scheduler/patches/`](results/2026-11-21-pg63-pg64-scheduler/patches/SHA256SUMS) |
 | launcher, cutover, rollback, lane check | [`scripts/launch-pg61.sh`](scripts/launch-pg61.sh) (Pg62 = `DS41_PG62=1`), [`cutover-pg61-to-pg62.sh`](scripts/cutover-pg61-to-pg62.sh), [`rollback-pg62-to-pg61.sh`](scripts/rollback-pg62-to-pg61.sh), [`pg61_lane_check.sh`](scripts/pg61_lane_check.sh) (`PG_WORK`), [`w1_cubin_hash.sh`](scripts/w1_cubin_hash.sh); Pg61's [`cutover-h2ref-to-pg61.sh`](scripts/cutover-h2ref-to-pg61.sh), [`rollback-pg61-to-h2ref.sh`](scripts/rollback-pg61-to-h2ref.sh) | — |
 
 ### Why each patch exists
@@ -313,10 +356,12 @@ Two settings that are not optional:
 
 ## Software
 
-**Pg62 (serving since 2026-11-14 23:11:55 CST)** = the Pg61 pins below plus three Pg62 rows:
+**Pg64 (current config, 2026-11-21)** = the Pg62 pins below plus two rows; **Pg62** = the Pg61 pins plus three Pg62 rows:
 
 | piece | pin |
 |---|---|
+| **Pg64 / Pg63** scheduler overlay | `overlay-vllm/v1/core/sched/scheduler.py` over `/usr/local/lib/python3.12/dist-packages/vllm/v1/core/sched/scheduler.py` (stock sha256 `f820bee4…`). Pg63 = [`cadence3.diff`](results/2026-11-21-pg63-pg64-scheduler/patches/cadence3.diff) → `d5f97ee8…`; Pg64 = [`yieldcad.diff`](results/2026-11-21-pg63-pg64-scheduler/patches/yieldcad.diff) → `0b830765…`; both verified inside `ds41` at promotion ([SHA256SUMS](results/2026-11-21-pg63-pg64-scheduler/patches/SHA256SUMS)) |
+| **Pg64 / Pg63** policy | `DS41_ARM_ENV=VLLM_PREFILL_CADENCE=3 VLLM_PREFILL_CADENCE_MIN_REMAINING=8192 VLLM_PREFILL_YIELD=short VLLM_PREFILL_YIELD_LIMIT_S=2` appended to `policy.env` (Pg63: the first two); `serve/serve.sh` gains the `DS41_ARM_ENV` / `DS41_LPT` hooks (Pg63, sha256 `7ad4f7d9…`) and `DS41_SIDECAR_ENV` (Pg64, `8db3fe7e…`), each a no-op unless set ([`scripts/serve.sh.arm`, `serve.sh.arm2`](results/2026-11-21-pg63-pg64-scheduler/scripts/)). **Not yet in the published `launch-pg61.sh build`**: the box trees were made by `promote-pg62-to-pg63.sh` / `promote-pg63-to-pg64.sh` copying `pg62-work` / `pg63-work` and dropping the overlay + env in |
 | **Pg62** patches on his tree | [`06-w1-fp8-flag-serve.patch`](patches/garner-8043a681/06-w1-fp8-flag-serve.patch) (sha256 `7d15187f…`) and [`w1-exact/w13-fp8-compressed-records.patch`](patches/garner-8043a681/w1-exact/w13-fp8-compressed-records.patch) (`8366c92f…`). In the serving container: `fastpath/w1attn/integrate.py` `bc87880f…`, `ops.py` `5bb4dc8c…`, `formats.py` `654881a1…` ([`in-container-sha256.txt`](results/2026-11-14-pg62-w1-exact/raw/promote/live/in-container-sha256.txt)); `serve/serve.sh` `e33ffb33…` (sha256, box manifest) |
 | **Pg62** W1 extensions | `w1_attn_fp8_ext.so` `de87450648e96214…` (W13 source + [`fp8-variants.patch`](patches/garner-8043a681/w1-exact/fp8-variants.patch)) and `w1_attn_ext.so` `3bca6cac288d7795…` (his pinned source + [`incumbent-variants.patch`](patches/garner-8043a681/w1-exact/incumbent-variants.patch)), both `-DW1_VARIANT_STOCK_ALL`, in-container sha256. Pg61 served his committed prebuilt `w1_attn_ext.so` `7201643d…` |
 | **Pg62** policy | `DS41_W1_COMPRESSED_FP8=1` appended to `policy.env` ([`pg62-policy.env`](results/2026-11-14-pg62-w1-exact/raw/promote/live/pg62-policy.env)); everything else in `docker inspect` is Pg61's |
@@ -346,7 +391,17 @@ the live probe and the behaviour changes: [`results/2026-11-06-dsml-structural-c
 
 ## Launch
 
-**The serving config, Pg62.** On the reference box Pg62's tree was **built by hand-assembly**: a copy of
+**The current config, Pg64, has no published launcher path yet.** On the box, `garner/pg64-work` = a copy of `pg63-work` (itself a copy of
+`pg62-work`) plus the `yieldcad` `scheduler.py` under `overlay-vllm/v1/core/sched/`, the arm `serve.sh` and the `DS41_ARM_ENV` line in
+`policy.env`; `BUILD-SHA256SUMS` was regenerated for it (118 lines). That is what
+[`promote-pg63-to-pg64.sh`](results/2026-11-21-pg63-pg64-scheduler/promote/promote-pg63-to-pg64.sh) does before `launch-pg61.sh up`
+(read it; it also shows the five checks the promotion ran). Reproducing Pg64 from the recipe = build Pg62 as below, then apply
+`patches/yieldcad.diff` to the image's stock `scheduler.py` into `$WORK/overlay-vllm/v1/core/sched/scheduler.py`, add the two hooks to
+`serve.sh` (diff in the bundle's `scripts/serve.sh.arm2` vs the Pg62 `serve.sh`), append the env line to `policy.env`, regenerate
+`BUILD-SHA256SUMS`, and `up`. Folding this into `launch-pg61.sh build` (`DS41_PG64=1`) is open work. **Restore of the stopped lane:**
+`WORK=~/dsv41/garner/pg64-work MODEL_DIR=/models/DeepSeek-V4.1-Flash-1017-<rev> DS41_HOME=~/dsv41/garner/home bash launch-pg61.sh up`.
+
+**Pg62 (the second rollback).** On the reference box Pg62's tree was **built by hand-assembly**: a copy of
 `pg61-work` plus the W13 `fastpath/w1attn/{integrate,ops,formats}.py`, the two `.so` files, the two `serve.sh`
 lines and the policy line (`raw/LEDGER.md` 22:58; manifest
 [`pg62-BUILD-SHA256SUMS`](results/2026-11-14-pg62-w1-exact/raw/promote/live/pg62-BUILD-SHA256SUMS), 117 files).
@@ -513,7 +568,31 @@ must end `ALL GATES PASS`.
 
 ## Results
 
-### Pg62 = the serving config (promoted 2026-11-14 23:11:55 CST, soak in progress) — [`results/2026-11-14-pg62-w1-exact/`](results/2026-11-14-pg62-w1-exact/README.md)
+### Pg63 + Pg64 = the current config (promoted 2026-11-21 09:31:08 and 12:08:42 CST; lane stopped-and-kept 14:49:50) — [`results/2026-11-21-pg63-pg64-scheduler/`](results/2026-11-21-pg63-pg64-scheduler/README.md)
+
+Promotion logs ([`promote-pg63-20261121-0923.log`](results/2026-11-21-pg63-pg64-scheduler/promote/promote-pg63-20261121-0923.log),
+[`promote-pg64-20261121-1201.log`](results/2026-11-21-pg63-pg64-scheduler/promote/promote-pg64-20261121-1201.log)): `pg6N-work ready:
+tree diffs=1 (serve.sh) overlay diffs=1 (scheduler.py)` → `down` → sidecar `prepared 40 layers` → KV 11,696,582 → `verify OK` →
+`UP on :30006; watchdog ENFORCE armed` → env + args + in-container overlay sha256 checks → smoke → cadence line in the engine log →
+`trip: null` → `DONE` (09:31:08 / 12:08:42). The first Pg63 attempt (09:08) **false-failed** on its own `docker logs | grep -q`
+under `pipefail` (SIGPIPE) and auto-restored Pg62 by 09:22:24 ([log](results/2026-11-21-pg63-pg64-scheduler/promote/promote-pg63-20261121-0908.log)).
+
+- **Speed where it was aimed:** a reply streaming beside a 413K prompt 33 vs 12–13 tok/s; beside 1M 29–30 vs 10–11; short chat
+  behind 413K first token 0.33–0.36 s (Pg63) → 0.16–0.22 s (Pg64) vs 0.27–0.58 s. C1/C16/C32×5/cold prefill within the control
+  spread on every passing boot. Tables: [At a glance](#pg63--pg64-2026-11-21-replies-during-a-long-prompt).
+- **Cost:** the 413K prompt finishes +3…+8 % later while a reply streams beside it (by arrival); the reply's ITL is bimodal.
+- **Fidelity:** card battery only (qeval 71, needle 3/3 at 1M, greedy same-boot 40/40, JSON 64/64, DSML pass on every arm). No
+  T2/T3, no teacher-forced bracket, no temperature > 0 instrument on Pg63 or Pg64.
+- **Tried, not adopted:** #59131 + #63540 prefill backports (+1.05 % at 1M, inside the control spread); cadence N=2 (misses the
+  1M bar); cadence on every prefill (C32 burst stall); b12x deterministic combine (sidecar refuses to boot); dead-draft-row
+  skipping (no room: C1 survival by position 0.73 / 0.52 / 0.39 / 0.30 / 0.23). Port of Owen's engine not attempted
+  ([why](https://al-engr.com/gb300-why-not-port-spark-ds41f.html)).
+
+<a id="pg62--the-serving-config-promoted-2026-11-14-231155-cst-soak-in-progress--results2026-11-14-pg62-w1-exactresults2026-11-14-pg62-w1-exactreadmemd"></a>
+### Pg62 (promoted 2026-11-14 23:11:55 CST; served to 2026-11-21 09:24 CST; the second rollback) — [`results/2026-11-14-pg62-w1-exact/`](results/2026-11-14-pg62-w1-exact/README.md)
+
+*(Corrected 2026-11-21: this heading said "Pg62 = the serving config … soak in progress". Pg63 took the lane 2026-11-21 09:31:08 CST
+and Pg64 at 12:08:42; the lane is stopped-and-kept since 14:49:50.)*
 
 Cutover log ([`cutover-pg62-20261114-2305.log`](results/2026-11-14-pg62-w1-exact/raw/promote/live/cutover-pg62-20261114-2305.log)):
 gate `GATE PASS -> cutover` 23:05:13 → KV 11,696,582 → `verify OK` 23:11:36 → watchdog ENFORCE armed 23:11:39 →
@@ -588,8 +667,10 @@ pre-registrations for G0–G5, raw receipts per card (per-class rows withheld), 
 
 | release | served on `:30006` | bundle | result |
 |---|---|---|---|
-| **Pg62** | 2026-11-14 23:11:55 CST → now (soak) | [`2026-11-14-pg62-w1-exact`](results/2026-11-14-pg62-w1-exact/README.md) | +6.1 % C1 decode vs Pg61 same window (gt_mix, greedy); each W1 decode-attention call byte-equal to the stock op in shadow; oracle 8/8 |
-| Pg61 (first rollback) | 2026-10-29 10:14pm CDT → before the 2026-11-14 round (stop time not in this round's receipts) | [`2026-10-29-pg61-garner-engine`](results/2026-10-29-pg61-garner-engine/README.md) | 1.31× h2-REF per-class C1 at T = 1; T3 all six bars PASS; prefill −8 to −17 % |
+| **Pg64** | 2026-11-21 12:08:42 → 14:49:50 CST (stopped-and-kept by James; current config) | [`2026-11-21-pg63-pg64-scheduler`](results/2026-11-21-pg63-pg64-scheduler/README.md) | Pg63 + Owen's prefill yield (limit 2 s): short chat behind a 413K prompt first token 0.16–0.22 s vs 0.27–0.58 s (P1, three boots, 0.49–0.68× pooled control); 8K prompts not helped; Y2 C1 −2.5 % (bar −2 %), Y1/Y3 pass |
+| **Pg63** (first rollback) | 2026-11-21 09:31:08 → 12:02 CST | [`2026-11-21-pg63-pg64-scheduler`](results/2026-11-21-pg63-pg64-scheduler/README.md) | Pg62 + prefill cadence N=3 on long prefills: reply beside 413K 33 vs 12–13 tok/s, beside 1M 29–30 vs 10–11; long prompt +3…+8 % while shared; C32×5 −0.6 / −0.04 % |
+| Pg62 (second rollback) | 2026-11-14 23:11:55 CST → 2026-11-21 09:24 CST (minus the card windows of 11-16/17, 11-20 and 11-21 listed in the bundles) | [`2026-11-14-pg62-w1-exact`](results/2026-11-14-pg62-w1-exact/README.md) | +6.1 % C1 decode vs Pg61 same window (gt_mix, greedy); each W1 decode-attention call byte-equal to the stock op in shadow; oracle 8/8 |
+| Pg61 (third rollback) | 2026-10-29 10:14pm CDT → before the 2026-11-14 round (stop time not in this round's receipts) | [`2026-10-29-pg61-garner-engine`](results/2026-10-29-pg61-garner-engine/README.md) | 1.31× h2-REF per-class C1 at T = 1; T3 all six bars PASS; prefill −8 to −17 % |
 | h2-REF (rollback) | 2026-10-28 5:22pm → 2026-10-29 10:07pm CDT | [`2026-10-28-h2-splitkv-ap2`](results/2026-10-28-h2-splitkv-ap2/README.md) | Card AP2 S4 = PROMOTE-READY: coding C1 484.5 vs 467.5 tok/s (1.036×), crash-free on all four arms |
 | h1-REF | 2026-10-27 4:46pm → 2026-10-28 5:13pm CDT (with the #60945 guard from 2:42pm) | [`h1-lineage`](results/2026-10-28-h2-splitkv-ap2/h1-lineage/) | Card H1: −0.117 ms/step, bit-identical; `SUBBAR` against its bar, promoted by James |
 | v27 | 2026-10-26 4:08am → 2026-10-27 4:46pm CDT | [`2026-10-26-br1-block-verification`](results/2026-10-26-br1-block-verification/), [`2026-10-26-v27-t2-heldout`](results/2026-10-26-v27-t2-heldout/README.md) | Card BR1 block verification PASS (re-scored): +2.0 % tokens/step; T2 and held-out BFCL 77.27 % PASS |
@@ -610,10 +691,46 @@ The long write-up for each release is in [HISTORY.md → Superseded Results subs
 
 ## Known limits
 
-**Pg62 (the serving config since 2026-11-14 23:11:55 CST).** Every Pg61 limit below also applies to Pg62. Pg62 adds:
+**Pg64 (the current config since 2026-11-21 12:08:42 CST; lane stopped-and-kept since 14:49:50).** Every Pg62 and Pg61 limit below
+also applies to Pg63 and Pg64. The scheduler round adds:
+
+* **Still being tested, and less tested than Pg62.** No 48 h soak has run on Pg63 or Pg64 (Pg64's clock ran 12:08:21 → 14:49:50, 2 h 41 min).
+  **No T2/T3 quality suite on Pg63 or Pg64** — no needle-checksum 500, GSM8K, BFCL, MMLU-Pro, gauntlet, teacher-forced bracket or
+  temperature > 0 instrument. The fidelity evidence is the card battery on each arm (qeval 71/75 — D1 read 70 — 3-needle at 1M 3/3, greedy
+  same-boot 40/40, 64-request JSON burst 64/64, DSML live). Pg62's 2026-11-15 T2/T3 pass is Pg62's.
+* **Pg63's cadence is a backport plus one addition.** Upstream vLLM ships the single-engine `--prefill-schedule-interval` from v0.32.1
+  ([#54627](https://github.com/vllm-project/vllm/pull/54627)); our base v0.31.0 predates it. Our overlay adds the long-only gate (defer only
+  prompts with > 8,192 tokens left, tick only while one is in flight), which upstream lacks. On a rebase, use the flag and carry only the gate;
+  that gate has not been A/B'd against the bare upstream flag on a ≥ v0.34 build.
+* **The long prompt pays while a reply streams beside it: +3 … +8 %** on a 413K prompt's completion, by the reply's arrival (2 / 4 / 6 s in:
+  +7.5…+7.9 / +5.3…+5.4 / +3.0…+3.5 % on Card X4's same-window pairs; two of every three steps go to the reply). With only a 32-token probe
+  beside it the long prompt moves ≤ +0.7 %; solo cold prefill is unchanged (±1 %). Measured once per arm at 1M: −1.2 … +0.5 %.
+* **The reply's inter-token latency is bimodal** (≈7 ms decode-only steps and ≈167 ms steps that carry a 6,144-token chunk at 413K, ≈219 ms
+  at 1M). Mean ITL falls ~2.7×; a client p99 will look worse than before. Not measured as a distribution this round.
+* **Yield helps single-chunk prompts only.** An 8,192-token prompt behind a 413K prefill is not helped (P2 1.10–1.12 s on Y1–Y3 vs 1.07 s
+  pooled control). A 131K neighbour behind a 1M prefill is not helped by either lever (not measured this round).
+* **The lane's one-user speed moves ±1.5 % boot to boot and the −2 % C1 bar sits inside that.** Y2 read −2.5 %, Y1 −0.5 %, Y3 −0.7 %
+  (controls 547.6 / 552.2 tok/s). Pg64 was promoted on Y1 + Y3 by James's call; Y2 stays on file.
+* **No launcher path for Pg63/Pg64 yet.** The box trees were made by the promotion scripts copying the previous work dir and adding the overlay
+  + env; `launch-pg61.sh build` does not know `DS41_PG64`. `serve.sh` on the box carries three extra no-op-unless-set hooks
+  (`DS41_ARM_ENV`, `DS41_LPT`, `DS41_SIDECAR_ENV`) that the published patch set does not.
+* **Neither new rollback script has run** (`rollback-pg64-to-pg63.sh`, `rollback-pg63-to-pg62.sh`). Both are the 2026-11-17
+  `rollback-pg62y-to-pg62.sh` with the work-dir names changed, and that one did run end to end (Pg62y → Pg62, 7 min). The lane check's `W=`
+  on the M4 points at `pg64-work`; after a rollback point it back by hand.
+* **Single-rep C32 is a noisy instrument on this lane.** The first C32 after any fresh boot reads ≈ 2,700 tok/s against ≈ 3,950 warm, on Pg62
+  too, and 0.3–0.74 s single-category stalls recur at random (X3b diagnostic). Cards X1–X3 failed on it and are kept as FAIL; gate 32-user
+  throughput on a warmed C32×5 median.
+* **Batch composition is not deterministic on this lane, scheduler overlay or not:** det_check (32 concurrent greedy requests with logprobs,
+  twice) reproduces 0 of 32 on Pg63 controls and on every Y arm; first-token logprobs already differ. The b12x deterministic-combine flag
+  does not boot with our sidecar's plans.
+* **1M cells are single samples** (one trace, one cold prefill per arm).
+* **No caller-probe table on Pg63/Pg64**; the "what a caller sees" table is Pg62's.
+
+**Pg62 (the serving config 2026-11-14 23:11:55 → 2026-11-21 09:24 CST; the second rollback).** Every Pg61 limit below also applies to Pg62. Pg62 adds:
 
 * **Still being tested.** 48 h soak from 2026-11-14 23:11:39 CST to **Monday 2026-11-16 11:11 PM CST**; status stays
-  `experimental`. Any restore or card restarts the clock.
+  `experimental`. Any restore or card restarts the clock. *(Superseded 2026-11-21: no receipt shows that window completing — the
+  2026-11-16/17 Owen card windows, the 11-19 reboot and the 11-20 probe windows each restarted it, and Pg63 took the lane 11-21 09:31.)*
 * **No quality bench has run on Pg62.** No needle, GSM8K, BFCL, MMLU-Pro, gauntlet or teacher-forced bracket. The
   evidence is byte-level op equality plus the 8-prompt first-pass greedy oracle (8 prompts × up to 256 tokens, top-20
   logprobs). Only the first pass after boot counts: on the control arm the second pass is 7/8 against the same
@@ -730,7 +847,8 @@ The long write-up for each release is in [HISTORY.md → Superseded Results subs
 
 * **No 48 h soak has completed on any sidecar config.** The 2026-10-22 window was cut at ~25 h, and James cancelled
   the v25m window on 2026-10-24. Pg61's soak is running. *(Corrected 2026-11-15: no receipt shows Pg61's last window
-  completing; Pg62's soak runs to Monday 2026-11-16 11:11 PM CST.)*
+  completing; Pg62's soak runs to Monday 2026-11-16 11:11 PM CST.)* *(Corrected 2026-11-21: Pg62's window did not complete either;
+  Pg63/Pg64 have had no soak; the lane is stopped-and-kept since 2026-11-21 14:49:50 CST.)*
 * **A silent sidecar timeout is wrong output.** Infinite-spin + watchdog, or do not serve. Do not run the lane
   in `--mode report` and call it production.
 * **The power cap binds in prefill**, on the GB300-only incumbent too. Every number here was measured under that
@@ -794,6 +912,20 @@ The long write-up for each release is in [HISTORY.md → Superseded Results subs
 Limits that described only superseded configs are in [HISTORY.md → Superseded limits](HISTORY.md#superseded-limits).
 
 ## Rollback
+
+The chain is **Pg64 → Pg63 → Pg62 → Pg61 → h2-REF**. Which steps have run for real:
+
+| step | script | exercised? |
+|---|---|---|
+| Pg64 → Pg63 | [`promote/rollback-pg64-to-pg63.sh`](results/2026-11-21-pg63-pg64-scheduler/promote/rollback-pg64-to-pg63.sh) (box) | **never run.** Same bytes as the 11-17 `rollback-pg62y-to-pg62.sh` except the work-dir names |
+| Pg63 → Pg62 | [`promote/rollback-pg63-to-pg62.sh`](results/2026-11-21-pg63-pg64-scheduler/promote/rollback-pg63-to-pg62.sh) (box) | **never run as such.** The equivalent sequence (`launch-pg61.sh down` on the Pg63 tree → drop caches → `up` on `pg62-work`) ran for real at **09:15–09:22 CST on 2026-11-21** as the Pg63 promotion's auto-restore after its false FAIL ([log](results/2026-11-21-pg63-pg64-scheduler/promote/promote-pg63-20261121-0908.log): `verify OK` 09:22:21, `UP on :30006` 09:22:24, Pg62 serving), and the identically shaped `rollback-pg62y-to-pg62.sh` ran end to end on 2026-11-17 01:23–01:30 ([log](results/2026-11-21-pg63-pg64-scheduler/promote/rollback-pg62y-20261117-0123.log)) |
+| Pg62 → Pg61 | [`scripts/rollback-pg62-to-pg61.sh`](scripts/rollback-pg62-to-pg61.sh) | never drilled (below) |
+| Pg61 → h2-REF | [`scripts/rollback-pg61-to-h2ref.sh`](scripts/rollback-pg61-to-h2ref.sh) | drilled end to end 2026-10-31 (below) |
+
+The two new scripts are plain: `launch-pg61.sh down` on the current work dir (`|| true`), `sync; drop_caches`, 45 s, `launch-pg61.sh up` on
+the target work dir, an owner line; on a failed `up` they write `ROLLBACK FAILED; lane DARK` and exit 1. Neither has a `--dry-run`. Neither
+moves the M4 lane check (`W=…/pg64-work` since 12:08) or the box autostart; point both at the restored work dir by hand. Pg63 and Pg62 trees
+are untouched by the later promotions (`chmod -R a-w`; `diff -rq` checks in the promote scripts).
 
 **Pg62 → Pg61 (one command, on the Station):**
 
@@ -952,6 +1084,7 @@ Fable 5.1 as advisor.
 One line per dated round, newest first. The full text of each is in [HISTORY.md](HISTORY.md). The anchors on each
 line keep old links into this README working.
 
+- <a id="pg62-status-banner"></a>**2026-11-21** — Pg63 promoted 09:31:08 CST (prefill cadence N=3 on long prefills, Card X4 after X1–X3 failed a single-rep C32 instrument that the X3b diagnostic showed fails on Pg62 too) and Pg64 promoted 12:08:42 CST (+ Owen's prefill yield, Cards X5/X6, Y1 + Y3 pass, Y2 C1 −2.5 % on file): reply beside a 413K prompt 33 vs 12–13 tok/s, short chat behind it 0.16–0.22 s to first token vs 0.27–0.58; long prompt +3…+8 % while shared. #59131+#63540, cadence N=2, b12x deterministic combine and dead-row skipping measured and parked. Lane stopped-and-kept 14:49:50 at James's request. [Bundle](results/2026-11-21-pg63-pg64-scheduler/README.md) · [the Pg62 status banner it replaced](HISTORY.md#pg62-status-banner-superseded-2026-11-21-by-pg64)
 - **2026-11-15** — T2/T3 quality suite on the live Pg62 lane: six of six pre-registered bars pass against Pg61's stored items (needle 500/500, GSM8K-1319 1284 vs 1279, BFCL held-out 1024 vs 1026, MMLU-Pro-1000 871 vs 877); cross-day reference, not a same-window control. [Bundle](results/2026-11-15-pg62-t2-t3/README.md)
 - <a id="pg61-status-banner"></a>**2026-11-14** — Pg62 promoted 23:11:55 CST: an exact FP8 decode-attention fast path (W13 routing + the stock op's rounding in both W1 extensions), +6.1 % C1, each W1 call byte-equal to the stock op in shadow; Pg61 found never byte-equal on window-only layers (70 of 17,797 calls). [Bundle](results/2026-11-14-pg62-w1-exact/README.md) · [the Pg61 status banner it replaced](HISTORY.md#pg61-status-banner-superseded-2026-11-15-by-pg62)
 - **2026-11-10** — Card HC1: 275 hot experts per layer measured against 255 (61K first token 11–12 % sooner, C1 0.9796×, KV 5,524,336 tokens); not promoted; soak clock restarted. [Bundle](results/2026-11-10-hc1-hot-count/README.md)
@@ -972,7 +1105,21 @@ line keep old links into this README working.
 
 ## Finalisation checklist
 
-What stands between **Pg62** and `status: verified` (2026-11-15):
+What stands between **Pg64** and `status: verified` (2026-11-21):
+
+| item | state |
+|---|---|
+| 48 h soak on Pg64 | **pending** — none run; the lane is stopped-and-kept since 2026-11-21 14:49:50 CST and the clock restarts at the next `up` |
+| T2 (needle-checksum, GSM8K paired) + held-out BFCL on Pg64 | **pending** — not run on Pg63 or Pg64 |
+| T3 promotion bench on Pg64 | **pending** — not run; the round's bars were the card battery + traces + C32×5 ([bundle](results/2026-11-21-pg63-pg64-scheduler/README.md)) |
+| temperature > 0 quality on Pg64 | **pending** |
+| ITL distribution of a reply beside a long prompt (p50 / p99) | **pending** — bimodality is by construction, not yet measured as a distribution |
+| caller-probe table on Pg64 | **pending** |
+| launcher path (`DS41_PG64=1 build`) + `BUILD-SHA256SUMS.expected` | **pending** — box trees made by the promote scripts |
+| rollback Pg64 → Pg63 and Pg63 → Pg62 run for real | **pending** — the Pg63→Pg62 shape ran as the 09:15 auto-restore; the scripts themselves have not |
+| gate stamps | **not stamped.** Nothing new is stamped this round |
+
+<a id="finalisation-checklist-pg62"></a>What stood between **Pg62** and `status: verified` (2026-11-15; kept as the record — Pg62 is now the second rollback):
 
 | item | state |
 |---|---|
