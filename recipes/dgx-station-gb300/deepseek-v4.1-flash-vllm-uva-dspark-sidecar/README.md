@@ -9,10 +9,10 @@ other road: it reads cold experts from Grace memory, which puts a serial read on
 
 ![Pg64 card: DeepSeek-V4.1-Flash on one DGX Station GB300 + RTX PRO 6000 sidecar](card.png)
 
-- **Pg64 is the current config; lane stopped-and-kept since 2026-11-21 14:50 CST (James), restore =**
-  `WORK=~/dsv41/garner/pg64-work MODEL_DIR=… DS41_HOME=~/dsv41/garner/home bash scripts/launch-pg61.sh up` on the box
-  (the ledger line: `promote/lane-owner-20261121.txt` in the bundle, 14:49:50 CST; GPU freed, `garner/pg64-work` intact).
-  Pg64 served `:30006` from **2026-11-21 12:08:42 CST** to 14:49:50. Pg64 = Pg63 + prefill yield; Pg63 = Pg62 + prefill
+- **Pg64 is the current config and is serving `:30006` again since 2026-11-21 18:43:45 CST** (restored on James's word after a planned
+  stop 14:49:50–18:43:45 CST while the Station ran other measurement cards; restore = `WORK=~/dsv41/garner/pg64-work MODEL_DIR=… DS41_HOME=~/dsv41/garner/home
+  bash scripts/launch-pg61.sh up`, cadence + yield env and the cadence engine-log line verified, p3 watchdog ENFORCE). First served
+  **2026-11-21 12:08:42 CST**. The lane is back on the Funland Lab guest page (`deepseek-v4.1-flash`) since 2026-11-21 20:41 CST. Pg64 = Pg63 + prefill yield; Pg63 = Pg62 + prefill
   cadence; both are one env-gated scheduler overlay on Pg62 and nothing else ([what changed](#pg63--pg64-2026-11-21-replies-during-a-long-prompt)).
 - **Status:** `experimental`. The round's evidence is pre-registered bars on two boots per lever against same-window
   controls ([bundle](results/2026-11-21-pg63-pg64-scheduler/README.md)): beside a 413K-token prompt a streaming reply decodes
@@ -20,8 +20,7 @@ other road: it reads cold experts from Grace memory, which puts a serial read on
   0.27–0.58 s. **No 48 h soak has completed on Pg63 or Pg64, and no T2/T3 quality suite has run on either**; the fidelity
   evidence is the card battery (qeval 71/75, 3-needle at 1M, greedy same-boot 40/40, JSON burst, DSML live) on every arm.
   Pg62's T2/T3 pass (2026-11-15) is Pg62's.
-- **Soak:** none in progress. Pg64's clock started 12:08:21 CST and stopped with the lane at 14:49:50 (2 h 41 min). It
-  restarts at the next `up`.
+- **Soak:** in progress — the 48 h soak clock restarted 2026-11-21 18:43:45 CST and runs to Monday 2026-11-23 6:43 PM CST if nothing restarts it. (The first clock ran 12:08:21 → 14:49:50, 2 h 41 min, and stopped with the lane.)
 - **Rollback:** Pg64 → Pg63 `bash scripts/rollback-pg64-to-pg63.sh`, Pg63 → Pg62 `bash scripts/rollback-pg63-to-pg62.sh`
   (box scripts, in the bundle's `promote/`; neither has been run). Pg62 → Pg61 `scripts/rollback-pg62-to-pg61.sh` (never
   drilled); Pg61 → h2-REF `scripts/rollback-pg61-to-h2ref.sh` (drilled 2026-10-31). What did run for real on 2026-11-21: the
@@ -31,7 +30,8 @@ other road: it reads cold experts from Grace memory, which puts a serial read on
   [`results/2026-11-15-pg62-t2-t3/`](results/2026-11-15-pg62-t2-t3/README.md). Pg61's:
   [`results/2026-10-29-pg61-garner-engine/`](results/2026-10-29-pg61-garner-engine/README.md),
   [`results/2026-10-31-r1-qt1/`](results/2026-10-31-r1-qt1/README.md). Cards: `card-pg62.png`, `card-pg61.png`.
-- **Related:** [why we did not port Owen's spark-ds41f engine to the GB300, and what we tried instead](https://al-engr.com/gb300-why-not-port-spark-ds41f.html)
+- **Related:** [the Pg64 write-up: keeping replies flowing while a giant prompt is read](https://al-engr.com/gb300-pg64-replies-during-long-prompts.html) (companion post, 2026-11-21);
+  [why we did not port Owen's spark-ds41f engine to the GB300, and what we tried instead](https://al-engr.com/gb300-why-not-port-spark-ds41f.html)
   (the post this round came out of); blogs
   [GB300 + sidecar vs 4× RTX PRO 6000 (BRRR)](https://al-engr.com/gb300-vs-4x-rtx6000-dsv41-flash-brrr.html),
   [Adaptive Residency Part 3, the seed map](https://al-engr.com/gb300-adaptive-residency-seed-map.html) and
@@ -203,7 +203,7 @@ is the one that needs nothing but the GB300.
 
 ## What this runs
 
-**Pg64 (the current config; served 2026-11-21 12:08:42 → 14:49:50 CST, then stopped-and-kept)**: Pg62 plus one
+**Pg64 (the current config; serving since 2026-11-21 12:08:42 CST, with a planned stop 14:49:50 → 18:43:45)**: Pg62 plus one
 env-gated scheduler overlay carrying prefill cadence (Pg63, [`patches/cadence3.diff`](results/2026-11-21-pg63-pg64-scheduler/patches/cadence3.diff))
 and Christopher Owen's prefill yield (Pg64, [`patches/yieldcad.diff`](results/2026-11-21-pg63-pg64-scheduler/patches/yieldcad.diff)),
 with `VLLM_PREFILL_CADENCE=3 VLLM_PREFILL_CADENCE_MIN_REMAINING=8192 VLLM_PREFILL_YIELD=short VLLM_PREFILL_YIELD_LIMIT_S=2` in the
@@ -568,7 +568,7 @@ must end `ALL GATES PASS`.
 
 ## Results
 
-### Pg63 + Pg64 = the current config (promoted 2026-11-21 09:31:08 and 12:08:42 CST; lane stopped-and-kept 14:49:50) — [`results/2026-11-21-pg63-pg64-scheduler/`](results/2026-11-21-pg63-pg64-scheduler/README.md)
+### Pg63 + Pg64 = the current config (promoted 2026-11-21 09:31:08 and 12:08:42 CST; serving again since 18:43:45 after a planned stop) — [`results/2026-11-21-pg63-pg64-scheduler/`](results/2026-11-21-pg63-pg64-scheduler/README.md)
 
 Promotion logs ([`promote-pg63-20261121-0923.log`](results/2026-11-21-pg63-pg64-scheduler/promote/promote-pg63-20261121-0923.log),
 [`promote-pg64-20261121-1201.log`](results/2026-11-21-pg63-pg64-scheduler/promote/promote-pg64-20261121-1201.log)): `pg6N-work ready:
@@ -592,7 +592,7 @@ under `pipefail` (SIGPIPE) and auto-restored Pg62 by 09:22:24 ([log](results/202
 ### Pg62 (promoted 2026-11-14 23:11:55 CST; served to 2026-11-21 09:24 CST; the second rollback) — [`results/2026-11-14-pg62-w1-exact/`](results/2026-11-14-pg62-w1-exact/README.md)
 
 *(Corrected 2026-11-21: this heading said "Pg62 = the serving config … soak in progress". Pg63 took the lane 2026-11-21 09:31:08 CST
-and Pg64 at 12:08:42; the lane is stopped-and-kept since 14:49:50.)*
+and Pg64 at 12:08:42; serving again since 18:43:45 after a planned stop 14:49:50–18:43:45.)*
 
 Cutover log ([`cutover-pg62-20261114-2305.log`](results/2026-11-14-pg62-w1-exact/raw/promote/live/cutover-pg62-20261114-2305.log)):
 gate `GATE PASS -> cutover` 23:05:13 → KV 11,696,582 → `verify OK` 23:11:36 → watchdog ENFORCE armed 23:11:39 →
@@ -667,7 +667,7 @@ pre-registrations for G0–G5, raw receipts per card (per-class rows withheld), 
 
 | release | served on `:30006` | bundle | result |
 |---|---|---|---|
-| **Pg64** | 2026-11-21 12:08:42 → 14:49:50 CST (stopped-and-kept by James; current config) | [`2026-11-21-pg63-pg64-scheduler`](results/2026-11-21-pg63-pg64-scheduler/README.md) | Pg63 + Owen's prefill yield (limit 2 s): short chat behind a 413K prompt first token 0.16–0.22 s vs 0.27–0.58 s (P1, three boots, 0.49–0.68× pooled control); 8K prompts not helped; Y2 C1 −2.5 % (bar −2 %), Y1/Y3 pass |
+| **Pg64** | since 2026-11-21 12:08:42 CST (current config; planned stop 14:49:50 → 18:43:45) | [`2026-11-21-pg63-pg64-scheduler`](results/2026-11-21-pg63-pg64-scheduler/README.md) | Pg63 + Owen's prefill yield (limit 2 s): short chat behind a 413K prompt first token 0.16–0.22 s vs 0.27–0.58 s (P1, three boots, 0.49–0.68× pooled control); 8K prompts not helped; Y2 C1 −2.5 % (bar −2 %), Y1/Y3 pass |
 | **Pg63** (first rollback) | 2026-11-21 09:31:08 → 12:02 CST | [`2026-11-21-pg63-pg64-scheduler`](results/2026-11-21-pg63-pg64-scheduler/README.md) | Pg62 + prefill cadence N=3 on long prefills: reply beside 413K 33 vs 12–13 tok/s, beside 1M 29–30 vs 10–11; long prompt +3…+8 % while shared; C32×5 −0.6 / −0.04 % |
 | Pg62 (second rollback) | 2026-11-14 23:11:55 CST → 2026-11-21 09:24 CST (minus the card windows of 11-16/17, 11-20 and 11-21 listed in the bundles) | [`2026-11-14-pg62-w1-exact`](results/2026-11-14-pg62-w1-exact/README.md) | +6.1 % C1 decode vs Pg61 same window (gt_mix, greedy); each W1 decode-attention call byte-equal to the stock op in shadow; oracle 8/8 |
 | Pg61 (third rollback) | 2026-10-29 10:14pm CDT → before the 2026-11-14 round (stop time not in this round's receipts) | [`2026-10-29-pg61-garner-engine`](results/2026-10-29-pg61-garner-engine/README.md) | 1.31× h2-REF per-class C1 at T = 1; T3 all six bars PASS; prefill −8 to −17 % |
@@ -691,10 +691,10 @@ The long write-up for each release is in [HISTORY.md → Superseded Results subs
 
 ## Known limits
 
-**Pg64 (the current config since 2026-11-21 12:08:42 CST; lane stopped-and-kept since 14:49:50).** Every Pg62 and Pg61 limit below
+**Pg64 (the current config since 2026-11-21 12:08:42 CST; serving again since 18:43:45 after a planned stop).** Every Pg62 and Pg61 limit below
 also applies to Pg63 and Pg64. The scheduler round adds:
 
-* **Still being tested, and less tested than Pg62.** No 48 h soak has run on Pg63 or Pg64 (Pg64's clock ran 12:08:21 → 14:49:50, 2 h 41 min).
+* **Still being tested, and less tested than Pg62.** No 48 h soak has completed on Pg63 or Pg64 (the first Pg64 clock ran 12:08:21 → 14:49:50, 2 h 41 min; the 48 h soak clock restarted 2026-11-21 18:43:45 CST and runs to Monday 2026-11-23 6:43 PM CST if nothing restarts it).
   **No T2/T3 quality suite on Pg63 or Pg64** — no needle-checksum 500, GSM8K, BFCL, MMLU-Pro, gauntlet, teacher-forced bracket or
   temperature > 0 instrument. The fidelity evidence is the card battery on each arm (qeval 71/75 — D1 read 70 — 3-needle at 1M 3/3, greedy
   same-boot 40/40, 64-request JSON burst 64/64, DSML live). Pg62's 2026-11-15 T2/T3 pass is Pg62's.
@@ -848,7 +848,7 @@ also applies to Pg63 and Pg64. The scheduler round adds:
 * **No 48 h soak has completed on any sidecar config.** The 2026-10-22 window was cut at ~25 h, and James cancelled
   the v25m window on 2026-10-24. Pg61's soak is running. *(Corrected 2026-11-15: no receipt shows Pg61's last window
   completing; Pg62's soak runs to Monday 2026-11-16 11:11 PM CST.)* *(Corrected 2026-11-21: Pg62's window did not complete either;
-  Pg63/Pg64 have had no soak; the lane is stopped-and-kept since 2026-11-21 14:49:50 CST.)*
+  Pg63/Pg64 have had no completed soak; the 48 h soak clock restarted 2026-11-21 18:43:45 CST and runs to Monday 2026-11-23 6:43 PM CST if nothing restarts it.)*
 * **A silent sidecar timeout is wrong output.** Infinite-spin + watchdog, or do not serve. Do not run the lane
   in `--mode report` and call it production.
 * **The power cap binds in prefill**, on the GB300-only incumbent too. Every number here was measured under that
@@ -1109,7 +1109,7 @@ What stands between **Pg64** and `status: verified` (2026-11-21):
 
 | item | state |
 |---|---|
-| 48 h soak on Pg64 | **pending** — none run; the lane is stopped-and-kept since 2026-11-21 14:49:50 CST and the clock restarts at the next `up` |
+| 48 h soak on Pg64 | **in progress** — the 48 h soak clock restarted 2026-11-21 18:43:45 CST and runs to Monday 2026-11-23 6:43 PM CST if nothing restarts it |
 | T2 (needle-checksum, GSM8K paired) + held-out BFCL on Pg64 | **pending** — not run on Pg63 or Pg64 |
 | T3 promotion bench on Pg64 | **pending** — not run; the round's bars were the card battery + traces + C32×5 ([bundle](results/2026-11-21-pg63-pg64-scheduler/README.md)) |
 | temperature > 0 quality on Pg64 | **pending** |
