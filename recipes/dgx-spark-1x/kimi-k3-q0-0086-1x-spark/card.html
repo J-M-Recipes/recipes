@@ -1,0 +1,85 @@
+<!doctype html>
+<html><head><meta charset="utf-8">
+<style>
+  html,body{margin:0;background:#0b0f14;}
+  .card{width:1200px;box-sizing:border-box;padding:36px 44px;background:linear-gradient(160deg,#0b0f14 0%,#0f1620 100%);color:#e6edf3;font-family:Inter,-apple-system,Segoe UI,Helvetica,Arial,sans-serif;border:1px solid #1e2a38;border-radius:14px;}
+  .mono{font-family:"JetBrains Mono",SFMono-Regular,Menlo,Consolas,monospace;}
+  .top{display:flex;justify-content:space-between;align-items:flex-start;}
+  h1{margin:0;font-size:38px;font-weight:800;letter-spacing:-0.5px;}
+  .sub{margin-top:6px;font-size:15px;color:#9fb0c3;}
+  .brand{text-align:right;font-size:13px;color:#9fb0c3;line-height:1.5;white-space:nowrap}
+  .brand b{color:#6ee7b7;font-size:16px;letter-spacing:1px}
+  .pills{display:flex;flex-wrap:wrap;gap:8px;margin:18px 0 22px}
+  .pill{border:1px solid #2a3a4d;background:#111a25;border-radius:999px;padding:6px 12px;font-size:13px;color:#cfd9e4}
+  .pill b{color:#fff;font-weight:600}
+  .pill.type{border-color:#6ee7b7;color:#6ee7b7}
+  .grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px}
+  .box{background:#111a25;border:1px solid #1e2a38;border-radius:10px;padding:16px 18px}
+  .lbl{font-size:11px;letter-spacing:1.6px;text-transform:uppercase;color:#7f93a8;margin-bottom:6px}
+  .hero{font-size:56px;font-weight:800;line-height:1;color:#fff}
+  .hero small{font-size:18px;font-weight:500;color:#9fb0c3;margin-left:6px}
+  .note{font-size:12px;color:#9fb0c3;margin-top:8px;line-height:1.4}
+  .row2{display:grid;grid-template-columns:1.2fr 1fr 1fr;gap:14px;margin-top:14px}
+  .kv{font-size:14px;line-height:1.75}
+  .kv b{color:#fff;font-weight:600}
+  .acc span{display:inline-block;margin-right:12px}
+  .fid{margin-top:14px;background:#0e1a17;border:1px solid #1f4d3d;border-radius:10px;padding:16px 18px}
+  .fid .lbl{color:#6ee7b7}
+  .fid ul{margin:0;padding-left:0;list-style:none;display:grid;grid-template-columns:1fr 1fr;gap:6px 24px;font-size:14px;line-height:1.5}
+  .ok::before{content:"✓ ";color:#6ee7b7;font-weight:700}
+  .pend::before{content:"◌ ";color:#f59e0b;font-weight:700}
+  .pend{color:#d9c58a}
+  .meas::before{content:"≈ ";color:#93c5fd;font-weight:700}
+  .pend-inline{color:#f59e0b;font-size:0.6em;font-weight:600;letter-spacing:1px}
+  .foot{display:flex;justify-content:space-between;margin-top:18px;font-size:12px;color:#7f93a8}
+  .foot .mono{color:#9fb0c3}
+  .fid li.pair { list-style: none; margin: 6px 0 2px -18px; padding: 10px 12px; border: 1px solid rgba(255,255,255,.14); border-radius: 8px; background: rgba(255,255,255,.04); }
+  .fid li.pair .big { font-size: 20px; font-weight: 700; color: #e8f0ff; letter-spacing: -.2px; }
+  .fid li.pair .sep { color: rgba(255,255,255,.35); margin: 0 6px; }
+  .fid li.pair .dim { font-size: 11.5px; color: rgba(255,255,255,.62); }
+</style></head><body>
+<div class="card">
+  <div class="top">
+    <div>
+      <h1>Kimi-K3 · 0.0086 bits/parameter · 1× DGX Spark</h1>
+      <div class="sub">2.8T-parameter MoE, 12 of 93 layers, 16 of 896 experts per layer, stock Q1_0, 3.01 GB, one GB10. The output is not language and that is not the variable under test — the arithmetic is: delete 99.4% of the weights, keep the parameter count on the label.</div>
+    </div>
+    <div class="brand"><b>J-M-RECIPES</b><br>v1 (2026-10-22 · llama.cpp 36cbf41 · 3-rung ladder · EXPERIMENTAL / USELESS / FOR THE LULZ) · 2026-10-22<br>status: experimental</div>
+  </div>
+  <div class="pills">
+<span class="pill type"><b>MoE (pruned)</b> · 896 routed experts, 16 kept, top-2 used · 93 layers, 12 kept · KDA + gated MLA · vision dropped</span>
+<span class="pill"><b>2.8T</b> total · <b>15.6B</b> active</span>
+<span class="pill">checkpoint <b>594.0 GB</b> · rev <span class="mono">f831ab66</span></span>
+<span class="pill">weights <b>stock llama.cpp Q1_0 · 1.544 bpw over the tensors present · 0.0086 bpw over the 2.8T label</b></span>
+<span class="pill">engine <b>llama.cpp <span class="mono">36cbf41</span> · llama.cpp 36cbf41 · CUDA 13.0 · sm_121 · host build, no container</b></span>
+<span class="pill">memory <b>3.01 GB of 121.7 GiB unified · no offload · no KV quant · 4096 ctx (arbitrary)</b></span>
+  </div>
+  <div class="grid">
+<div class="box"><div class="lbl">Decode · single stream (tg128 · token-shaped noise)</div><div class="hero">83.65<small>tok/s</small></div><div class="note">mean of 3, ±0.17 · server sample 81.30 on a 48-token greedy completion · not a quality result, there is no quality</div></div>
+<div class="box"><div class="lbl">Decode · C16 aggregate</div><div class="hero">not measured<small></small></div><div class="note">unmeasured, and you should not extrapolate tg128 to get it</div></div>
+<div class="box"><div class="lbl">Prefill · 128-token prompt</div><div class="hero">1806.63<small>tok/s</small></div><div class="note">mean of 3, ±131 · 395 tok/s on the 94-token serving request</div></div>
+  </div>
+  <div class="row2">
+<div class="box"><div class="lbl">Guesser</div><div class="kv"><b>none</b> · no drafter, no speculation — there is nothing worth drafting for<br>n/a<br><span class="acc">accept: <span class="pend-inline">PENDING</span></span></div></div>
+<div class="box"><div class="lbl">The two numbers (this is the whole recipe)</div><div class="kv">Declared bits/param (÷ 2.8 T): <b>0.0086</b><br>Real bits/param (÷ 15.6 B in the file): <b>1.544</b><br>Weights deleted: <b>99.4%</b><br>Quantizer changed: <b>no — stock Q1_0</b></div></div>
+<div class="box"><div class="lbl">Depth ladder, same weights, same quantizer</div><div class="kv">93 layers / top-16: <b>11.27 tok/s · 15.64 GB · 0.0447 bpw</b><br>24 layers / top-4: <b>49.03 tok/s · 4.88 GB · 0.0140 bpw</b><br>12 layers / top-2 (shipped): <b>83.65 tok/s · 3.01 GB · 0.0086 bpw</b></div></div>
+  </div>
+  <div class="fid"><div class="lbl">Output fidelity — does the recipe change what the model says?</div>
+    <ul>
+<li class="pend">Nothing to preserve: 99.4% of the weight volume is absent, so there is no output to be faithful to. This is the joke, and it is also the limit.</li>
+<li class="meas">Greedy 48-token sample: &quot;moderate moderate … Zem Nom Nom&quot; — 81.30 tok/s. Not language.</li>
+<li class="ok">Every tensor present is a verbatim byte-range copy from the pinned GGUF revision a0836360; no synthetic or re-initialized weights.</li>
+<li class="meas">3,010,804,800 B × 8 ÷ 1.5599e10 = 1.544 bpw (scripts/receipts.py, raw/receipts-L12.txt); the same file ÷ 2.8e12 = 0.0086.</li>
+    </ul>
+  </div>
+  <div class="fid"><div class="lbl">Agent claim card — fixed protocol, held-out sibling, cost per solved task</div>
+    <ul>
+<li class="pend">harness card pending — protocol hash, held-out sibling suite, cost per solved task</li>
+    </ul>
+  </div>
+  <div class="foot">
+    <span>recipe <span class="mono">recipes/dgx-spark-1x/kimi-k3-q0-0086-1x-spark</span> · run <span class="mono">2026-10-22-k3-q01-lulz</span></span>
+    <span>github.com/J-M-Recipes/recipes · al-engr.com · @jmeadlock</span>
+  </div>
+</div>
+</body></html>
