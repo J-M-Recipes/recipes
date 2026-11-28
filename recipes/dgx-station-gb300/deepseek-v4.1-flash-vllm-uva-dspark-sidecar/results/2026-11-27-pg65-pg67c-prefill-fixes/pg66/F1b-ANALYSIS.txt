@@ -1,0 +1,22 @@
+| arm | C1 step ms | C1 tok/s | T=0 step ms | fixed greedy tok/s | steps/s | C32 windows |
+|---|--:|--:|--:|--:|--:|---|
+| A3 | 7.835 | 493.5 | 8.012 | 735.6 | 128.6 | 2611/2612/2620 (mean 2614) |
+| C2 | 7.725 | 503.4 | 7.871 | 709.5 | 131.7 | 2662/2634/2643 (mean 2646) |
+| D2 | 7.642 | 497.6 | 7.873 | 718.4 | 132.3 | 2641/2617/2619 (mean 2626) |
+| A4 | 7.846 | 491.6 | 8.009 | 698.0 | 128.7 | 2592/2580/2589 (mean 2587) |
+| arm | prose | structured | code | shell_ops | tool_json |
+| A3 | 7.564 | 7.544 | 8.083 | 8.112 | 7.871 |
+| C2 | 7.423 | 7.514 | 7.888 | 7.983 | 7.818 |
+| D2 | 7.364 | 7.389 | 7.835 | 7.953 | 7.669 |
+| A4 | 7.540 | 7.553 | 8.102 | 8.130 | 7.903 |
+A3-A4   pos  1773 eq 0.318 mean 0.014073 p99 0.25403 max 0.56918 top1 1.0 firstdiv 39.0
+C2-A3   pos  1584 eq 0.353 mean 0.011282 p99 0.24458 max 0.78671 top1 1.0 firstdiv 33.5
+C2-A4   pos  1837 eq 0.342 mean 0.012732 p99 0.25553 max 0.5368 top1 1.0 firstdiv 37.0
+D2-A3   pos  1689 eq 0.332 mean 0.010476 p99 0.21908 max 0.48332 top1 1.0 firstdiv 33.5
+D2-A4   pos  1866 eq 0.355 mean 0.011416 p99 0.25861 max 0.59469 top1 1.0 firstdiv 39.0
+
+control mean 7.840 (A3 7.835 A4 7.846); C32 ctl mean 2601 spread 39
+C2 {"delta": -0.115, "speed": true, "c32": true, "dlp_mean": true, "dlp_p99": true, "top1": true, "firstdiv": true, "CONFIRM": true}
+D2 {"delta": -0.198, "speed": true, "c32": true, "dlp_mean": true, "dlp_p99": true, "top1": true, "firstdiv": true, "CONFIRM": true}
+
+D vs C: boot deltas C [-0.12, -0.115] D [-0.149, -0.198]; D beats C in both boots: True; pooled D-C -0.056 ms -> PROMOTE D

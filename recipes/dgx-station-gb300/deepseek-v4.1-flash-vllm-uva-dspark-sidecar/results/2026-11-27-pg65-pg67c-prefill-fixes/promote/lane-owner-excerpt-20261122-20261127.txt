@@ -1,0 +1,59 @@
+# Excerpt of the Station's lane-owner log, 2026-11-22 to 2026-11-27: promotion, rollback and card F / PF / F1 / F2 / F3 lines only.
+- 2026-11-22 08:30:43 CST PROMOTE Pg65 starting (Milo; James 11/22 'yes' to porting the DSML real-token rule): Pg64 + DSML token provenance parser overlay; Pg64 kept as rollback (promote/rollback-pg65-to-pg64.sh)
+- 2026-11-22 08:37:56 CST PROMOTE Pg65 DONE: serving :30006 (garner/pg65-work = pg64-work + DSML token-provenance parser); p3 watchdog ENFORCE; rollback promote/rollback-pg65-to-pg64.sh; log ~/dsv41/garner/promote/promote-pg65-20261122-0830.log
+- 2026-11-24 19:47:47 CST card F1 (Flare-transfer: w8oproj/lowb_aux on Pg65): START: A1 live Pg65 cells, then :30006 DARK for arms C (+w8oproj) and D (+w8oproj+lowb_aux); restore Pg65 scripted; runner ~/dsv41/flarex/results-F1/runner.log
+- 2026-11-24 20:04:13 CST card F1 (Flare-transfer: w8oproj/lowb_aux on Pg65): arm C boot (lane DARK)
+- 2026-11-24 20:11:12 CST card F1 (Flare-transfer: w8oproj/lowb_aux on Pg65): arm C BOUND (isolated)
+- 2026-11-24 20:27:39 CST card F1 (Flare-transfer: w8oproj/lowb_aux on Pg65): arm D boot (lane DARK)
+- 2026-11-24 20:34:48 CST card F1 (Flare-transfer: w8oproj/lowb_aux on Pg65): arm D BOUND (isolated)
+- 2026-11-24 20:51:05 CST card F1 (Flare-transfer: w8oproj/lowb_aux on Pg65): RESTORE Pg65 starting
+- 2026-11-24 21:15:11 CST card F1 (Flare-transfer: w8oproj/lowb_aux on Pg65): END: Pg65 (pg65-work) serving :30006; watchdog ENFORCE; MAINTENANCE archived
+- 2026-11-24 21:16:55 CST card F1b (confirm w8oproj / +lowb_aux, 2nd boot): START: A3 live Pg65 cells, then :30006 DARK for confirm arms C2 (+w8oproj) and D2 (+w8oproj+lowb_aux); restore Pg65 scripted; runner ~/dsv41/flarex/results-F1b/runner.log
+- 2026-11-24 21:28:47 CST card F1b (confirm w8oproj / +lowb_aux, 2nd boot): arm C2 boot (lane DARK)
+- 2026-11-24 21:35:47 CST card F1b (confirm w8oproj / +lowb_aux, 2nd boot): arm C2 BOUND (isolated)
+- 2026-11-24 21:47:51 CST card F1b (confirm w8oproj / +lowb_aux, 2nd boot): arm D2 boot (lane DARK)
+- 2026-11-24 21:55:10 CST card F1b (confirm w8oproj / +lowb_aux, 2nd boot): arm D2 BOUND (isolated)
+- 2026-11-24 22:07:18 CST card F1b (confirm w8oproj / +lowb_aux, 2nd boot): RESTORE Pg65 starting
+- 2026-11-24 22:27:03 CST card F1b (confirm w8oproj / +lowb_aux, 2nd boot): END: Pg65 (pg65-work) serving :30006; watchdog ENFORCE; MAINTENANCE archived
+- 2026-11-24 22:28:32 CST PROMOTE Pg66 starting (Milo; James 11/24 'test and see if we can improve our recipe'; F1+F1b passed): Pg65 + w8oproj + lowb_aux; Pg65 kept as rollback (promote/rollback-pg66-to-pg65.sh)
+- 2026-11-24 22:35:41 CST PROMOTE Pg66 FAILED (w8oproj not ACTIVE); restoring Pg65
+- 2026-11-24 22:44:25 CST PROMOTE Pg66 starting (Milo; James 11/24 'test and see if we can improve our recipe'; F1+F1b passed): Pg65 + w8oproj + lowb_aux; Pg65 kept as rollback (promote/rollback-pg66-to-pg65.sh)
+- 2026-11-24 22:51:56 CST PROMOTE Pg66 DONE: serving :30006 (garner/pg66-work = pg65-work + w8oproj + lowb_aux); p3 watchdog ENFORCE; rollback promote/rollback-pg66-to-pg65.sh; log ~/dsv41/garner/promote/promote-pg66-20261124-2244.log
+- 2026-11-24 23:34:52 CST card F2 (Pg66 vs Flare gb300 vs gracetier): START: P1 live Pg66 cells, then :30006 DARK for Flare gb300 and gracetier; restore Pg66 scripted; runner ~/dsv41/flarecmp/results-F2/runner.log
+- 2026-11-24 23:53:59 CST card F2 (Pg66 vs Flare gb300 vs gracetier): arm F (Flare) boot; lane DARK
+- 2026-11-24 23:56:16 CST card F2 (Pg66 vs Flare gb300 vs gracetier): arm G (gracetier) boot; lane DARK
+- 2026-11-25 00:02:01 CST card F2 (Pg66 vs Flare gb300 vs gracetier): arm G BOUND (isolated)
+- 2026-11-25 00:26:31 CST card F2 (Pg66 vs Flare gb300 vs gracetier): RESTORE Pg66 starting
+- 2026-11-25 00:52:59 CST card F2 (Pg66 vs Flare gb300 vs gracetier): END: Pg66 (pg66-work) serving :30006; watchdog ENFORCE; MAINTENANCE archived
+- 2026-11-25 00:54:25 CST card F2b (Flare gb300 retry: 11/20 package and 11/25 core): START: :30006 DARK for Flare arms F20 (11/20 package, their README exactly) and F25 (11/25 core + flare main fd6c0f3); restore Pg66 scripted; runner ~/dsv41/flarecmp/results-F2b/runner.log
+- 2026-11-25 00:55:04 CST card F2b (Flare gb300 retry: 11/20 package and 11/25 core): arm F20 boot
+- 2026-11-25 00:56:52 CST card F2b (Flare gb300 retry: 11/20 package and 11/25 core): arm F20 BOUND (isolated)
+- 2026-11-25 01:01:09 CST card F2c (Flare gb300 via kwproxy): START (continues F2b; lane still DARK): Flare F20 restarted behind kwproxy, then F25, then restore Pg66 + P3 + P3x; runner ~/dsv41/flarecmp/results-F2c/runner.log
+- 2026-11-25 01:03:01 CST card F2c (Flare gb300 via kwproxy): arm F20 BOUND (isolated, kwproxy)
+- 2026-11-25 01:23:02 CST card F2c (Flare gb300 via kwproxy): arm F25 boot
+- 2026-11-25 01:24:39 CST card F2c (Flare gb300 via kwproxy): RESTORE Pg66 starting
+- 2026-11-25 01:58:12 CST card F2c (Flare gb300 via kwproxy): END: Pg66 (pg66-work) serving :30006; watchdog ENFORCE; MAINTENANCE archived
+- 2026-11-26 21:15:10 CST soak (James: go, I do not mind downtime): lane = Pg66 + capture 384 512 768 via WORK=~/dsv41/sidecar-resid/work-R6-s-S; production tree immutable/untouched; ROLLBACK = WORK=~/dsv41/garner/pg66-work DS41_HOME=~/dsv41/garner/home ~/dsv41/garner/launcher/launch-pg61.sh {down,up} (~9 min)
+- 2026-11-27T07:39:53 card R7 window w1 (James: go; you have the station): arms A,O 7cells x2reps fp8 warm start; isolate on; OPC counting arm O (opcount_overlay, DS41_OPC_MINROWS=256). ROLLBACK = ABORT file at ~/dsv41/sidecar-resid/results-R7-w1/ABORT or restore via launch-pg61.sh up (production).
+- 2026-11-27T11:29:53 card F w1 END: lane = Pg66 restored; S/F/FO ok; G1/G2/G3/G5 PASS (+5.0 ms eager srv_prefill [M]); FO OPC shard lost to OPC_HOST bug (G4 unmeasured); receipt-a12 F==S; det identical; dark 40 min. receipts in sidecar-resid/results-F-w1.
+- 2026-11-27 11:39:28 CST PROMOTE Pg66 -> Pg67 starting (F1a + rungs 384/512/768; James: 'try them all plz' 2026-11-27 ~11:40)
+- 2026-11-27 12:05:33 CST ROLLBACK Pg67 -> Pg66 starting
+- 2026-11-27 12:13:09 CST ROLLBACK done: Pg66 (pg66-work) serving :30006; autostart repointed to pg66-work
+- 2026-11-27 12:13:15 CST PROMOTE Pg66 -> Pg67a starting (F1a only, no rung change)
+- 2026-11-27T12:24:58 PROMOTED (live-gates path): Pg67a serving :30006 = Pg66 + F1a routing-glue fusion ONLY; gates on the running boot: hash OK, selftests x4 OK, capture 45, kv_tokens 11,660,754 == Pg66, A12 PASS (kv_bytes+free == Pg66), det 8/8; promote log had two false-fail grounds (log-source + kv-bar constant); rollback = bash ~/dsv41/garner/promote/rollback-pg67a-to-pg66.sh; autostart repointed (backup written)
+- 2026-11-27 17:38:44 CST PROMOTE Pg67b starting (work-Pg67a + rungs 384/512/768 + util 0.9531 slack-pin; James: 'ok; queue them up')
+- 2026-11-27 17:46:18 CST PROMOTE Pg67b GATES FAILED; restoring Pg67a
+- 2026-11-27 18:11:47 CST card PF (ProjFuse: direct mm_mxfp8 call plan): START: :30006 DARK for card PF (arms S,PF, <= 40 min), restore Pg67a scripted; runner ~/dsv41/sidecar-resid/results-PF-w1/runner.log
+- 2026-11-27 18:12:24 CST card PF (ProjFuse: direct mm_mxfp8 call plan): arm S boot (lane DARK) ladder_top=256 added='none'
+- 2026-11-27 18:25:08 CST card PF (ProjFuse: direct mm_mxfp8 call plan): arm PF boot (lane DARK) ladder_top=256 added='none'
+- 2026-11-27 18:38:21 CST card PF (ProjFuse: direct mm_mxfp8 call plan): RESTORE Pg67a starting
+- 2026-11-27 18:45:33 CST card PF (ProjFuse: direct mm_mxfp8 call plan): END: Pg67a (~/dsv41/sidecar-resid/work-Pg67a) serving; ladder restored to production; MAINTENANCE archived; arms run: S PF; dark 26 min
+- 2026-11-27 18:47:44 CST PROMOTE Pg67b starting (Pg67a + PF1 direct mm_mxfp8 call plan; James: 'it is acceptable' on the G2 byte-equal-pool reading)
+- 2026-11-27T19:03:02 PROMOTED (live-gates path): Pg67b serving :30006 = Pg67a + PF1 direct mm_mxfp8 call plan (card: -18.33 ms/eager step pooled, 12 reps; live warm probe 264=103.5 392=102.0 648=108.0 ms; det 8/8; A12 PASS; kv_tokens >= 11.55M; the promote script's smoke-probe gate failed on a det-pass-evicts-prefix artifact, not a regression). rollback = promote/rollback-pg67b-to-pg67a.sh; autostart repointed
+- 2026-11-27 19:05:09 CST PROMOTE Pg67c starting (Pg67b + rung 384 only + util 0.9531 slack-pin; Fable: buy fewer rungs; clears the free-space bar the 3-rung variant missed)
+- 2026-11-27T19:22:55 PROMOTED (live-gates path): Pg67c serving :30006 = Pg67b + rung 384 only + util 0.9531 slack-pin (card: -18.33 ms/eager step pooled; live warm probe 264=104.2 392=99.5 ms; det 8/8; A12 PASS free 12.47 GiB > 12.0 bar; kv_tokens 11,813,533 > Pg66; capture 46 (rung 384 landed); PF1 installed no DISABLED; the promote script's 264-cell smoke-probe gate failed on a cold-rep-0 decode-drain artifact, not a regression). rollback = WORK=work-Pg67b launch down+up; autostart repointed
+- 2026-11-27 21:30:14 CST card F3 (Flare gb300 core d683cc1a vs Pg67c, C1): START: :30006 isolated for card F3 (P1 on live Pg67c, then DARK for Flare core d683cc1a @ runtime 7db06e0c); end state = C1 winner, else Pg67c restored; runner ~/dsv41/flarecmp/results-F3/runner.log
+- 2026-11-27 21:44:30 CST card F3 (Flare gb300 core d683cc1a vs Pg67c, C1): Pg67c down for the Flare arm (lane DARK)
+- 2026-11-27 21:47:04 CST card F3 (Flare gb300 core d683cc1a vs Pg67c, C1): arm F26 BOUND (isolated; flare :30016, kwproxy :30006)
+- 2026-11-27 22:10:53 CST card F3 (Flare gb300 core d683cc1a vs Pg67c, C1): RESTORE Pg67c starting
+- 2026-11-27 22:29:46 CST card F3 (Flare gb300 core d683cc1a vs Pg67c, C1): END: Pg67c (~/dsv41/sidecar-resid/work-Pg67c) serving :30006; watchdog ENFORCE; MAINTENANCE archived; winner=pg67c; dark 45 min

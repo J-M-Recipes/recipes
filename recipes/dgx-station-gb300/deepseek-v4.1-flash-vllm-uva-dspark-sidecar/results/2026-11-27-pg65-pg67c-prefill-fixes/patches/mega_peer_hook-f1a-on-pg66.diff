@@ -1,0 +1,63 @@
+--- garner/pg66-work/tree/fastpath/hook/mega_peer_hook.py	2026-10-29 07:55:16.000000000 -0500
++++ sidecar-resid/work-Pg67a/tree/fastpath/hook/mega_peer_hook.py	2026-11-27 12:06:13.509439180 -0600
+@@ -73,6 +73,7 @@
+         for c, e in enumerate(cold):
+             self.row[e] = -(c + 1)
+         self.row_map = None   # int32 [E] on device, built at finalize
++        self.route_tabs = None  # FUSE1: hot/cold id lookup tables (fuse1_route.RouteTables), built at finalize; None = original path
+ 
+ 
+ def _target_layer(prefix: str, num_experts: int, num_local_experts: int):
+@@ -162,6 +163,11 @@
+         _orig["finalize_weights"](self, shared_experts)
+         if st.row_map is None:
+             st.row_map = torch.tensor(st.row, dtype=torch.int32).to(dev)
++        if st.route_tabs is None and os.environ.get("MEGA_FUSE1", "1") == "1":
++            try:  # FUSE1 (W12): CPU build + copy, loader-thread safe like row_map above; any failure leaves the original path
++                st.route_tabs = _fuse1().build_tables(st.row, dev, st.idx)
++            except Exception as e:
++                _LOG(f"FUSE1 tables layer {st.idx} not built ({e!r}); original routing glue")
+         # finalize_weights drops the loader-side Parameters; return their blocks to the driver before the
+         # next layer allocates its transformed weights.  The old cold-tier path did this per layer.
+         torch.cuda.empty_cache()
+@@ -200,6 +206,19 @@
+     return _pf2
+ 
+ 
++_f1 = None
++
++
++def _fuse1():
++    global _f1
++    if _f1 is None:
++        sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
++        import fuse1_route
++
++        _f1 = fuse1_route
++    return _f1
++
++
+ def _forward(self, hidden_states, topk_weights, topk_ids, *, activation_clamp, fast_math=True):
+     st = getattr(self, "_mp", None)
+     if st is None:
+@@ -219,10 +238,16 @@
+         pf2.finish2(peer2, y, has, pos, rows)
+         return y
+ 
+-    valid = topk_ids >= 0
+-    rm = st.row_map[topk_ids.clamp_min(0).long()]
+-    hot_ids = torch.where(valid & (rm >= 0), rm, -1).to(topk_ids.dtype)
+-    cold_ids = torch.where(valid & (rm < 0), -rm - 1, -1).to(torch.int32)
++    split = None
++    if st.route_tabs is not None and not torch.cuda.is_current_stream_capturing():  # eager only: captured graphs stay byte-identical
++        split = _fuse1().route_split(st.route_tabs, st.row_map, topk_ids)
++    if split is not None:
++        hot_ids, cold_ids = split  # FUSE1: 12 elementwise launches -> clamp_min + 2 table gathers, bit-identical (results/W12/FUSION-DESIGN.md)
++    else:
++        valid = topk_ids >= 0
++        rm = st.row_map[topk_ids.clamp_min(0).long()]
++        hot_ids = torch.where(valid & (rm >= 0), rm, -1).to(topk_ids.dtype)
++        cold_ids = torch.where(valid & (rm < 0), -rm - 1, -1).to(torch.int32)
+     xq, xs = _quant(hidden_states)
+     has, pos, rows = peer2.send(xq, xs, cold_ids, topk_weights, st.idx)
+     y = _orig["forward"](self, hidden_states, topk_weights, hot_ids,

@@ -1,0 +1,33 @@
+# Bind mounts to add to the GB300 lane launcher.
+#
+# Container root for vLLM:  /usr/local/lib/python3.12/dist-packages/vllm
+# (confirm once on the box: docker run --rm --entrypoint python3 \
+#    vllm/vllm-openai:v0.31.0 -c 'import os,vllm;print(os.path.dirname(vllm.__file__))')
+# RUN-TESTS.sh.DRAFT resolves it at run time and prints it.
+#
+# Every source is the *.DRAFT file in this directory. Rename to the plain
+# file name (or point the mount at the .DRAFT suffix, as below) before use.
+# Each target is a single file; nothing else in the image is replaced.
+#
+# host (this port dir)                                              -> container
+~/hermes/research/dsml-opener-20261122/gb300-port/overlay/vllm/parser/deepseek_v41.py.DRAFT                        -> /usr/local/lib/python3.12/dist-packages/vllm/parser/deepseek_v41.py
+~/hermes/research/dsml-opener-20261122/gb300-port/overlay/vllm/parser/parser_manager.py.DRAFT                      -> /usr/local/lib/python3.12/dist-packages/vllm/parser/parser_manager.py
+~/hermes/research/dsml-opener-20261122/gb300-port/overlay/vllm/parser/engine/token_id_scanner.py.DRAFT             -> /usr/local/lib/python3.12/dist-packages/vllm/parser/engine/token_id_scanner.py
+~/hermes/research/dsml-opener-20261122/gb300-port/overlay/vllm/parser/engine/incremental_lexer.py.DRAFT            -> /usr/local/lib/python3.12/dist-packages/vllm/parser/engine/incremental_lexer.py
+~/hermes/research/dsml-opener-20261122/gb300-port/overlay/vllm/parser/engine/streaming_parser_engine.py.DRAFT       -> /usr/local/lib/python3.12/dist-packages/vllm/parser/engine/streaming_parser_engine.py
+~/hermes/research/dsml-opener-20261122/gb300-port/overlay/vllm/parser/engine/parser_engine.py.DRAFT                 -> /usr/local/lib/python3.12/dist-packages/vllm/parser/engine/parser_engine.py
+~/hermes/research/dsml-opener-20261122/gb300-port/overlay/vllm/parser/engine/parser_engine_config.py.DRAFT        -> /usr/local/lib/python3.12/dist-packages/vllm/parser/engine/parser_engine_config.py
+
+# NOT replaced (deliberately):
+#   vllm/parser/deepseek_v4.py   - the PR's only change there is an extraction that
+#                                  v0.31.0 does not have (_dsml_arg_value_extender);
+#                                  nothing in the port needs it.
+#   vllm/parser/engine/adapters.py, events.py, registered_adapters.py,
+#   vllm/parser/abstract_parser.py - untouched; the port uses their v0.31.0 API.
+#   vllm/tokenizers/deepseek_v41.py, deepseek_v41_encoding.py, vllm/renderers/deepseek_v4.py
+#                                - Garner McCloud's overlay-1017 files stay as they are;
+#                                  the port only reads get_vocab()/decode() from them.
+#
+# The lane already mounts our old parser/deepseek_v41.py from
+#   research/dsv41-owen-gb300-20261116/src/pg62/overlay-vllm/
+# Point that mount at the .DRAFT above instead; do not mount both.

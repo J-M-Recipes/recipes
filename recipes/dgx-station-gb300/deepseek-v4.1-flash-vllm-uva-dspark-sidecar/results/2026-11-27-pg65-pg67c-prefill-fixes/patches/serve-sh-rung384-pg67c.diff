@@ -1,0 +1,11 @@
+--- sidecar-resid/work-Pg67b/tree/serve/serve.sh	2026-11-27 18:47:43.744164707 -0600
++++ sidecar-resid/work-Pg67c/tree/serve/serve.sh	2026-11-27 19:04:34.709995693 -0600
+@@ -347,7 +347,7 @@
+     "${attncfg[@]}" \
+     --tool-call-parser deepseek_v41 --reasoning-parser deepseek_v41 --enable-auto-tool-choice \
+     --long-prefill-token-threshold "${DS41_LPT:-6144}" --enable-prefix-caching "${spec[@]}" \
+-    --cudagraph-capture-sizes 1 2 4 6 8 12 16 18 20 24 28 32 36 40 48 56 64 72 80 96 128 144 160 192 224 256 \
++    --cudagraph-capture-sizes 1 2 4 6 8 12 16 18 20 24 28 32 36 40 48 56 64 72 80 96 128 144 160 192 224 256 384 \
+     "${genover[@]}" \
+     "${effort[@]}" "${offload[@]}" \
+     --host 0.0.0.0 --port "$DS41_PORT" >/dev/null
