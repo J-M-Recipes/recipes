@@ -7,30 +7,31 @@ other road: it reads cold experts from Grace memory, which puts a serial read on
 
 ## Status
 
-![Pg64 card: DeepSeek-V4.1-Flash on one DGX Station GB300 + RTX PRO 6000 sidecar](card.png)
+![Pg67c card: DeepSeek-V4.1-Flash on one DGX Station GB300 + RTX PRO 6000 sidecar](card.png)
 
-- **Pg64 is the current config and is serving `:30006` again since 2026-11-21 18:43:45 CST** (restored on James's word after a planned
-  stop 14:49:50–18:43:45 CST while the Station ran other measurement cards; restore = `WORK=~/dsv41/garner/pg64-work MODEL_DIR=… DS41_HOME=~/dsv41/garner/home
-  bash scripts/launch-pg61.sh up`, cadence + yield env and the cadence engine-log line verified, p3 watchdog ENFORCE). First served
-  **2026-11-21 12:08:42 CST**. The lane is back on the Funland Lab guest page (`deepseek-v4.1-flash`) since 2026-11-21 20:41 CST. Pg64 = Pg63 + prefill yield; Pg63 = Pg62 + prefill
-  cadence; both are one env-gated scheduler overlay on Pg62 and nothing else ([what changed](#pg63--pg64-2026-11-21-replies-during-a-long-prompt)).
-- **Status:** `experimental`. The round's evidence is pre-registered bars on two boots per lever against same-window
-  controls ([bundle](results/2026-11-21-pg63-pg64-scheduler/README.md)): beside a 413K-token prompt a streaming reply decodes
-  at 33 tok/s instead of 12–13; a short chat arriving during that prompt gets its first token in 0.16–0.22 s instead of
-  0.27–0.58 s. **No 48 h soak has completed on Pg63 or Pg64, and no T2/T3 quality suite has run on either**; the fidelity
-  evidence is the card battery (qeval 71/75, 3-needle at 1M, greedy same-boot 40/40, JSON burst, DSML live) on every arm.
-  Pg62's T2/T3 pass (2026-11-15) is Pg62's.
-- **Soak:** in progress — the 48 h soak clock restarted 2026-11-21 18:43:45 CST and runs to Monday 2026-11-23 6:43 PM CST if nothing restarts it. (The first clock ran 12:08:21 → 14:49:50, 2 h 41 min, and stopped with the lane.)
-- **Rollback:** Pg64 → Pg63 `bash scripts/rollback-pg64-to-pg63.sh`, Pg63 → Pg62 `bash scripts/rollback-pg63-to-pg62.sh`
-  (box scripts, in the bundle's `promote/`; neither has been run). Pg62 → Pg61 `scripts/rollback-pg62-to-pg61.sh` (never
-  drilled); Pg61 → h2-REF `scripts/rollback-pg61-to-h2ref.sh` (drilled 2026-10-31). What did run for real on 2026-11-21: the
-  Pg63 promotion's own failure path restored Pg62 at 09:22 after a false FAIL ([Rollback](#rollback)).
-- **Bundle:** [`results/2026-11-21-pg63-pg64-scheduler/`](results/2026-11-21-pg63-pg64-scheduler/README.md). Pg62's:
-  [`results/2026-11-14-pg62-w1-exact/`](results/2026-11-14-pg62-w1-exact/README.md) and
-  [`results/2026-11-15-pg62-t2-t3/`](results/2026-11-15-pg62-t2-t3/README.md). Pg61's:
-  [`results/2026-10-29-pg61-garner-engine/`](results/2026-10-29-pg61-garner-engine/README.md),
-  [`results/2026-10-31-r1-qt1/`](results/2026-10-31-r1-qt1/README.md). Cards: `card-pg62.png`, `card-pg61.png`.
-- **Related:** [the Pg64 write-up: keeping replies flowing while a giant prompt is read](https://al-engr.com/gb300-pg64-replies-during-long-prompts.html) (companion post, 2026-11-21);
+- **Pg67c is the current config and has served `:30006` since 2026-11-27 19:22:55 CST** (last restore 2026-11-27 22:17:28 CST, after
+  Card F3). Pg67c = Pg64 plus five small steps, each promoted on its own evidence: DSML token provenance in the parser
+  (Pg65, 11-22), two of Garner's own fast-path components (Pg66, 11-24), and three fixes to the eager prefill step
+  (Pg67a/b/c, 11-27). What each is: [At a glance](#pg65--pg67c-2026-11-22--2026-11-27).
+- **Status:** `experimental`, and less tested than Pg64. **No T2/T3 quality suite has run on Pg65–Pg67c and no 48 h soak
+  has completed.** The three Pg67 promotions were declared from gates read off the running boot after each promote
+  script's own gate block failed for a scripting reason, and Card PF's verdict was HOLD on a KV-token-count gate (861
+  tokens; the pool's bytes were equal). The logs are published as written:
+  [bundle](results/2026-11-27-pg65-pg67c-prefill-fixes/README.md).
+- **What it buys:** a daily agent turn's first token. Prefill steps that ran eager at about 133 ms on Pg66 run at
+  103.8 ms (median, 17 reps), and turns with at most 256 uncached tokens now run captured at 44.8 ms
+  (19 reps). Decode is unchanged by design. KV pool 11,813,533 tokens.
+- **Soak:** in progress. The 48 h clock restarted 2026-11-27 22:17:28 CST and runs to Sunday 2026-11-29 10:17 PM CST if nothing restarts it.
+- **Rollback:** Pg67c → Pg67b → Pg67a → Pg66 → Pg65 → Pg64, then the chain below. Box scripts in the bundle's
+  [`promote/`](results/2026-11-27-pg65-pg67c-prefill-fixes/promote/); the Pg67 → Pg66 one ran for real on 11-27 ([Rollback](#rollback)).
+- **Same-box check against Flare (Card F3, 2026-11-27):** one user, Pg67c 389.4 vs Flare's 2026-11-26 one-GPU core
+  322.7 tok/s on Local Inference Lab's own bench client, and 498.9 vs 366.3 on our per-class instrument. One boot
+  each, Flare at its defaults and untuned on our box. Their recipe needs one GPU and one command; this one needs two
+  GPUs. No many-user claim: [the card](results/2026-11-27-pg65-pg67c-prefill-fixes/README.md#card-f3-2026-11-27-21302229-cst-one-user-pg67c-vs-flares-current-one-gpu-core).
+- **Bundle:** [`results/2026-11-27-pg65-pg67c-prefill-fixes/`](results/2026-11-27-pg65-pg67c-prefill-fixes/README.md). Pg63/Pg64's:
+  [`results/2026-11-21-pg63-pg64-scheduler/`](results/2026-11-21-pg63-pg64-scheduler/README.md). Card of the previous config: `card-pg64.png`.
+- **Related:** [the Pg67c recipe write-up](https://al-engr.com/gb300-sidecar-recipe.html), [three fixes in one day](https://al-engr.com/gb300-three-fixes-one-day.html) and
+  [Pg66 vs Flare on one GPU](https://al-engr.com/gb300-dsv41-pg66-vs-flare-one-gpu.html) (2026-11-25 to 11-27); [the Pg64 write-up: keeping replies flowing while a giant prompt is read](https://al-engr.com/gb300-pg64-replies-during-long-prompts.html) (companion post, 2026-11-21);
   [why we did not port Owen's spark-ds41f engine to the GB300, and what we tried instead](https://al-engr.com/gb300-why-not-port-spark-ds41f.html)
   (the post this round came out of); blogs
   [GB300 + sidecar vs 4× RTX PRO 6000 (BRRR)](https://al-engr.com/gb300-vs-4x-rtx6000-dsv41-flash-brrr.html),
@@ -38,9 +39,43 @@ other road: it reads cold experts from Grace memory, which puts a serial read on
   [Part 1, with its convergence correction](https://al-engr.com/gb300-adaptive-expert-residency.html). Peer recipe:
   [fraserprice/DeepSeek-4.1-Flash-1017-BRRR](https://huggingface.co/fraserprice/DeepSeek-4.1-Flash-1017-BRRR).
 - **How we got here:** one line per round in [History](#history). The Pg62 banner this block replaced is in
-  [HISTORY.md](HISTORY.md#pg62-status-banner-superseded-2026-11-21-by-pg64).
+  [HISTORY.md](HISTORY.md#pg62-status-banner-superseded-2026-11-21-by-pg64). The Pg64 banner is in
+  [HISTORY.md](HISTORY.md#pg64-status-banner-superseded-2026-11-27-by-pg67c).
 
 ## At a glance
+
+<a id="pg65--pg67c-2026-11-22--2026-11-27"></a>
+### Pg65 → Pg67c (2026-11-22 → 2026-11-27)
+
+| config | promoted (CST) | = previous + | evidence | KV pool, tokens |
+|---|---|---|---|--:|
+| Pg65 | 11-22 08:37:56 | parser: DSML markers are structure only when they come from the real `｜DSML｜` token (port of vLLM [#65019](https://github.com/vllm-project/vllm/pull/65019)) | desk suite 67/67 on the port, 45 of 67 fail on stock; provenance log line at boot | 11,696,582 |
+| Pg66 | 11-24 22:51:56 | Garner's `w8oproj` + `lowb_aux` components switched on | Cards F1 + F1b: C1 step 7.841 → 7.692 and 7.840 → 7.642 ms; log-prob distance inside control spread; gauntlet 12/12 | 11,660,754 |
+| Pg67a | 11-27 12:24:58 | F1a: cold-path routing glue as two table lookups | Card F: eager prefill step +4.98 ms saved; captured cells unchanged; det 8/8 | 11,660,754 |
+| Pg67b | 11-27 19:03:02 | PF1: direct call plan for the eager `mm_mxfp8` GEMMs | Card PF: +18.33 ms saved (95 % CI 16.68–19.90); verdict HOLD on a KV-token gate, accepted by James | 11,659,893 |
+| **Pg67c** | 11-27 19:22:55 | capture rung 384; `--gpu-memory-utilization` 0.9531 | live probes below; 12.47 GiB free after capture (bar 12.0); det 8/8 | 11,813,533 |
+
+Server-side prefill time of a warm 52K-token session by uncached tokens (ms, medians):
+
+| uncached tokens | Pg66 (Card F, 11 reps) | Pg66 + F1a (Card F) | Pg67a → + PF1 (Card PF, 11 reps) | Pg67c live |
+|--:|--:|--:|--:|--:|
+| ≤ 256 | 49.0 at 120 | 49.3 at 120 | 49.4 → 49.5 at 120 | **44.8** (37.3–54.8, 19 reps, captured) |
+| > 256 | 133.7 at 264 · 132.3 at 1144 | 128.7 · 127.1 | 124.0 → 105.8 · 122.4 → 104.3 | **103.8** (99.2–115.1, 17 reps, eager) |
+
+A turn with 129–256 uncached tokens is the row the rung moves: about 133 ms eager on Pg66, captured on Pg67c. One stream
+decode on Local Inference Lab's llm-inference-bench 0.6.2 (no context): Pg66 380.7 (median of 3, 11-24/25), Pg67c
+389.4 and 380.7 (two medians of 3, 11-27); C8 1,256.7 → 1,266.8; C32 2,430.8 → 2,405.0. Per-class C1 at
+temperature 1.0 (the Card G5 instrument, 3 seeds): **498.9** before the Flare run and 500.4 after (Pg62 live: 490.8).
+
+Card F3, one user, same box, same night:
+
+| instrument | Pg67c | Flare, 2026-11-26 core, one GB300 | Pg67c / Flare |
+|---|--:|--:|--:|
+| llm-inference-bench C1, median of 3 | 389.4 | 322.7 | 1.21× |
+| per-class C1, mean of 3 seeds | 498.9 | 366.3 | 1.36× |
+
+Flare ran at its defaults in a container on our box; its own card lists more than we read, and at 8 and 32 streams this
+run gives no usable comparison. Details, the dead ends and what is not covered: [the bundle](results/2026-11-27-pg65-pg67c-prefill-fixes/README.md).
 
 <a id="pg63--pg64-2026-11-21-replies-during-a-long-prompt"></a>
 ### Pg63 + Pg64 (2026-11-21): replies during a long prompt
@@ -272,6 +307,30 @@ Two changes, both in decode attention ([bundle](results/2026-11-14-pg62-w1-exact
 workload tested. It is **not** a claim about the rest of Garner's engine against bare vLLM. His W1 cluster (cx)
 kernel and FP4 records never run on this lane, so the patch covers them in source only (untested).
 
+### Pg65 to Pg67c: the parser rule, two of Garner's components, three prefill fixes
+
+- **Pg65, DSML token provenance.** The V4.1 tokenizer spells every DSML marker as ordinary text around one token,
+  `｜DSML｜`. Stock v0.31.0 matches markers as text, so a marker the model merely quotes becomes a tool call. vLLM PR
+  [#65019](https://github.com/vllm-project/vllm/pull/65019) makes structure depend on the token; our port onto v0.31.0
+  keeps the 2026-11-06 structural-closers rule. Seven parser files mounted over the image
+  ([diff](results/2026-11-27-pg65-pg67c-prefill-fixes/patches/pg65-dsml-token-provenance.diff), [port report](results/2026-11-27-pg65-pg67c-prefill-fixes/pg65/PORT-REPORT.md)).
+  `VLLM_DSV41_DSML_TOKEN_PROVENANCE=0` restores the text behaviour.
+- **Pg66, `w8oproj` and `lowb_aux`.** Two components of Garner's engine that Pg61–Pg65 left off because they change
+  numerics by design: the attention output projection fused with its MXFP8 quantize (1–8 rows), and the attention side
+  projections on a low-latency BF16 path at small row counts. Policy now runs **26 of his 29** components.
+- **Pg67a, F1a.** The cold path's routing glue is a pure function of one integer per route and a per-layer row map, so
+  it becomes two 385-entry tables built once per layer ([`fuse1_route.py`](results/2026-11-27-pg65-pg67c-prefill-fixes/patches/fuse1_route.py)). Never used
+  during graph capture; self-tests on the first eager call per layer; any mismatch disables it.
+- **Pg67b, PF1.** An eager attention layer's three projection GEMMs each paid a wrapper stack that returns the same
+  runner and tactic on every call after the first. PF1 resolves that plan once per shape key and calls the runner
+  directly ([`pf1_mm.py`](results/2026-11-27-pg65-pg67c-prefill-fixes/patches/pf1_mm.py)). Coupled to FlashInfer 0.7.0.post1; any version or name mismatch
+  refuses to install and the stock path runs. Captured graphs are not touched.
+- **Pg67c, rung 384.** The capture ladder gains one size, 384 rows, so a turn with up to 256 uncached tokens runs
+  captured. `--gpu-memory-utilization` goes 0.95 → 0.9531 to pay for the graph without shrinking the KV pool.
+
+F1a and PF1 were designed and desk-tested by Claude Sonnet 5.5; the one-rung choice came from a Claude Fable 5.2 review
+of a three-rung variant that failed its memory bar. Orchestration, cards and verdicts: Milo.
+
 ### Ours on top
 
 | piece | what | file |
@@ -306,9 +365,10 @@ Full reasoning, Cards G0 → G5 and the cutover log:
   ruled out here because it changes numerics. The indexer is the default (his: MXFP4 indexer K + sparse logits).
 - **Context and memory.** `--max-model-len 1048576` (his: 524,288), a 48 GB host KV tier, util 0.95.
 - **Requests.** No forced T = 1.0 / top_p 0.95, no reasoning-effort default, no API key.
-- **Components.** 24 of his 29. `ds41_sampling` and `ds41_stop` are dropped as sampling policy. `w8oproj`, `lowb_aux`
-  and `tail_drafthead_mxfp8` are dropped because each changes numerics by design (the last is also a requantized
-  draft-head copy).
+- **Components.** 26 of his 29 since Pg66 (2026-11-24). `ds41_sampling` and `ds41_stop` are dropped as sampling policy;
+  `tail_drafthead_mxfp8` is dropped because it changes numerics by design and is a requantized draft-head copy.
+  *Corrected 2026-11-27: this said 24 of 29, with `w8oproj` and `lowb_aux` also dropped for changing numerics. That was
+  true through Pg65; Pg66 switched both on after Cards F1 and F1b.*
 
 ### The correctness trap
 
@@ -391,7 +451,21 @@ the live probe and the behaviour changes: [`results/2026-11-06-dsml-structural-c
 
 ## Launch
 
-**The current config, Pg64, has no published launcher path yet.** On the box, `garner/pg64-work` = a copy of `pg63-work` (itself a copy of
+**The current config, Pg67c, has no published launcher path.** On the box its tree is `pg64-work` carried through five
+promote scripts ([`promote/`](results/2026-11-27-pg65-pg67c-prefill-fixes/promote/)). Reproducing it from the recipe = build Pg62 as below, apply the Pg63/Pg64
+scheduler overlay as described next, then:
+
+1. Pg65: apply [`pg65-dsml-token-provenance.diff`](results/2026-11-27-pg65-pg67c-prefill-fixes/patches/pg65-dsml-token-provenance.diff) under `$WORK/overlay-vllm/parser/` (seven files; mounts in [`pg65/MOUNTS.txt`](results/2026-11-27-pg65-pg67c-prefill-fixes/pg65/MOUNTS.txt)).
+2. Pg66: insert `w8oproj` after `topp_fast` and `lowb_aux` after `tail_proj_side` in `DS41_FASTPATH_COMPONENTS_OVERRIDE` in `policy.env`.
+3. Pg67a/b: copy [`fuse1_route.py`](results/2026-11-27-pg65-pg67c-prefill-fixes/patches/fuse1_route.py) and [`pf1_mm.py`](results/2026-11-27-pg65-pg67c-prefill-fixes/patches/pf1_mm.py) into `tree/fastpath/hook/` and apply the two `mega_peer_hook` diffs.
+4. Pg67c: apply [`serve-sh-rung384-pg67c.diff`](results/2026-11-27-pg65-pg67c-prefill-fixes/patches/serve-sh-rung384-pg67c.diff) and [`recipe-env-util-pg67c.diff`](results/2026-11-27-pg65-pg67c-prefill-fixes/patches/recipe-env-util-pg67c.diff).
+
+Check the result against [`SERVING-SHA256SUMS.txt`](results/2026-11-27-pg65-pg67c-prefill-fixes/patches/SERVING-SHA256SUMS.txt), then `up`. **These steps have not been
+executed end to end from a fresh clone.** Restore of a stopped lane on the box:
+`WORK=~/dsv41/sidecar-resid/work-Pg67c MODEL_DIR=/models/DeepSeek-V4.1-Flash-1017-<rev> DS41_HOME=~/dsv41/garner/home bash launch-pg61.sh up`
+(run for real at 22:10 on 2026-11-27 by Card F3's restore).
+
+**Pg64 has no published launcher path either.** On the box, `garner/pg64-work` = a copy of `pg63-work` (itself a copy of
 `pg62-work`) plus the `yieldcad` `scheduler.py` under `overlay-vllm/v1/core/sched/`, the arm `serve.sh` and the `DS41_ARM_ENV` line in
 `policy.env`; `BUILD-SHA256SUMS` was regenerated for it (118 lines). That is what
 [`promote-pg63-to-pg64.sh`](results/2026-11-21-pg63-pg64-scheduler/promote/promote-pg63-to-pg64.sh) does before `launch-pg61.sh up`
@@ -568,7 +642,17 @@ must end `ALL GATES PASS`.
 
 ## Results
 
-### Pg63 + Pg64 = the current config (promoted 2026-11-21 09:31:08 and 12:08:42 CST; serving again since 18:43:45 after a planned stop) — [`results/2026-11-21-pg63-pg64-scheduler/`](results/2026-11-21-pg63-pg64-scheduler/README.md)
+### Pg65 → Pg67c = the current config (Pg67c promoted 2026-11-27 19:22:55 CST) — [`results/2026-11-27-pg65-pg67c-prefill-fixes/`](results/2026-11-27-pg65-pg67c-prefill-fixes/README.md)
+
+The five steps, their cards and the same-box Flare check are in [At a glance](#pg65--pg67c-2026-11-22--2026-11-27) and in
+full in the bundle. What the serving boot's log shows (container started 2026-11-27 22:13 CST,
+[`raw/live/serving-boot-lines.txt`](results/2026-11-27-pg65-pg67c-prefill-fixes/raw/live/serving-boot-lines.txt)): `MEGA_PEER FUSE1 layer N: selftest OK` on layers
+0, 20, 21, 39, `MEGA_PEER PF1 ACTIVE` on FlashInfer 0.7.0.post1, `DSML token provenance active`, KV pool
+11,813,533 tokens (11.27× one 1M request), the A12 memory guard `PASS` with 12.47 GiB free after capture. Determinism probe 8/8 on each Pg67
+boot. Not run on any of the five: T2, T3, a teacher-forced bracket (Pg66's F1 numerics excepted), temperature > 0
+quality, the caller probe, the long-prompt battery of the Pg63/Pg64 round.
+
+### Pg63 + Pg64 (the current config until 2026-11-22; promoted 2026-11-21 09:31:08 and 12:08:42 CST; serving again since 18:43:45 after a planned stop) — [`results/2026-11-21-pg63-pg64-scheduler/`](results/2026-11-21-pg63-pg64-scheduler/README.md)
 
 Promotion logs ([`promote-pg63-20261121-0923.log`](results/2026-11-21-pg63-pg64-scheduler/promote/promote-pg63-20261121-0923.log),
 [`promote-pg64-20261121-1201.log`](results/2026-11-21-pg63-pg64-scheduler/promote/promote-pg64-20261121-1201.log)): `pg6N-work ready:
@@ -691,7 +775,27 @@ The long write-up for each release is in [HISTORY.md → Superseded Results subs
 
 ## Known limits
 
-**Pg64 (the current config since 2026-11-21 12:08:42 CST; serving again since 18:43:45 after a planned stop).** Every Pg62 and Pg61 limit below
+**Pg67c (the current config since 2026-11-27 19:22:55 CST).** Every Pg64, Pg62 and Pg61 limit below also applies. Pg65–Pg67c add:
+
+* **Less tested than anything before it.** No T2/T3 quality suite and no completed 48 h soak on Pg65, Pg66, Pg67a, Pg67b
+  or Pg67c; the soak clock restarted 2026-11-27 22:17:28 CST and runs to Sunday 2026-11-29 10:17 PM CST. Pg66 switches on two components that change
+  numerics by design; its evidence is Cards F1/F1b (log-prob distance inside the control spread, top-1 agreement 1.0,
+  gauntlet 12/12), not a quality suite.
+* **Three promotions were declared by hand.** The promote scripts' gate blocks for Pg67a, Pg67b and Pg67c failed on
+  script problems, and the gates were read off the running boot instead. Card PF's verdict was HOLD (KV pool 861
+  tokens smaller with equal bytes). Card F's analysis step failed and its table was recomputed from the probe files.
+* **A cold prefix build can hold a later prefill.** A prefill that followed a cold 52K-token prefix build waited 575 ms
+  at 40 uncached tokens (583 ms in the same spot on Pg67b). Cause not established; measured, not fixed.
+* **PF1 is pinned to FlashInfer 0.7.0.post1.** On any other version it refuses to install and the eager step gives back
+  about 18 ms. The boot log line `MEGA_PEER PF1 installed` is the check.
+* **Prefill above 256 uncached tokens is still eager** at about 103.8 ms a step. Wider rungs cost KV: three rungs took
+  the pool to 11,324,211 tokens.
+* **No launcher path** for Pg65–Pg67c ([Launch](#launch)), and the serving containers mount the vLLM overlay from a card
+  arm's directory (same bytes, hashed in the container).
+* **The Flare comparison is one boot per engine, one user, on our box.** It says nothing about many users, and Flare's
+  own card reports higher numbers than we read for their core.
+
+**Pg64 (the config from 2026-11-21 12:08:42 CST until Pg65 on 2026-11-22; text as written then).** Every Pg62 and Pg61 limit below
 also applies to Pg63 and Pg64. The scheduler round adds:
 
 * **Still being tested, and less tested than Pg62.** No 48 h soak has completed on Pg63 or Pg64 (the first Pg64 clock ran 12:08:21 → 14:49:50, 2 h 41 min; the 48 h soak clock restarted 2026-11-21 18:43:45 CST and runs to Monday 2026-11-23 6:43 PM CST if nothing restarts it).
@@ -913,10 +1017,15 @@ Limits that described only superseded configs are in [HISTORY.md → Superseded 
 
 ## Rollback
 
-The chain is **Pg64 → Pg63 → Pg62 → Pg61 → h2-REF**. Which steps have run for real:
+The chain is **Pg67c → Pg67b → Pg67a → Pg66 → Pg65 → Pg64 → Pg63 → Pg62 → Pg61 → h2-REF**. Which steps have run for real:
 
 | step | script | exercised? |
 |---|---|---|
+| Pg67c → Pg67b | none; `WORK=<work-Pg67b> launch-pg61.sh down`, then `up` | **never run** |
+| Pg67b → Pg67a | [`promote/rollback-pg67b-to-pg67a.sh`](results/2026-11-27-pg65-pg67c-prefill-fixes/promote/rollback-pg67b-to-pg67a.sh) (box) | **never run as such**; the same restore ran at 17:46 on 11-27 when a three-rung variant failed its gates |
+| Pg67a → Pg66 | [`promote/rollback-pg67a-to-pg66.sh`](results/2026-11-27-pg65-pg67c-prefill-fixes/promote/rollback-pg67a-to-pg66.sh) (box) | **never run**; its twin [`rollback-pg67-to-pg66.sh`](results/2026-11-27-pg65-pg67c-prefill-fixes/promote/rollback-pg67-to-pg66.sh) **ran for real** 2026-11-27 12:05:33 → 12:13:09 CST ([log](results/2026-11-27-pg65-pg67c-prefill-fixes/promote/rollback-pg67-20261127-1205.log)) |
+| Pg66 → Pg65 | [`promote/rollback-pg66-to-pg65.sh`](results/2026-11-27-pg65-pg67c-prefill-fixes/promote/rollback-pg66-to-pg65.sh) (box) | **never run as such**; the first Pg66 attempt's failure path restored Pg65 on 11-24, 22:36 → 22:42 |
+| Pg65 → Pg64 | [`promote/rollback-pg65-to-pg64.sh`](results/2026-11-27-pg65-pg67c-prefill-fixes/promote/rollback-pg65-to-pg64.sh) (box) | **never run** |
 | Pg64 → Pg63 | [`promote/rollback-pg64-to-pg63.sh`](results/2026-11-21-pg63-pg64-scheduler/promote/rollback-pg64-to-pg63.sh) (box) | **never run.** Same bytes as the 11-17 `rollback-pg62y-to-pg62.sh` except the work-dir names |
 | Pg63 → Pg62 | [`promote/rollback-pg63-to-pg62.sh`](results/2026-11-21-pg63-pg64-scheduler/promote/rollback-pg63-to-pg62.sh) (box) | **never run as such.** The equivalent sequence (`launch-pg61.sh down` on the Pg63 tree → drop caches → `up` on `pg62-work`) ran for real at **09:15–09:22 CST on 2026-11-21** as the Pg63 promotion's auto-restore after its false FAIL ([log](results/2026-11-21-pg63-pg64-scheduler/promote/promote-pg63-20261121-0908.log): `verify OK` 09:22:21, `UP on :30006` 09:22:24, Pg62 serving), and the identically shaped `rollback-pg62y-to-pg62.sh` ran end to end on 2026-11-17 01:23–01:30 ([log](results/2026-11-21-pg63-pg64-scheduler/promote/rollback-pg62y-20261117-0123.log)) |
 | Pg62 → Pg61 | [`scripts/rollback-pg62-to-pg61.sh`](scripts/rollback-pg62-to-pg61.sh) | never drilled (below) |
@@ -1050,7 +1159,20 @@ and b12x notices his tree requires us to pass on.
   [Block Verification Accelerates Speculative Decoding](https://arxiv.org/abs/2403.10444) (ICLR 2025), the algorithm
   behind vLLM's `rejection_sample_method: block`, which Card BR1 measured.
 
+* **Boris ([@BorisLoveDev](https://github.com/BorisLoveDev))**, for vLLM PR [#65019](https://github.com/vllm-project/vllm/pull/65019),
+  "treat DSML markers as structure only from the DSML token". Pg65's parser overlay is a port of that PR (head
+  `cad5796a`, open when ported) onto v0.31.0, merged with our structural-closers rule. The rule is his; the merge and
+  any mistake in it are ours.
+* **Garner McCloud** again for Pg66: `w8oproj` and `lowb_aux` are components of his engine at the pinned commit. We
+  only switched them on.
+
 **Measured against, not run** (peer lanes and harnesses whose numbers we quote beside ours):
+
+* **[Local Inference Lab](https://huggingface.co/local-inference-lab)** (voipmonitor / Martin Vit, lukealonso, original-el8) for the
+  [Flare package](https://huggingface.co/local-inference-lab/DeepSeek-V4.1-Flash-1017-FLARE/tree/gb300) of this model on NVIDIA's Flare engine, the one-GPU recipe Card F3
+  measured beside ours, and for llm-inference-bench, the client both arms ran. **Jason Cook
+  ([original-el8](https://github.com/original-el8))** for Parallax, the expert-residency technique in that package. None of
+  it is in this recipe. Their recipe is simpler and runs on the GB300 alone.
 
 * **[Fraser Price](https://huggingface.co/fraserprice/DeepSeek-4.1-Flash-1017-BRRR)** — the BRRR recipe for
   DeepSeek-V4.1-Flash-1017 on 4× RTX PRO 6000 (fused decode kernels, `decoder.cu`), its published results table, and
@@ -1084,6 +1206,9 @@ Fable 5.1 as advisor.
 One line per dated round, newest first. The full text of each is in [HISTORY.md](HISTORY.md). The anchors on each
 line keep old links into this README working.
 
+- <a id="pg64-status-banner"></a>**2026-11-27** — Pg67a, Pg67b and Pg67c promoted (12:24:58, 19:03:02, 19:22:55 CST): routing-glue fusion, a direct call plan for the eager `mm_mxfp8` GEMMs, and capture rung 384. Eager prefill step about 133 → 103.8 ms; turns with ≤ 256 uncached tokens captured at 44.8 ms. Card F3 the same night: one user, Pg67c 389.4 vs Flare's 2026-11-26 one-GPU core 322.7 tok/s on their client. Three promotions declared by hand after script gate failures; no T2/T3. [Bundle](results/2026-11-27-pg65-pg67c-prefill-fixes/README.md)
+- **2026-11-24** — Pg66 promoted 22:51:56 CST: Garner's `w8oproj` + `lowb_aux` switched on (Cards F1 + F1b, C1 step −0.15 and −0.20 ms; first attempt failed its own ACTIVE check and restored Pg65). [Bundle](results/2026-11-27-pg65-pg67c-prefill-fixes/README.md#pg66-cards-f1-and-f1b)
+- **2026-11-22** — Pg65 promoted 08:37:56 CST: DSML markers are structure only from the real `｜DSML｜` token (port of vLLM #65019). [Bundle](results/2026-11-27-pg65-pg67c-prefill-fixes/README.md)
 - <a id="pg62-status-banner"></a>**2026-11-21** — Pg63 promoted 09:31:08 CST (prefill cadence N=3 on long prefills, Card X4 after X1–X3 failed a single-rep C32 instrument that the X3b diagnostic showed fails on Pg62 too) and Pg64 promoted 12:08:42 CST (+ Owen's prefill yield, Cards X5/X6, Y1 + Y3 pass, Y2 C1 −2.5 % on file): reply beside a 413K prompt 33 vs 12–13 tok/s, short chat behind it 0.16–0.22 s to first token vs 0.27–0.58; long prompt +3…+8 % while shared. #59131+#63540, cadence N=2, b12x deterministic combine and dead-row skipping measured and parked. Lane stopped-and-kept 14:49:50 at James's request. [Bundle](results/2026-11-21-pg63-pg64-scheduler/README.md) · [the Pg62 status banner it replaced](HISTORY.md#pg62-status-banner-superseded-2026-11-21-by-pg64)
 - **2026-11-15** — T2/T3 quality suite on the live Pg62 lane: six of six pre-registered bars pass against Pg61's stored items (needle 500/500, GSM8K-1319 1284 vs 1279, BFCL held-out 1024 vs 1026, MMLU-Pro-1000 871 vs 877); cross-day reference, not a same-window control. [Bundle](results/2026-11-15-pg62-t2-t3/README.md)
 - <a id="pg61-status-banner"></a>**2026-11-14** — Pg62 promoted 23:11:55 CST: an exact FP8 decode-attention fast path (W13 routing + the stock op's rounding in both W1 extensions), +6.1 % C1, each W1 call byte-equal to the stock op in shadow; Pg61 found never byte-equal on window-only layers (70 of 17,797 calls). [Bundle](results/2026-11-14-pg62-w1-exact/README.md) · [the Pg61 status banner it replaced](HISTORY.md#pg61-status-banner-superseded-2026-11-15-by-pg62)
@@ -1105,7 +1230,20 @@ line keep old links into this README working.
 
 ## Finalisation checklist
 
-What stands between **Pg64** and `status: verified` (2026-11-21):
+What stands between **Pg67c** and `status: verified` (2026-11-27):
+
+| item | state |
+|---|---|
+| 48 h soak on Pg67c | **in progress** — clock restarted 2026-11-27 22:17:28 CST, runs to Sunday 2026-11-29 10:17 PM CST if nothing restarts it |
+| T2 + held-out BFCL, T3, temperature > 0 quality on Pg67c | **pending** — none run since Pg62 (2026-11-15); Pg66 changed numerics by design |
+| the Pg63/Pg64 long-prompt battery and the caller probe on Pg67c | **pending** |
+| promote scripts whose gate blocks pass on a good boot | **pending** — three Pg67 promotions were declared by hand |
+| launcher path for Pg65–Pg67c + `BUILD-SHA256SUMS.expected`; serving overlay mounted from its own tree | **pending** |
+| rollback scripts run for real | **partly** — Pg67 → Pg66 ran 11-27 12:05; the others have not |
+| cold-build hold on the next prefill (575 ms) | **open** — measured, not fixed |
+| gate stamps | **not stamped.** Nothing new is stamped this round |
+
+<a id="finalisation-checklist-pg64"></a>What stood between **Pg64** and `status: verified` (2026-11-21; kept as the record — Pg64 is now five steps back):
 
 | item | state |
 |---|---|

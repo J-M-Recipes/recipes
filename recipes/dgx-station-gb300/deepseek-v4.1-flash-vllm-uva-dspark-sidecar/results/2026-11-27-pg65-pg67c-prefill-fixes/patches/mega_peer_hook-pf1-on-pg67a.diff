@@ -1,0 +1,17 @@
+--- sidecar-resid/work-Pg67a/tree/fastpath/hook/mega_peer_hook.py	2026-11-27 12:06:13.509439180 -0600
++++ sidecar-resid/work-Pg67b/tree/fastpath/hook/mega_peer_hook.py	2026-11-27 18:47:43.585165117 -0600
+@@ -295,6 +295,14 @@
+     ll = importlib.util.module_from_spec(spec)
+     spec.loader.exec_module(ll)
+     ll.patch(module)
++    if os.environ.get("MEGA_PF1", "1") == "1":
++        try:  # PF1 (W15): direct eager call plan for vllm::mm_mxfp8; any failure leaves the original CustomOpDef path
++            sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
++            import pf1_mm
++
++            pf1_mm.install(module)
++        except Exception as e:
++            _LOG(f"PF1 not installed ({e!r}); original mm_mxfp8 path")
+ 
+ 
+ def _check_pin(src) -> None:

@@ -1,0 +1,33 @@
+| arm | C1 step ms (3 seeds, 5 cls) | C1 tok/s | T=0 step ms | nat step ms | nat tok/s | fixed greedy tok/s | steps/s | C8 | C32 (n) | gauntlet |
+|---|--:|--:|--:|--:|--:|--:|--:|--:|--:|--:|
+| A1 | 7.855 | 494.5 | 8.091 | 7.758 | 523.7 | 666.1 | 129.2 | 1435 | 2583/2566 | 12/12 |
+| C | 7.721 | 500.2 | 7.954 | 7.639 | 540.3 | 695.5 | 131.9 | 1441 | 2599/2632 | 12/12 |
+| D | 7.692 | 506.9 | 7.909 | 7.595 | 551.9 | 711.4 | 132.1 | 1436 | 2638/2587 | 12/12 |
+| A2 | 7.827 | 484.9 | 8.022 | 7.730 | 519.6 | 663.0 | 129.1 | 1433 | 2611/2607 | 12/12 |
+
+per-class step ms (mean of 3 seeds):
+| arm | prose | structured | code | shell_ops | tool_json |
+|---|--:|--:|--:|--:|--:|
+| A1 | 7.554 | 7.584 | 8.097 | 8.115 | 7.924 |
+| C | 7.448 | 7.472 | 7.953 | 7.952 | 7.779 |
+| D | 7.373 | 7.364 | 7.938 | 8.005 | 7.779 |
+| A2 | 7.525 | 7.542 | 8.081 | 8.075 | 7.911 |
+tokens/step:
+| A1 | 3.013 | 3.344 | 4.495 | 4.617 | 4.031 |
+| C | 3.073 | 3.389 | 4.400 | 4.547 | 3.965 |
+| D | 3.046 | 3.293 | 4.495 | 4.738 | 4.016 |
+| A2 | 2.952 | 3.254 | 4.280 | 4.586 | 3.981 |
+
+numerics (decode_lp compare):
+A1r1-A1r2  pos  1739 eq 0.322 mean 0.014286 p99 0.23606 max 0.57966 top1 1.0 firstdiv 40.5 full 0
+A1-A2      pos  1594 eq 0.307 mean 0.013199 p99 0.22876 max 0.71641 top1 1.0 firstdiv 40.5 full 0
+A2r1-A2r2  pos  1628 eq 0.293 mean 0.013505 p99 0.25567 max 0.66603 top1 1.0 firstdiv 37.5 full 0
+C-A1       pos  1437 eq 0.319 mean 0.015889 p99 0.24814 max 0.5255 top1 1.0 firstdiv 32.5 full 0
+C-A2       pos  1840 eq 0.333 mean 0.0131 p99 0.25693 max 0.59645 top1 1.0 firstdiv 35.5 full 1
+D-A1       pos  1852 eq 0.355 mean 0.011945 p99 0.23518 max 0.48113 top1 1.0 firstdiv 39.0 full 0
+D-A2       pos  1953 eq 0.307 mean 0.012967 p99 0.22845 max 0.53068 top1 1.0 firstdiv 35.5 full 1
+Cr1-Cr2    pos  1616 eq 0.298 mean 0.015438 p99 0.23794 max 0.49305 top1 1.0 firstdiv 31.0 full 1
+
+control step mean 7.841 half-spread 0.014 min 7.827; ctl numerics worst mean 0.014286 p99 0.25567 min top1 1.0 min firstdiv 37.5
+C {"d_vs_mean": -0.12, "d_vs_min": -0.106, "speed": true, "c32": true, "c8": true, "dlp_mean": true, "dlp_p99": true, "top1": true, "firstdiv": true, "gauntlet": true, "PASS": true}
+D {"d_vs_mean": -0.149, "d_vs_min": -0.135, "speed": true, "c32": true, "c8": true, "dlp_mean": true, "dlp_p99": true, "top1": true, "firstdiv": true, "gauntlet": true, "PASS": true}

@@ -10,6 +10,7 @@ For what serves today, read [README.md](README.md). Dated rounds are newest firs
 
 ## Contents
 
+- [Pg64 status banner (superseded 2026-11-27 by Pg67c)](#pg64-status-banner-superseded-2026-11-27-by-pg67c)
 - [Pg62 status banner (superseded 2026-11-21 by Pg64)](#pg62-status-banner-superseded-2026-11-21-by-pg64)
 - [Pg61 status banner (superseded 2026-11-15 by Pg62)](#pg61-status-banner-superseded-2026-11-15-by-pg62)
 - [Status banners and intro before the 2026-10-30 rewrite](#status-banners-and-intro-before-the-2026-10-30-rewrite)
@@ -29,6 +30,33 @@ For what serves today, read [README.md](README.md). Dated rounds are newest firs
 - [Superseded limits](#superseded-limits)
 - [Older rollback pairs](#older-rollback-pairs)
 - [Finalisation checklist (2026-10-26)](#finalisation-checklist-2026-10-26)
+
+## Pg64 status banner, superseded 2026-11-27 by Pg67c
+
+Moved from the README's Status block on 2026-11-27, verbatim. Pg64 served from 2026-11-21 12:08:42 CST until Pg65 was
+promoted on 2026-11-22 08:37:56 CST; the soak this banner describes did not complete.
+
+- **Pg64 is the current config and is serving `:30006` again since 2026-11-21 18:43:45 CST** (restored on James's word after a planned
+  stop 14:49:50–18:43:45 CST while the Station ran other measurement cards; restore = `WORK=~/dsv41/garner/pg64-work MODEL_DIR=… DS41_HOME=~/dsv41/garner/home
+  bash scripts/launch-pg61.sh up`, cadence + yield env and the cadence engine-log line verified, p3 watchdog ENFORCE). First served
+  **2026-11-21 12:08:42 CST**. The lane is back on the Funland Lab guest page (`deepseek-v4.1-flash`) since 2026-11-21 20:41 CST. Pg64 = Pg63 + prefill yield; Pg63 = Pg62 + prefill
+  cadence; both are one env-gated scheduler overlay on Pg62 and nothing else ([what changed](#pg63--pg64-2026-11-21-replies-during-a-long-prompt)).
+- **Status:** `experimental`. The round's evidence is pre-registered bars on two boots per lever against same-window
+  controls ([bundle](results/2026-11-21-pg63-pg64-scheduler/README.md)): beside a 413K-token prompt a streaming reply decodes
+  at 33 tok/s instead of 12–13; a short chat arriving during that prompt gets its first token in 0.16–0.22 s instead of
+  0.27–0.58 s. **No 48 h soak has completed on Pg63 or Pg64, and no T2/T3 quality suite has run on either**; the fidelity
+  evidence is the card battery (qeval 71/75, 3-needle at 1M, greedy same-boot 40/40, JSON burst, DSML live) on every arm.
+  Pg62's T2/T3 pass (2026-11-15) is Pg62's.
+- **Soak:** in progress — the 48 h soak clock restarted 2026-11-21 18:43:45 CST and runs to Monday 2026-11-23 6:43 PM CST if nothing restarts it. (The first clock ran 12:08:21 → 14:49:50, 2 h 41 min, and stopped with the lane.)
+- **Rollback:** Pg64 → Pg63 `bash scripts/rollback-pg64-to-pg63.sh`, Pg63 → Pg62 `bash scripts/rollback-pg63-to-pg62.sh`
+  (box scripts, in the bundle's `promote/`; neither has been run). Pg62 → Pg61 `scripts/rollback-pg62-to-pg61.sh` (never
+  drilled); Pg61 → h2-REF `scripts/rollback-pg61-to-h2ref.sh` (drilled 2026-10-31). What did run for real on 2026-11-21: the
+  Pg63 promotion's own failure path restored Pg62 at 09:22 after a false FAIL ([Rollback](#rollback)).
+- **Bundle:** [`results/2026-11-21-pg63-pg64-scheduler/`](results/2026-11-21-pg63-pg64-scheduler/README.md). Pg62's:
+  [`results/2026-11-14-pg62-w1-exact/`](results/2026-11-14-pg62-w1-exact/README.md) and
+  [`results/2026-11-15-pg62-t2-t3/`](results/2026-11-15-pg62-t2-t3/README.md). Pg61's:
+  [`results/2026-10-29-pg61-garner-engine/`](results/2026-10-29-pg61-garner-engine/README.md),
+  [`results/2026-10-31-r1-qt1/`](results/2026-10-31-r1-qt1/README.md). Cards: `card-pg62.png`, `card-pg61.png`.
 
 ## Pg62 status banner, superseded 2026-11-21 by Pg64
 
